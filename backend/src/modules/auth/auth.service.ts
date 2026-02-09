@@ -69,8 +69,8 @@ export class AuthService {
         data: {
           email: data.email.toLowerCase(),
           passwordHash,
-          role: data.role || 'customer',
-          status: 'pending_verification',
+          role: data.role || 'USER',
+          status: 'PENDING',
           verificationToken,
           verificationTokenExpiry,
           profile: {
@@ -478,7 +478,7 @@ export class AuthService {
         where: { id: user.id },
         data: {
           emailVerified: true,
-          status: 'active',
+          status: 'ACTIVE',
           verificationToken: null,
           verificationTokenExpiry: null,
         },

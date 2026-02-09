@@ -13,7 +13,7 @@ export interface RegisterRequest {
   lastName?: string;
   phone?: string;
   companyName?: string;
-  role?: 'admin' | 'customer' | 'dealer' | 'sales';
+  role?: 'ADMIN' | 'USER';
   locale?: 'en' | 'ar';
   userAgent?: string;
   ipAddress?: string;

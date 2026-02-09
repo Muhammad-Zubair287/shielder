@@ -4,15 +4,33 @@
  */
 
 import { Request } from 'express';
+import { UserRole } from './rbac.types';
+
+/**
+ * Extend Express Request globally
+ */
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        userId: string;
+        email: string;
+        role: UserRole;
+      };
+    }
+  }
+}
 
 /**
  * Extended Express Request with user information
  */
 export interface AuthRequest extends Request {
   user?: {
+    id: string;
     userId: string;
     email: string;
-    role: string;
+    role: UserRole;
   };
 }
 
