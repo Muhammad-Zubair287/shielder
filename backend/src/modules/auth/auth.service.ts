@@ -75,11 +75,11 @@ export class AuthService {
           verificationTokenExpiry,
           profile: {
             create: {
-              firstName: data.firstName || '',
-              lastName: data.lastName || '',
-              phone: data.phone,
+              fullName: data.fullName || '',
+              phoneNumber: data.phoneNumber,
+              address: data.address,
               companyName: data.companyName,
-              locale: data.locale || 'en',
+              preferredLanguage: data.preferredLanguage || 'en',
             },
           },
         },
@@ -91,10 +91,10 @@ export class AuthService {
       logger.info(`New user registered: ${user.email}`);
 
       // Send welcome and verification emails
-      const firstName = user.profile?.firstName || 'User';
+      const displayName = user.profile?.fullName || 'User';
       await Promise.all([
-        emailService.sendWelcomeEmail(user.email, firstName),
-        emailService.sendVerificationEmail(user.email, firstName, verificationToken),
+        emailService.sendWelcomeEmail(user.email, displayName),
+        emailService.sendVerificationEmail(user.email, displayName, verificationToken),
       ]);
 
       // Generate tokens

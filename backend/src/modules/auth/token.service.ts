@@ -9,6 +9,7 @@ import { env } from '@/config/env';
 import { prisma } from '@/config/database';
 import { UnauthorizedError } from '@/common/errors/api.error';
 import { logger } from '@/common/logger/logger';
+import { UserRole } from '../../types/rbac.types';
 
 /**
  * JWT Payload Interface
@@ -16,7 +17,7 @@ import { logger } from '@/common/logger/logger';
 export interface JWTPayload {
   userId: string;
   email: string;
-  role: string;
+  role: UserRole;
   preferredLanguage?: string;
 }
 
@@ -187,8 +188,8 @@ export class TokenService {
       return {
         userId: storedToken.user.id,
         email: storedToken.user.email,
-        role: storedToken.user.role,
-        preferredLanguage: storedToken.user.profile?.locale || 'en',
+        role: storedToken.user.role as UserRole,
+        preferredLanguage: storedToken.user.profile?.preferredLanguage || 'en',
       };
     } catch (error) {
       if (error instanceof UnauthorizedError) {

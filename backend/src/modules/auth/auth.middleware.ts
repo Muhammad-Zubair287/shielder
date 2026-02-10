@@ -8,6 +8,7 @@ import { verifyAccessToken } from '../../config/jwt';
 import { UnauthorizedError, ForbiddenError } from '../../common/errors/api.error';
 import { AuthRequest } from '../../types/global';
 import { logger } from '../../common/logger/logger';
+import { UserRole } from '../../types/rbac.types';
 
 /**
  * Authenticate user middleware
@@ -33,9 +34,11 @@ export const authenticate = async (
 
     // Attach user to request
     req.user = {
+      id: payload.userId,
       userId: payload.userId,
       email: payload.email,
-      role: payload.role,
+      role: payload.role as UserRole,
+      preferredLanguage: payload.preferredLanguage,
     };
 
     next();
@@ -83,9 +86,11 @@ export const optionalAuth = async (
       const payload = verifyAccessToken(token);
 
       req.user = {
+        id: payload.userId,
         userId: payload.userId,
         email: payload.email,
-        role: payload.role,
+        role: payload.role as UserRole,
+        preferredLanguage: payload.preferredLanguage,
       };
     }
 

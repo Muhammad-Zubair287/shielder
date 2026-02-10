@@ -5,6 +5,7 @@
 
 import jwt from 'jsonwebtoken';
 import { env } from './env';
+import { UserRole } from '../types/rbac.types';
 
 /**
  * JWT Payload Interface
@@ -12,7 +13,8 @@ import { env } from './env';
 export interface JWTPayload {
   userId: string;
   email: string;
-  role: string;
+  role: UserRole;
+  preferredLanguage?: string;
 }
 
 /**

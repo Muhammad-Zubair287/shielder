@@ -37,9 +37,10 @@ async function main() {
       emailVerified: true,
       profile: {
         create: {
-          firstName: 'Super',
-          lastName: 'Admin',
-          locale: 'en',
+          fullName: 'Super Admin',
+          phoneNumber: '+0000000000',
+          address: 'Main Command Center',
+          preferredLanguage: 'en',
         },
       },
     },

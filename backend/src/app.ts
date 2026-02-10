@@ -17,6 +17,9 @@ import { logger } from './common/logger/logger';
 import authRoutes from './modules/auth/auth.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import superAdminRoutes from './modules/super-admin/super-admin.routes';
+import inventoryRoutes from './modules/inventory/inventory.routes';
+import profileRoutes from './modules/profile/profile.routes';
+import cartRoutes from './modules/cart/cart.routes';
 
 /**
  * Create Express application
@@ -54,8 +57,11 @@ export const createApp = (): Application => {
 
   // API routes
   app.use(`${appConfig.api.prefix}/auth`, authRoutes);
+  app.use(`${appConfig.api.prefix}/profile`, profileRoutes);
+  app.use(`${appConfig.api.prefix}/cart`, cartRoutes);
   app.use(`${appConfig.api.prefix}/admin`, adminRoutes);
   app.use(`${appConfig.api.prefix}/super-admin`, superAdminRoutes);
+  app.use(`${appConfig.api.prefix}/inventory`, inventoryRoutes);
 
   // 404 handler
   app.use(notFoundHandler);

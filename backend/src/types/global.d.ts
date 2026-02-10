@@ -17,6 +17,7 @@ declare global {
         userId: string;
         email: string;
         role: UserRole;
+        preferredLanguage?: string;
       };
     }
   }
@@ -31,6 +32,7 @@ export interface AuthRequest extends Request {
     userId: string;
     email: string;
     role: UserRole;
+    preferredLanguage?: string;
   };
 }
 
@@ -61,22 +63,22 @@ export interface PaginationParams {
 /**
  * User Roles
  */
-export type UserRole = 'admin' | 'customer' | 'dealer' | 'sales';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER';
 
 /**
  * User Status
  */
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending_verification';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
 
 /**
  * Order Status
  */
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 
 /**
  * Product Status
  */
-export type ProductStatus = 'active' | 'inactive' | 'out_of_stock';
+export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK';
 
 /**
  * Supported Locales

@@ -49,35 +49,34 @@ export const appConfig = {
 
   // User Roles
   roles: {
-    ADMIN: 'admin',
-    CUSTOMER: 'customer',
-    DEALER: 'dealer', // For future implementation
-    SALES: 'sales',
+    SUPER_ADMIN: 'SUPER_ADMIN',
+    ADMIN: 'ADMIN',
+    USER: 'USER',
   },
 
   // Order Status
   orderStatus: {
-    PENDING: 'pending',
-    CONFIRMED: 'confirmed',
-    PROCESSING: 'processing',
-    SHIPPED: 'shipped',
-    DELIVERED: 'delivered',
-    CANCELLED: 'cancelled',
+    PENDING: 'PENDING',
+    CONFIRMED: 'CONFIRMED',
+    PROCESSING: 'PROCESSING',
+    SHIPPED: 'SHIPPED',
+    DELIVERED: 'DELIVERED',
+    CANCELLED: 'CANCELLED',
   },
 
   // Product Status
   productStatus: {
-    ACTIVE: 'active',
-    INACTIVE: 'inactive',
-    OUT_OF_STOCK: 'out_of_stock',
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    OUT_OF_STOCK: 'OUT_OF_STOCK',
   },
 
   // User Status
   userStatus: {
-    ACTIVE: 'active',
-    INACTIVE: 'inactive',
-    SUSPENDED: 'suspended',
-    PENDING_VERIFICATION: 'pending_verification',
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    SUSPENDED: 'SUSPENDED',
+    PENDING: 'PENDING',
   },
 } as const;
 

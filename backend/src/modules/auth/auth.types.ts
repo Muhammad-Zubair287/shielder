@@ -9,12 +9,12 @@
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
+  fullName: string;
+  phoneNumber: string;
+  address: string;
   companyName?: string;
   role?: 'ADMIN' | 'USER';
-  locale?: 'en' | 'ar';
+  preferredLanguage?: string;
   userAgent?: string;
   ipAddress?: string;
 }
