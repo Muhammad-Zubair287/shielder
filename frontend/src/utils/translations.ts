@@ -17,6 +17,7 @@ export const translations = {
     name: 'Full Name',
     company: 'Company Name',
     phone: 'Phone Number',
+    address: 'Address',
     language: 'Language',
     submit: 'Submit',
     cancel: 'Cancel',
@@ -33,6 +34,10 @@ export const translations = {
     dontHaveAccount: "Don't have an account?",
     rememberMe: 'Remember me',
     forgotPassword: 'Forgot password?',
+    loginYourAccount: 'Login your account!',
+    welcomeToShielder: 'Welcome to the Shielder',
+    loginToExplore: 'Login to explore',
+    continue: 'Continue',
     
     // Form Labels
     enterEmail: 'Enter your email',
@@ -40,6 +45,7 @@ export const translations = {
     enterName: 'Enter your full name',
     enterCompany: 'Enter company name',
     enterPhone: 'Enter phone number',
+    enterAddress: 'Enter your address',
     selectLanguage: 'Select Language',
     
     // Validation
@@ -49,6 +55,7 @@ export const translations = {
     invalidEmail: 'Invalid email format',
     passwordMinLength: 'Password must be at least 8 characters',
     nameRequired: 'Name is required',
+    addressRequired: 'Address is required',
     
     // Messages
     loginSuccess: 'Login successful',
@@ -97,6 +104,7 @@ export const translations = {
     name: 'الاسم الكامل',
     company: 'اسم الشركة',
     phone: 'رقم الهاتف',
+    address: 'العنوان',
     language: 'اللغة',
     submit: 'إرسال',
     cancel: 'إلغاء',
@@ -113,6 +121,10 @@ export const translations = {
     dontHaveAccount: 'ليس لديك حساب؟',
     rememberMe: 'تذكرني',
     forgotPassword: 'هل نسيت كلمة المرور؟',
+    loginYourAccount: 'تسجيل الدخول إلى حسابك!',
+    welcomeToShielder: 'مرحباً بكم في شيلدر',
+    loginToExplore: 'سجل الدخول للاستكشاف',
+    continue: 'متابعة',
     
     // Form Labels - تسميات النموذج
     enterEmail: 'أدخل بريدك الإلكتروني',
@@ -120,6 +132,7 @@ export const translations = {
     enterName: 'أدخل اسمك الكامل',
     enterCompany: 'أدخل اسم الشركة',
     enterPhone: 'أدخل رقم الهاتف',
+    enterAddress: 'أدخل العنوان',
     selectLanguage: 'اختر اللغة',
     
     // Validation - التحقق
@@ -129,6 +142,7 @@ export const translations = {
     invalidEmail: 'صيغة البريد الإلكتروني غير صحيحة',
     passwordMinLength: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
     nameRequired: 'الاسم مطلوب',
+    addressRequired: 'العنوان مطلوب',
     
     // Messages - الرسائل
     loginSuccess: 'تم تسجيل الدخول بنجاح',

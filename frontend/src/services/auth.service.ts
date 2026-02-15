@@ -80,13 +80,16 @@ class AuthService {
   async refreshToken(refreshToken: string): Promise<string> {
     try {
       const response = await apiClient.post<
-        ApiResponse<{ accessToken: string }>
+        ApiResponse<{ accessToken: string; refreshToken: string }>
       >(API_ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken });
 
-      const { accessToken } = response.data.data!;
+      const { accessToken, refreshToken: newRefreshToken } = response.data.data!;
 
       // Store new access token
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+      if (newRefreshToken) {
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+      }
 
       return accessToken;
     } catch (error) {
@@ -128,10 +131,13 @@ class AuthService {
   /**
    * Store authentication data in localStorage
    */
-  private storeAuthData(authData: AuthResponse): void {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, authData.accessToken);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, authData.refreshToken);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authData.user));
+  private storeAuthData(authData: any): void {
+    const accessToken = authData.accessToken || authData.tokens?.accessToken;
+    const refreshToken = authData.refreshToken || authData.tokens?.refreshToken;
+
+    if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    if (authData.user) localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authData.user));
   }
 
   /**

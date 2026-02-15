@@ -7,7 +7,7 @@
  * API Configuration
  */
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api',
   TIMEOUT: 30000, // 30 seconds
 } as const;
 
@@ -17,29 +17,35 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    REGISTER: '/auth/register',
+    REGISTER: '/auth/signup',
     LOGIN: '/auth/login',
     LOGOUT: '/auth/logout',
-    REFRESH_TOKEN: '/auth/refresh-token',
+    REFRESH_TOKEN: '/auth/refresh',
     ME: '/auth/me',
-    VERIFY_EMAIL: '/auth/verify-email',
+    VERIFY_EMAIL: '/auth/verify-email', // Note: backend expects GET /verify-email/:token
   },
   // Users
   USERS: {
-    BASE: '/users',
-    BY_ID: (id: string) => `/users/${id}`,
-    UPDATE_PROFILE: '/users/profile',
+    BASE: '/profile',
+    BY_ID: (id: string) => `/super-admin/users/${id}`,
+    UPDATE_PROFILE: '/profile',
   },
   // Products
   PRODUCTS: {
-    BASE: '/products',
-    BY_ID: (id: string) => `/products/${id}`,
-    BY_CATEGORY: (categoryId: string) => `/products?category=${categoryId}`,
+    BASE: '/inventory/products',
+    BY_ID: (id: string) => `/inventory/products/${id}`,
+    BY_CATEGORY: (categoryId: string) => `/inventory/products?categoryId=${categoryId}`,
+    LOW_STOCK: '/products/low-stock',
   },
   // Categories
   CATEGORIES: {
-    BASE: '/categories',
-    BY_ID: (id: string) => `/categories/${id}`,
+    BASE: '/inventory/categories',
+    BY_ID: (id: string) => `/inventory/categories/${id}`,
+  },
+  // Subcategories
+  SUBCATEGORIES: {
+    BASE: '/inventory/subcategories',
+    BY_ID: (id: string) => `/inventory/subcategories/${id}`,
   },
   // Orders
   ORDERS: {
@@ -136,9 +142,9 @@ export const PAGINATION = {
  */
 export const VALIDATION_RULES = {
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
+  PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/,
   PASSWORD_MIN_LENGTH: 8,
-  PHONE_REGEX: /^[\d\s\-\+\(\)]+$/,
+  PHONE_REGEX: /^\+?[1-9]\d{1,14}$/,
 } as const;
 
 /**
@@ -187,9 +193,9 @@ export const ROUTES = {
   CUSTOMER_PROFILE: '/customer/profile',
   
   // Admin
-  ADMIN_DASHBOARD: '/admin/dashboard',
-  ADMIN_PRODUCTS: '/admin/products',
+  ADMIN_DASHBOARD: '/admin',
+  ADMIN_PRODUCTS: '/admin/approvals',
   ADMIN_ORDERS: '/admin/orders',
   ADMIN_USERS: '/admin/users',
-  ADMIN_REPORTS: '/admin/reports',
+  ADMIN_REPORTS: '/admin/analytics',
 } as const;

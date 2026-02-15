@@ -54,9 +54,8 @@ export class AdminService {
         updatedAt: true,
         profile: {
           select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
+            fullName: true,
+            phoneNumber: true,
             companyName: true,
           },
         },
@@ -117,9 +116,8 @@ export class AdminService {
     email: string;
     password: string;
     role?: UserRole;
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
+    fullName?: string;
+    phoneNumber?: string;
     companyName?: string;
   }, createdBy: string, adminRole: UserRole) {
     // Admin can only create USER
@@ -147,13 +145,11 @@ export class AdminService {
         isActive: true,
         emailVerified: true, // Admin-created users are pre-verified
         createdBy,
-        profile: data.firstName || data.lastName || data.phone || data.companyName ? {
+        profile: data.fullName || data.phoneNumber || data.companyName ? {
           create: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
+            fullName: data.fullName,
+            phoneNumber: data.phoneNumber,
             companyName: data.companyName,
-            locale: 'en',
           },
         } : undefined,
       },
@@ -179,9 +175,8 @@ export class AdminService {
     userId: string,
     data: {
       email?: string;
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
+      fullName?: string;
+      phoneNumber?: string;
       companyName?: string;
       status?: UserStatus;
     },
@@ -203,19 +198,16 @@ export class AdminService {
         email: data.email,
         status: data.status,
         updatedBy,
-        profile: data.firstName || data.lastName || data.phone || data.companyName ? {
+        profile: data.fullName || data.phoneNumber || data.companyName ? {
           upsert: {
             create: {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              phone: data.phone,
+              fullName: data.fullName,
+              phoneNumber: data.phoneNumber,
               companyName: data.companyName,
-              locale: 'en',
             },
             update: {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              phone: data.phone,
+              fullName: data.fullName,
+              phoneNumber: data.phoneNumber,
               companyName: data.companyName,
             },
           },

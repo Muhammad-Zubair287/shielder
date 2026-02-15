@@ -18,14 +18,24 @@ import authRoutes from './modules/auth/auth.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import superAdminRoutes from './modules/super-admin/super-admin.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
+import stockAlertRoutes from './modules/inventory/stock-alert/stock-alert.routes';
+import notificationRoutes from './modules/notification/notification.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
 import profileRoutes from './modules/profile/profile.routes';
 import cartRoutes from './modules/cart/cart.routes';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+import { swaggerConfig } from './config/swagger';
 
 /**
  * Create Express application
  */
 export const createApp = (): Application => {
   const app = express();
+
+  // Swagger setup
+  const specs = swaggerJsdoc(swaggerConfig);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
   // Security middleware
   app.use(helmet());
@@ -62,6 +72,9 @@ export const createApp = (): Application => {
   app.use(`${appConfig.api.prefix}/admin`, adminRoutes);
   app.use(`${appConfig.api.prefix}/super-admin`, superAdminRoutes);
   app.use(`${appConfig.api.prefix}/inventory`, inventoryRoutes);
+  app.use(`${appConfig.api.prefix}/products`, stockAlertRoutes);
+  app.use(`${appConfig.api.prefix}/notifications`, notificationRoutes);
+  app.use(`${appConfig.api.prefix}/analytics`, analyticsRoutes);
 
   // 404 handler
   app.use(notFoundHandler);

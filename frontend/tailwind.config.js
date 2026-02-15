@@ -8,6 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        shielder: {
+          primary: '#045870',
+          secondary: '#0205A6',
+          dark: '#0A1E36',
+          critical: '#FF4C4C',
+          warning: '#FFC107',
+          gray: {
+            50: '#F9FAFB',
+            400: '#9CA3AF',
+            600: '#4B5563',
+          }
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

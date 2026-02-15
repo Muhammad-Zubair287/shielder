@@ -8,12 +8,16 @@ import { requireAdmin } from '@/common/middleware/rbac.middleware';
 const router = Router();
 
 // Public routes
-router.get('/', productController.list);
+router.get('/', validate(productValidation.list, 'query'), productController.list);
 router.get('/:id', productController.getById);
 router.get('/:id/attachments', productController.listAttachments);
 
 // Protected routes (Admin only)
 router.use(authenticate, requireAdmin);
+
+router.get('/pending', productController.getPending);
+router.patch('/:id/approve', productController.approve);
+router.patch('/:id/reject', productController.reject);
 
 router.post('/', validate(productValidation.create), productController.create);
 router.put('/:id', validate(productValidation.update), productController.update);

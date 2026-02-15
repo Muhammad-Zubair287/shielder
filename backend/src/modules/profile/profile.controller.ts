@@ -4,7 +4,15 @@ import { AuthRequest } from '../../types/global';
 
 export class ProfileController {
   /**
-   * Get own profile
+   * @swagger
+   * /api/profile/me:
+   *   get:
+   *     summary: Get my own profile
+   *     tags: [User Profile]
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Profile data
    */
   static async getMyProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -21,7 +29,25 @@ export class ProfileController {
   }
 
   /**
-   * Update own profile
+   * @swagger
+   * /api/profile/me:
+   *   put:
+   *     summary: Update my own profile
+   *     tags: [User Profile]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               fullName: { type: string }
+   *               address: { type: string }
+   *               phoneNumber: { type: string }
+   *     responses:
+   *       200:
+   *         description: Profile updated
    */
   static async updateMyProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -39,7 +65,23 @@ export class ProfileController {
   }
 
   /**
-   * Update language
+   * @swagger
+   * /api/profile/language:
+   *   patch:
+   *     summary: Update language preference
+   *     tags: [User Profile]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               preferredLanguage: { type: string, enum: [en, ar] }
+   *     responses:
+   *       200:
+   *         description: Language updated
    */
   static async updateLanguage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -58,7 +100,20 @@ export class ProfileController {
   }
 
   /**
-   * Get profile by ID (Admin/Super Admin only)
+   * @swagger
+   * /api/profile/{userId}:
+   *   get:
+   *     summary: Get profile by ID (Admin only)
+   *     tags: [User Profile]
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema: { type: string, format: uuid }
+   *     responses:
+   *       200:
+   *         description: Profile data
    */
   static async getProfileById(req: AuthRequest, res: Response, next: NextFunction) {
     try {

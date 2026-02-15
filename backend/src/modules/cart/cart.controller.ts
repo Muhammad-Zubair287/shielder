@@ -23,7 +23,15 @@ export class CartController {
   }
 
   /**
-   * Get user cart
+   * @swagger
+   * /api/cart:
+   *   get:
+   *     summary: Get user's active cart
+   *     tags: [Cart Management]
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Cart details
    */
   static async getCart(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -74,7 +82,25 @@ export class CartController {
   }
 
   /**
-   * Add item to cart
+   * @swagger
+   * /api/cart/add:
+   *   post:
+   *     summary: Add an item to the cart
+   *     tags: [Cart Management]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [productId]
+   *             properties:
+   *               productId: { type: string, format: uuid }
+   *               quantity: { type: number, default: 1 }
+   *     responses:
+   *       201:
+   *         description: Item added
    */
   static async addItem(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -94,7 +120,25 @@ export class CartController {
   }
 
   /**
-   * Update item quantity
+   * @swagger
+   * /api/cart/update:
+   *   put:
+   *     summary: Update cart item quantity
+   *     tags: [Cart Management]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [productId, quantity]
+   *             properties:
+   *               productId: { type: string, format: uuid }
+   *               quantity: { type: number }
+   *     responses:
+   *       200:
+   *         description: Cart updated
    */
   static async updateItem(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -114,7 +158,20 @@ export class CartController {
   }
 
   /**
-   * Remove item from cart
+   * @swagger
+   * /api/cart/remove/{productId}:
+   *   delete:
+   *     summary: Remove item from cart
+   *     tags: [Cart Management]
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: productId
+   *         required: true
+   *         schema: { type: string, format: uuid }
+   *     responses:
+   *       200:
+   *         description: Item removed
    */
   static async removeItem(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -133,7 +190,15 @@ export class CartController {
   }
 
   /**
-   * Clear cart
+   * @swagger
+   * /api/cart/clear:
+   *   delete:
+   *     summary: Clear entire cart
+   *     tags: [Cart Management]
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Cart cleared
    */
   static async clearCart(req: AuthRequest, res: Response, next: NextFunction) {
     try {

@@ -43,9 +43,8 @@ export class SuperAdminService {
         updatedBy: true,
         profile: {
           select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
+            fullName: true,
+            phoneNumber: true,
             companyName: true,
           },
         },
@@ -160,9 +159,8 @@ export class SuperAdminService {
     data: {
       email: string;
       password: string;
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
+      fullName?: string;
+      phoneNumber?: string;
     },
     createdBy: string
   ) {
@@ -188,12 +186,10 @@ export class SuperAdminService {
         isActive: true,
         emailVerified: true,
         createdBy,
-        profile: data.firstName || data.lastName || data.phone ? {
+        profile: data.fullName || data.phoneNumber ? {
           create: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
-            locale: 'en',
+            fullName: data.fullName,
+            phoneNumber: data.phoneNumber,
           },
         } : undefined,
       },

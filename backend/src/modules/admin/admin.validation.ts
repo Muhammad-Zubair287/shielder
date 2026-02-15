@@ -19,9 +19,8 @@ export const adminValidation = {
       'string.min': 'Password must be at least 8 characters',
       'any.required': 'Password is required',
     }),
-    firstName: Joi.string().optional(),
-    lastName: Joi.string().optional(),
-    phone: Joi.string().optional(),
+    fullName: Joi.string().optional(),
+    phoneNumber: Joi.string().optional(),
     companyName: Joi.string().optional(),
   }),
 
@@ -30,9 +29,8 @@ export const adminValidation = {
    */
   updateUser: Joi.object({
     email: Joi.string().email().optional(),
-    firstName: Joi.string().optional(),
-    lastName: Joi.string().optional(),
-    phone: Joi.string().optional(),
+    fullName: Joi.string().optional(),
+    phoneNumber: Joi.string().optional(),
     companyName: Joi.string().optional(),
     status: Joi.string()
       .valid(...Object.values(UserStatus))

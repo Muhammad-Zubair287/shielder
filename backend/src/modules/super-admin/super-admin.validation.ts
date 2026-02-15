@@ -9,9 +9,8 @@ export const superAdminValidation = {
   createAdmin: Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
-    firstName: Joi.string().optional(),
-    lastName: Joi.string().optional(),
-    phone: Joi.string().optional(),
+    fullName: Joi.string().optional(),
+    phoneNumber: Joi.string().optional(),
   }),
 
   updateRole: Joi.object({

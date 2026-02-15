@@ -20,19 +20,19 @@ export interface User {
 export interface UserProfile {
   id: string;
   userId: string;
-  firstName: string | null;
-  lastName: string | null;
-  phone: string | null;
+  fullName: string | null;
+  phoneNumber: string | null;
+  address: string | null;
   companyName: string | null;
   taxId: string | null;
-  locale: Locale;
+  preferredLanguage: Locale;
   preferences: any;
   createdAt: string;
   updatedAt: string;
 }
 
-export type UserRole = 'admin' | 'customer' | 'dealer' | 'sales';
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending_verification';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
 
 /**
  * Auth Types
@@ -45,17 +45,20 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
+  fullName: string;
+  phoneNumber: string;
+  address: string;
   companyName?: string;
-  locale?: Locale;
+  role?: 'ADMIN' | 'USER';
+  preferredLanguage?: string;
 }
 
 export interface AuthResponse {
   user: User;
-  accessToken: string;
-  refreshToken: string;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
 }
 
 export interface RefreshTokenRequest {

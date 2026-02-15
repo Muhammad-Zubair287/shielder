@@ -10,7 +10,16 @@ datasource db {
 enum UserRole {
   SUPER_ADMIN
   ADMIN
+  SUPPLIER
   USER
+}
+
+enum NotificationType {
+  LOW_STOCK
+  NEW_ORDER
+  NEW_SUPPLIER
+  PAYMENT_SUCCESS
+  SYSTEM_ALERT
 }
 
 enum UserStatus {
@@ -31,6 +40,13 @@ enum AttachmentType {
   DATASHEET
   MANUAL
   CERTIFICATE
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
 }
 
 enum CartStatus {
@@ -119,6 +135,7 @@ model Category {
   subcategories Subcategory[]
   products      Product[]
   translations  CategoryTranslation[]
+  brands        Brand[] // Brands associated with categories
 
   @@map("categories")
 }
@@ -145,6 +162,7 @@ model Subcategory {
   category     Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   products     Product[]
   translations SubcategoryTranslation[]
+  brands       Brand[] // Brands associated with subcategories
 
   @@map("subcategories")
 }
@@ -163,24 +181,82 @@ model SubcategoryTranslation {
   @@map("subcategory_translations")
 }
 
-model Product {
-  id             String               @id @default(uuid())
-  categoryId     String
-  subcategoryId  String
-  price          Decimal              @db.Decimal(10, 2)
-  stock          Int                  @default(0)
-  isActive       Boolean              @default(true) @map("is_active")
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  category       Category             @relation(fields: [categoryId], references: [id])
-  subcategory    Subcategory          @relation(fields: [subcategoryId], references: [id])
-  translations   ProductTranslation[]
-  specifications ProductSpecification[]
-  attachments    ProductAttachment[]
-  orderItems     OrderItem[]
-  cartItems      CartItem[]
+model Brand {
+  id            String             @id @default(uuid())
+  name          String
+  logo          String?
+  categoryId    String?
+  subcategoryId String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  category      Category?          @relation(fields: [categoryId], references: [id])
+  subcategory   Subcategory?       @relation(fields: [subcategoryId], references: [id])
+  products      Product[]
+  translations  BrandTranslation[]
 
+  @@map("brands")
+}
+
+model BrandTranslation {
+  id          String   @id @default(uuid())
+  brandId     String
+  locale      String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, locale])
+  @@map("brand_translations")
+}
+
+model Product {
+  id                     String               @id @default(uuid())
+  categoryId             String
+  subcategoryId          String
+  brandId                String?
+  price                  Decimal              @db.Decimal(10, 2)
+  stock                  Int                  @default(0)
+  status                 ProductStatus        @default(PENDING)
+  minimumStockThreshold  Int                  @default(5) @map("minimum_stock_threshold")
+  isActive               Boolean              @default(true) @map("is_active")
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  category               Category             @relation(fields: [categoryId], references: [id])
+  subcategory            Subcategory          @relation(fields: [subcategoryId], references: [id])
+  brand                  Brand?               @relation(fields: [brandId], references: [id])
+  translations           ProductTranslation[]
+  specifications         ProductSpecification[]
+  attachments            ProductAttachment[]
+  orderItems             OrderItem[]
+  cartItems              CartItem[]
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([brandId])
+  @@index([price])
+  @@index([stock])
+  @@index([minimumStockThreshold])
+  @@index([isActive])
+  @@index([createdAt])
   @@map("products")
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  type       NotificationType
+  title      String
+  message    String
+  roleTarget UserRole?        @map("role_target")
+  userId     String?          @map("user_id")
+  isRead     Boolean          @default(false) @map("is_read")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([roleTarget])
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }
 
 model ProductTranslation {

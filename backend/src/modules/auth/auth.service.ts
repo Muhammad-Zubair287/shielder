@@ -90,6 +90,23 @@ export class AuthService {
 
       logger.info(`New user registered: ${user.email}`);
 
+      // NEW: Trigger notification for new supplier
+      if (user.role === 'SUPPLIER') {
+        try {
+          const { NotificationService } = require('../notification/notification.service');
+          const { NotificationType, UserRole } = require('@prisma/client');
+          
+          await NotificationService.createNotification({
+            type: NotificationType.NEW_SUPPLIER,
+            title: 'New Supplier Registration',
+            message: `A new supplier "${user.profile?.fullName || user.email}" has registered and is pending approval.`,
+            roleTarget: UserRole.SUPER_ADMIN,
+          });
+        } catch (err) {
+            logger.error('Failed to create notification for new supplier:', err);
+        }
+      }
+
       // Send welcome and verification emails
       const displayName = user.profile?.fullName || 'User';
       await Promise.all([
@@ -107,8 +124,8 @@ export class AuthService {
         {
           userId: user.id,
           email: user.email,
-          role: user.role,
-          preferredLanguage: user.profile?.locale || 'en',
+          role: user.role as any,
+          preferredLanguage: user.profile?.preferredLanguage || 'en',
         },
         deviceInfo
       );
@@ -186,8 +203,8 @@ export class AuthService {
         {
           userId: user.id,
           email: user.email,
-          role: user.role,
-          preferredLanguage: user.profile?.locale || 'en',
+          role: user.role as any,
+          preferredLanguage: user.profile?.preferredLanguage || 'en',
         },
         deviceInfo
       );
@@ -307,8 +324,8 @@ export class AuthService {
       logger.info(`Password reset token generated for: ${user.email}`);
 
       // Send password reset email with PLAIN token
-      const firstName = user.profile?.firstName || 'User';
-      await emailService.sendPasswordResetEmail(user.email, firstName, resetToken);
+      const fullName = user.profile?.fullName || 'User';
+      await emailService.sendPasswordResetEmail(user.email, fullName, resetToken);
 
       // Create audit log
       await this.createAuditLog(user.id, 'PASSWORD_RESET_REQUESTED', 'Password reset requested');
@@ -422,8 +439,8 @@ export class AuthService {
       logger.info(`Password changed for user: ${user.email}`);
 
       // Send password changed notification email
-      const firstName = user.profile?.firstName || 'User';
-      await emailService.sendPasswordChangedEmail(user.email, firstName);
+      const fullName = user.profile?.fullName || 'User';
+      await emailService.sendPasswordChangedEmail(user.email, fullName);
 
       // Create audit log
       await this.createAuditLog(userId, 'PASSWORD_CHANGED', 'User changed their password');

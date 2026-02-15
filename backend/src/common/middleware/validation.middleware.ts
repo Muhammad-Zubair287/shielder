@@ -8,13 +8,14 @@ import Joi from 'joi';
 import { ValidationError } from '../errors/api.error';
 
 /**
- * Validate request body against a Joi schema
+ * Validate request data (body, query, or params) against a Joi schema
  */
-export const validate = (schema: Joi.ObjectSchema) => {
+export const validate = (schema: Joi.ObjectSchema, source: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    const { error, value } = schema.validate(req.body, {
+    const data = req[source];
+    const { error, value } = schema.validate(data, {
       abortEarly: false,
-      stripUnknown: true,
+      stripUnknown: source === 'body', // Strip unknown only for body to avoid removing custom spec filters in query
     });
 
     if (error) {
@@ -27,8 +28,8 @@ export const validate = (schema: Joi.ObjectSchema) => {
       return;
     }
 
-    // Replace request body with validated value
-    req.body = value;
+    // Replace request data with validated value
+    req[source] = value;
     next();
   };
 };

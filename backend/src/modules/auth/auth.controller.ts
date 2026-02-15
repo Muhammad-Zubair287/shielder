@@ -21,8 +21,25 @@ import type {
  */
 class AuthController {
   /**
-   * POST /api/auth/signup
-   * Register a new user
+   * @swagger
+   * /api/auth/signup:
+   *   post:
+   *     summary: Register a new user
+   *     tags: [Authentication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email, password]
+   *             properties:
+   *               email: { type: string, format: email }
+   *               password: { type: string, minLength: 8 }
+   *               fullName: { type: string }
+   *     responses:
+   *       201:
+   *         description: Registration successful
    */
   signup = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: RegisterRequest = {
@@ -41,8 +58,24 @@ class AuthController {
   });
 
   /**
-   * POST /api/auth/login
-   * User login
+   * @swagger
+   * /api/auth/login:
+   *   post:
+   *     summary: User login
+   *     tags: [Authentication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email, password]
+   *             properties:
+   *               email: { type: string, format: email }
+   *               password: { type: string }
+   *     responses:
+   *       200:
+   *         description: Login successful
    */
   login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: LoginRequest = req.body;
@@ -61,8 +94,23 @@ class AuthController {
   });
 
   /**
-   * POST /api/auth/refresh
-   * Refresh access token using refresh token
+   * @swagger
+   * /api/auth/refresh:
+   *   post:
+   *     summary: Refresh access token
+   *     tags: [Authentication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [refreshToken]
+   *             properties:
+   *               refreshToken: { type: string }
+   *     responses:
+   *       200:
+   *         description: Tokens refreshed
    */
   refreshToken = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { refreshToken } = req.body;
@@ -90,8 +138,24 @@ class AuthController {
   });
 
   /**
-   * POST /api/auth/logout
-   * Logout from current device
+   * @swagger
+   * /api/auth/logout:
+   *   post:
+   *     summary: Logout from current device
+   *     tags: [Authentication]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [refreshToken]
+   *             properties:
+   *               refreshToken: { type: string }
+   *     responses:
+   *       200:
+   *         description: Logged out
    */
   logout = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const { refreshToken } = req.body;
@@ -114,8 +178,15 @@ class AuthController {
   });
 
   /**
-   * POST /api/auth/logout-all
-   * Logout from all devices
+   * @swagger
+   * /api/auth/logout-all:
+   *   post:
+   *     summary: Logout from all devices
+   *     tags: [Authentication]
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Logged out from all devices
    */
   logoutAll = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user!.userId;
@@ -129,8 +200,23 @@ class AuthController {
   });
 
   /**
-   * POST /api/auth/forgot-password
-   * Request password reset
+   * @swagger
+   * /api/auth/forgot-password:
+   *   post:
+   *     summary: Request password reset
+   *     tags: [Authentication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email]
+   *             properties:
+   *               email: { type: string, format: email }
+   *     responses:
+   *       200:
+   *         description: Reset link sent
    */
   forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ForgotPasswordRequest = req.body;
@@ -145,8 +231,24 @@ class AuthController {
   });
 
   /**
-   * POST /api/auth/reset-password
-   * Reset password using token
+   * @swagger
+   * /api/auth/reset-password:
+   *   post:
+   *     summary: Reset password using token
+   *     tags: [Authentication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [token, password]
+   *             properties:
+   *               token: { type: string }
+   *               password: { type: string, minLength: 8 }
+   *     responses:
+   *       200:
+   *         description: Password reset successful
    */
   resetPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ResetPasswordRequest = req.body;
@@ -160,8 +262,25 @@ class AuthController {
   });
 
   /**
-   * PATCH /api/auth/change-password
-   * Change password (authenticated)
+   * @swagger
+   * /api/auth/change-password:
+   *   patch:
+   *     summary: Change password (authenticated)
+   *     tags: [Authentication]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [oldPassword, newPassword]
+   *             properties:
+   *               oldPassword: { type: string }
+   *               newPassword: { type: string, minLength: 8 }
+   *     responses:
+   *       200:
+   *         description: Password changed successfully
    */
   changePassword = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user!.userId;
@@ -176,8 +295,15 @@ class AuthController {
   });
 
   /**
-   * GET /api/auth/me
-   * Get current authenticated user
+   * @swagger
+   * /api/auth/me:
+   *   get:
+   *     summary: Get current authenticated user
+   *     tags: [Authentication]
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Current user data
    */
   getCurrentUser = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user!.userId;
@@ -191,8 +317,19 @@ class AuthController {
   });
 
   /**
-   * GET /api/auth/verify-email/:token
-   * Verify email address
+   * @swagger
+   * /api/auth/verify-email/{token}:
+   *   get:
+   *     summary: Verify email address
+   *     tags: [Authentication]
+   *     parameters:
+   *       - in: path
+   *         name: token
+   *         required: true
+   *         schema: { type: string }
+   *     responses:
+   *       200:
+   *         description: Email verified successfully
    */
   verifyEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token } = req.params;

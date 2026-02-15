@@ -13,8 +13,25 @@ import { UserRole } from '../../common/constants/roles';
 
 export class AdminController {
   /**
-   * GET /api/admin/users
-   * Get all users with search, filter, and pagination
+   * @swagger
+   * /api/admin/users:
+   *   get:
+   *     summary: Get all users (Admin/Super Admin only)
+   *     tags: [Admin Panel]
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: query
+   *         name: page
+   *         schema: { type: integer }
+   *       - in: query
+   *         name: limit
+   *         schema: { type: integer }
+   *       - in: query
+   *         name: search
+   *         schema: { type: string }
+   *     responses:
+   *       200:
+   *         description: List of users
    */
   async getUsers(req: Request, res: Response, next: NextFunction) {
     try {
@@ -35,8 +52,20 @@ export class AdminController {
   }
 
   /**
-   * GET /api/admin/users/:id
-   * Get single user by ID
+   * @swagger
+   * /api/admin/users/{id}:
+   *   get:
+   *     summary: Get user by ID (Admin only)
+   *     tags: [Admin Panel]
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: string }
+   *     responses:
+   *       200:
+   *         description: User data
    */
   async getUserById(req: Request, res: Response, next: NextFunction) {
     try {
@@ -56,8 +85,27 @@ export class AdminController {
   }
 
   /**
-   * POST /api/admin/users
-   * Create new user
+   * @swagger
+   * /api/admin/users:
+   *   post:
+   *     summary: Create new user (Admin only)
+   *     tags: [Admin Panel]
+   *     security: [{ bearerAuth: [] }]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email, password]
+   *             properties:
+   *               email: { type: string, format: email }
+   *               password: { type: string }
+   *               fullName: { type: string }
+   *               role: { type: string, enum: [USER, ADMIN] }
+   *     responses:
+   *       201:
+   *         description: User created
    */
   async createUser(req: Request, res: Response, next: NextFunction) {
     try {
@@ -77,8 +125,30 @@ export class AdminController {
   }
 
   /**
-   * PUT /api/admin/users/:id
-   * Update user
+   * @swagger
+   * /api/admin/users/{id}:
+   *   put:
+   *     summary: Update user (Admin only)
+   *     tags: [Admin Panel]
+   *     security: [{ bearerAuth: [] }]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: string }
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               fullName: { type: string }
+   *               role: { type: string, enum: [USER, ADMIN] }
+   *               isActive: { type: boolean }
+   *     responses:
+   *       200:
+   *         description: User updated
    */
   async updateUser(req: Request, res: Response, next: NextFunction) {
     try {

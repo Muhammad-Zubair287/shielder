@@ -57,7 +57,7 @@ export const useAuth = () => {
       toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
 
       // Redirect based on role
-      if (response.user.role === 'admin') {
+      if (response.user.role === 'ADMIN' || response.user.role === 'SUPER_ADMIN') {
         router.push(ROUTES.ADMIN_DASHBOARD);
       } else {
         router.push(ROUTES.CUSTOMER_DASHBOARD);

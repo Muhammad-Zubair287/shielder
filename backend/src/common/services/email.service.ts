@@ -156,9 +156,9 @@ class EmailService {
   /**
    * Send welcome email after registration
    */
-  async sendWelcomeEmail(email: string, firstName: string): Promise<boolean> {
+  async sendWelcomeEmail(email: string, name: string): Promise<boolean> {
     const subject = 'Welcome to Shielder Digital Platform!';
-    const html = this.getWelcomeEmailTemplate(firstName);
+    const html = this.getWelcomeEmailTemplate(name);
 
     return this.sendEmail({ to: email, subject, html });
   }
@@ -168,12 +168,12 @@ class EmailService {
    */
   async sendVerificationEmail(
     email: string,
-    firstName: string,
+    name: string,
     verificationToken: string
   ): Promise<boolean> {
     const verificationUrl = `${env.FRONTEND_URL}/verify-email/${verificationToken}`;
     const subject = 'Verify Your Email Address';
-    const html = this.getVerificationEmailTemplate(firstName, verificationUrl);
+    const html = this.getVerificationEmailTemplate(name, verificationUrl);
 
     logger.info('📧 Email verification link:', { email, verificationUrl });
 
@@ -185,12 +185,12 @@ class EmailService {
    */
   async sendPasswordResetEmail(
     email: string,
-    firstName: string,
+    name: string,
     resetToken: string
   ): Promise<boolean> {
     const resetUrl = `${env.FRONTEND_URL}/reset-password/${resetToken}`;
     const subject = 'Reset Your Password';
-    const html = this.getPasswordResetEmailTemplate(firstName, resetUrl);
+    const html = this.getPasswordResetEmailTemplate(name, resetUrl);
 
     logger.info('🔐 Password reset details:', {
       email,
@@ -204,9 +204,9 @@ class EmailService {
   /**
    * Send password changed notification email
    */
-  async sendPasswordChangedEmail(email: string, firstName: string): Promise<boolean> {
+  async sendPasswordChangedEmail(email: string, name: string): Promise<boolean> {
     const subject = 'Your Password Has Been Changed';
-    const html = this.getPasswordChangedEmailTemplate(firstName);
+    const html = this.getPasswordChangedEmailTemplate(name);
 
     return this.sendEmail({ to: email, subject, html });
   }
@@ -216,11 +216,11 @@ class EmailService {
    */
   async sendAccountLockedEmail(
     email: string,
-    firstName: string,
+    name: string,
     lockedUntil: Date
   ): Promise<boolean> {
     const subject = 'Your Account Has Been Temporarily Locked';
-    const html = this.getAccountLockedEmailTemplate(firstName, lockedUntil);
+    const html = this.getAccountLockedEmailTemplate(name, lockedUntil);
 
     return this.sendEmail({ to: email, subject, html });
   }
@@ -242,7 +242,7 @@ class EmailService {
    * Email Templates
    */
 
-  private getWelcomeEmailTemplate(firstName: string): string {
+  private getWelcomeEmailTemplate(name: string): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -257,7 +257,7 @@ class EmailService {
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #667eea; margin-top: 0;">Hello ${firstName}!</h2>
+            <h2 style="color: #667eea; margin-top: 0;">Hello ${name}!</h2>
             
             <p style="font-size: 16px;">Thank you for joining <strong>Shielder Digital Platform</strong>. We're excited to have you on board!</p>
             
@@ -286,7 +286,7 @@ class EmailService {
     `;
   }
 
-  private getVerificationEmailTemplate(firstName: string, verificationUrl: string): string {
+  private getVerificationEmailTemplate(name: string, verificationUrl: string): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -301,7 +301,7 @@ class EmailService {
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #667eea; margin-top: 0;">Hello ${firstName}!</h2>
+            <h2 style="color: #667eea; margin-top: 0;">Hello ${name}!</h2>
             
             <p style="font-size: 16px;">Thank you for registering with <strong>Shielder Digital Platform</strong>.</p>
             
@@ -329,7 +329,7 @@ class EmailService {
     `;
   }
 
-  private getPasswordResetEmailTemplate(firstName: string, resetUrl: string): string {
+  private getPasswordResetEmailTemplate(name: string, resetUrl: string): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -344,7 +344,7 @@ class EmailService {
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #667eea; margin-top: 0;">Hello ${firstName}!</h2>
+            <h2 style="color: #667eea; margin-top: 0;">Hello ${name}!</h2>
             
             <p style="font-size: 16px;">We received a request to reset your password for your <strong>Shielder</strong> account.</p>
             
@@ -378,7 +378,7 @@ class EmailService {
     `;
   }
 
-  private getPasswordChangedEmailTemplate(firstName: string): string {
+  private getPasswordChangedEmailTemplate(name: string): string {
     const changeTime = new Date().toLocaleString();
 
     return `
@@ -395,7 +395,7 @@ class EmailService {
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #28a745; margin-top: 0;">Hello ${firstName}!</h2>
+            <h2 style="color: #28a745; margin-top: 0;">Hello ${name}!</h2>
             
             <p style="font-size: 16px;">This is to confirm that your password has been successfully changed.</p>
             
@@ -427,7 +427,7 @@ class EmailService {
     `;
   }
 
-  private getAccountLockedEmailTemplate(firstName: string, lockedUntil: Date): string {
+  private getAccountLockedEmailTemplate(name: string, lockedUntil: Date): string {
     const unlockTime = lockedUntil.toLocaleString();
     const minutesLeft = Math.round((lockedUntil.getTime() - Date.now()) / 60000);
 
@@ -445,7 +445,7 @@ class EmailService {
           </div>
           
           <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #dc3545; margin-top: 0;">Hello ${firstName}!</h2>
+            <h2 style="color: #dc3545; margin-top: 0;">Hello ${name}!</h2>
             
             <p style="font-size: 16px;">Your account has been temporarily locked due to multiple failed login attempts.</p>
             

@@ -73,10 +73,13 @@ apiClient.interceptors.response.use(
           { refreshToken }
         );
 
-        const { accessToken } = response.data.data;
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
 
-        // Store new token
+        // Store new tokens
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        if (newRefreshToken) {
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+        }
 
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
