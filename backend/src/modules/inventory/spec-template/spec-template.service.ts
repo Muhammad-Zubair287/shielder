@@ -1,6 +1,7 @@
 import { prisma } from '@/config/database';
 import { ApiError } from '@/common/errors/api.error';
-import { CategorySpecTemplate } from '@prisma/client';
+import { category_spec_templates } from '@prisma/client';
+import crypto from 'crypto';
 
 export class SpecTemplateService {
   async create(data: {
@@ -8,13 +9,13 @@ export class SpecTemplateService {
     subcategoryId?: string | null;
     specKey: string;
     isRequired: boolean;
-  }): Promise<CategorySpecTemplate> {
-    // Check if duplicate specKey for this category/subcategory
-    const existing = await prisma.categorySpecTemplate.findFirst({
+  }): Promise<category_spec_templates> {
+    // Check if duplicate spec_key for this category/subcategory
+    const existing = await prisma.category_spec_templates.findFirst({
       where: {
-        categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId || null,
-        specKey: data.specKey,
+        category_id: data.categoryId,
+        subcategory_id: data.subcategoryId || null,
+        spec_key: data.specKey,
       },
     });
 
@@ -22,39 +23,44 @@ export class SpecTemplateService {
       throw new ApiError('Specification template for this key already exists in this category', 400);
     }
 
-    return await prisma.categorySpecTemplate.create({
+    return await prisma.category_spec_templates.create({
       data: {
-        categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId || null,
-        specKey: data.specKey,
-        isRequired: data.isRequired,
+        id: crypto.randomUUID(), // id is required in schema and not @default(uuid())
+        category_id: data.categoryId,
+        subcategory_id: data.subcategoryId || null,
+        spec_key: data.specKey,
+        is_required: data.isRequired,
+        updated_at: new Date()
       },
     });
   }
 
-  async getByCategory(categoryId: string, subcategoryId?: string | null): Promise<CategorySpecTemplate[]> {
-    return await prisma.categorySpecTemplate.findMany({
+  async getByCategory(categoryId: string, subcategoryId?: string | null): Promise<category_spec_templates[]> {
+    return await prisma.category_spec_templates.findMany({
       where: {
-        categoryId,
+        category_id: categoryId,
         OR: [
-          { subcategoryId: subcategoryId || null },
-          { subcategoryId: null }
+          { subcategory_id: subcategoryId || null },
+          { subcategory_id: null }
         ]
       },
-      orderBy: { specKey: 'asc' }
+      orderBy: { spec_key: 'asc' }
     });
   }
 
-  async delete(id: string): Promise<CategorySpecTemplate> {
-    return await prisma.categorySpecTemplate.delete({
+  async delete(id: string): Promise<category_spec_templates> {
+    return await prisma.category_spec_templates.delete({
       where: { id },
     });
   }
 
-  async update(id: string, data: Partial<CategorySpecTemplate>): Promise<CategorySpecTemplate> {
-    return await prisma.categorySpecTemplate.update({
+  async update(id: string, data: Partial<category_spec_templates>): Promise<category_spec_templates> {
+    return await prisma.category_spec_templates.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        updated_at: new Date()
+      },
     });
   }
 }

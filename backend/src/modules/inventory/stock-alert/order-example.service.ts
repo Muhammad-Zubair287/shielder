@@ -18,14 +18,14 @@ class OrderService {
       // 1. Fetch order items
       const order = await tx.order.findUnique({
         where: { id: orderId },
-        include: { items: true },
+        include: { orderItems: true },
       });
 
       if (!order) throw new Error('Order not found');
       if (order.paymentStatus === 'PAID') throw new Error('Order already processed');
 
       // 2. Deduct stock for each item using the utility function
-      for (const item of order.items) {
+      for (const item of (order as any).orderItems) {
         await deductStock(item.productId, item.quantity, tx as any);
       }
 

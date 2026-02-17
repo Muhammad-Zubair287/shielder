@@ -3,7 +3,7 @@
  * Handles HTTP requests for enterprise reports
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { AuthRequest } from '@/types/global';

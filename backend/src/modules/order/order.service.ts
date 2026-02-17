@@ -1,5 +1,6 @@
 import { prisma } from '@/config/database';
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
+import crypto from 'crypto';
 // @ts-ignore
 import { OrderStatus, PaymentStatus, StockChangeType, Prisma, NotificationType, UserRole } from '@prisma/client';
 import NotificationService from '@/modules/notification/notification.service';
@@ -122,7 +123,7 @@ export class OrderService {
       prisma.order.findMany({
         where,
         include: {
-          user: {
+          users: {
             select: {
               email: true,
               profile: {
@@ -139,7 +140,7 @@ export class OrderService {
             }
           },
           _count: {
-            select: { items: true }
+            select: { orderItems: true }
           }
         },
         skip,
@@ -239,7 +240,7 @@ export class OrderService {
 
           // Deduct Stock
           if (item.variantId) {
-            await tx.productVariant.update({
+            await tx.product_variants.update({
               where: { id: item.variantId },
               data: { stock: { decrement: item.quantity } }
             });
@@ -254,12 +255,13 @@ export class OrderService {
           const productName = item.product.translations[0]?.name || 'Product';
           await tx.stock_history.create({
             data: {
-              productId: item.productId,
-              productName: item.variantId ? `${productName} (${item.variant.name})` : productName,
-              orderId: order.id,
+              id: crypto.randomUUID(),
+              product_id: item.productId,
+              product_name: item.variantId ? `${productName} (${item.variant?.name})` : productName,
+              order_id: order.id,
               quantity: -item.quantity,
-              type: StockChangeType.REDUCE,
-              performedBy,
+              type: StockChangeType.ORDER_COMPLETED,
+              performed_by: performedBy,
               note: `Order ${order.orderNumber} marked as Completed`
             }
           });
@@ -274,7 +276,7 @@ export class OrderService {
         for (const item of order.orderItems) {
           // Restore Stock
           if (item.variantId) {
-            await tx.productVariant.update({
+            await tx.product_variants.update({
               where: { id: item.variantId },
               data: { stock: { increment: item.quantity } }
             });
@@ -289,12 +291,13 @@ export class OrderService {
           const productName = item.product.translations[0]?.name || 'Product';
           await tx.stock_history.create({
             data: {
-              productId: item.productId,
-              productName: item.variantId ? `${productName} (${item.variant.name})` : productName,
-              orderId: order.id,
+              id: crypto.randomUUID(),
+              product_id: item.productId,
+              product_name: item.variantId ? `${productName} (${item.variant?.name})` : productName,
+              order_id: order.id,
               quantity: item.quantity,
-              type: StockChangeType.ADD,
-              performedBy,
+              type: StockChangeType.ORDER_CANCELLED,
+              performed_by: performedBy,
               note: `Order ${order.orderNumber} cancelled. Stock restored.`
             }
           });

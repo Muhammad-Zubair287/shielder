@@ -7,8 +7,6 @@ import { Router } from 'express';
 import notificationController from './notification.controller';
 import { authenticate } from '@/modules/auth/auth.middleware';
 import { requireRoles } from '@/common/middleware/rbac.middleware';
-import { validate } from '@/common/middleware/validation.middleware';
-import { notificationValidation } from './notification.validation';
 import { UserRole } from '@/common/constants/roles';
 
 const router = Router();

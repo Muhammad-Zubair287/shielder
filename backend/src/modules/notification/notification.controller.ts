@@ -3,7 +3,7 @@
  * Handles HTTP requests for system notifications
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import NotificationService from './notification.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { AuthRequest } from '@/types/global';
@@ -43,6 +43,7 @@ class NotificationController {
       message: 'Notifications retrieved successfully',
       ...result,
     });
+    return;
   });
 
   /**
@@ -56,7 +57,7 @@ class NotificationController {
 
     const data = await NotificationService.getStats();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data
     });
@@ -72,7 +73,7 @@ class NotificationController {
     const limit = parseInt(req.query.limit as string) || 5;
     const data = await NotificationService.getLatest(userId, limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data
     });
@@ -87,7 +88,7 @@ class NotificationController {
 
     const result = await NotificationService.getUnreadCount(userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Unread count retrieved successfully',
       data: result,
@@ -104,7 +105,7 @@ class NotificationController {
     const id = req.params.id as string;
     const notification = await NotificationService.markAsRead(userId, id);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Notification marked as read',
       data: notification,
@@ -120,7 +121,7 @@ class NotificationController {
 
     await NotificationService.markAllAsRead(userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'All notifications marked as read',
     });
@@ -136,7 +137,7 @@ class NotificationController {
     const id = req.params.id as string;
     await NotificationService.deleteNotification(userId, id);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Notification deleted successfully',
     });
@@ -150,7 +151,7 @@ class NotificationController {
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const data = await NotificationService.getPreferences(userId);
-    res.json({ success: true, data });
+    return res.json({ success: true, data });
   });
 
   updatePreferences = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -158,7 +159,7 @@ class NotificationController {
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const data = await NotificationService.updatePreferences(userId, req.body);
-    res.json({ success: true, data });
+    return res.json({ success: true, data });
   });
 }
 
