@@ -31,7 +31,8 @@ COPY package*.json ./
 COPY tsconfig.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+# This ensures we don't carry over local development settings
+RUN npm ci --omit=dev
 
 # Copy built files and prisma
 COPY --from=builder /app/dist ./dist
