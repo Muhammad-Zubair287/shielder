@@ -32,7 +32,9 @@ export const connectDatabase = async (): Promise<void> => {
     await prisma.$connect();
     console.log('✅ Database connected successfully');
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error('❌ Database connection failed!');
+    console.error('Error Details:', error instanceof Error ? error.message : error);
+    console.error('Note: Ensure DATABASE_URL is correctly set in your environment variables.');
     process.exit(1);
   }
 };
