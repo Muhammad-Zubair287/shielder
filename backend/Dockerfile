@@ -2,6 +2,9 @@
 
 FROM node:18-alpine AS builder
 
+# Install openssl and other dependencies for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 # Set working directory
 WORKDIR /app
 
@@ -23,6 +26,9 @@ RUN npm run build
 
 # Production stage
 FROM node:18-alpine
+
+# Install openssl for Prisma runtime
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
