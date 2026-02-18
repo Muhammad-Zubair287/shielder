@@ -46,7 +46,7 @@ export const createApp = (): Application => {
   const app = express();
 
   // Debug middleware to log origins
-  app.use((req, res, next) => {
+  app.use((req, _res, next) => {
     if (env.isProduction) {
       console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'None'}`);
     }

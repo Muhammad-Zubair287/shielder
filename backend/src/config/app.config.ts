@@ -104,6 +104,6 @@ export const appConfig = {
     SUSPENDED: 'SUSPENDED',
     PENDING: 'PENDING',
   },
-} as const;
+};
 
 export default appConfig;
