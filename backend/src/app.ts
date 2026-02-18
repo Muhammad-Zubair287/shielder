@@ -80,6 +80,15 @@ export const createApp = (): Application => {
     });
   });
 
+  // Debug route to verify prefixes
+  app.get('/api/debug-routes', (_req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'Sub-route /api is working correctly',
+      prefix: appConfig.api.prefix
+    });
+  });
+
   // API routes
   app.use(`${appConfig.api.prefix}/auth`, authRoutes);
   app.use(`${appConfig.api.prefix}/profile`, profileRoutes);

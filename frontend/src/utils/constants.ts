@@ -17,60 +17,60 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    REGISTER: '/auth/signup',
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REFRESH_TOKEN: '/auth/refresh',
-    ME: '/auth/me',
-    VERIFY_EMAIL: '/auth/verify-email', // Note: backend expects GET /verify-email/:token
+    REGISTER: 'auth/signup',
+    LOGIN: 'auth/login',
+    LOGOUT: 'auth/logout',
+    REFRESH_TOKEN: 'auth/refresh',
+    ME: 'auth/me',
+    VERIFY_EMAIL: 'auth/verify-email', // Note: backend expects GET /verify-email/:token
   },
   // Users
   USERS: {
-    BASE: '/profile',
-    BY_ID: (id: string) => `/super-admin/users/${id}`,
-    UPDATE_PROFILE: '/profile',
+    BASE: 'profile',
+    BY_ID: (id: string) => `super-admin/users/${id}`,
+    UPDATE_PROFILE: 'profile',
   },
   // Products
   PRODUCTS: {
-    BASE: '/inventory/products',
-    BY_ID: (id: string) => `/inventory/products/${id}`,
-    BY_CATEGORY: (categoryId: string) => `/inventory/products?categoryId=${categoryId}`,
-    LOW_STOCK: '/products/low-stock',
-    BULK_UPLOAD: '/inventory/products/bulk-upload',
-    TEMPLATE: '/inventory/products/template',
+    BASE: 'inventory/products',
+    BY_ID: (id: string) => `inventory/products/${id}`,
+    BY_CATEGORY: (categoryId: string) => `inventory/products?categoryId=${categoryId}`,
+    LOW_STOCK: 'products/low-stock',
+    BULK_UPLOAD: 'inventory/products/bulk-upload',
+    TEMPLATE: 'inventory/products/template',
   },
   // Super Admin
   SUPER_ADMIN: {
-    SUMMARY: '/super-admin/dashboard/summary',
-    ANALYTICS_MONTHLY: '/super-admin/analytics/monthly',
-    ACTIVITY: '/super-admin/activity',
-    USERS: '/super-admin/users/all',
-    USER_STATS: '/super-admin/users/stats',
-    USER_CREATE: '/super-admin/users/create',
-    USER_BY_ID: (id: string) => `/super-admin/users/${id}`,
+    SUMMARY: 'super-admin/dashboard/summary',
+    ANALYTICS_MONTHLY: 'super-admin/analytics/monthly',
+    ACTIVITY: 'super-admin/activity',
+    USERS: 'super-admin/users/all',
+    USER_STATS: 'super-admin/users/stats',
+    USER_CREATE: 'super-admin/users/create',
+    USER_BY_ID: (id: string) => `super-admin/users/${id}`,
   },
   // Admin Management
   ADMINS: {
-    BASE: '/admins',
-    SUMMARY: '/admins/summary',
-    BY_ID: (id: string) => `/admins/${id}`,
-    STATUS: (id: string) => `/admins/${id}/status`,
+    BASE: 'admins',
+    SUMMARY: 'admins/summary',
+    BY_ID: (id: string) => `admins/${id}`,
+    STATUS: (id: string) => `admins/${id}/status`,
   },
   // Categories
   CATEGORIES: {
-    BASE: '/inventory/categories',
-    BY_ID: (id: string) => `/inventory/categories/${id}`,
+    BASE: 'inventory/categories',
+    BY_ID: (id: string) => `inventory/categories/${id}`,
   },
   // Subcategories
   SUBCATEGORIES: {
-    BASE: '/inventory/subcategories',
-    BY_ID: (id: string) => `/inventory/subcategories/${id}`,
+    BASE: 'inventory/subcategories',
+    BY_ID: (id: string) => `inventory/subcategories/${id}`,
   },
   // Orders
   ORDERS: {
-    BASE: '/orders',
-    BY_ID: (id: string) => `/orders/${id}`,
-    UPDATE_STATUS: (id: string) => `/orders/${id}/status`,
+    BASE: 'orders',
+    BY_ID: (id: string) => `orders/${id}`,
+    UPDATE_STATUS: (id: string) => `orders/${id}/status`,
   },
 } as const;
 
