@@ -98,20 +98,32 @@ export const createApp = (): Application => {
   });
 
   // API routes
-  app.use(`${appConfig.api.prefix}/auth`, authRoutes);
-  app.use(`${appConfig.api.prefix}/profile`, profileRoutes);
-  app.use(`${appConfig.api.prefix}/cart`, cartRoutes);
-  app.use(`${appConfig.api.prefix}/admin`, adminRoutes);
-  app.use(`${appConfig.api.prefix}/admins`, adminManagementRoutes);
-  app.use(`${appConfig.api.prefix}/super-admin`, superAdminRoutes);
-  app.use(`${appConfig.api.prefix}/inventory`, inventoryRoutes);
-  app.use(`${appConfig.api.prefix}/products`, stockAlertRoutes);
-  app.use(`${appConfig.api.prefix}/notifications`, notificationRoutes);
-  app.use(`${appConfig.api.prefix}/analytics`, analyticsRoutes);
-  app.use(`${appConfig.api.prefix}/orders`, orderRoutes);
-  app.use(`${appConfig.api.prefix}/payments`, paymentRoutes);
-  app.use(`${appConfig.api.prefix}/reports`, reportsRoutes);
-  app.use(`${appConfig.api.prefix}/settings`, settingsRoutes);
+  const apiPrefix = appConfig.api.prefix; // /api
+  const versionedPrefix = `${apiPrefix}/${appConfig.api.version}`; // /api/v1
+  
+  // Log prefixes for debugging
+  console.log(`[BOOT] Registering routes with prefixes: ${apiPrefix} and ${versionedPrefix}`);
+
+  // Mounting routes on both /api AND /api/v1 to be safe and match documentation
+  const mountRoutes = (prefix: string) => {
+    app.use(`${prefix}/auth`, authRoutes);
+    app.use(`${prefix}/profile`, profileRoutes);
+    app.use(`${prefix}/cart`, cartRoutes);
+    app.use(`${prefix}/admin`, adminRoutes);
+    app.use(`${prefix}/admins`, adminManagementRoutes);
+    app.use(`${prefix}/super-admin`, superAdminRoutes);
+    app.use(`${prefix}/inventory`, inventoryRoutes);
+    app.use(`${prefix}/products`, stockAlertRoutes);
+    app.use(`${prefix}/notifications`, notificationRoutes);
+    app.use(`${prefix}/analytics`, analyticsRoutes);
+    app.use(`${prefix}/orders`, orderRoutes);
+    app.use(`${prefix}/payments`, paymentRoutes);
+    app.use(`${prefix}/reports`, reportsRoutes);
+    app.use(`${prefix}/settings`, settingsRoutes);
+  };
+
+  mountRoutes(apiPrefix);
+  mountRoutes(versionedPrefix);
 
   // 404 handler
   app.use(notFoundHandler);
