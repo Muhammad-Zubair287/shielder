@@ -45,6 +45,14 @@ import { swaggerConfig } from './config/swagger';
 export const createApp = (): Application => {
   const app = express();
 
+  // Debug middleware to log origins
+  app.use((req, res, next) => {
+    if (env.isProduction) {
+      console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'None'}`);
+    }
+    next();
+  });
+
   // Swagger setup
   const specs = swaggerJsdoc(swaggerConfig);
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

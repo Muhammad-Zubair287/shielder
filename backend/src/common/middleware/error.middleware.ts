@@ -79,6 +79,13 @@ export const errorHandler = (
     response.stack = err.stack;
   }
 
+  // Ensure CORS is allowed even for errors
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
   res.status(statusCode).json(response);
 };
 
@@ -86,7 +93,15 @@ export const errorHandler = (
  * 404 Not Found handler
  */
 export const notFoundHandler = (req: Request, res: Response): void => {
-  console.log(`[404 NOT FOUND] ${req.method} ${req.path}`);
+  console.log(`[404 NOT FOUND] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'None'}`);
+  
+  // Ensure CORS is allowed even for 404s
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
   res.status(404).json({
     success: false,
     message: `Route ${req.method} ${req.path} not found`,

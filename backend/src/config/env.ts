@@ -74,9 +74,9 @@ export const env = {
   // CORS
   cors: {
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
-    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
-      'http://localhost:3000',
-    ],
+    allowedOrigins: process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+      : ['http://localhost:3000', 'https://shielder-frontend.vercel.app'],
   },
 
   // Frontend URL (for email links)

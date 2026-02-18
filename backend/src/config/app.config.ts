@@ -22,10 +22,36 @@ export const appConfig = {
 
   // CORS Configuration
   cors: {
-    origin: env.cors.allowedOrigins,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = env.cors.allowedOrigins;
+      
+      // Allow wildcard for easier debugging
+      if (allowedOrigins.includes('*')) return callback(null, true);
+      
+      // Check if the origin matches or is a vercel sub-domain
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed === origin) return true;
+        // Match Vercel preview/deployment URLs
+        if (allowed.includes('vercel.app') && origin.endsWith('vercel.app')) return true;
+        return false;
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS REJECTED] Origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as string[],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'] as string[],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   },
 
   // Rate Limiting
