@@ -139,6 +139,16 @@ export const handleApiError = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ApiError>;
 
+    // Handle timeout / network errors with a helpful message
+    if (axiosError.code === 'ECONNABORTED' || axiosError.message?.toLowerCase().includes('timeout')) {
+      return 'The server is taking longer than usual to respond (it may be waking up). The operation may have already succeeded — please refresh the page to check before trying again.';
+    }
+
+    // Handle no network response at all
+    if (!axiosError.response) {
+      return 'Unable to reach the server. Please check your internet connection and try again.';
+    }
+
     // Handle Joi validation errors from backend
     if (axiosError.response?.data?.errors && Array.isArray(axiosError.response.data.errors) && axiosError.response.data.errors.length > 0) {
       return axiosError.response.data.errors.map(err => err.message).join('. ');

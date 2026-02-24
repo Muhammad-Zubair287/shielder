@@ -23,7 +23,7 @@ const getBaseUrl = () => {
 
 export const API_CONFIG = {
   BASE_URL: getBaseUrl(),
-  TIMEOUT: 30000, // 30 seconds
+  TIMEOUT: 60000, // 60 seconds (Railway cold starts can take 30s+)
 } as const;
 
 /**
