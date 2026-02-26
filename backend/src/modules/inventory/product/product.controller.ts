@@ -83,6 +83,7 @@ export class ProductController {
         maxPrice,
         inStock,
         sort,
+        search,
         page,
         limit,
         locale,
@@ -105,10 +106,11 @@ export class ProductController {
         minPrice: minPrice ? Number(minPrice) : undefined,
         maxPrice: maxPrice ? Number(maxPrice) : undefined,
         inStock: inStock === 'true' ? true : inStock === 'false' ? false : undefined,
+        search: search as string,
         specs,
         sort: sort as string,
         page: page ? Number(page) : 1,
-        limit: limit ? Number(limit) : 12, // User-facing default 12
+        limit: limit ? Number(limit) : 12,
         locale: locale as string,
       });
 

@@ -336,8 +336,6 @@ export class ProductService {
 
   // Legacy/Internal Filter
   async filterProducts(filters: any) {
-    // This is the user-facing filter we saw earlier
-    // For now, I'll keep it as is but it might need status: PUBLISHED check
     const {
       categoryId,
       subcategoryId,
@@ -345,6 +343,8 @@ export class ProductService {
       minPrice,
       maxPrice,
       inStock,
+      search,
+      sort,
       page = 1,
       limit = 10,
       locale = 'en',
@@ -356,13 +356,31 @@ export class ProductService {
     const where: Prisma.ProductWhereInput = {
       isActive: true,
       status: ProductStatus.PUBLISHED,
-      categoryId,
-      subcategoryId,
-      brandId,
     };
 
+    if (categoryId) where.categoryId = categoryId;
+    if (subcategoryId) where.subcategoryId = subcategoryId;
+    if (brandId) where.brandId = brandId;
+
+    // Full-text search across name, description (via translations) and SKU
+    if (search && search.trim()) {
+      where.OR = [
+        { sku: { contains: search.trim(), mode: 'insensitive' } },
+        {
+          translations: {
+            some: {
+              OR: [
+                { name: { contains: search.trim(), mode: 'insensitive' } },
+                { description: { contains: search.trim(), mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+      ];
+    }
+
     if (specs && Object.keys(specs).length > 0) {
-      where.AND = Object.entries(specs).map(([key, values]) => ({
+      const specConditions = Object.entries(specs).map(([key, values]) => ({
         specifications: {
           some: {
             spec_key: key,
@@ -370,6 +388,7 @@ export class ProductService {
           },
         },
       }));
+      where.AND = specConditions;
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
@@ -378,6 +397,12 @@ export class ProductService {
 
     if (inStock === true) where.stock = { gt: 0 };
     else if (inStock === false) where.stock = 0;
+
+    // Sort mapping
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
+    if (sort === 'price_asc') orderBy = { price: 'asc' };
+    else if (sort === 'price_desc') orderBy = { price: 'desc' };
+    else if (sort === 'newest') orderBy = { createdAt: 'desc' };
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -390,7 +415,7 @@ export class ProductService {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' }
+        orderBy,
       }),
       prisma.product.count({ where }),
     ]);
@@ -400,6 +425,7 @@ export class ProductService {
         ...p,
         name: p.translations[0]?.name || '',
         description: p.translations[0]?.description || '',
+        categoryName: p.category?.translations[0]?.name || '',
       })),
       pagination: {
         total,

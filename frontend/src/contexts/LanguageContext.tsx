@@ -63,16 +63,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLocale = (newLocale: Locale) => setLocaleState(newLocale);
 
-  const value: LanguageContextType = {
-    locale,
-    setLocale,
-    t: createT(locale),
-    isRTL: isRTLLocale(locale),
-    dir: localeDir(locale),
-  };
+  // Before mount, serve default LTR/English so children render immediately
+  // (avoids blank page while waiting for localStorage). After mount the
+  // correct locale kicks in; suppressHydrationWarning on <html> handles the diff.
+  const activeLocale = mounted ? locale : DEFAULT_LOCALE;
 
-  // Avoid flash of wrong direction on first paint
-  if (!mounted) return null;
+  const value: LanguageContextType = {
+    locale: activeLocale,
+    setLocale,
+    t: createT(activeLocale),
+    isRTL: mounted ? isRTLLocale(locale) : false,
+    dir: mounted ? localeDir(locale) : 'ltr',
+  };
 
   return (
     <LanguageContext.Provider value={value}>

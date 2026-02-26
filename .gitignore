@@ -69,3 +69,8 @@ next-env.d.ts
 # Misc
 .cache/
 _archive/
+
+# Design reference images (local only)
+/images/
+hero
+write_landing.py
