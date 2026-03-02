@@ -11,6 +11,8 @@
     "prisma:migrate": "prisma migrate dev --schema=./src/database/prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=./src/database/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=./src/database/prisma/schema.prisma",
+    "seed:super-admin": "npx tsx src/scripts/seed-super-admin.ts",
+    "seed:test-data": "npx tsx src/scripts/seed-test-data.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
