@@ -132,7 +132,7 @@ export default function ProfilePage() {
             <div className="w-24 h-24 rounded-2xl bg-white p-1 shadow-lg">
               <div className="w-full h-full rounded-xl bg-gray-100 flex items-center justify-center text-shielder-dark relative">
                 {user?.profile?.profileImage ? (
-                  <Image src={getImageUrl(user.profile.profileImage) || user.profile.profileImage} alt="Profile" className="rounded-xl object-cover" fill unoptimized />
+                  <Image src={getImageUrl(user.profile.profileImage) || user.profile.profileImage} alt="Profile" className="rounded-xl object-cover" fill />
                 ) : (
                   <User size={40} />
                 )}

@@ -1,11 +1,11 @@
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 
 /**
- * Root route `/` → redirect to the public landing page.
- * Authenticated users land on the landing page and follow the Login link
- * to reach their role-specific dashboard.
+ * Root route `/` → permanent redirect (308) to the public landing page.
+ * 308 is cached by the browser after the first visit so the server is
+ * never hit again — eliminates the extra round-trip on every Vercel request.
  */
 export default function HomePage() {
-  redirect('/home');
+  permanentRedirect('/home');
 }
 

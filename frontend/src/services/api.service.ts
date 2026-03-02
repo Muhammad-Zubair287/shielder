@@ -7,6 +7,19 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { API_CONFIG, API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
 import type { ApiResponse, ApiError } from '@/types';
 
+// Cache locale so we don't hit localStorage on every request
+let _cachedLocale: string | null = null;
+const getCachedLocale = (): string => {
+  if (!_cachedLocale) {
+    _cachedLocale = (typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.LOCALE)
+      : null) || 'en';
+  }
+  return _cachedLocale;
+};
+// Invalidate when locale changes (called from LanguageContext)
+export const invalidateLocaleCache = () => { _cachedLocale = null; };
+
 /**
  * Create Axios instance
  */
@@ -31,9 +44,8 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Add locale to headers
-    const locale = localStorage.getItem(STORAGE_KEYS.LOCALE) || 'en';
-    config.headers['Accept-Language'] = locale;
+    // Add locale to headers (cached — avoids localStorage read on every request)
+    config.headers['Accept-Language'] = getCachedLocale();
 
     return config;
   },

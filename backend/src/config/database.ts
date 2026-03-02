@@ -18,6 +18,14 @@ export const prisma =
   global.prisma ||
   new PrismaClient({
     log: env.isDevelopment ? ['query', 'error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        // Railway PostgreSQL: keep pool small to avoid connection exhaustion on
+        // the free/hobby plan. connection_limit=5 and pool_timeout=20 are safe
+        // defaults; tweak via DATABASE_URL query params if needed.
+        url: env.databaseUrl,
+      },
+    },
   });
 
 if (env.isDevelopment) {

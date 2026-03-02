@@ -7,16 +7,18 @@
  * Assembles all section components in order.
  */
 
-import React from 'react';
-import LandingNavbar           from './_components/LandingNavbar';
-import HeroSection             from './_components/HeroSection';
-import StatsSection            from './_components/StatsSection';
-import WhyChooseUsSection      from './_components/WhyChooseUsSection';
-import ProductCategoriesSection from './_components/ProductCategoriesSection';
-import TrustSection            from './_components/TrustSection';
-import CTASection              from './_components/CTASection';
-import ContactSection          from './_components/ContactSection';
-import LandingFooter           from './_components/LandingFooter';
+import React, { Suspense, lazy } from 'react';
+import LandingNavbar from './_components/LandingNavbar';
+import HeroSection   from './_components/HeroSection';
+
+// Below-the-fold — lazy-loaded after hydration to shrink initial bundle
+const StatsSection             = lazy(() => import('./_components/StatsSection'));
+const WhyChooseUsSection       = lazy(() => import('./_components/WhyChooseUsSection'));
+const ProductCategoriesSection = lazy(() => import('./_components/ProductCategoriesSection'));
+const TrustSection             = lazy(() => import('./_components/TrustSection'));
+const CTASection               = lazy(() => import('./_components/CTASection'));
+const ContactSection           = lazy(() => import('./_components/ContactSection'));
+const LandingFooter            = lazy(() => import('./_components/LandingFooter'));
 
 export default function LandingPage() {
   return (
@@ -24,16 +26,23 @@ export default function LandingPage() {
       <LandingNavbar />
 
       <main className="flex-1">
+        {/* Above the fold — rendered immediately */}
         <HeroSection />
-        <StatsSection />
-        <WhyChooseUsSection />
-        <ProductCategoriesSection />
-        <TrustSection />
-        <CTASection />
-        <ContactSection />
+
+        {/* Below the fold — streamed in after initial paint */}
+        <Suspense fallback={null}>
+          <StatsSection />
+          <WhyChooseUsSection />
+          <ProductCategoriesSection />
+          <TrustSection />
+          <CTASection />
+          <ContactSection />
+        </Suspense>
       </main>
 
-      <LandingFooter />
+      <Suspense fallback={null}>
+        <LandingFooter />
+      </Suspense>
     </div>
   );
 }

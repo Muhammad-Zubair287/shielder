@@ -69,7 +69,6 @@ export default function HeroSection() {
               src="/images/landing/herosection-upgrade image.png"
               alt={t('landingHeroImageAlt')}
               fill priority
-              unoptimized
               className="object-cover object-center"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1152px"
             />
@@ -87,7 +86,7 @@ export default function HeroSection() {
               <div className={`flex flex-shrink-0 ${isRTL ? '-space-x-reverse' : ''} -space-x-2`}>
                 {[1,2,3,4].map(i => (
                   <div key={i} className="relative w-9 h-9 rounded-full border-2 border-white overflow-hidden bg-slate-600 flex-shrink-0">
-                    <Image src={`/images/landing/user-${i}.jpg`} alt="" fill unoptimized className="object-cover" sizes="36px" />
+                    <Image src={`/images/landing/user-${i}.jpg`} alt="" fill className="object-cover" sizes="36px" />
                   </div>
                 ))}
               </div>

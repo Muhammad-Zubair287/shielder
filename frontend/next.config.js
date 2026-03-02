@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  compress: true,
+  poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -8,9 +10,10 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Image domains — allows any HTTPS host (Railway, S3, CDN, etc.)
-  // and localhost for local development
+  // Image optimisation — serve modern formats and cache aggressively
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
     remotePatterns: [
       {
         protocol: 'http',
@@ -37,19 +40,34 @@ const nextConfig = {
     ],
   },
 
-  // Headers for security
+  // HTTP headers — security + long-lived caching for static assets
   async headers() {
     return [
+      // Security headers on every route
       {
         source: '/:path*',
         headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        ],
+      },
+      // Immutable cache for Next.js static chunks (JS/CSS)
+      {
+        source: '/_next/static/:path*',
+        headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
+        ],
+      },
+      // Cache public images for 7 days
+      {
+        source: '/images/:path*',
+        headers: [
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
           },
         ],
       },

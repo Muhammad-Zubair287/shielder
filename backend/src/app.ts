@@ -48,19 +48,16 @@ import { swaggerConfig } from './config/swagger';
 export const createApp = (): Application => {
   const app = express();
 
-  // Debug middleware to log origins
-  app.use((req, _res, next) => {
-    if (env.isProduction) {
-      console.log(`[REQUEST] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'None'}`);
-    }
-    next();
-  });
+  // Compression FIRST — compresses all downstream responses
+  app.use(compression());
 
-  // Swagger setup
-  const specs = swaggerJsdoc(swaggerConfig);
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+  // Swagger UI (development / staging only — it is heavy)
+  if (!env.isProduction) {
+    const specs = swaggerJsdoc(swaggerConfig);
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+  }
 
-  // Security middleware - Configure helmet to allow cross-origin images
+  // Security middleware
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: {
@@ -81,19 +78,18 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Language middleware – sets req.locale from Accept-Language header
+  // Language middleware
   app.use(languageMiddleware);
 
-  // Compression middleware
-  app.use(compression());
-
-  // Static files
-  app.use('/uploads', express.static('uploads'));
-
-  // Logging middleware (only in development)
+  // HTTP request logging (development only)
   if (env.isDevelopment) {
     app.use(morgan('dev'));
   }
+
+  // Static files (served with long-lived cache in production)
+  app.use('/uploads', express.static('uploads', {
+    maxAge: env.isProduction ? '7d' : 0,
+  }));
 
   // Health check endpoint
   app.get('/health', (_req, res) => {

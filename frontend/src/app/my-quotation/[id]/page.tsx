@@ -219,7 +219,7 @@ export default function MyQuotationPage() {
                           <Image
                             src={item.thumbnail ?? PLACEHOLDER}
                             alt={item.productName}
-                            fill unoptimized
+                            fill
                             className="object-cover"
                             sizes="56px"
                           />

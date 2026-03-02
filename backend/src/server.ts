@@ -7,6 +7,7 @@ import { createApp } from './app';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './common/logger/logger';
+import http from 'http';
 
 /**
  * Start the server
@@ -30,6 +31,28 @@ const startServer = async (): Promise<void> => {
       console.log(`✅ API Endpoint: http://localhost:${env.port}/api`);
       console.log(`✅ Health Check: http://localhost:${env.port}/health\n`);
     });
+
+    // Keep-alive self-ping on Railway production to prevent cold-start sleeps.
+    // Pings /health every 4 minutes (Railway idles after ~5 minutes of inactivity).
+    if (env.isProduction) {
+      const PING_INTERVAL_MS = 4 * 60 * 1000; // 4 minutes
+      setInterval(() => {
+        const options = {
+          hostname: 'localhost',
+          port: env.port,
+          path: '/health',
+          method: 'GET',
+        };
+        const req = http.request(options, (res) => {
+          if (res.statusCode !== 200) {
+            logger.warn(`[keep-alive] health ping returned ${res.statusCode}`);
+          }
+        });
+        req.on('error', (err) => logger.warn('[keep-alive] ping error', err));
+        req.end();
+      }, PING_INTERVAL_MS);
+      logger.info('[keep-alive] Self-ping enabled (every 4 min) to prevent Railway cold starts');
+    }
 
     // Graceful shutdown
     const shutdown = async (signal: string) => {

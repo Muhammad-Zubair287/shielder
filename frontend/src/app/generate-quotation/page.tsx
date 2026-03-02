@@ -242,7 +242,7 @@ export default function GenerateQuotationPage() {
                           <Image
                             src={p.thumbnail ?? PLACEHOLDER}
                             alt={p.name}
-                            fill unoptimized
+                            fill
                             className="object-cover"
                             sizes="48px"
                           />

@@ -112,7 +112,7 @@ function ProductCard({ product, tab, t, isRTL }: {
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
       {/* Image */}
       <div className="relative h-52 overflow-hidden bg-gray-50">
-        <Image src={image} alt={product.name} fill unoptimized className="object-cover"
+        <Image src={image} alt={product.name} fill className="object-cover"
           sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,33vw" />
         {product.stock === 0 && (
           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">

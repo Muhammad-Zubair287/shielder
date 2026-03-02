@@ -175,15 +175,15 @@ export default function RegisterPage() {
           </div>
 
           {/* Content Overlay */}
-          <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8">
-            {/* Logo at Top Right */}
-            <div className="flex items-start justify-end">
+          <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8">
+            {/* Logo — pinned to top-left corner */}
+            <div className="absolute top-5 left-5">
               <Image 
                 src="/images/shielder image.png" 
                 alt="Shielder Logo" 
-                width={300}
-                height={300}
-                className="drop-shadow-2xl"
+                width={160}
+                height={70}
+                className="drop-shadow-2xl object-contain"
               />
             </div>
 

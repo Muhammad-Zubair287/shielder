@@ -50,7 +50,6 @@ export default function CartItem({ item, isLast }: CartItemProps) {
             src={image}
             alt={item.product.name}
             fill
-            unoptimized
             className="object-cover"
             sizes="68px"
           />

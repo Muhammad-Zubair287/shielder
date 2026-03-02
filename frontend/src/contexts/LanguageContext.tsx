@@ -11,6 +11,7 @@ import {
   DEFAULT_LOCALE,
 } from '@/i18n/config';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { invalidateLocaleCache } from '@/services/api.service';
 
 type TFunction = (key: TranslationKey | string) => string;
 
@@ -59,6 +60,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
 
     localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
+    invalidateLocaleCache(); // keep axios interceptor cache in sync
   }, [locale, mounted]);
 
   const setLocale = (newLocale: Locale) => setLocaleState(newLocale);
