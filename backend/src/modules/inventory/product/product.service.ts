@@ -491,7 +491,7 @@ export class ProductService {
         'Filter Type': 'Air Filter',
         'Material': 'Synthetic',
         'Dimensions': '250mm x 150mm x 50mm',
-        'Image': 'images/products images/Aluminium grear.jpeg',
+        'Image': 'images/products-images/Aluminium grear.jpeg',
         'spec_Color': 'White',
         'spec_Size': 'Standard'
       }
@@ -566,7 +566,7 @@ export class ProductService {
             mainImage = rawImage;
           } else {
             // Treat as a bare filename inside the products images folder
-            mainImage = `images/products images/${rawImage}`;
+            mainImage = `images/products-images/${rawImage}`;
           }
         }
 
