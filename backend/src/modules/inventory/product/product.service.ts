@@ -2,6 +2,7 @@ import { prisma } from '@/config/database';
 import { ApiError } from '@/common/errors/api.error';
 import { Prisma, ProductStatus } from '@prisma/client';
 import * as XLSX from 'xlsx';
+import AdmZip from 'adm-zip';
 import { translate } from '@vitalets/google-translate-api';
 
 /** Translate a string to Arabic. Returns the original text if translation fails. */
@@ -513,6 +514,59 @@ export class ProductService {
       throw new ApiError('The uploaded file is empty', 400);
     }
 
+    // ── Extract embedded images from the xlsx (floating images anchored to cells) ──
+    // xlsx files are ZIP archives; images live in xl/media/ and anchors in xl/drawings/
+    const embeddedImages = new Map<number, string>(); // 0-based Excel row → base64 data URL
+    try {
+      const zip = new AdmZip(buffer);
+
+      // Find the first drawing file and its rels
+      const drawingEntry = zip.getEntry('xl/drawings/drawing1.xml');
+      const drawingRelEntry = zip.getEntry('xl/drawings/_rels/drawing1.xml.rels');
+
+      if (drawingEntry && drawingRelEntry) {
+        const drawingXml = drawingEntry.getData().toString('utf8');
+        const relXml = drawingRelEntry.getData().toString('utf8');
+
+        // Build rId → media path map from the rels file
+        const relMap = new Map<string, string>();
+        const relRegex = /Id="([^"]+)"[^>]+Target="([^"]+)"/g;
+        let relMatch;
+        while ((relMatch = relRegex.exec(relXml)) !== null) {
+          const [, rId, target] = relMatch;
+          // target is like "../media/image1.png" → normalise to "xl/media/image1.png"
+          relMap.set(rId, target.replace(/^\.\.\//, 'xl/'));
+        }
+
+        // Parse each anchor block: get the FROM row and the blip rId
+        const anchorRegex = /<xdr:(?:twoCellAnchor|oneCellAnchor)[\s\S]*?<\/xdr:(?:twoCellAnchor|oneCellAnchor)>/g;
+        let anchorMatch;
+        while ((anchorMatch = anchorRegex.exec(drawingXml)) !== null) {
+          const block = anchorMatch[0];
+          const rowMatch = block.match(/<xdr:from>[\s\S]*?<xdr:row>(\d+)<\/xdr:row>/);
+          const rIdMatch = block.match(/r:embed="([^"]+)"/);
+          if (rowMatch && rIdMatch) {
+            const excelRow = parseInt(rowMatch[1]); // 0-based (0 = header row)
+            const mediaPath = relMap.get(rIdMatch[1]);
+            if (mediaPath) {
+              const imgEntry = zip.getEntry(mediaPath);
+              if (imgEntry) {
+                const imgBuffer = imgEntry.getData();
+                const ext = mediaPath.split('.').pop()?.toLowerCase() || 'png';
+                const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+                  : ext === 'png' ? 'image/png'
+                  : ext === 'gif' ? 'image/gif'
+                  : ext === 'webp' ? 'image/webp' : 'image/png';
+                embeddedImages.set(excelRow, `data:${mime};base64,${imgBuffer.toString('base64')}`);
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // If ZIP extraction fails, continue — the text Image column will still be used
+    }
+
     // Pre-fetch categories, subcategories, brands to maps
     const [categories, subcategories, allBrands] = await Promise.all([
       prisma.category.findMany({ include: { translations: { where: { locale: 'en' } } } }),
@@ -557,9 +611,13 @@ export class ProductService {
         const nameAr = nameArInput || await toArabic(name);
         const descriptionAr = descArInput || (description ? await toArabic(description) : '');
         const rawImage: string | undefined = row['Image']?.toString().trim() || undefined;
+        // Prefer an image embedded directly in the Excel cell (floating image anchored to this row).
+        // excelRow is 0-based; row 0 = header, so data row i (0-based) sits at excelRow i+1.
+        const embeddedDataUrl = embeddedImages.get(i + 1);
+
         // Normalise image path: bare filename → full relative path, always URL-safe
-        let mainImage: string | undefined;
-        if (rawImage) {
+        let mainImage: string | undefined = embeddedDataUrl; // embedded image wins
+        if (!mainImage && rawImage) {
           if (rawImage.startsWith('http://') || rawImage.startsWith('https://') || rawImage.startsWith('/')) {
             mainImage = rawImage;
           } else {
