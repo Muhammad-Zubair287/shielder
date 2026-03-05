@@ -18,6 +18,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { orderService } from '@/services/order.service';
+import { getImageUrl } from '@/utils/helpers';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -157,7 +158,7 @@ export default function OrderDetailPage() {
                         <div className="flex items-center space-x-4">
                           <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                             {item.product?.mainImage ? (
-                              <img src={item.product.mainImage} alt="Product" className="w-full h-full object-contain" />
+                              <img src={getImageUrl(item.product.mainImage) || ''} alt="Product" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/factory-1.png'; }} />
                             ) : (
                               <Box size={24} className="text-gray-300" />
                             )}

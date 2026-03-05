@@ -175,7 +175,7 @@ export class CustomerQuotationController {
       // Enrich items with thumbnail
       const enrichedItems = quotation.items.map((item: any) => ({
         ...item,
-        thumbnail: item.product.attachments?.[0]?.fileUrl || null,
+        thumbnail: item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
       }));
 
       res.status(201).json({
@@ -243,7 +243,7 @@ export class CustomerQuotationController {
         return {
           ...item,
           productName: translation?.name || item.productName,
-          thumbnail:   item.product.attachments?.[0]?.fileUrl || null,
+          thumbnail:   item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
         };
       });
 

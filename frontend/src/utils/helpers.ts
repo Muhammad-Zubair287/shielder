@@ -18,7 +18,10 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   // directly from the Next.js public folder (works on Vercel without a backend).
   const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
   if (normalized.startsWith('images/')) {
-    return `/${normalized}`;
+    // Encode each path segment so spaces and special characters in folder/file
+    // names (e.g. "products images") are valid in a URL.
+    const encoded = normalized.split('/').map(encodeURIComponent).join('/');
+    return `/${encoded}`;
   }
   
   // User-uploaded files (uploads/...) are served by the backend.

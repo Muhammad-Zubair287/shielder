@@ -143,6 +143,7 @@ export default function ProductsTable({
                         src={getImageUrl(p.mainImage) || ''}
                         alt={productName(p)}
                         className="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/factory-1.png'; }}
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
