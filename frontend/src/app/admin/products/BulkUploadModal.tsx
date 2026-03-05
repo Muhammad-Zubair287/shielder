@@ -132,6 +132,7 @@ export default function BulkUploadModal({ onClose, onSuccess }: Props) {
   // ── Template column reference ──────────────────────────────────────────────
   const templateColumns = [
     'Product Name *',
+    'Arabic Name',
     'SKU',
     'Price *',
     'Stock *',
@@ -140,6 +141,8 @@ export default function BulkUploadModal({ onClose, onSuccess }: Props) {
     'Subcategory Name *',
     'Brand Name',
     'Description',
+    'Arabic Description',
+    'Image',
     'spec_Color',
     'spec_Material',
     'spec_Size',
@@ -220,6 +223,9 @@ export default function BulkUploadModal({ onClose, onSuccess }: Props) {
               ))}
             </div>
             <p className="text-xs text-gray-400 mt-2">{t('bulkRequiredNote')}</p>
+            <p className="text-xs text-blue-500 mt-1">
+              <span className="font-semibold">Image</span> column: enter a filename (e.g. <code className="bg-blue-50 px-1 rounded">spare parts.jpeg</code>) from the products images folder, a relative path like <code className="bg-blue-50 px-1 rounded">images/products images/spare parts.jpeg</code>, or a full URL.
+            </p>
           </div>
 
           {/* ── Step 2 — Drop zone ── */}

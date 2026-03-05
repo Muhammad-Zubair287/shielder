@@ -2,6 +2,18 @@ import { prisma } from '@/config/database';
 import { ApiError } from '@/common/errors/api.error';
 import { Prisma, ProductStatus } from '@prisma/client';
 import * as XLSX from 'xlsx';
+import { translate } from '@vitalets/google-translate-api';
+
+/** Translate a string to Arabic. Returns the original text if translation fails. */
+async function toArabic(text: string): Promise<string> {
+  if (!text) return text;
+  try {
+    const { text: translated } = await translate(text, { to: 'ar' });
+    return translated || text;
+  } catch {
+    return text;
+  }
+}
 
 export interface ProductFilters {
   categoryId?: string;
@@ -437,14 +449,16 @@ export class ProductService {
 
   async generateTemplate() {
     const headers = [
-      'Product Name', 'SKU', 'Price', 'Stock', 'Minimum Stock', 
-      'Category Name', 'Subcategory Name', 'Brand Name', 'Description',
+      'Product Name', 'Arabic Name', 'SKU', 'Price', 'Stock', 'Minimum Stock',
+      'Category Name', 'Subcategory Name', 'Brand Name', 'Description', 'Arabic Description',
+      'Image',
       'spec_Color', 'spec_Material', 'spec_Size'
     ];
     
     const sampleData = [
       {
         'Product Name': 'High Capacity Air Filter',
+        'Arabic Name': 'فلتر هواء عالي السعة',
         'SKU': 'AF-HC-001',
         'Price': 299.99,
         'Stock': 100,
@@ -453,6 +467,8 @@ export class ProductService {
         'Subcategory Name': 'Air Systems',
         'Brand Name': 'Shielder Core',
         'Description': 'Premium air filter for industrial use',
+        'Arabic Description': 'فلتر هواء فائق الجودة للاستخدام الصناعي',
+        'Image': 'images/products images/Aluminium grear.jpeg',
         'spec_Color': 'White',
         'spec_Material': 'Synthetic',
         'spec_Size': 'Standard'
@@ -507,6 +523,25 @@ export class ProductService {
         const subName = row['Subcategory Name']?.toLowerCase();
         const brandName = row['Brand Name']?.toLowerCase();
         const description = row['Description'] || '';
+        const nameArInput: string = row['Arabic Name']?.toString().trim() || '';
+        const descArInput: string = row['Arabic Description']?.toString().trim() || '';
+
+        // Auto-translate if Arabic fields are not provided
+        const nameAr = nameArInput || await toArabic(name);
+        const descriptionAr = descArInput || (description ? await toArabic(description) : '');
+        const rawImage: string | undefined = row['Image']?.toString().trim() || undefined;
+        // Normalise image path: bare filename → full relative path
+        let mainImage: string | undefined;
+        if (rawImage) {
+          if (rawImage.startsWith('http://') || rawImage.startsWith('https://') || rawImage.startsWith('/')) {
+            mainImage = rawImage;
+          } else if (rawImage.startsWith('images/')) {
+            mainImage = rawImage;
+          } else {
+            // Treat as a bare filename inside the products images folder
+            mainImage = `images/products images/${rawImage}`;
+          }
+        }
 
         // Validations
         if (!name || !price || isNaN(price) || isNaN(stock)) {
@@ -548,9 +583,13 @@ export class ProductService {
             categoryId,
             subcategoryId,
             brandId,
+            mainImage,
             status: ProductStatus.PUBLISHED, // Auto-approve bulk uploads for now as they come from SuperAdmin
             translations: {
-              create: { locale: 'en', name, description }
+              create: [
+                { locale: 'en', name, description },
+                { locale: 'ar', name: nameAr, description: descriptionAr || description }
+              ]
             },
             specifications: specifications.length > 0 ? {
               create: specifications
