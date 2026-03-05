@@ -13,9 +13,15 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
       imagePath.startsWith('blob:') || imagePath.startsWith('data:')) {
     return imagePath;
   }
+
+  // Seed/demo images stored under images/products images/... are served
+  // directly from the Next.js public folder (works on Vercel without a backend).
+  const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+  if (normalized.startsWith('images/')) {
+    return `/${normalized}`;
+  }
   
-  // Get backend base URL — strip everything from /api onwards
-  // Handles both "http://host:port/api" and "http://host:port/api/v1"
+  // User-uploaded files (uploads/...) are served by the backend.
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
   const baseUrl = apiUrl.replace(/\/api(\/.*)?$/, '');
   
