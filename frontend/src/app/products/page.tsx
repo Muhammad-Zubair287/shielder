@@ -251,10 +251,10 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50 z-[80] backdrop-blur-sm"
-            onClick={() => setQuotationModalOpen(false)}
+            onClick={e => { e.stopPropagation(); setQuotationModalOpen(false); }}
           />
           {/* Modal */}
-          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
+          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
               dir={isRTL ? 'rtl' : 'ltr'}>
               {/* Header */}
@@ -396,10 +396,10 @@ function ProductDetailModal({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 z-[80] backdrop-blur-sm"
-        onClick={onClose}
+        onClick={e => { e.stopPropagation(); onClose(); }}
       />
       {/* Modal */}
-      <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
         <div
           className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
           dir={isRTL ? 'rtl' : 'ltr'}
