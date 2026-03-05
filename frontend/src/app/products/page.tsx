@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Filter, ShoppingCart, ChevronLeft, ChevronRight, Search, X, Check, Plus, Minus, Download } from 'lucide-react';
+import { Filter, ShoppingCart, ChevronLeft, ChevronRight, Search, X, Check, Plus, Minus, Download, ImageOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
@@ -50,7 +50,6 @@ interface ActiveFilters {
 
 type Tab = 'buy' | 'quotation';
 
-const PLACEHOLDER_IMAGE = '/images/landing/factory-1.png';
 const ITEMS_PER_PAGE = 12;
 
 const SORT_OPTIONS = [
@@ -85,7 +84,8 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
   isAuthenticated: boolean;
 }) {
   const rawImage = product.mainImage ?? product.images?.[0] ?? null;
-  const image     = getImageUrl(rawImage) ?? PLACEHOLDER_IMAGE;
+  const image     = getImageUrl(rawImage) ?? null;
+  const [imgError, setImgError] = useState(false);
   const price     = Number(product.price);
   const original = Number(product.originalPrice ?? price * 1.2);
   const isQuotation = tab === 'quotation';
@@ -146,13 +146,20 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
       {/* Image */}
       <div className="relative h-52 overflow-hidden bg-gray-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={image}
-          alt={product.name}
-          className="w-full h-full object-cover"
-          onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
-        />
+        {image && !imgError ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-100">
+            <ImageOff size={36} className="text-gray-300" />
+            <span className="text-xs text-gray-400 font-medium">No Image</span>
+          </div>
+        )}
         {product.stock === 0 && (
           <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
             {t('productsOutOfStock')}
@@ -253,13 +260,19 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
                 {/* Product row */}
                 <div className="flex items-center gap-3 mb-5">
                   <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={image}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
-                    />
+                    {image && !imgError ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={image}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={() => setImgError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageOff size={20} className="text-gray-300" />
+                      </div>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 text-sm truncate">{product.name}</p>
