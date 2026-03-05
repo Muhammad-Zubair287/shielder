@@ -79,9 +79,9 @@ function buildQuery(filters: ActiveFilters, page: number, tab: Tab, locale: stri
 const _categoryCache: Record<string, Category[]> = {};
 
 // ── Product Card ──────────────────────────────────────────────────────────────
-function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
+function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick }: {
   product: Product; tab: Tab; t: (k: string) => string; isRTL: boolean;
-  isAuthenticated: boolean;
+  isAuthenticated: boolean; onProductClick: () => void;
 }) {
   const rawImage = product.mainImage ?? product.images?.[0] ?? null;
   const image     = getImageUrl(rawImage) ?? null;
@@ -92,9 +92,9 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
   const { addItem, loading: cartLoading } = useCart();
   const router = useRouter();
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!isAuthenticated) {
-      // Save current page so login can redirect back
       sessionStorage.setItem('post_login_redirect', typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/products');
       router.push('/login');
       return;
@@ -111,44 +111,15 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
     );
   };
 
-  const [detailOpen, setDetailOpen] = useState(false);
-
-  const [quotationModalOpen, setQuotationModalOpen] = useState(false);
-  const [quotationQty, setQuotationQty]             = useState(1);
-  const { addItem: addToQuotation } = useQuotation();
-
-  const handleGetQuotation = () => {
-    if (!isAuthenticated) {
-      sessionStorage.setItem('post_login_redirect', typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/products');
-      router.push('/login');
-      return;
-    }
-    setQuotationQty(1);
-    setQuotationModalOpen(true);
-  };
-
-  const handleAddToQuotationBasket = () => {
-    addToQuotation({
-      productId: product.id,
-      name:      product.name,
-      sku:       product.sku,
-      price,
-      quantity:  quotationQty,
-      thumbnail: product.mainImage ?? product.images?.[0] ?? null,
-    });
-    setQuotationModalOpen(false);
-    toast.success(`"${product.name}" added to quotation basket!`);
-  };
   // Shorten category name to uppercase abbreviation for the badge (e.g. 'Air Filters' → 'AIR')
   const badgeLabel = product.categoryName
     ? product.categoryName.replace(/filters?/i, '').trim().toUpperCase() || product.categoryName.toUpperCase()
     : null;
 
   return (
-    <>
     <div
       className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col cursor-pointer"
-      onClick={() => setDetailOpen(true)}
+      onClick={onProductClick}
     >
       {/* Image */}
       <div className="relative h-52 overflow-hidden bg-gray-50">
@@ -210,13 +181,13 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
         {/* Button */}
         {isQuotation ? (
           <button
-            onClick={e => { e.stopPropagation(); handleGetQuotation(); }}
+            onClick={e => { e.stopPropagation(); onProductClick(); }}
             className="mt-3 w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3 rounded-xl transition-colors">
             {t('productsGetQuotation')}
           </button>
         ) : (
           <button
-            onClick={e => { e.stopPropagation(); handleAddToCart(); }}
+            onClick={handleAddToCart}
             disabled={cartLoading || product.stock === 0}
             className="mt-3 w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <ShoppingCart size={15} />
@@ -224,163 +195,33 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated }: {
           </button>
         )}
       </div>
-
-      {/* ── Product Detail Modal ── */}
-      {detailOpen && (
-        <ProductDetailModal
-          product={product}
-          tab={tab}
-          t={t}
-          isRTL={isRTL}
-          isAuthenticated={isAuthenticated}
-          onClose={() => setDetailOpen(false)}
-          onAddToCart={handleAddToCart}
-          onGetQuotation={handleGetQuotation}
-          cartLoading={cartLoading}
-          image={image}
-          imgError={imgError}
-          setImgError={setImgError}
-          price={price}
-          badgeLabel={badgeLabel}
-        />
-      )}
-
-      {/* ── Quotation quick-add modal ── */}
-      {quotationModalOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 z-[80] backdrop-blur-sm"
-            onClick={e => { e.stopPropagation(); setQuotationModalOpen(false); }}
-          />
-          {/* Modal */}
-          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
-              dir={isRTL ? 'rtl' : 'ltr'}>
-              {/* Header */}
-              <div className="bg-[#0D1637] px-6 py-5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#F97316] flex items-center justify-center shrink-0">
-                    <Download size={13} className="text-white" />
-                  </div>
-                  <span className="text-white font-bold text-sm">Add to Quotation</span>
-                </div>
-                <button
-                  onClick={() => setQuotationModalOpen(false)}
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors">
-                  <X size={16} className="text-white" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="px-6 py-5">
-                {/* Product row */}
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                    {image && !imgError ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                        onError={() => setImgError(true)}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageOff size={20} className="text-gray-300" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{product.name}</p>
-                    {product.sku && (
-                      <p className="text-xs text-gray-400">{product.sku}</p>
-                    )}
-                    <p className="text-sm font-bold text-[#0205A6] flex items-center gap-0.5 mt-0.5">
-                      <SARSymbol />{price.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Quantity */}
-                <div className="mb-5">
-                  <label className="block text-xs font-semibold text-gray-600 mb-2">Quantity</label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setQuotationQty(q => Math.max(1, q - 1))}
-                      disabled={quotationQty <= 1}
-                      className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
-                      <Minus size={14} />
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      value={quotationQty}
-                      onChange={e => setQuotationQty(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQuotationQty(q => q + 1)}
-                      className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-                      <Plus size={14} />
-                    </button>
-                    <span className="text-xs text-gray-400 ml-1">
-                      Total: <span className="font-bold text-gray-700">
-                        <SARSymbol className="inline" />{(price * quotationQty).toFixed(2)}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleAddToQuotationBasket}
-                    className="flex-1 bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold py-3 rounded-2xl transition-colors text-sm flex items-center justify-center gap-2">
-                    <Download size={14} />
-                    Add to Basket
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuotationModalOpen(false)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-2xl transition-colors text-sm">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
     </div>
-    </>
   );
 }
 
 // ── Product Detail Modal ──────────────────────────────────────────────────────
+// Rendered at page level (outside card DOM) — zero event-propagation issues.
 function ProductDetailModal({
-  product, tab, t, isRTL, isAuthenticated,
-  onClose, onAddToCart, onGetQuotation,
-  cartLoading, image, imgError, setImgError, price, badgeLabel,
+  product, tab, t, isRTL, isAuthenticated, onClose,
 }: {
   product: Product; tab: Tab; t: (k: string) => string; isRTL: boolean;
-  isAuthenticated: boolean;
-  onClose: () => void;
-  onAddToCart: () => void;
-  onGetQuotation: () => void;
-  cartLoading: boolean;
-  image: string | null;
-  imgError: boolean;
-  setImgError: (v: boolean) => void;
-  price: number;
-  badgeLabel: string | null;
+  isAuthenticated: boolean; onClose: () => void;
 }) {
+  const rawImage = product.mainImage ?? product.images?.[0] ?? null;
+  const image    = getImageUrl(rawImage) ?? null;
+  const [imgError, setImgError] = useState(false);
+  const [qty, setQty] = useState(1);
+  const price = Number(product.price);
   const isQuotation = tab === 'quotation';
+  const badgeLabel = product.categoryName
+    ? product.categoryName.replace(/filters?/i, '').trim().toUpperCase() || product.categoryName.toUpperCase()
+    : null;
 
-  // Lock body scroll
+  const router = useRouter();
+  const { addItem, loading: cartLoading } = useCart();
+  const { addItem: addToQuotation } = useQuotation();
+
+  // Lock body scroll while open
   useEffect(() => {
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -391,15 +232,38 @@ function ProductDetailModal({
     };
   }, []);
 
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      sessionStorage.setItem('post_login_redirect', typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/products');
+      router.push('/login');
+      return;
+    }
+    addItem(product.id, 1, {
+      id: product.id, name: product.name, thumbnail: product.mainImage ?? product.images?.[0] ?? null,
+    }, price);
+    onClose();
+  };
+
+  const handleAddToQuotation = () => {
+    if (!isAuthenticated) {
+      sessionStorage.setItem('post_login_redirect', typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/products');
+      router.push('/login');
+      return;
+    }
+    addToQuotation({
+      productId: product.id, name: product.name, sku: product.sku,
+      price, quantity: qty, thumbnail: product.mainImage ?? product.images?.[0] ?? null,
+    });
+    toast.success(`"${product.name}" added to quotation basket!`);
+    onClose();
+  };
+
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-[80] backdrop-blur-sm"
-        onClick={e => { e.stopPropagation(); onClose(); }}
-      />
+      {/* Backdrop — safe to click without stopPropagation; modal is outside any card div */}
+      <div className="fixed inset-0 bg-black/50 z-[80] backdrop-blur-sm" onClick={onClose} />
       {/* Modal */}
-      <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
         <div
           className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
           dir={isRTL ? 'rtl' : 'ltr'}
@@ -408,9 +272,7 @@ function ProductDetailModal({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h2 className="text-base font-bold text-gray-900">{t('productsDetailTitle') || 'Product Details'}</h2>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
               <X size={18} className="text-gray-500" />
             </button>
           </div>
@@ -421,12 +283,7 @@ function ProductDetailModal({
             <div className="relative h-64 bg-gray-100 overflow-hidden">
               {image && !imgError ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={() => setImgError(true)}
-                />
+                <img src={image} alt={product.name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <ImageOff size={40} className="text-gray-300" />
@@ -445,9 +302,7 @@ function ProductDetailModal({
                   </span>
                 )}
                 {(product.filterNumber || product.sku) && (
-                  <span className="text-gray-400 text-xs font-medium">
-                    {product.filterNumber ?? product.sku}
-                  </span>
+                  <span className="text-gray-400 text-xs font-medium">{product.filterNumber ?? product.sku}</span>
                 )}
               </div>
 
@@ -474,24 +329,44 @@ function ProductDetailModal({
                   <SARSymbol />{price.toFixed(2)}
                 </span>
                 {product.stock !== undefined && product.stock !== null && (
-                  <span className={`text-sm font-semibold ${
-                    product.stock === 0 ? 'text-red-500' : 'text-gray-500'
-                  }`}>
+                  <span className={`text-sm font-semibold ${product.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
                     {product.stock === 0 ? t('productsOutOfStock') : `${product.stock} ${t('productsInStock') || 'in stock'}`}
                   </span>
                 )}
               </div>
 
+              {/* Quotation qty */}
+              {isQuotation && (
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}
+                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                    <Minus size={14} />
+                  </button>
+                  <input type="number" min={1} value={qty}
+                    onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />
+                  <button type="button" onClick={() => setQty(q => q + 1)}
+                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+                    <Plus size={14} />
+                  </button>
+                  <span className="text-xs text-gray-400 ml-1">
+                    Total: <span className="font-bold text-gray-700"><SARSymbol className="inline" />{(price * qty).toFixed(2)}</span>
+                  </span>
+                </div>
+              )}
+
               {/* CTA */}
               {isQuotation ? (
                 <button
-                  onClick={() => { onClose(); onGetQuotation(); }}
-                  className="w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3.5 rounded-2xl transition-colors">
+                  onClick={handleAddToQuotation}
+                  disabled={product.stock === 0}
+                  className="w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <Download size={14} />
                   {t('productsGetQuotation')}
                 </button>
               ) : (
                 <button
-                  onClick={() => { onAddToCart(); onClose(); }}
+                  onClick={handleAddToCart}
                   disabled={cartLoading || product.stock === 0}
                   className="w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-bold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   <ShoppingCart size={16} />
@@ -792,6 +667,7 @@ function ProductsContent() {
   const [draftFilters,   setDraftFilters]   = useState<ActiveFilters>(emptyFilters);
   const [searchInput,    setSearchInput]    = useState(emptyFilters.search);
   const [filterOpen,     setFilterOpen]     = useState(false);
+  const [detailProduct, setDetailProduct]   = useState<Product | null>(null);
 
   const [products,   setProducts]   = useState<Product[]>([]);
   const [total,      setTotal]      = useState(0);
@@ -1006,7 +882,7 @@ function ProductsContent() {
                       )}
                     </div>
                   )
-                : products.map(p => <ProductCard key={p.id} product={p} tab={activeTab} t={t} isRTL={isRTL} isAuthenticated={isAuthenticated} />)
+                : products.map(p => <ProductCard key={p.id} product={p} tab={activeTab} t={t} isRTL={isRTL} isAuthenticated={isAuthenticated} onProductClick={() => setDetailProduct(p)} />)
             }
           </div>
 
@@ -1017,6 +893,17 @@ function ProductsContent() {
           )}
         </div>
       </main>
+
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          tab={activeTab}
+          t={t}
+          isRTL={isRTL}
+          isAuthenticated={isAuthenticated}
+          onClose={() => setDetailProduct(null)}
+        />
+      )}
 
       <LandingFooter />
 
