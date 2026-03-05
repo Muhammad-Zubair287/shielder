@@ -654,15 +654,11 @@ function ProductsContent() {
         const items: Product[] = data?.products ?? (Array.isArray(data?.data) ? data.data : []);
         setProducts(items);
         setTotal(data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length);
-      } catch {
+      } catch (err: any) {
         if (cancelled) return;
-        const mock: Product[] = Array.from({ length: ITEMS_PER_PAGE }, (_, i) => ({
-          id: String(i), name: 'Air Filter',
-          description: 'Premium industrial filter for high-performance environments.',
-          price: 99.5, originalPrice: 119.9, mainImage: PLACEHOLDER_IMAGE,
-        }));
-        setProducts(mock);
-        setTotal(120);
+        console.error('[Products] API error:', err?.response?.status, err?.response?.data ?? err?.message);
+        setProducts([]);
+        setTotal(0);
       } finally {
         if (!cancelled) setLoading(false);
       }
