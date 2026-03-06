@@ -9,39 +9,39 @@ datasource db {
 }
 
 model User {
-  id                      String         @id @default(uuid())
-  email                   String         @unique
-  passwordHash            String         @map("password_hash")
-  role                    UserRole       @default(USER)
-  status                  UserStatus     @default(PENDING)
-  isActive                Boolean        @default(true) @map("is_active")
-  emailVerified           Boolean        @default(false) @map("email_verified")
-  verificationToken       String?        @map("verification_token")
-  verificationTokenExpiry DateTime?      @map("verification_token_expiry")
-  resetToken              String?        @map("reset_token")
-  resetTokenExpiry        DateTime?      @map("reset_token_expiry")
-  lastLoginAt             DateTime?      @map("last_login_at")
-  lastPasswordChange      DateTime?      @map("last_password_change")
-  failedLoginAttempts     Int            @default(0) @map("failed_login_attempts")
-  lockedUntil             DateTime?      @map("locked_until")
-  deletedAt               DateTime?      @map("deleted_at")
-  createdBy               String?        @map("created_by")
-  updatedBy               String?        @map("updated_by")
-  createdAt               DateTime       @default(now()) @map("created_at")
-  updatedAt               DateTime       @updatedAt @map("updated_at")
-  lastLoginIp             String?        @map("last_login_ip")
+  id                      String                  @id @default(uuid())
+  email                   String                  @unique
+  createdAt               DateTime                @default(now()) @map("created_at")
+  createdBy               String?                 @map("created_by")
+  deletedAt               DateTime?               @map("deleted_at")
+  emailVerified           Boolean                 @default(false) @map("email_verified")
+  failedLoginAttempts     Int                     @default(0) @map("failed_login_attempts")
+  isActive                Boolean                 @default(true) @map("is_active")
+  lastLoginAt             DateTime?               @map("last_login_at")
+  lastPasswordChange      DateTime?               @map("last_password_change")
+  lockedUntil             DateTime?               @map("locked_until")
+  passwordHash            String                  @map("password_hash")
+  resetToken              String?                 @map("reset_token")
+  resetTokenExpiry        DateTime?               @map("reset_token_expiry")
+  updatedAt               DateTime                @updatedAt @map("updated_at")
+  updatedBy               String?                 @map("updated_by")
+  verificationToken       String?                 @map("verification_token")
+  verificationTokenExpiry DateTime?               @map("verification_token_expiry")
+  role                    UserRole                @default(USER)
+  status                  UserStatus              @default(PENDING)
+  lastLoginIp             String?                 @map("last_login_ip")
   auditLogs               AuditLog[]
   carts                   Cart[]
+  expenses                Expense[]
+  notificationPreferences NotificationPreference?
+  triggeredNotifications  Notification[]          @relation("NotificationTriggerer")
+  notifications           Notification[]
   orders                  Order[]
   payments                Payment[]
-  expenses                Expense[]
   products                Product[]
-  refreshTokens           RefreshToken[]
-  notifications           Notification[]
-  triggeredNotifications  Notification[]          @relation("NotificationTriggerer")
-  notificationPreferences NotificationPreference?
-  profile                 UserProfile?
   quotationsCreated       Quotation[]             @relation("QuotationCreator")
+  refreshTokens           RefreshToken[]
+  profile                 UserProfile?
 
   @@index([email])
   @@index([role])
@@ -75,15 +75,15 @@ model RefreshToken {
 model UserProfile {
   id                String   @id @default(uuid())
   userId            String   @unique
-  fullName          String?  @map("full_name")
-  address           String?
-  phoneNumber       String?  @map("phone_number")
-  profileImage      String?  @map("profile_image")
-  preferredLanguage String   @default("en") @map("preferred_language")
-  companyName       String?  @default("Shielder") @map("company_name")
-  taxId             String?  @map("tax_id")
   preferences       Json?
+  address           String?
+  companyName       String?  @default("Shielder") @map("company_name")
   createdAt         DateTime @default(now()) @map("created_at")
+  fullName          String?  @map("full_name")
+  phoneNumber       String?  @map("phone_number")
+  preferredLanguage String   @default("en") @map("preferred_language")
+  profileImage      String?  @map("profile_image")
+  taxId             String?  @map("tax_id")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -92,9 +92,9 @@ model UserProfile {
 
 model Category {
   id                      String                    @id @default(uuid())
+  createdAt               DateTime                  @default(now()) @map("created_at")
   image                   String?
   isActive                Boolean                   @default(true) @map("is_active")
-  createdAt               DateTime                  @default(now()) @map("created_at")
   updatedAt               DateTime                  @updatedAt @map("updated_at")
   brands                  brands[]
   category_spec_templates category_spec_templates[]
@@ -122,9 +122,9 @@ model CategoryTranslation {
 model Subcategory {
   id                      String                    @id @default(uuid())
   categoryId              String                    @map("category_id")
+  createdAt               DateTime                  @default(now()) @map("created_at")
   image                   String?
   isActive                Boolean                   @default(true) @map("is_active")
-  createdAt               DateTime                  @default(now()) @map("created_at")
   updatedAt               DateTime                  @updatedAt @map("updated_at")
   brands                  brands[]
   category_spec_templates category_spec_templates[]
@@ -152,26 +152,20 @@ model SubcategoryTranslation {
 model Product {
   id                    String                 @id @default(uuid())
   categoryId            String                 @map("categoryId")
-  subcategoryId         String                 @map("subcategoryId")
-  brandId               String?                @map("brandId")
-  supplierId            String?                @map("supplier_id")
-  price                 Decimal                @db.Decimal(10, 2)
-  stock                 Int                    @default(0)
-  minimumStockThreshold Int                    @default(5) @map("minimum_stock_threshold")
-  status                ProductStatus          @default(PENDING)
-  isActive              Boolean                @default(true) @map("is_active")
-  mainImage             String?                @map("main_image")
-  filterNumber          String?                @map("filter_number")
-  alternateNumbers      String?                @map("alternate_numbers")
-  filterType            String?                @map("filter_type")
-  material              String?
-  dimensions            String?
   createdAt             DateTime               @default(now()) @map("createdAt")
   updatedAt             DateTime               @updatedAt @map("updatedAt")
+  price                 Decimal                @db.Decimal(10, 2)
+  stock                 Int                    @default(0)
+  subcategoryId         String                 @map("subcategoryId")
+  isActive              Boolean                @default(true) @map("is_active")
+  brandId               String?                @map("brandId")
+  minimumStockThreshold Int                    @default(5) @map("minimum_stock_threshold")
+  mainImage             String?                @map("main_image")
   sku                   String?
+  status                ProductStatus          @default(PENDING)
+  supplierId            String?                @map("supplier_id")
   cartItems             CartItem[]
   orderItems            OrderItem[]
-  quotationItems        QuotationItem[]
   attachments           ProductAttachment[]
   specifications        ProductSpecification[]
   translations          ProductTranslation[]
@@ -180,6 +174,7 @@ model Product {
   category              Category               @relation(fields: [categoryId], references: [id])
   subcategory           Subcategory            @relation(fields: [subcategoryId], references: [id])
   supplier              User?                  @relation(fields: [supplierId], references: [id])
+  quotationItems        QuotationItem[]
   stockHistory          stock_history[]
 
   @@index([categoryId])
@@ -211,10 +206,10 @@ model ProductTranslation {
 
 model ProductSpecification {
   id         String   @id @default(uuid())
+  created_at DateTime @default(now())
   product_id String
   spec_key   String
   spec_value String
-  created_at DateTime @default(now())
   updated_at DateTime
   products   Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
@@ -239,26 +234,26 @@ model ProductAttachment {
 }
 
 model Order {
-  id              String          @id @default(uuid())
-  total           Decimal         @db.Decimal(10, 2)
-  createdAt       DateTime        @default(now()) @map("created_at")
-  customerName    String?         @map("customer_name")
-  notes           String?
-  orderNumber     String          @unique @map("order_number")
-  paymentMethod   String?         @map("payment_method")
-  paymentStatus   PaymentStatus   @default(UNPAID) @map("payment_status")
-  phoneNumber     String?         @map("phone_number")
-  shippingAddress String?         @map("shipping_address")
-  subtotal        Decimal         @db.Decimal(10, 2)
-  tax             Decimal         @default(0) @db.Decimal(10, 2)
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  userId          String          @map("user_id")
-  status          OrderStatus     @default(PENDING)
-  orderItems        OrderItem[]
-  payments          Payment[]
-  users             User              @relation(fields: [userId], references: [id])
-  stockHistory      stock_history[]   @relation("OrderToStockHistory")
+  id                 String          @id @default(uuid())
+  total              Decimal         @db.Decimal(10, 2)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  customerName       String?         @map("customer_name")
+  notes              String?
+  orderNumber        String          @unique @map("order_number")
+  paymentMethod      String?         @map("payment_method")
+  paymentStatus      PaymentStatus   @default(UNPAID) @map("payment_status")
+  phoneNumber        String?         @map("phone_number")
+  shippingAddress    String?         @map("shipping_address")
+  subtotal           Decimal         @db.Decimal(10, 2)
+  tax                Decimal         @default(0) @db.Decimal(10, 2)
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  userId             String          @map("user_id")
+  status             OrderStatus     @default(PENDING)
+  orderItems         OrderItem[]
+  users              User            @relation(fields: [userId], references: [id])
+  payments           Payment[]
   convertedQuotation Quotation?
+  stockHistory       stock_history[] @relation("OrderToStockHistory")
 
   @@index([orderNumber])
   @@index([status])
@@ -277,9 +272,8 @@ model Payment {
   recordedBy    String?       @map("recorded_by")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
-
-  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  recorder User? @relation(fields: [recordedBy], references: [id])
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recorder      User?         @relation(fields: [recordedBy], references: [id])
 
   @@index([orderId])
   @@index([status])
@@ -296,8 +290,7 @@ model Expense {
   recordedBy  String?  @map("recorded_by")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-
-  recorder User? @relation(fields: [recordedBy], references: [id])
+  recorder    User?    @relation(fields: [recordedBy], references: [id])
 
   @@index([category])
   @@index([date])
@@ -305,16 +298,16 @@ model Expense {
 }
 
 model OrderItem {
-  id             String            @id @default(uuid())
-  quantity       Int
-  orderId        String            @map("order_id")
-  productId      String            @map("product_id")
-  totalPrice     Decimal           @db.Decimal(10, 2) @map("total_price")
-  unitPrice      Decimal           @db.Decimal(10, 2) @map("unit_price")
-  variantId      String?           @map("variant_id")
-  order          Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product        Product           @relation(fields: [productId], references: [id])
-  variant        product_variants? @relation(fields: [variantId], references: [id])
+  id         String            @id @default(uuid())
+  quantity   Int
+  orderId    String            @map("order_id")
+  productId  String            @map("product_id")
+  totalPrice Decimal           @map("total_price") @db.Decimal(10, 2)
+  unitPrice  Decimal           @map("unit_price") @db.Decimal(10, 2)
+  variantId  String?           @map("variant_id")
+  order      Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product           @relation(fields: [productId], references: [id])
+  variant    product_variants? @relation(fields: [variantId], references: [id])
 
   @@map("order_items")
 }
@@ -325,10 +318,10 @@ model AuditLog {
   action     String
   entityType String?
   entityId   String?
+  createdAt  DateTime @default(now())
   changes    Json?
   ipAddress  String?
   userAgent  String?
-  createdAt  DateTime @default(now())
   user       User?    @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
@@ -337,9 +330,9 @@ model AuditLog {
 model Cart {
   id        String     @id @default(uuid())
   userId    String     @map("user_id")
-  status    CartStatus @default(ACTIVE)
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
+  status    CartStatus @default(ACTIVE)
   items     CartItem[]
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -349,57 +342,44 @@ model Cart {
 }
 
 model SystemSettings {
-  id              String   @id @default("CURRENT") // Singleton-like
-  
-  // General
-  systemName      String   @default("Shielder") @map("system_name")
-  companyName     String   @default("Shielder Digital") @map("company_name")
-  companyLogo     String?  @map("company_logo")
-  companyEmail    String?  @map("company_email")
-  companyPhone    String?  @map("company_phone")
-  companyAddress  String?  @map("company_address")
-  currency        String   @default("USD")
-  timezone        String   @default("UTC")
-  dateFormat      String   @default("YYYY-MM-DD") @map("date_format")
-  language        String   @default("en")
-
-  // Order
-  defaultOrderStatus          String  @default("PENDING") @map("default_order_status")
-  autoCompleteOrderAfterPayment Boolean @default(true) @map("auto_complete_order_after_payment")
-  allowPartialPayment         Boolean @default(false) @map("allow_partial_payment")
-  allowOrderCancellation      Boolean @default(true) @map("allow_order_cancellation")
-  autoCancelUnpaidOrdersHours Int?    @map("auto_cancel_unpaid_orders_hours")
-
-  // Payment
-  paymentMethodsEnabled       Json?   @map("payment_methods_enabled") // Array of strings
-  onlinePaymentEnabled        Boolean @default(true) @map("online_payment_enabled")
-  paymentTestMode             Boolean @default(true) @map("payment_test_mode")
-  paymentGatewayApiKey        String? @map("payment_gateway_api_key") // Encrypted
-  paymentGatewaySecretKey     String? @map("payment_gateway_secret_key") // Encrypted
-  paymentWebhookUrl           String? @map("payment_webhook_url")
-
-  // Notification
-  enableEmailNotifications    Boolean @default(true) @map("enable_email_notifications")
-  enableLowStockAlerts        Boolean @default(true) @map("enable_low_stock_alerts")
-  lowStockThreshold           Int     @default(5) @map("low_stock_threshold")
-  enableOrderStatusNotifications Boolean @default(true) @map("enable_order_status_notifications")
-  enablePaymentNotifications  Boolean @default(true) @map("enable_payment_notifications")
-  roleNotificationMappings    Json?   @map("role_notification_mappings")
-
-  // Security
-  passwordMinLength           Int     @default(8) @map("password_min_length")
-  maxLoginAttempts            Int     @default(5) @map("max_login_attempts")
-  accountLockDurationMinutes  Int     @default(30) @map("account_lock_duration_minutes")
-  sessionTimeoutMinutes       Int     @default(60) @map("session_timeout_minutes")
-  enableTwoFactorAuth         Boolean @default(false) @map("enable_two_factor_auth")
-  forceStrongPasswords        Boolean @default(true) @map("force_strong_passwords")
-
-  // Backup (Metadata)
-  lastBackupDate              DateTime? @map("last_backup_date")
-  autoBackupSchedule          String?   @map("auto_backup_schedule") // Cron string
-
-  updatedAt                   DateTime @updatedAt @map("updated_at")
-  updatedBy                   String?  @map("updated_by")
+  id                             String    @id @default("CURRENT")
+  systemName                     String    @default("Shielder") @map("system_name")
+  companyName                    String    @default("Shielder Digital") @map("company_name")
+  companyLogo                    String?   @map("company_logo")
+  companyEmail                   String?   @map("company_email")
+  companyPhone                   String?   @map("company_phone")
+  companyAddress                 String?   @map("company_address")
+  currency                       String    @default("USD")
+  timezone                       String    @default("UTC")
+  dateFormat                     String    @default("YYYY-MM-DD") @map("date_format")
+  language                       String    @default("en")
+  defaultOrderStatus             String    @default("PENDING") @map("default_order_status")
+  autoCompleteOrderAfterPayment  Boolean   @default(true) @map("auto_complete_order_after_payment")
+  allowPartialPayment            Boolean   @default(false) @map("allow_partial_payment")
+  allowOrderCancellation         Boolean   @default(true) @map("allow_order_cancellation")
+  autoCancelUnpaidOrdersHours    Int?      @map("auto_cancel_unpaid_orders_hours")
+  paymentMethodsEnabled          Json?     @map("payment_methods_enabled")
+  onlinePaymentEnabled           Boolean   @default(true) @map("online_payment_enabled")
+  paymentTestMode                Boolean   @default(true) @map("payment_test_mode")
+  paymentGatewayApiKey           String?   @map("payment_gateway_api_key")
+  paymentGatewaySecretKey        String?   @map("payment_gateway_secret_key")
+  paymentWebhookUrl              String?   @map("payment_webhook_url")
+  enableEmailNotifications       Boolean   @default(true) @map("enable_email_notifications")
+  enableLowStockAlerts           Boolean   @default(true) @map("enable_low_stock_alerts")
+  lowStockThreshold              Int       @default(5) @map("low_stock_threshold")
+  enableOrderStatusNotifications Boolean   @default(true) @map("enable_order_status_notifications")
+  enablePaymentNotifications     Boolean   @default(true) @map("enable_payment_notifications")
+  roleNotificationMappings       Json?     @map("role_notification_mappings")
+  passwordMinLength              Int       @default(8) @map("password_min_length")
+  maxLoginAttempts               Int       @default(5) @map("max_login_attempts")
+  accountLockDurationMinutes     Int       @default(30) @map("account_lock_duration_minutes")
+  sessionTimeoutMinutes          Int       @default(60) @map("session_timeout_minutes")
+  enableTwoFactorAuth            Boolean   @default(false) @map("enable_two_factor_auth")
+  forceStrongPasswords           Boolean   @default(true) @map("force_strong_passwords")
+  lastBackupDate                 DateTime? @map("last_backup_date")
+  autoBackupSchedule             String?   @map("auto_backup_schedule")
+  updatedAt                      DateTime  @updatedAt @map("updated_at")
+  updatedBy                      String?   @map("updated_by")
 
   @@map("system_settings")
 }
@@ -420,9 +400,9 @@ model CartItem {
   cartId      String   @map("cart_id")
   productId   String   @map("product_id")
   quantity    Int      @default(1)
-  priceAtTime Decimal  @map("price_at_time") @db.Decimal(10, 2)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  priceAtTime Decimal  @map("price_at_time") @db.Decimal(10, 2)
   cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -458,22 +438,21 @@ model category_spec_templates {
 
 model Notification {
   id            String           @id @default(uuid())
-  type          NotificationType
   title         String
   message       String
-  module        String?          // e.g., 'ORDER', 'INVENTORY', 'PAYMENT', 'USER'
-  roleTarget    UserRole?        @map("role_target")
-  userId        String?          @map("user_id")
-  relatedId     String?          @map("related_id")
-  triggeredById String?          @map("triggered_by_id")
-  triggeredBy   String?          @map("triggered_by")   // "System" or User Name
-  metadata      Json?
   isRead        Boolean          @default(false) @map("is_read")
   createdAt     DateTime         @default(now()) @map("created_at")
   deletedAt     DateTime?        @map("deleted_at")
-
-  user          User?            @relation(fields: [userId], references: [id])
+  metadata      Json?
+  module        String?
+  relatedId     String?          @map("related_id")
+  roleTarget    UserRole?        @map("role_target")
+  triggeredBy   String?          @map("triggered_by")
+  triggeredById String?          @map("triggered_by_id")
+  userId        String?          @map("user_id")
+  type          NotificationType
   triggerer     User?            @relation("NotificationTriggerer", fields: [triggeredById], references: [id])
+  user          User?            @relation(fields: [userId], references: [id])
 
   @@index([createdAt])
   @@index([isRead])
@@ -483,15 +462,15 @@ model Notification {
 }
 
 model NotificationPreference {
-  id           String   @id @default(uuid())
-  userId       String   @unique @map("user_id")
-  lowStock     Boolean  @default(true) @map("low_stock")
-  orderUpdates Boolean  @default(true) @map("order_updates")
-  payments     Boolean  @default(true)
-  newUser      Boolean  @default(true) @map("new_user")
-  email        Boolean  @default(true)
-  inApp        Boolean  @default(true) @map("in_app")
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String  @id @default(uuid())
+  userId       String  @unique @map("user_id")
+  lowStock     Boolean @default(true) @map("low_stock")
+  orderUpdates Boolean @default(true) @map("order_updates")
+  payments     Boolean @default(true)
+  newUser      Boolean @default(true) @map("new_user")
+  email        Boolean @default(true)
+  inApp        Boolean @default(true) @map("in_app")
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
 }
@@ -541,11 +520,74 @@ model stock_history {
   @@index([type])
 }
 
+model Quotation {
+  id               String              @id @default(uuid())
+  quotationNumber  String              @unique @map("quotation_number")
+  status           QuotationStatus     @default(DRAFT)
+  customerName     String              @map("customer_name")
+  customerEmail    String              @map("customer_email")
+  customerPhone    String?             @map("customer_phone")
+  customerAddress  String?             @map("customer_address")
+  companyName      String?             @map("company_name")
+  subtotal         Decimal             @db.Decimal(10, 2)
+  discount         Decimal             @default(0) @db.Decimal(10, 2)
+  tax              Decimal             @default(0) @db.Decimal(10, 2)
+  total            Decimal             @db.Decimal(10, 2)
+  notes            String?
+  terms            String?
+  quotationDate    DateTime            @default(now()) @map("quotation_date")
+  expiryDate       DateTime            @map("expiry_date")
+  createdById      String              @map("created_by_id")
+  convertedOrderId String?             @unique @map("converted_order_id")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  activities       QuotationActivity[]
+  items            QuotationItem[]
+  convertedOrder   Order?              @relation(fields: [convertedOrderId], references: [id])
+  createdBy        User                @relation("QuotationCreator", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([createdById])
+  @@index([expiryDate])
+  @@index([quotationNumber])
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          String    @id @default(uuid())
+  quotationId String    @map("quotation_id")
+  productId   String    @map("product_id")
+  productName String    @map("product_name")
+  quantity    Int
+  unitPrice   Decimal   @map("unit_price") @db.Decimal(10, 2)
+  discount    Decimal   @default(0) @db.Decimal(10, 2)
+  totalPrice  Decimal   @map("total_price") @db.Decimal(10, 2)
+  product     Product   @relation(fields: [productId], references: [id])
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@index([productId])
+  @@map("quotation_items")
+}
+
+model QuotationActivity {
+  id          String                @id @default(uuid())
+  quotationId String                @map("quotation_id")
+  action      QuotationActivityType
+  performedBy String                @map("performed_by")
+  note        String?
+  createdAt   DateTime              @default(now()) @map("created_at")
+  quotation   Quotation             @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@map("quotation_activities")
+}
+
 enum UserRole {
   SUPER_ADMIN
   ADMIN
-  SUPPLIER
   USER
+  SUPPLIER
   STAFF
 }
 
@@ -652,70 +694,4 @@ enum QuotationActivityType {
   DELETED
   EXPIRED
   REACTIVATED
-}
-
-model Quotation {
-  id               String              @id @default(uuid())
-  quotationNumber  String              @unique @map("quotation_number")
-  status           QuotationStatus     @default(DRAFT)
-  customerName     String              @map("customer_name")
-  customerEmail    String              @map("customer_email")
-  customerPhone    String?             @map("customer_phone")
-  customerAddress  String?             @map("customer_address")
-  companyName      String?             @map("company_name")
-  subtotal         Decimal             @db.Decimal(10, 2)
-  discount         Decimal             @default(0) @db.Decimal(10, 2)
-  tax              Decimal             @default(0) @db.Decimal(10, 2)
-  total            Decimal             @db.Decimal(10, 2)
-  notes            String?
-  terms            String?
-  quotationDate    DateTime            @default(now()) @map("quotation_date")
-  expiryDate       DateTime            @map("expiry_date")
-  createdById      String              @map("created_by_id")
-  convertedOrderId String?             @unique @map("converted_order_id")
-  createdAt        DateTime            @default(now()) @map("created_at")
-  updatedAt        DateTime            @updatedAt @map("updated_at")
-
-  createdBy        User                @relation("QuotationCreator", fields: [createdById], references: [id])
-  convertedOrder   Order?              @relation(fields: [convertedOrderId], references: [id])
-  items            QuotationItem[]
-  activities       QuotationActivity[]
-
-  @@index([status])
-  @@index([createdById])
-  @@index([expiryDate])
-  @@index([quotationNumber])
-  @@map("quotations")
-}
-
-model QuotationItem {
-  id          String    @id @default(uuid())
-  quotationId String    @map("quotation_id")
-  productId   String    @map("product_id")
-  productName String    @map("product_name")
-  quantity    Int
-  unitPrice   Decimal   @db.Decimal(10, 2) @map("unit_price")
-  discount    Decimal   @default(0) @db.Decimal(10, 2)
-  totalPrice  Decimal   @db.Decimal(10, 2) @map("total_price")
-
-  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id])
-
-  @@index([quotationId])
-  @@index([productId])
-  @@map("quotation_items")
-}
-
-model QuotationActivity {
-  id          String               @id @default(uuid())
-  quotationId String               @map("quotation_id")
-  action      QuotationActivityType
-  performedBy String               @map("performed_by")
-  note        String?
-  createdAt   DateTime             @default(now()) @map("created_at")
-
-  quotation   Quotation            @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-
-  @@index([quotationId])
-  @@map("quotation_activities")
 }

@@ -42,18 +42,25 @@ export const connectDatabase = async (): Promise<void> => {
     console.log('✅ Database connected successfully');
   } catch (error) {
     const isLocalhost = env.databaseUrl.includes('127.0.0.1') || env.databaseUrl.includes('localhost');
-    
+    const isProduction = process.env.NODE_ENV === 'production';
+
     console.error('❌ Database connection failed!');
-    console.error('Current DATABASE_URL:', isLocalhost ? 'Localhost (incorrect for Railway)' : 'Remote (check credentials)');
     console.error('Error Details:', error instanceof Error ? error.message : error);
-    
-    if (process.env.NODE_ENV === 'production' && isLocalhost) {
-      console.error('\n🔧 ACTION REQUIRED:');
-      console.error('Your app is running in PRODUCTION but trying to connect to LOCALHOST.');
-      console.error('Please go to Railway -> your backend service -> Variables');
-      console.error('And update DATABASE_URL with your Railway PostgreSQL connection string.');
+
+    if (isProduction && isLocalhost) {
+      console.error('\n🔧 ACTION REQUIRED (Production):');
+      console.error('Your app is running in PRODUCTION but DATABASE_URL points to localhost.');
+      console.error('Go to Railway → your backend service → Variables and set DATABASE_URL');
+      console.error('to your Railway PostgreSQL connection string.');
+    } else if (!isProduction && isLocalhost) {
+      console.error('\n🔧 Local development fix:');
+      console.error('Make sure PostgreSQL is running:  brew services start postgresql');
+      console.error('Check your backend/.env DATABASE_URL is:');
+      console.error('  postgresql://postgres:<password>@127.0.0.1:5432/shielderDB');
+    } else {
+      console.error('\n🔧 Check your DATABASE_URL credentials in backend/.env');
     }
-    
+
     process.exit(1);
   }
 };
