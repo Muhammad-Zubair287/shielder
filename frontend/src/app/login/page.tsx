@@ -226,9 +226,12 @@ function LoginPageContent() {
         {/* Right Side - Login Form */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative bg-white">
           {/* Back Button */}
-          <Link href={ROUTES.HOME} className={`absolute top-8 ${isRTL ? 'right-8' : 'left-8'} text-gray-400 hover:text-gray-700 transition-colors`}>
+          <button
+            onClick={() => window.history.length > 1 ? router.back() : router.push(ROUTES.HOME)}
+            className={`absolute top-8 ${isRTL ? 'right-8' : 'left-8'} text-gray-400 hover:text-gray-700 transition-colors`}
+          >
             <ChevronLeft className={`w-6 h-6 ${isRTL ? 'rotate-180' : ''}`} />
-          </Link>
+          </button>
 
           {/* Language Switcher */}
           <button
