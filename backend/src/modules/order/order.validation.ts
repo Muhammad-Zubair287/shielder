@@ -14,9 +14,10 @@ export const orderValidation = {
         quantity: Joi.number().integer().min(1).required(),
       })
     ).min(1).required(),
-    subtotal: Joi.number().required(),
-    tax: Joi.number().required(),
-    total: Joi.number().required(),
+    // Backend recalculates these from actual product prices — accept but don't require
+    subtotal: Joi.number().optional(),
+    tax: Joi.number().optional(),
+    total: Joi.number().optional(),
   }),
 
   updateStatus: Joi.object({

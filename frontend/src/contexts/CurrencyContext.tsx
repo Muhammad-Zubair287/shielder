@@ -22,12 +22,13 @@ const CurrencyContext = createContext<CurrencyCtx>({ currency: 'SAR' });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrency] = useState('SAR');
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
-    // Only fetch when authenticated — settings endpoint requires auth.
-    // Unauthenticated visitors get the default (SAR).
-    if (!isAuthenticated) return;
+    // Only admins can call GET /api/settings (requireRoles ADMIN|SUPER_ADMIN).
+    // Customers and unauthenticated users use the default ('SAR').
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    if (!isAuthenticated || !isAdmin) return;
 
     settingsService.getSettings()
       .then((res: any) => {
@@ -35,7 +36,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         if (cur) setCurrency(cur);
       })
       .catch(() => { /* keep default */ });
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.role]);
 
   return (
     <CurrencyContext.Provider value={{ currency }}>
