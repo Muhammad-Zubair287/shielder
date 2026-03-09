@@ -393,6 +393,47 @@ export class OrderService {
   }
 
   /**
+   * Get orders for the authenticated customer (customer self-service)
+   */
+  async getMyOrders(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const where: Prisma.OrderWhereInput = { userId };
+
+    const [total, orders] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        where,
+        include: {
+          orderItems: {
+            include: {
+              product: {
+                include: {
+                  translations: { where: { locale: 'en' }, select: { name: true } },
+                  attachments:  { where: { type: 'IMAGE' }, take: 1, select: { fileUrl: true } },
+                },
+              },
+            },
+          },
+          payments: { select: { amount: true, status: true, method: true } },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
    * Get summary for dashboard
    */
   async getOrderSummary() {

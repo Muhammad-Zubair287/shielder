@@ -11,6 +11,12 @@ const router = Router();
 router.use(authenticate);
 
 /**
+ * GET /api/orders/my
+ * Customer's own order history — must be before /:id so it isn't swallowed
+ */
+router.get('/my', orderController.getMyOrders.bind(orderController));
+
+/**
  * GET /api/orders/summary
  * Get order totals for dashboard summary cards
  */

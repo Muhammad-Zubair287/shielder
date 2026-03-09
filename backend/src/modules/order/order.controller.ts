@@ -178,6 +178,26 @@ export class OrderController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/orders/my
+   * Authenticated customer fetches their own orders.
+   */
+  async getMyOrders(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user?.id as string;
+      const page   = parseInt(req.query.page  as string || '1',  10);
+      const limit  = parseInt(req.query.limit as string || '10', 10);
+      const result = await orderService.getMyOrders(userId, page, limit);
+      res.json({
+        success: true,
+        message: 'Orders retrieved successfully',
+        ...result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const orderController = new OrderController();

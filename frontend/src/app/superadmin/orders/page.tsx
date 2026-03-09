@@ -93,7 +93,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Header */}}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-2xl font-black text-shielder-dark uppercase tracking-tight">{t('ordersTitle')}</h1>

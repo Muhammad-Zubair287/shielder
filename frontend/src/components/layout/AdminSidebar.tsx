@@ -308,12 +308,11 @@ export const AdminSidebar = () => {
         />
         <aside
           className={cn(
-            'absolute start-0 top-0 h-full w-[240px] shadow-2xl transition-transform duration-300',
+            'absolute start-0 top-0 h-full w-[240px] shadow-2xl transition-transform duration-300 bg-white',
             isMobileOpen
               ? 'translate-x-0'
               : isRTL ? 'translate-x-full' : '-translate-x-full'
           )}
-          className="bg-white"
         >
           <button
             onClick={() => setIsMobileOpen(false)}

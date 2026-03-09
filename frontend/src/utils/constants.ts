@@ -99,9 +99,15 @@ export const API_ENDPOINTS = {
   },
   // Orders
   ORDERS: {
-    BASE: 'orders',
-    BY_ID: (id: string) => `orders/${id}`,
+    BASE:          'orders',
+    MY:            'orders/my',
+    BY_ID:         (id: string) => `orders/${id}`,
     UPDATE_STATUS: (id: string) => `orders/${id}/status`,
+  },
+  // EPG Card Payment
+  EPG: {
+    INITIALIZE: 'epg/initialize',
+    CALLBACK:   'epg/callback',
   },
   // Admin User Management
   ADMIN_USERS: {

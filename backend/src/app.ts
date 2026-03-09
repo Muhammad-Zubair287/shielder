@@ -28,6 +28,7 @@ import profileRoutes from './modules/profile/profile.routes';
 import cartRoutes from './modules/cart/cart.routes';
 import orderRoutes from './modules/order/order.routes';
 import paymentRoutes from './modules/payment/payment.routes';
+import epgRoutes from './modules/payment/epg.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import quotationRoutes from './modules/quotation/quotation.routes';
@@ -137,6 +138,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/analytics`, analyticsRoutes);
     app.use(`${prefix}/orders`, orderRoutes);
     app.use(`${prefix}/payments`, paymentRoutes);
+    app.use(`${prefix}/epg`, epgRoutes);
     app.use(`${prefix}/reports`, reportsRoutes);
     app.use(`${prefix}/settings`, settingsRoutes);
     app.use(`${prefix}/quotations`, quotationRoutes);
