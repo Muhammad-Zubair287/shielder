@@ -79,8 +79,12 @@ export const env = {
       : ['http://localhost:3001', 'https://shielder-frontend.vercel.app'],
   },
 
-  // Frontend URL (for email links)
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3001',
+  // Frontend URL (for email links and redirects — ensure protocol is always present)
+  FRONTEND_URL: (() => {
+    const raw = process.env.FRONTEND_URL || 'http://localhost:3001';
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return `https://${raw}`;
+  })(),
 
   // Email Configuration
   EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'smtp',
