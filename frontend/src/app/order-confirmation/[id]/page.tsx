@@ -39,6 +39,7 @@ import LandingFooter from '@/app/home/_components/LandingFooter';
 import SARSymbol from '@/components/SARSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { orderService } from '@/services/order.service';
+import { useCart } from '@/contexts/CartContext';
 import { getImageUrl } from '@/utils/helpers';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ export default function OrderConfirmationPage() {
 
 function OrderConfirmationPageInner() {
   const { t, isRTL, locale } = useLanguage();
+  const { clearCart } = useCart();
   const { id }    = useParams<{ id: string }>();
   const qParams   = useSearchParams();
   const fromEPG   = qParams?.get('payment') === 'success';
@@ -120,6 +122,12 @@ function OrderConfirmationPageInner() {
   const [order,   setOrder]   = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+
+  // Clear cart when landing here from a successful EPG payment
+  useEffect(() => {
+    if (fromEPG) clearCart().catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromEPG]);
 
   useEffect(() => {
     if (!id) return;

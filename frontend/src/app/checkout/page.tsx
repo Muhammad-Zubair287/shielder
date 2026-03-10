@@ -199,6 +199,7 @@ function CheckoutPageInner() {
           notes:           form.notes || undefined,
         });
         if (res?.data?.paymentUrl) {
+          await clearCart();
           window.location.href = res.data.paymentUrl;
         } else {
           toast.error(t('checkout.paymentGatewayError'));
