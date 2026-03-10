@@ -78,12 +78,15 @@ export const useAuth = () => {
       } else if (response.user.role === 'ADMIN') {
         router.replace('/admin/dashboard');
       } else {
-        const redirectTo = typeof window !== 'undefined' ? sessionStorage.getItem('post_login_redirect') : null;
+        const redirectTo = typeof window !== 'undefined'
+          ? (sessionStorage.getItem('post_login_redirect') || sessionStorage.getItem('checkout_redirect'))
+          : null;
         if (redirectTo) {
           sessionStorage.removeItem('post_login_redirect');
+          sessionStorage.removeItem('checkout_redirect');
           router.replace(redirectTo);
         } else {
-          router.replace(ROUTES.CUSTOMER_DASHBOARD);
+          router.replace('/products');
         }
       }
 
