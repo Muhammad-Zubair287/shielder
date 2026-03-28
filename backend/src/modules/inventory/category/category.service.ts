@@ -148,6 +148,21 @@ export class CategoryService {
       where: { id },
       include: {
         translations: true, // Return ALL translations so admin can edit bilingual fields
+        subcategories: {
+          include: {
+            translations: true,
+            _count: {
+              select: { products: true },
+            },
+            products: {
+              include: {
+                translations: true,
+              },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
         _count: {
           select: { subcategories: true, products: true },
         },
@@ -161,6 +176,38 @@ export class CategoryService {
     const localeTranslation = category.translations.find(t => t.locale === locale);
     const enTranslation = category.translations.find(t => t.locale === 'en');
     const arTranslation = category.translations.find(t => t.locale === 'ar');
+    const formattedSubcategories = category.subcategories.map((sub) => {
+      const subLocaleTranslation = sub.translations.find(t => t.locale === locale) || sub.translations[0];
+      const subEnTranslation = sub.translations.find(t => t.locale === 'en');
+      const subArTranslation = sub.translations.find(t => t.locale === 'ar');
+
+      const formattedProducts = sub.products.map((product) => {
+        const productLocaleTranslation = product.translations.find(t => t.locale === locale) || product.translations[0];
+        const productEnTranslation = product.translations.find(t => t.locale === 'en');
+        const productArTranslation = product.translations.find(t => t.locale === 'ar');
+
+        return {
+          ...product,
+          name: productLocaleTranslation?.name || productEnTranslation?.name || '',
+          description: productLocaleTranslation?.description || productEnTranslation?.description || '',
+          nameEn: productEnTranslation?.name || '',
+          descriptionEn: productEnTranslation?.description || '',
+          nameAr: productArTranslation?.name || '',
+          descriptionAr: productArTranslation?.description || '',
+        };
+      });
+
+      return {
+        ...sub,
+        name: subLocaleTranslation?.name || subEnTranslation?.name || '',
+        description: subLocaleTranslation?.description || subEnTranslation?.description || '',
+        nameEn: subEnTranslation?.name || '',
+        descriptionEn: subEnTranslation?.description || '',
+        nameAr: subArTranslation?.name || '',
+        descriptionAr: subArTranslation?.description || '',
+        products: formattedProducts,
+      };
+    });
 
     return {
       ...category,
@@ -172,6 +219,7 @@ export class CategoryService {
       descriptionEn: enTranslation?.description || '',
       nameAr: arTranslation?.name || '',
       descriptionAr: arTranslation?.description || '',
+      subcategories: formattedSubcategories,
     };
   }
 

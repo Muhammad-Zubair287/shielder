@@ -9,6 +9,18 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './common/logger/logger';
 import http from 'http';
 
+// Global error handlers - set these FIRST before anything else
+process.on('uncaughtException', (error: Error) => {
+  console.error('[GLOBAL] Uncaught Exception:', error.message);
+  console.error('[GLOBAL] Stack:', error.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  console.error('[GLOBAL] Unhandled Rejection:', reason);
+  process.exit(1);
+});
+
 /**
  * Start the server
  */
@@ -21,7 +33,7 @@ const startServer = async (): Promise<void> => {
     const app = createApp();
 
     // Start listening
-    const server = app.listen(env.port, () => {
+    const server = app.listen(env.port, '0.0.0.0', () => {
       logger.info(`🚀 Shielder API Server started successfully`, {
         port: env.port,
         environment: env.nodeEnv,
@@ -30,6 +42,11 @@ const startServer = async (): Promise<void> => {
       console.log(`\n✅ Server is running on http://localhost:${env.port}`);
       console.log(`✅ API Endpoint: http://localhost:${env.port}/api`);
       console.log(`✅ Health Check: http://localhost:${env.port}/health\n`);
+    });
+    
+    server.on('error', (err) => {
+      console.error('Server error:', err);
+      process.exit(1);
     });
 
     // Keep-alive self-ping on Railway production to prevent cold-start sleeps.

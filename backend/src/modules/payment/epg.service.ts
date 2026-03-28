@@ -88,24 +88,11 @@ export class EPGService {
     const amount   = Number(order.total);
     const currency = 'SAR';
 
-    // 2. If no real API key is configured — use simulated/demo mode
-    if (!config.apiKey || config.apiKey.length < 10) {
-      logger.warn('[EPG] API key not configured — running in simulated mode');
-      const simSessionId = `sim_${order.id}`;
-      // In simulated mode redirect directly to the order confirmation page.
-      const simulatedUrl =
-        `${params.successUrl}/${order.id}?payment=success`;
-
-      return {
-        orderId:     order.id,
-        orderNumber: order.orderNumber,
-        sessionId:   simSessionId,
-        paymentUrl:  simulatedUrl,
-        testMode:    true,
-      };
+    if (!config.apiKey) {
+      throw new BadRequestError('Payment gateway is not configured. Please contact support.');
     }
 
-    // 3. Call the real EPG API
+    // 2. Call the real EPG API
     const payload = {
       amount:      Math.round(amount * 100), // smallest currency unit (halalas)
       currency,
