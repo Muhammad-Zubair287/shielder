@@ -91,7 +91,11 @@ class AuthService {
    */
   async resendVerificationEmail(email: string): Promise<void> {
     try {
-      await apiClient.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email });
+      await apiClient.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email }, {
+        // Add timeout of 10 seconds for resend endpoint
+        // This prevents the request from hanging if email service is misconfigured
+        timeout: 10000,
+      });
     } catch (error) {
       throw new Error(handleApiError(error));
     }

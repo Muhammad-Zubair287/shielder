@@ -51,6 +51,9 @@ class EmailService {
               user: env.SMTP_USER,
               pass: env.SMTP_PASSWORD,
             },
+            // Add connection timeout (5 seconds) to prevent hanging
+            connectionTimeout: 5000,
+            socketTimeout: 5000,
           });
           break;
 
@@ -63,6 +66,9 @@ class EmailService {
               user: 'apikey',
               pass: env.SENDGRID_API_KEY,
             },
+            // Add connection timeout (5 seconds) to prevent hanging
+            connectionTimeout: 5000,
+            socketTimeout: 5000,
           });
           break;
 
@@ -75,6 +81,9 @@ class EmailService {
               user: env.AWS_SES_ACCESS_KEY,
               pass: env.AWS_SES_SECRET_KEY,
             },
+            // Add connection timeout (5 seconds) to prevent hanging
+            connectionTimeout: 5000,
+            socketTimeout: 5000,
           });
           break;
 
