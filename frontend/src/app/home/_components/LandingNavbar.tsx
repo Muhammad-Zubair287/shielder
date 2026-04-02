@@ -74,16 +74,6 @@ export default function LandingNavbar() {
           </div>
         </div>
 
-        {searchOpen && (
-          <div className="md:hidden pb-3">
-            <div className="relative">
-              <Search size={14} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-              <input ref={searchRef} type="text" placeholder={t('landingNavSearchPlaceholder')}
-                className={`w-full bg-gray-100 rounded-full text-sm py-2.5 outline-none focus:ring-2 focus:ring-[#F97316]/30 ${isRTL ? 'pr-8 pl-4 text-right' : 'pl-8 pr-4'}`}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {mobileOpen && (
