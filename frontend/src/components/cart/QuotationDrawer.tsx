@@ -198,8 +198,13 @@ export default function QuotationDrawer() {
                   {/* Qty controls */}
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={() => updateQty(item.productId, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
+                      onClick={() => {
+                        if (item.quantity <= 1) {
+                          removeItem(item.productId);
+                          return;
+                        }
+                        updateQty(item.productId, item.quantity - 1);
+                      }}
                       className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
                     >
                       <Minus size={10} />

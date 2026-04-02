@@ -808,50 +808,51 @@ function ProductsContent() {
             <p className="text-gray-500 text-base sm:text-lg">{t('productsPageSubtitle')}</p>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search size={18} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'right-4' : 'left-4'}`} />
-            <input type="search" value={searchInput}
-              aria-label={t('productsSearchPlaceholder')}
-              onChange={e => handleSearchChange(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              placeholder={t('productsSearchPlaceholder')}
-              className={`w-full bg-white border border-gray-200 rounded-2xl py-3 text-sm text-gray-900 placeholder-gray-400
-                focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6] transition-colors
-                ${isRTL ? 'pr-12 pl-10 text-right' : 'pl-12 pr-10'}`} />
-            {searchInput && (
-              <button onClick={() => handleSearchChange('')}
-                aria-label="Clear search"
-                className={`absolute top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 ${isRTL ? 'left-3' : 'right-3'}`}>
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Tab bar */}
-          <div className={`flex items-center bg-gray-100 border border-gray-200 rounded-2xl p-1.5 gap-1 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            {([['buy', 'productsTabBuy'], ['quotation', 'productsTabQuotation']] as const).map(([tab, key]) => (
-              <button key={tab} onClick={() => handleTabChange(tab)}
-                aria-pressed={activeTab === tab}
-                className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
-                  ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
-                {t(key)}
-              </button>
-            ))}
-            <button onClick={() => { setDraftFilters(appliedFilters); setFilterOpen(true); }}
-              aria-haspopup="dialog"
-              aria-expanded={filterOpen}
-              aria-label={t('productsFilterAll')}
-              className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors whitespace-nowrap ml-auto
-                ${activeFilterCount > 0 ? 'bg-[#0205A6] text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-              {t('productsFilterAll')}
-              <Filter size={14} className={activeFilterCount > 0 ? 'text-white' : 'text-gray-500'} />
-              {activeFilterCount > 0 && (
-                <span className="bg-white text-[#0205A6] text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
+          {/* Search + Tab bar */}
+          <div className={`flex flex-col lg:flex-row lg:items-center gap-3 mb-6 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+            <div className="relative w-full lg:max-w-md xl:max-w-lg">
+              <Search size={18} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'right-4' : 'left-4'}`} />
+              <input type="search" value={searchInput}
+                aria-label={t('productsSearchPlaceholder')}
+                onChange={e => handleSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder={t('productsSearchPlaceholder')}
+                className={`w-full bg-white border border-gray-200 rounded-2xl py-3 text-sm text-gray-900 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6] transition-colors
+                  ${isRTL ? 'pr-12 pl-10 text-right' : 'pl-12 pr-10'}`} />
+              {searchInput && (
+                <button onClick={() => handleSearchChange('')}
+                  aria-label="Clear search"
+                  className={`absolute top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 ${isRTL ? 'left-3' : 'right-3'}`}>
+                  <X size={16} />
+                </button>
               )}
-            </button>
+            </div>
+
+            <div className={`flex-1 flex items-center bg-gray-100 border border-gray-200 rounded-2xl p-1.5 gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              {([['buy', 'productsTabBuy'], ['quotation', 'productsTabQuotation']] as const).map(([tab, key]) => (
+                <button key={tab} onClick={() => handleTabChange(tab)}
+                  aria-pressed={activeTab === tab}
+                  className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
+                    ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
+                  {t(key)}
+                </button>
+              ))}
+              <button onClick={() => { setDraftFilters(appliedFilters); setFilterOpen(true); }}
+                aria-haspopup="dialog"
+                aria-expanded={filterOpen}
+                aria-label={t('productsFilterAll')}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors whitespace-nowrap ml-auto
+                  ${activeFilterCount > 0 ? 'bg-[#0205A6] text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                {t('productsFilterAll')}
+                <Filter size={14} className={activeFilterCount > 0 ? 'text-white' : 'text-gray-500'} />
+                {activeFilterCount > 0 && (
+                  <span className="bg-white text-[#0205A6] text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Active badges */}

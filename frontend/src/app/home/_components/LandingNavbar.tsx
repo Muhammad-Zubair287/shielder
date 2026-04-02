@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Menu, X, MessageCircle } from 'lucide-react';
+import { Menu, X, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import CartBadge from '@/components/cart/CartBadge';
@@ -15,8 +15,6 @@ export default function LandingNavbar() {
   const { t, isRTL } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -24,15 +22,10 @@ export default function LandingNavbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    if (searchOpen) searchRef.current?.focus();
-  }, [searchOpen]);
-
   const navLinks = [
     { label: t('landingNavHome'),     href: '/home'     },
     { label: t('landingNavProducts'), href: '/products' },
     { label: 'Request a Quote',       href: '/generate-quotation' },
-    { label: 'Admin Portal',          href: '/login'    },
     { label: t('landingNavContact'),  href: '/contact'  },
     { label: t('landingNavLogin'),    href: '/login'    },
   ];
@@ -66,23 +59,8 @@ export default function LandingNavbar() {
 
           <div className="flex-1" />
 
-          {/* Search */}
-          <div className="hidden md:flex w-60 lg:w-72">
-            <div className="relative w-full">
-              <Search size={14} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-              <input type="text" placeholder={t('landingNavSearchPlaceholder')}
-                className={`w-full bg-gray-100 hover:bg-gray-200 focus:bg-white rounded-full text-sm py-2 text-gray-700 outline-none focus:ring-2 focus:ring-[#F97316]/30 placeholder:text-gray-400 transition-all ${
-                  isRTL ? 'pr-8 pl-4 text-right' : 'pl-8 pr-4'
-                }`}
-              />
-            </div>
-          </div>
-
           {/* Actions */}
           <div className={`flex items-center gap-0.5 ${isRTL ? 'flex-row-reverse' : ''} ml-2`}>
-            <button className="md:hidden p-2 text-gray-600 hover:text-[#F97316] rounded-lg" onClick={() => setSearchOpen(v => !v)}>
-              <Search size={20} />
-            </button>
             <LanguageSwitcher variant="pills" />
             <a href="https://wa.me/966506814416" target="_blank" rel="noopener noreferrer"
               className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors">
@@ -118,8 +96,6 @@ export default function LandingNavbar() {
           ))}
         </div>
       )}
-
-      {/* Quotation basket drawer — outside header to avoid stacking context */}
     </header>
     <QuotationDrawer />
     <LiveChatWidget />

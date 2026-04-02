@@ -22,6 +22,41 @@ export class CartController {
     return messages[lang]?.[key] || messages['en'][key];
   }
 
+  private static normalizeCart(cart: any, lang: string) {
+    let totalAmount = 0;
+
+    const items = (cart?.items || []).map((item: any) => {
+      const translation = item.product.translations.find((t: any) => t.locale === lang)
+        || item.product.translations.find((t: any) => t.locale === 'en');
+
+      const itemPrice = Number(item.priceAtTime);
+      const subtotal = itemPrice * item.quantity;
+      totalAmount += subtotal;
+
+      return {
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        priceAtTime: itemPrice,
+        subtotal,
+        product: {
+          id: item.product.id,
+          name: translation?.name || 'Unknown',
+          description: translation?.description,
+          thumbnail: item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
+          isActive: item.product.isActive,
+        },
+      };
+    });
+
+    return {
+      ...cart,
+      items,
+      totalAmount,
+      currency: 'USD',
+    };
+  }
+
   /**
    * @swagger
    * /api/cart:
@@ -38,43 +73,10 @@ export class CartController {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
       const cart: any = await CartService.getCart(userId);
-      
-      let totalAmount = 0;
-
-      // Sanitize and calculate item subtotals
-      if (cart && cart.items) {
-        cart.items = cart.items.map((item: any) => {
-          const translation = item.product.translations.find((t: any) => t.locale === lang) 
-            || item.product.translations.find((t: any) => t.locale === 'en');
-          
-          const itemPrice = Number(item.priceAtTime);
-          const subtotal = itemPrice * item.quantity;
-          totalAmount += subtotal;
-
-          return {
-            id: item.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            priceAtTime: itemPrice,
-            subtotal: subtotal,
-            product: {
-              id: item.product.id,
-              name: translation?.name || 'Unknown',
-              description: translation?.description,
-              thumbnail: item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
-              isActive: item.product.isActive,
-            }
-          };
-        });
-      }
 
       res.status(200).json({
         success: true,
-        data: {
-          ...cart,
-          totalAmount: totalAmount,
-          currency: 'USD', // You can make this dynamic based on locale
-        },
+        data: CartController.normalizeCart(cart, lang),
       });
     } catch (error) {
       next(error);
@@ -107,12 +109,13 @@ export class CartController {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
       const { productId, quantity } = req.body;
-      const cartItem = await CartService.addItem(userId, productId, quantity);
+      await CartService.addItem(userId, productId, quantity);
+      const cart = await CartService.getCart(userId);
       
       res.status(201).json({
         success: true,
         message: CartController.getMessage(lang, 'added'),
-        data: cartItem,
+        data: CartController.normalizeCart(cart, lang),
       });
     } catch (error) {
       next(error);
@@ -145,12 +148,13 @@ export class CartController {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
       const { productId, quantity } = req.body;
-      const cartItem = await CartService.updateItem(userId, productId, quantity);
+      await CartService.updateItem(userId, productId, quantity);
+      const cart = await CartService.getCart(userId);
       
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'updated'),
-        data: cartItem,
+        data: CartController.normalizeCart(cart, lang),
       });
     } catch (error) {
       next(error);
@@ -179,10 +183,12 @@ export class CartController {
       const lang = req.user!.preferredLanguage || 'en';
       const { productId } = req.params;
       await CartService.removeItem(userId, productId as string);
+      const cart = await CartService.getCart(userId);
       
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'removed'),
+        data: CartController.normalizeCart(cart, lang),
       });
     } catch (error) {
       next(error);
@@ -205,10 +211,12 @@ export class CartController {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
       await CartService.clearCart(userId);
+      const cart = await CartService.getCart(userId);
       
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'cleared'),
+        data: CartController.normalizeCart(cart, lang),
       });
     } catch (error) {
       next(error);

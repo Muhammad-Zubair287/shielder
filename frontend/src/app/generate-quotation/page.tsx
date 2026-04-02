@@ -5,7 +5,8 @@
  *
  * Customer self-service quotation form.
  * Reads selected product(s) from sessionStorage (set by products page).
- * Falls back to cart items if nothing selected.
+ * Does not fall back to cart items; quotation requests should come from the
+ * explicit Get Quotation flow.
  * Requires authentication — redirects to /login if not signed in.
  */
 
@@ -19,7 +20,6 @@ import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
-import { useCart } from '@/contexts/CartContext';
 import customerQuotationService, { QuotationProduct } from '@/services/customerQuotation.service';
 import { getImageUrl } from '@/utils/helpers';
 import SARSymbol from '@/components/SARSymbol';
@@ -104,7 +104,6 @@ function Field({
 export default function GenerateQuotationPage() {
   const { t, isRTL } = useLanguage();
   const { isAuthenticated } = useAuthStore();
-  const { cart } = useCart();
   const router = useRouter();
 
   const [products, setProducts] = useState<QuotationProduct[]>([]);
@@ -132,19 +131,7 @@ export default function GenerateQuotationPage() {
       }
     } catch { /* ignore */ }
 
-    // Fall back to cart items
-    if (cart.items.length > 0) {
-      setProducts(
-        cart.items.map(item => ({
-          productId: item.productId,
-          name:      item.product.name,
-          price:     item.priceAtTime,
-          quantity:  item.quantity,
-          thumbnail: item.product.thumbnail,
-        })),
-      );
-    }
-  }, [isAuthenticated, router, cart.items]);
+  }, [isAuthenticated, router]);
 
   // ── Field change ────────────────────────────────────────────────────────────
 
@@ -277,7 +264,7 @@ export default function GenerateQuotationPage() {
               {products.length === 0 && (
                 <div className={`mb-6 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  {t('quot.productsRequired')}
+                  {t('quot.productsRequired') || 'Add products using Get Quotation before generating a PDF.'}
                 </div>
               )}
 

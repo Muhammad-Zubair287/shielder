@@ -8,6 +8,7 @@ import { CartProvider } from '@/contexts/CartContext';
 import { QuotationProvider } from '@/contexts/QuotationContext';
 import { NavigationProgress } from '@/components/NavigationProgress';
 import { ThemeClientWrapper } from '@/components/layout/ThemeClientWrapper';
+import SmartBackButton from '@/components/layout/SmartBackButton';
 import { DirSync } from '@/components/DirSync';
 import SessionTimeoutWatcher from '@/components/providers/SessionTimeoutWatcher';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <DirSync />
         <NavigationProgress />
         <ThemeClientWrapper />
+        <SmartBackButton />
         <LanguageProvider>
           <AuthProvider>
             <SessionTimeoutWatcher />

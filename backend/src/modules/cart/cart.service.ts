@@ -59,6 +59,40 @@ export class CartService {
   }
 
   /**
+   * Lightweight helper for mutation flows that only need cart id.
+   */
+  private static async getOrCreateActiveCartId(userId: string): Promise<string> {
+    const cart = await prisma.cart.findFirst({
+      where: {
+        userId,
+        status: CartStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
+
+    if (cart) return cart.id;
+
+    const created = await prisma.cart.create({
+      data: {
+        userId,
+        status: CartStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
+
+    logger.info(`New active cart created for user: ${userId}`);
+    return created.id;
+  }
+
+  private static async getActiveCartId(userId: string): Promise<string | null> {
+    const cart = await prisma.cart.findFirst({
+      where: { userId, status: CartStatus.ACTIVE },
+      select: { id: true },
+    });
+    return cart?.id ?? null;
+  }
+
+  /**
    * Get user cart
    */
   static async getCart(userId: string) {
@@ -92,13 +126,13 @@ export class CartService {
     }
 
     // 3. Get or create active cart
-    const cart = await this.getOrCreateActiveCart(userId);
+    const cartId = await this.getOrCreateActiveCartId(userId);
 
     // 4. Add or update item in cart with price snapshot
     const cartItem = await prisma.cartItem.upsert({
       where: {
         cartId_productId: {
-          cartId: cart.id,
+          cartId,
           productId,
         },
       },
@@ -109,7 +143,7 @@ export class CartService {
         priceAtTime: product.price, // Update snapshot to current price
       },
       create: {
-        cartId: cart.id,
+        cartId,
         productId,
         quantity,
         priceAtTime: product.price, // Snapshot price
@@ -128,11 +162,9 @@ export class CartService {
       return this.removeItem(userId, productId);
     }
 
-    const cart = await prisma.cart.findFirst({
-      where: { userId, status: CartStatus.ACTIVE },
-    });
+    const cartId = await this.getActiveCartId(userId);
 
-    if (!cart) {
+    if (!cartId) {
       throw new NotFoundError('Active cart not found');
     }
 
@@ -152,7 +184,7 @@ export class CartService {
     const updatedItem = await prisma.cartItem.update({
       where: {
         cartId_productId: {
-          cartId: cart.id,
+          cartId,
           productId,
         },
       },
@@ -169,18 +201,16 @@ export class CartService {
    * Remove item from cart
    */
   static async removeItem(userId: string, productId: string) {
-    const cart = await prisma.cart.findFirst({
-      where: { userId, status: CartStatus.ACTIVE },
-    });
+    const cartId = await this.getActiveCartId(userId);
 
-    if (!cart) {
+    if (!cartId) {
       throw new NotFoundError('Active cart not found');
     }
 
     await prisma.cartItem.delete({
       where: {
         cartId_productId: {
-          cartId: cart.id,
+          cartId,
           productId,
         },
       },
@@ -193,13 +223,11 @@ export class CartService {
    * Clear all items from cart
    */
   static async clearCart(userId: string) {
-    const cart = await prisma.cart.findFirst({
-      where: { userId, status: CartStatus.ACTIVE },
-    });
+    const cartId = await this.getActiveCartId(userId);
 
-    if (cart) {
+    if (cartId) {
       await prisma.cartItem.deleteMany({
-        where: { cartId: cart.id },
+        where: { cartId },
       });
       logger.info(`Cart cleared for user ${userId}`);
     }

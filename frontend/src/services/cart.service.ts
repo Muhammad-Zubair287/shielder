@@ -84,23 +84,41 @@ async function fetchCart(): Promise<Cart> {
   return res.data.data as Cart;
 }
 
+function isCartPayload(data: unknown): data is Cart {
+  if (!data || typeof data !== 'object') return false;
+  const maybeCart = data as Partial<Cart>;
+  return Array.isArray(maybeCart.items) && typeof maybeCart.totalAmount === 'number';
+}
+
 async function apiAddItem(productId: string, quantity: number): Promise<Cart> {
-  await apiClient.post(API_ENDPOINTS.CART.ADD, { productId, quantity });
+  const res = await apiClient.post(API_ENDPOINTS.CART.ADD, { productId, quantity });
+  if (isCartPayload(res.data?.data)) {
+    return res.data.data;
+  }
   return fetchCart();
 }
 
 async function apiUpdateItem(productId: string, quantity: number): Promise<Cart> {
-  await apiClient.put(API_ENDPOINTS.CART.UPDATE, { productId, quantity });
+  const res = await apiClient.put(API_ENDPOINTS.CART.UPDATE, { productId, quantity });
+  if (isCartPayload(res.data?.data)) {
+    return res.data.data;
+  }
   return fetchCart();
 }
 
 async function apiRemoveItem(productId: string): Promise<Cart> {
-  await apiClient.delete(API_ENDPOINTS.CART.REMOVE(productId));
+  const res = await apiClient.delete(API_ENDPOINTS.CART.REMOVE(productId));
+  if (isCartPayload(res.data?.data)) {
+    return res.data.data;
+  }
   return fetchCart();
 }
 
 async function apiClearCart(): Promise<Cart> {
-  await apiClient.delete(API_ENDPOINTS.CART.CLEAR);
+  const res = await apiClient.delete(API_ENDPOINTS.CART.CLEAR);
+  if (isCartPayload(res.data?.data)) {
+    return res.data.data;
+  }
   return { items: [], totalAmount: 0 };
 }
 
