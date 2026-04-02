@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { OrderService } from '@/services/order.service';
-import { CustomerQuotationService } from '@/services/customer-quotation.service';
+import { orderService } from '@/services/order.service';
+import customerQuotationService from '@/services/customerQuotation.service';
 import { DASHBOARD_LABELS } from '@/constants/ui.constants';
 import {
   DashboardActivityItem,
@@ -47,8 +47,8 @@ export default function CustomerDashboard() {
     try {
       setLoading(true);
       const [ordersData, quotationsData] = await Promise.all([
-        OrderService.getMyOrders(),
-        CustomerQuotationService.getMyQuotations(),
+        orderService.getMyOrders(),
+        customerQuotationService.getMyQuotations(),
       ]);
       setOrders(ordersData || []);
       setQuotations(quotationsData || []);
