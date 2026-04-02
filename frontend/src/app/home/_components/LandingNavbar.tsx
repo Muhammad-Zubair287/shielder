@@ -9,6 +9,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import CartBadge from '@/components/cart/CartBadge';
 import QuotationBadge from '@/components/cart/QuotationBadge';
 import QuotationDrawer from '@/components/cart/QuotationDrawer';
+import LiveChatWidget from '@/components/LiveChatWidget';
 
 export default function LandingNavbar() {
   const { t, isRTL } = useLanguage();
@@ -30,6 +31,8 @@ export default function LandingNavbar() {
   const navLinks = [
     { label: t('landingNavHome'),     href: '/home'     },
     { label: t('landingNavProducts'), href: '/products' },
+    { label: 'Request a Quote',       href: '/generate-quotation' },
+    { label: 'Admin Portal',          href: '/login'    },
     { label: t('landingNavContact'),  href: '/contact'  },
     { label: t('landingNavLogin'),    href: '/login'    },
   ];
@@ -119,6 +122,7 @@ export default function LandingNavbar() {
       {/* Quotation basket drawer — outside header to avoid stacking context */}
     </header>
     <QuotationDrawer />
+    <LiveChatWidget />
     </>
   );
 }

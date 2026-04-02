@@ -44,7 +44,7 @@ class SettingsController {
           req.user?.id as string,
           'general',
           { companyLogo: logoPath },
-          req.ip as any
+          req.ip || ''
         );
         res.json({ success: true, message: 'Company logo updated', data: { companyLogo: logoPath } });
       })
@@ -86,9 +86,9 @@ class SettingsController {
     const userId = (req.user?.id as string) || '';
     // Derive section from URL path (e.g., /general → 'general')
     const section = req.path.split('/').filter(Boolean)[0] || (req.params.section as string) || '';
-    const ipAddress = (req.ip as any) || '';
+    const ipAddress = req.ip || '';
 
-    const data = await (SettingsService as any).updateSettings(userId, section, req.body, ipAddress);
+    const data = await SettingsService.updateSettings(userId, section, req.body, ipAddress);
     res.json({ success: true, message: `${section} settings updated successfully`, data });
   });
 

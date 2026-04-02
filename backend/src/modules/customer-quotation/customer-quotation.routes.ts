@@ -21,4 +21,10 @@ router.get('/:id', CustomerQuotationController.getById);
 // GET   /api/customer-quotations/:id/pdf    → stream PDF download
 router.get('/:id/pdf', CustomerQuotationController.downloadPDF);
 
+// POST  /api/customer-quotations/:id/accept → customer accepts quotation
+router.post('/:id/accept', CustomerQuotationController.accept);
+
+// POST  /api/customer-quotations/:id/reject → customer rejects quotation
+router.post('/:id/reject', CustomerQuotationController.reject);
+
 export default router;

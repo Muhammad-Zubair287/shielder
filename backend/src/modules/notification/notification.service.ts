@@ -8,6 +8,32 @@ import { NotFoundError } from '@/common/errors/api.error';
 import { NotificationType, UserRole, Prisma } from '@prisma/client';
 import { emailService } from '@/common/services/email.service';
 
+type NotificationMetadata = Prisma.InputJsonValue | null;
+
+type NotificationTarget = {
+  id: string;
+  email: string;
+  notificationPreferences: {
+    inApp: boolean;
+    email: boolean;
+    lowStock: boolean;
+    orderUpdates: boolean;
+    payments: boolean;
+    newUser: boolean;
+  } | null;
+};
+
+type NotificationPreferencesUpdate = {
+  inApp?: boolean;
+  email?: boolean;
+  lowStock?: boolean;
+  orderUpdates?: boolean;
+  payments?: boolean;
+  newUser?: boolean;
+};
+
+type NotificationCreateData = Prisma.NotificationUncheckedCreateInput;
+
 class NotificationService {
   /**
    * Main Notification Trigger
@@ -23,7 +49,7 @@ class NotificationService {
     relatedId?: string;
     triggeredById?: string;
     triggeredBy?: string;
-    metadata?: any;
+    metadata?: NotificationMetadata;
     sendEmail?: boolean;
     force?: boolean; // If true, skip duplicate check
     global?: boolean; // If true, notify all Super Admins
@@ -50,7 +76,7 @@ class NotificationService {
     let globalOrderStatusEnabled = true;
     let globalPaymentEnabled = true;
     try {
-      const sysSettings = await (prisma as any).systemSettings.findUnique({ where: { id: 'CURRENT' } });
+      const sysSettings = await prisma.systemSettings.findUnique({ where: { id: 'CURRENT' } });
       if (sysSettings) {
         globalEmailEnabled = sysSettings.enableEmailNotifications ?? true;
         globalLowStockEnabled = sysSettings.enableLowStockAlerts ?? true;
@@ -67,7 +93,7 @@ class NotificationService {
     if (['PAYMENT_SUCCESSFUL', 'PAYMENT_FAILED'].includes(type) && !globalPaymentEnabled) return;
 
     // 1. Identify Target Users
-    let targets: any[] = [];
+    let targets: NotificationTarget[] = [];
     if (userId) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -204,7 +230,7 @@ class NotificationService {
     }
 
     if (read !== undefined) where.isRead = read;
-    if (type) where.type = type as any;
+    if (type) where.type = type as NotificationType;
     if (module) where.module = module;
     
     if (search) {
@@ -330,7 +356,7 @@ class NotificationService {
   /**
    * Update User Notification Preferences
    */
-  static async updatePreferences(userId: string, data: any) {
+  static async updatePreferences(userId: string, data: NotificationPreferencesUpdate) {
     return prisma.notificationPreference.upsert({
       where: { userId },
       create: { ...data, userId },
@@ -365,7 +391,7 @@ class NotificationService {
   /**
    * Simple create (for internal use, bypassing preferences)
    */
-  static async createNotification(data: any) {
+  static async createNotification(data: NotificationCreateData) {
     return prisma.notification.create({ data });
   }
 }

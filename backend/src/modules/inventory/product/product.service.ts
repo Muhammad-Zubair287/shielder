@@ -31,25 +31,55 @@ export interface ProductFilters {
   locale?: string;
 }
 
+interface FilterOption {
+  id: string;
+  name: string;
+  count: number;
+}
+
+type ProductTranslationInput = {
+  locale: string;
+  name: string;
+  description?: string;
+};
+
+type ProductSpecificationInput = {
+  specKey: string;
+  specValue: string;
+};
+
+type ProductAttachmentInput = {
+  type: string;
+  fileName: string;
+  fileUrl: string;
+  mimeType?: string;
+  size?: number;
+  language?: string;
+};
+
+type ProductUpsertPayload = {
+  sku?: string;
+  categoryId: string;
+  subcategoryId: string;
+  brandId?: string;
+  supplierId?: string;
+  price: number;
+  stock: number;
+  minimumStockThreshold?: number;
+  isActive?: boolean;
+  status?: ProductStatus;
+  mainImage?: string;
+  filterNumber?: string;
+  alternateNumbers?: string;
+  filterType?: string;
+  material?: string;
+  dimensions?: string;
+  translations: ProductTranslationInput[];
+  specifications?: ProductSpecificationInput[];
+};
+
 export class ProductService {
-  async create(data: {
-    sku?: string;
-    categoryId: string;
-    subcategoryId: string;
-    brandId?: string;
-    supplierId?: string;
-    price: number;
-    stock: number;
-    minimumStockThreshold?: number;
-    mainImage?: string;
-    filterNumber?: string;
-    alternateNumbers?: string;
-    filterType?: string;
-    material?: string;
-    dimensions?: string;
-    translations: any[];
-    specifications?: { specKey: string; specValue: string }[];
-  }) {
+  async create(data: ProductUpsertPayload) {
     const product = await prisma.product.create({
       data: {
         sku: data.sku,
@@ -92,7 +122,7 @@ export class ProductService {
       const NotificationService = (await import('../../notification/notification.service')).default;
       const { NotificationType, UserRole } = await import('@prisma/client');
       
-      const productName = data.translations.find((t: any) => t.locale === 'en')?.name || 'New Product';
+      const productName = data.translations.find((t) => t.locale === 'en')?.name || 'New Product';
 
       await NotificationService.notify({
         type: NotificationType.SYSTEM_ALERT,
@@ -122,6 +152,92 @@ export class ProductService {
       activeProducts,
       pendingApproval,
       lowStockProducts
+    };
+  }
+
+  async getFiltersMetadata(locale = 'en') {
+    const baseWhere: Prisma.ProductWhereInput = {
+      isActive: true,
+      status: ProductStatus.PUBLISHED,
+    };
+
+    const [categoryGroups, brandGroups, priceAggregate, stockCounts] = await Promise.all([
+      prisma.product.groupBy({
+        by: ['categoryId'],
+        where: baseWhere,
+        _count: { _all: true },
+      }),
+      prisma.product.groupBy({
+        by: ['brandId'],
+        where: { ...baseWhere, brandId: { not: null } },
+        _count: { _all: true },
+      }),
+      prisma.product.aggregate({
+        where: baseWhere,
+        _min: { price: true },
+        _max: { price: true },
+      }),
+      Promise.all([
+        prisma.product.count({ where: { ...baseWhere, stock: { gt: 0 } } }),
+        prisma.product.count({ where: { ...baseWhere, stock: 0 } }),
+      ]),
+    ]);
+
+    const categoryIds = categoryGroups.map(item => item.categoryId);
+    const brandIds = brandGroups
+      .map(item => item.brandId)
+      .filter((id): id is string => typeof id === 'string');
+
+    const [categories, brands] = await Promise.all([
+      prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        include: { translations: { where: { locale } } },
+      }),
+      prisma.brands.findMany({
+        where: { id: { in: brandIds } },
+        include: { brand_translations: { where: { locale } } },
+      }),
+    ]);
+
+    const categoryNameMap = new Map(
+      categories.map((category) => [
+        category.id,
+        category.translations?.[0]?.name || category.name || 'Category',
+      ])
+    );
+
+    const brandNameMap = new Map(
+      brands.map((brand) => [
+        brand.id,
+        brand.brand_translations?.[0]?.name || brand.name || 'Brand',
+      ])
+    );
+
+    const categoryOptions: FilterOption[] = categoryGroups.map(group => ({
+      id: group.categoryId,
+      name: categoryNameMap.get(group.categoryId) || 'Category',
+      count: group._count._all,
+    }));
+
+    const brandOptions: FilterOption[] = brandGroups
+      .filter(group => typeof group.brandId === 'string')
+      .map(group => ({
+        id: group.brandId as string,
+        name: brandNameMap.get(group.brandId as string) || 'Brand',
+        count: group._count._all,
+      }));
+
+    return {
+      categories: categoryOptions.sort((a, b) => b.count - a.count),
+      brands: brandOptions.sort((a, b) => b.count - a.count),
+      priceRange: {
+        min: Number(priceAggregate._min.price || 0),
+        max: Number(priceAggregate._max.price || 0),
+      },
+      stock: {
+        inStock: stockCounts[0],
+        outOfStock: stockCounts[1],
+      },
     };
   }
 
@@ -204,7 +320,7 @@ export class ProductService {
     ]);
 
     return {
-      products: products.map((p: any) => ({
+      products: products.map((p) => ({
         ...p,
         name: p.translations[0]?.name || 'Unnamed Product',
         description: p.translations[0]?.description || '',
@@ -250,7 +366,7 @@ export class ProductService {
     };
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: Partial<ProductUpsertPayload>) {
     await this.getById(id);
 
     return await prisma.product.update({
@@ -278,7 +394,7 @@ export class ProductService {
         } : undefined,
         specifications: data.specifications ? {
           deleteMany: { product_id: id },
-          create: data.specifications.map((s: any) => ({
+          create: data.specifications.map((s) => ({
             spec_key: s.specKey.trim(),
             spec_value: s.specValue.trim(),
             updated_at: new Date()
@@ -331,7 +447,7 @@ export class ProductService {
     });
   }
 
-  async addAttachment(id: string, data: any) {
+  async addAttachment(id: string, data: ProductAttachmentInput) {
     await this.getById(id);
     return await prisma.productAttachment.create({
       data: {
@@ -363,7 +479,7 @@ export class ProductService {
   }
 
   // Legacy/Internal Filter
-  async filterProducts(filters: any) {
+  async filterProducts(filters: ProductFilters & { sort?: string; specs?: Record<string, string[]> }) {
     const {
       categoryId,
       subcategoryId,
@@ -449,7 +565,7 @@ export class ProductService {
     ]);
 
     return {
-      products: products.map((p: any) => ({
+      products: products.map((p) => ({
         ...p,
         name: p.translations[0]?.name || '',
         description: p.translations[0]?.description || '',
@@ -508,7 +624,7 @@ export class ProductService {
   async bulkUpload(buffer: Buffer, _mimetype: string) {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
-    const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as any[];
+    const data = XLSX.utils.sheet_to_json<Record<string, string | number | undefined>>(workbook.Sheets[sheetName]);
 
     if (data.length === 0) {
       throw new ApiError('The uploaded file is empty', 400);
@@ -574,9 +690,9 @@ export class ProductService {
       prisma.brands.findMany({ include: { brand_translations: { where: { locale: 'en' } } } }),
     ]);
 
-    const catMap = new Map(categories.map((c: any) => [c.translations[0]?.name.toLowerCase() || '', c.id]));
-    const subMap = new Map(subcategories.map((s: any) => [s.translations[0]?.name.toLowerCase() || '', s.id]));
-    const brandMap = new Map(allBrands.map((b: any) => [b.name.toLowerCase() || '', b.id]));
+    const catMap = new Map(categories.map((c) => [c.translations[0]?.name.toLowerCase() || '', c.id]));
+    const subMap = new Map(subcategories.map((s) => [s.translations[0]?.name.toLowerCase() || '', s.id]));
+    const brandMap = new Map(allBrands.map((b) => [b.name.toLowerCase() || '', b.id]));
 
     const results = {
       total: data.length,
@@ -719,12 +835,12 @@ export class ProductService {
         });
 
         results.success++;
-      } catch (err: any) {
+      } catch (err: unknown) {
         results.failed++;
         results.errors.push({
           row: rowNum,
           sku: row['SKU'],
-          error: err.message
+          error: err instanceof Error ? err.message : 'Unknown upload error'
         });
       }
     }

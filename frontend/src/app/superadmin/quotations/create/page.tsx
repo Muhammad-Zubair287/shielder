@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Search, Package, Save, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import quotationService from '@/services/quotation.service';
-import apiClient from '@/services/api.service';
 import SARSymbol from '@/components/SARSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useProductSearch, type ProductSearchItem } from '@/hooks/useProductSearch';
 
 interface CartItem {
     productId: string;
@@ -33,8 +33,7 @@ export default function CreateQuotationPage() {
     // Products
     const [items, setItems] = useState<CartItem[]>([]);
     const [productSearch, setProductSearch] = useState('');
-    const [productResults, setProductResults] = useState<any[]>([]);
-    const [searchingProducts, setSearchingProducts] = useState(false);
+    const { results: productResults, searching: searchingProducts } = useProductSearch(productSearch);
 
     // Settings
     const [expiryDate, setExpiryDate] = useState('');
@@ -44,21 +43,7 @@ export default function CreateQuotationPage() {
     const [notes, setNotes] = useState('');
     const [terms, setTerms] = useState('');
 
-    // Search products
-    useEffect(() => {
-        if (!productSearch.trim()) { setProductResults([]); return; }
-        const timer = setTimeout(async () => {
-            try {
-                setSearchingProducts(true);
-                const res = await apiClient.get('/inventory/products', { params: { search: productSearch, limit: 5 } });
-                setProductResults(res.data?.data?.products || []);
-            } catch { setProductResults([]); }
-            finally { setSearchingProducts(false); }
-        }, 350);
-        return () => clearTimeout(timer);
-    }, [productSearch]);
-
-    const addProduct = (product: any) => {
+    const addProduct = (product: ProductSearchItem) => {
         const exists = items.find(i => i.productId === product.id);
         if (exists) {
             setItems(prev => prev.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + 1, totalPrice: (i.unitPrice * (i.quantity + 1)) - i.discount } : i));
@@ -67,7 +52,6 @@ export default function CreateQuotationPage() {
             setItems(prev => [...prev, { productId: product.id, productName: product.translations?.[0]?.name || product.name || 'Product', unitPrice: price, quantity: 1, discount: 0, totalPrice: price }]);
         }
         setProductSearch('');
-        setProductResults([]);
     };
 
     const updateItem = (idx: number, field: 'quantity' | 'discount', value: number) => {
@@ -107,8 +91,9 @@ export default function CreateQuotationPage() {
             const quotation = res.data.data;
             if (sendAfter) await quotationService.send(quotation.id);
             router.push(`/superadmin/quotations/${quotation.id}`);
-        } catch (e: any) {
-            alert(e?.response?.data?.message || 'Failed to create quotation');
+        } catch (error: unknown) {
+            const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create quotation';
+            alert(errorMessage);
         } finally {
             setSaving(false);
         }

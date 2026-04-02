@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = 'force-dynamic';
 /**
  * Login Page
  * User login form with Arabic/English support
@@ -16,27 +15,31 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ROUTES, VALIDATION_RULES, STORAGE_KEYS } from '@/utils/constants';
 import type { LoginRequest } from '@/types';
 import toast from 'react-hot-toast';
+import { validateLoginForm } from '@/services/validation.service';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 function LoginPageContent() {
-    // Clear auth state if session expired
-    useEffect(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('expired')) {
-        sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        sessionStorage.removeItem(STORAGE_KEYS.USER);
-        // Also clear legacy localStorage tokens
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER);
-        try {
-          const { useAuthStore } = require('@/store/auth.store');
-          useAuthStore.getState().setUser(null);
-          useAuthStore.getState().setError(null);
-          useAuthStore.getState().setLoading(false);
-        } catch (e) {}
+  // Clear auth state if session expired
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired')) {
+      sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.USER);
+      // Also clear legacy localStorage tokens
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      try {
+        const { useAuthStore } = require('@/store/auth.store');
+        useAuthStore.getState().setUser(null);
+        useAuthStore.getState().setError(null);
+        useAuthStore.getState().setLoading(false);
+      } catch {
+        // no-op: best-effort cleanup only
       }
-    }, []);
+    }
+  }, []);
   const { login, isSubmitting } = useAuth();
   const { isAuthenticated, user, isLoading } = useAuthStore();
   const router = useRouter();
@@ -133,16 +136,16 @@ function LoginPageContent() {
    */
   const validate = (): boolean => {
     const newErrors: Partial<LoginRequest> = {};
+    const validationErrors = validateLoginForm(formData);
 
-    if (!formData.email) {
-      newErrors.email = t('emailRequired');
-    } else if (!VALIDATION_RULES.EMAIL_REGEX.test(formData.email)) {
-      newErrors.email = t('invalidEmail');
-    }
-
-    if (!formData.password) {
-      newErrors.password = t('passwordRequired');
-    }
+    validationErrors.forEach((err) => {
+      if (err.field === 'email') {
+        newErrors.email = !formData.email ? t('emailRequired') : t('invalidEmail');
+      }
+      if (err.field === 'password') {
+        newErrors.password = t('passwordRequired');
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -236,6 +239,7 @@ function LoginPageContent() {
           <button
             onClick={() => window.history.length > 1 ? router.back() : router.push(ROUTES.HOME)}
             className={`absolute top-8 ${isRTL ? 'right-8' : 'left-8'} text-gray-400 hover:text-gray-700 transition-colors`}
+            aria-label={isRTL ? 'Back to previous page' : 'Back to previous page'}
           >
             <ChevronLeft className={`w-6 h-6 ${isRTL ? 'rotate-180' : ''}`} />
           </button>
@@ -244,6 +248,7 @@ function LoginPageContent() {
           <button
             onClick={() => setLocale(locale === 'en' ? 'ar' : 'en')}
             className={`absolute top-8 ${isRTL ? 'left-8' : 'right-8'} text-sm font-medium text-gray-500 hover:text-gray-700`}
+            aria-label="Switch language"
           >
             {locale === 'en' ? 'العربية' : 'English'}
           </button>
@@ -252,11 +257,14 @@ function LoginPageContent() {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-10">
               {t('loginYourAccount')}
             </h1>
+            <p className="text-sm text-gray-600 mb-6">
+              Secure sign in protected with encrypted sessions, account lockout, and role-based access controls.
+            </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label htmlFor="login-email" className="text-sm font-medium text-gray-700">
                   {t('email')}
                 </label>
                 <div className="relative group">
@@ -264,6 +272,7 @@ function LoginPageContent() {
                     <Mail className="w-5 h-5" />
                   </div>
                       <input
+                        id="login-email"
                         type="email"
                         name="email"
                         value={formData.email}
@@ -282,7 +291,7 @@ function LoginPageContent() {
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label htmlFor="login-password" className="text-sm font-medium text-gray-700">
                   {t('password')}
                 </label>
                 <div className="relative group">
@@ -290,6 +299,7 @@ function LoginPageContent() {
                     <Lock className="w-5 h-5" />
                   </div>
                       <input
+                        id="login-password"
                         type={showPassword ? "text" : "password"}
                         name="password"
                         value={formData.password}
@@ -304,6 +314,7 @@ function LoginPageContent() {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className={`absolute inset-y-0 ${isRTL ? 'left-4' : 'right-4'} flex items-center text-gray-400 hover:text-gray-600 transition-colors`}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -311,9 +322,10 @@ function LoginPageContent() {
                 {errors.password && (
                   <p className="text-xs text-red-500 mt-1 ml-1">{errors.password}</p>
                 )}
+                <PasswordStrengthMeter password={formData.password} showRequirements={false} className="mt-2" />
                 <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
                   <Link 
-                    href="#" 
+                    href="/forgot-password" 
                     className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     {t('forgotPassword')}
@@ -334,18 +346,12 @@ function LoginPageContent() {
             <div className="mt-8 text-center text-gray-600">
               <p className="text-sm">
                 {t('dontHaveAccount')}{' '}
-                <a
-                  href="#"
+                <Link
+                  href={ROUTES.REGISTER}
                   className="text-[#FF6B35] font-semibold hover:text-[#FF5722] transition-colors"
-                  onClick={e => {
-                    e.preventDefault();
-                    // Remove ?expired from URL before navigating
-                    const url = ROUTES.REGISTER;
-                    window.location.href = url;
-                  }}
                 >
                   {t('signUp')}
-                </a>
+                </Link>
               </p>
             </div>
           </div>

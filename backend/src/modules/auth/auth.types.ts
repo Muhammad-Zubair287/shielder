@@ -100,6 +100,8 @@ export interface AuthResponse {
     };
   };
   tokens: TokenPairResponse;
+  requiresTwoFactor?: boolean;
+  otpSessionToken?: string;
 }
 
 /**

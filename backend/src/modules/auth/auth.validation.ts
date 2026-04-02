@@ -4,37 +4,17 @@
  */
 
 import Joi from 'joi';
+import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
 /**
  * Password validation rules (OWASP compliant)
  */
-const passwordSchema = Joi.string()
-  .min(8)
-  .max(128)
-  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/)
-  .required()
-  .messages({
-    'string.empty': 'Password is required',
-    'string.min': 'Password must be at least 8 characters long',
-    'string.max': 'Password must not exceed 128 characters',
-    'string.pattern.base':
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-    'any.required': 'Password is required',
-  });
+const passwordSchema = sharedValidationSchemas.password;
 
 /**
  * Email validation
  */
-const emailSchema = Joi.string()
-  .email({ tlds: { allow: false } })
-  .lowercase()
-  .trim()
-  .required()
-  .messages({
-    'string.empty': 'Email is required',
-    'string.email': 'Please provide a valid email address',
-    'any.required': 'Email is required',
-  });
+const emailSchema = sharedValidationSchemas.email;
 
 /**
  * Auth Validation Schemas
@@ -122,5 +102,40 @@ export const authValidation = {
       'any.required': 'Current password is required',
     }),
     newPassword: passwordSchema,
+  }),
+
+  /**
+   * Send OTP validation (2FA)
+   */
+  sendOTP: Joi.object({
+    userId: Joi.string().required().messages({
+      'string.empty': 'User ID is required',
+      'any.required': 'User ID is required',
+    }),
+    method: Joi.string().valid('EMAIL', 'SMS').default('EMAIL'),
+  }),
+
+  /**
+   * Verify OTP validation (2FA)
+   */
+  verifyOTP: Joi.object({
+    userId: Joi.string().required().messages({
+      'string.empty': 'User ID is required',
+      'any.required': 'User ID is required',
+    }),
+    otpSessionToken: Joi.string().required().messages({
+      'string.empty': 'OTP session token is required',
+      'any.required': 'OTP session token is required',
+    }),
+    code: Joi.string()
+      .length(6)
+      .pattern(/^\d+$/)
+      .required()
+      .messages({
+        'string.empty': 'OTP code is required',
+        'string.length': 'OTP code must be 6 digits',
+        'string.pattern.base': 'OTP code must contain only numbers',
+        'any.required': 'OTP code is required',
+      }),
   }),
 };

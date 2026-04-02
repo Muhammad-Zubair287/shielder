@@ -26,8 +26,11 @@ export interface CreateQuotationData {
 }
 
 const quotationService = {
-    getAll: (params?: Record<string, any>) =>
+    getAll: (params?: Record<string, string | number | boolean>) =>
         apiClient.get('/quotations', { params }),
+
+    searchProducts: (search: string, limit = 5) =>
+        apiClient.get('/inventory/products', { params: { search, limit } }),
 
     getById: (id: string) =>
         apiClient.get(`/quotations/${id}`),

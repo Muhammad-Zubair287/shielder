@@ -7,83 +7,35 @@ import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
 import { useLanguage } from '@/contexts/LanguageContext';
-import apiClient from '@/services/api.service';
 import { useCart } from '@/contexts/CartContext';
 import { useQuotation } from '@/contexts/QuotationContext';
 import { getImageUrl } from '@/utils/helpers';
 import SARSymbol from '@/components/SARSymbol';
 import { useAuthStore } from '@/store/auth.store';
+import { useProductsCatalog } from '@/hooks/useProductsCatalog';
+import {
+  productComparisonService,
+  type ComparedProductItem,
+} from '@/services/product-comparison.service';
+import {
+  PRODUCT_UI_LABELS,
+  PRODUCTS_ITEMS_PER_PAGE,
+  PRODUCTS_SORT_OPTIONS,
+} from './products.constants';
+import { ActiveFilters, Category, Product, ProductTab } from './products.types';
+import { PRODUCT_COMPARE, TOAST_MESSAGES } from '@/constants/ui.constants';
 
 export const dynamic = 'force-dynamic';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number | string;
-  originalPrice?: number | string;
-  mainImage?: string;
-  images?: string[];
-  category?: { name: string };
-  categoryName?: string;
-  stock?: number;
-  sku?: string;
-  filterNumber?: string;
-  alternateNumbers?: string;
-  filterType?: string;
-  material?: string;
-  dimensions?: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface ActiveFilters {
-  search: string;
-  categoryId: string;
-  minPrice: string;
-  maxPrice: string;
-  inStock: boolean;
-  sort: string;
-}
-
-type Tab = 'buy' | 'quotation';
-
-const ITEMS_PER_PAGE = 12;
-
-const SORT_OPTIONS = [
-  { value: 'newest',     labelKey: 'productsSortNewest' },
-  { value: 'price_asc',  labelKey: 'productsSortPriceLow' },
-  { value: 'price_desc', labelKey: 'productsSortPriceHigh' },
-  { value: 'best_selling', labelKey: 'productsSortBestSelling' },
-];
-
-// ── Helper: build query string ────────────────────────────────────────────────
-function buildQuery(filters: ActiveFilters, page: number, tab: Tab, locale: string) {
-  const params = new URLSearchParams();
-  if (filters.search)     params.set('search',     filters.search);
-  if (filters.categoryId) params.set('categoryId', filters.categoryId);
-  if (filters.minPrice)   params.set('minPrice',   filters.minPrice);
-  if (filters.maxPrice)   params.set('maxPrice',   filters.maxPrice);
-  if (filters.inStock)    params.set('inStock',    'true');
-  if (filters.sort)       params.set('sort',       filters.sort);
-  params.set('page',   String(page));
-  params.set('limit',  String(ITEMS_PER_PAGE));
-  params.set('locale', locale);
-  return params;
-}
-
-// ── Module-level category cache (avoids refetch on every locale change) ───────
-// Keyed by locale so switching language still gets the right names.
-const _categoryCache: Record<string, Category[]> = {};
+type Tab = ProductTab;
 
 // ── Product Card ──────────────────────────────────────────────────────────────
-function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick }: {
+function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, isCompared, onToggleCompare }: {
   product: Product; tab: Tab; t: (k: string) => string; isRTL: boolean;
   isAuthenticated: boolean; onProductClick: () => void;
+  isCompared: boolean;
+  onToggleCompare: (product: Product) => void;
 }) {
   const rawImage = product.mainImage ?? product.images?.[0] ?? null;
   const image     = getImageUrl(rawImage) ?? null;
@@ -122,6 +74,15 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick }
     <div
       className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col cursor-pointer"
       onClick={onProductClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onProductClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open product details for ${product.name}`}
     >
       {/* Image */}
       <div className="relative h-52 overflow-hidden bg-gray-50">
@@ -136,7 +97,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick }
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-100">
             <ImageOff size={36} className="text-gray-300" />
-            <span className="text-xs text-gray-400 font-medium">No Image</span>
+            <span className="text-xs text-gray-400 font-medium">{PRODUCT_UI_LABELS.noImage}</span>
           </div>
         )}
         {product.stock === 0 && (
@@ -184,6 +145,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick }
         {isQuotation ? (
           <button
             onClick={e => { e.stopPropagation(); onProductClick(); }}
+            aria-label={`Get quotation for ${product.name}`}
             className="mt-3 w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3 rounded-xl transition-colors">
             {t('productsGetQuotation')}
           </button>
@@ -191,11 +153,27 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick }
           <button
             onClick={handleAddToCart}
             disabled={cartLoading || product.stock === 0}
+            aria-label={`Add ${product.name} to cart`}
             className="mt-3 w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <ShoppingCart size={15} />
             {t('productsAddToCart')}
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCompare(product);
+          }}
+          className={`mt-2 w-full border text-sm font-semibold py-2.5 rounded-xl transition-colors ${
+            isCompared
+              ? 'border-[#0205A6] text-[#0205A6] bg-[#0205A6]/5'
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {isCompared ? PRODUCT_COMPARE.REMOVE_TEXT : PRODUCT_COMPARE.ADD_TEXT}
+        </button>
       </div>
     </div>
   );
@@ -256,7 +234,7 @@ function ProductDetailModal({
       productId: product.id, name: product.name, sku: product.sku,
       price, quantity: qty, thumbnail: product.mainImage ?? product.images?.[0] ?? null,
     });
-    toast.success(`"${product.name}" added to quotation basket!`);
+    toast.success(`${product.name} ${TOAST_MESSAGES.ADDED_TO_QUOTATION}`);
     onClose();
   };
 
@@ -273,8 +251,8 @@ function ProductDetailModal({
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-bold text-gray-900">{t('productsDetailTitle') || 'Product Details'}</h2>
-            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+            <h2 className="text-base font-bold text-gray-900">{t('productsDetailTitle') || PRODUCT_UI_LABELS.detailTitle}</h2>
+            <button onClick={onClose} aria-label="Close product details" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
               <X size={18} className="text-gray-500" />
             </button>
           </div>
@@ -289,7 +267,7 @@ function ProductDetailModal({
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <ImageOff size={40} className="text-gray-300" />
-                  <span className="text-xs text-gray-400 font-medium">No Image</span>
+                  <span className="text-xs text-gray-400 font-medium">{PRODUCT_UI_LABELS.noImage}</span>
                 </div>
               )}
             </div>
@@ -319,9 +297,9 @@ function ProductDetailModal({
               {/* Filter Type / Material / Dimensions */}
               {(product.filterType || product.material || product.dimensions) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                  {product.filterType && <span><span className="font-semibold text-gray-700">Type:</span> {product.filterType}</span>}
-                  {product.material   && <span><span className="font-semibold text-gray-700">Material:</span> {product.material}</span>}
-                  {product.dimensions && <span><span className="font-semibold text-gray-700">Dimensions:</span> {product.dimensions}</span>}
+                  {product.filterType && <span><span className="font-semibold text-gray-700">{PRODUCT_UI_LABELS.type}</span> {product.filterType}</span>}
+                  {product.material   && <span><span className="font-semibold text-gray-700">{PRODUCT_UI_LABELS.material}</span> {product.material}</span>}
+                  {product.dimensions && <span><span className="font-semibold text-gray-700">{PRODUCT_UI_LABELS.dimensions}</span> {product.dimensions}</span>}
                 </div>
               )}
 
@@ -341,13 +319,16 @@ function ProductDetailModal({
               {isQuotation && (
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}
+                    aria-label="Decrease quantity"
                     className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
                     <Minus size={14} />
                   </button>
                   <input type="number" min={1} value={qty}
+                    aria-label="Quantity"
                     onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))}
                     className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />
                   <button type="button" onClick={() => setQty(q => q + 1)}
+                    aria-label="Increase quantity"
                     className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
                     <Plus size={14} />
                   </button>
@@ -458,7 +439,7 @@ function ActiveFilterBadges({ filters, categories, onRemove, t, isRTL }: {
     badges.push({ key: 'minPrice', label: `${t('productsPriceRange')}: ${filters.minPrice || '0'} – ${filters.maxPrice || '∞'}` });
   if (filters.inStock)    badges.push({ key: 'inStock',    label: t('productsInStockOnly') });
   if (filters.sort) {
-    const opt = SORT_OPTIONS.find(o => o.value === filters.sort);
+    const opt = PRODUCTS_SORT_OPTIONS.find(o => o.value === filters.sort);
     if (opt) badges.push({ key: 'sort', label: `${t('productsSortBy')}: ${t(opt.labelKey)}` });
   }
   if (badges.length === 0) return null;
@@ -468,6 +449,7 @@ function ActiveFilterBadges({ filters, categories, onRemove, t, isRTL }: {
       <span className="text-sm text-gray-500">{t('productsActiveFilters')}</span>
       {badges.map(b => (
         <button key={b.key} onClick={() => onRemove(b.key)}
+          aria-label={`Remove filter ${b.label}`}
           className="flex items-center gap-1.5 bg-[#0205A6]/10 text-[#0205A6] text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-red-50 hover:text-red-600 transition-colors group">
           {b.label}
           <X size={12} className="group-hover:text-red-600" />
@@ -514,12 +496,16 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
       <div className={`fixed z-50 bg-white shadow-2xl flex flex-col
         bottom-0 left-0 right-0 rounded-t-2xl max-h-[90vh]
         md:bottom-auto md:top-0 md:right-0 md:left-auto md:h-full md:w-96 md:rounded-none md:rounded-l-2xl
-        ${isRTL ? 'md:right-auto md:left-0 md:rounded-r-2xl md:rounded-l-none' : ''}`}>
+        ${isRTL ? 'md:right-auto md:left-0 md:rounded-r-2xl md:rounded-l-none' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('productsFilterTitle')}
+      >
 
         {/* Header */}
         <div className={`flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <h2 className="text-lg font-bold text-gray-900">{t('productsFilterTitle')}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} aria-label="Close filters" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-500" />
           </button>
         </div>
@@ -531,7 +517,7 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-3">{t('productsSortBy')}</label>
             <div className="space-y-2">
-              {SORT_OPTIONS.map(opt => (
+              {PRODUCTS_SORT_OPTIONS.map(opt => (
                 <button key={opt.value} onClick={() => field('sort', draft.sort === opt.value ? '' : opt.value)}
                   className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all
                     ${draft.sort === opt.value
@@ -590,10 +576,12 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
             <label className="block text-sm font-bold text-gray-800 mb-3">{t('productsPriceRange')}</label>
             <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <input type="number" min={0} placeholder={t('productsMinPrice')} value={draft.minPrice}
+                aria-label={t('productsMinPrice')}
                 onChange={e => field('minPrice', e.target.value)}
                 className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
               <span className="text-gray-400 text-sm shrink-0">—</span>
               <input type="number" min={0} placeholder={t('productsMaxPrice')} value={draft.maxPrice}
+                aria-label={t('productsMaxPrice')}
                 onChange={e => field('maxPrice', e.target.value)}
                 className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
             </div>
@@ -606,6 +594,8 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
               <p className="text-xs text-gray-400 mt-0.5">{t('productsInStockDesc')}</p>
             </div>
             <button onClick={() => field('inStock', !draft.inStock)}
+              aria-label={t('productsInStockOnly')}
+              aria-pressed={draft.inStock}
               className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${draft.inStock ? 'bg-[#0205A6]' : 'bg-gray-200'}`}>
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200
                 ${draft.inStock ? (isRTL ? 'translate-x-1' : 'translate-x-7') : (isRTL ? 'translate-x-7' : 'translate-x-1')}`} />
@@ -671,16 +661,59 @@ function ProductsContent() {
   const [filterOpen,     setFilterOpen]     = useState(false);
   const [detailProduct, setDetailProduct]   = useState<Product | null>(null);
 
-  const [products,   setProducts]   = useState<Product[]>([]);
-  const [total,      setTotal]      = useState(0);
-  const [loading,    setLoading]    = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [comparedProducts, setComparedProducts] = useState<ComparedProductItem[]>([]);
+  const [showCompareTable, setShowCompareTable] = useState(false);
+
+  const {
+    products,
+    total,
+    loading,
+    categories,
+  } = useProductsCatalog({
+    filters: appliedFilters,
+    page,
+    locale: locale || 'en',
+  });
 
   // Single Zustand subscription at the page level — passed down as a plain prop
   // so individual ProductCards don't each create their own store subscription.
   const { isAuthenticated } = useAuthStore();
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setComparedProducts(productComparisonService.getAll());
+  }, []);
+
+  const handleToggleCompare = (product: Product) => {
+    const currentlyCompared = productComparisonService.isCompared(product.id);
+
+    if (currentlyCompared) {
+      productComparisonService.remove(product.id);
+      setComparedProducts(productComparisonService.getAll());
+      toast.success('Product removed from compare');
+      return;
+    }
+
+    const result = productComparisonService.add({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      sku: product.sku,
+      thumbnail: product.mainImage ?? product.images?.[0] ?? null,
+      filterType: product.filterType,
+      material: product.material,
+      dimensions: product.dimensions,
+    });
+
+    if (!result.ok && result.reason === 'limit_reached') {
+      toast.error(`You can compare up to ${productComparisonService.maxItems} products only.`);
+      return;
+    }
+
+    setComparedProducts(productComparisonService.getAll());
+    toast.success('Product added to compare');
+  };
 
   // ── URL sync ──────────────────────────────────────────────────────────────
   const syncURL = useCallback((filters: ActiveFilters, p: number, tab: Tab) => {
@@ -695,52 +728,6 @@ function ProductsContent() {
     if (p > 1)              params.set('page', String(p));
     router.push(`/products?${params.toString()}`, { scroll: false });
   }, [router]);
-
-  // ── Fetch products ────────────────────────────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const qp  = buildQuery(appliedFilters, page, activeTab, locale || 'en');
-        const res = await apiClient.get(`inventory/products?${qp.toString()}`);
-        if (cancelled) return;
-        const data  = res.data;
-        const items: Product[] = data?.products ?? (Array.isArray(data?.data) ? data.data : []);
-        setProducts(items);
-        setTotal(data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length);
-      } catch (err: any) {
-        if (cancelled) return;
-        console.error('[Products] API error:', err?.response?.status, err?.response?.data ?? err?.message);
-        setProducts([]);
-        setTotal(0);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [appliedFilters, page, activeTab, locale]);
-
-  // ── Fetch categories (with module-level locale-keyed cache) ─────────────────
-  useEffect(() => {
-    const key = locale || 'en';
-    if (_categoryCache[key]) {
-      setCategories(_categoryCache[key]);
-      return;
-    }
-    (async () => {
-      try {
-        const res  = await apiClient.get(`inventory/categories?limit=100&locale=${key}`);
-        const data = res.data;
-        const cats: Category[] = (data?.categories ?? data?.data ?? []).map((c: any) => ({
-          id:   c.id,
-          name: c.name || c.translations?.[0]?.name || c.nameEn || 'Category',
-        }));
-        _categoryCache[key] = cats;
-        setCategories(cats);
-      } catch { /* optional */ }
-    })();
-  }, [locale]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleTabChange = (tab: Tab) => {
@@ -784,7 +771,11 @@ function ProductsContent() {
     const updated = { ...appliedFilters };
     if (key === 'minPrice')      { updated.minPrice = ''; updated.maxPrice = ''; }
     else if (key === 'inStock')  { updated.inStock = false; }
-    else                         (updated as any)[key] = '';
+    else {
+      if (key === 'search' || key === 'categoryId' || key === 'sort') {
+        updated[key] = '';
+      }
+    }
     setAppliedFilters(updated); setDraftFilters(updated);
     if (key === 'search') setSearchInput('');
     setPage(1); syncURL(updated, 1, activeTab);
@@ -821,6 +812,7 @@ function ProductsContent() {
           <div className="relative mb-6">
             <Search size={18} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'right-4' : 'left-4'}`} />
             <input type="search" value={searchInput}
+              aria-label={t('productsSearchPlaceholder')}
               onChange={e => handleSearchChange(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder={t('productsSearchPlaceholder')}
@@ -829,6 +821,7 @@ function ProductsContent() {
                 ${isRTL ? 'pr-12 pl-10 text-right' : 'pl-12 pr-10'}`} />
             {searchInput && (
               <button onClick={() => handleSearchChange('')}
+                aria-label="Clear search"
                 className={`absolute top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 ${isRTL ? 'left-3' : 'right-3'}`}>
                 <X size={16} />
               </button>
@@ -839,12 +832,16 @@ function ProductsContent() {
           <div className={`flex items-center bg-gray-100 border border-gray-200 rounded-2xl p-1.5 gap-1 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
             {([['buy', 'productsTabBuy'], ['quotation', 'productsTabQuotation']] as const).map(([tab, key]) => (
               <button key={tab} onClick={() => handleTabChange(tab)}
+                aria-pressed={activeTab === tab}
                 className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
                   ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
                 {t(key)}
               </button>
             ))}
             <button onClick={() => { setDraftFilters(appliedFilters); setFilterOpen(true); }}
+              aria-haspopup="dialog"
+              aria-expanded={filterOpen}
+              aria-label={t('productsFilterAll')}
               className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors whitespace-nowrap ml-auto
                 ${activeFilterCount > 0 ? 'bg-[#0205A6] text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
               {t('productsFilterAll')}
@@ -869,9 +866,122 @@ function ProductsContent() {
           )}
 
           {/* Grid */}
+          {comparedProducts.length > 0 && (
+            <div className="mb-4 bg-white border border-gray-200 rounded-2xl p-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">Compare:</span>
+              {comparedProducts.map((item) => (
+                <span key={item.id} className="inline-flex items-center gap-2 text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                  {item.name}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      productComparisonService.remove(item.id);
+                      const next = productComparisonService.getAll();
+                      setComparedProducts(next);
+                      if (next.length < 2) {
+                        setShowCompareTable(false);
+                      }
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label={`Remove ${item.name} from compare`}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              <div className="ml-auto flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCompareTable((v) => !v)}
+                  disabled={comparedProducts.length < 2}
+                  className="text-xs bg-[#0205A6] text-white font-semibold px-3 py-1.5 rounded-full hover:bg-[#0103d4] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {showCompareTable ? 'Hide Comparison' : 'Compare in Table'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    productComparisonService.clear();
+                    setComparedProducts([]);
+                    setShowCompareTable(false);
+                  }}
+                  className="text-xs text-[#0205A6] font-semibold hover:underline"
+                >
+                  Clear Compare
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showCompareTable && comparedProducts.length >= 2 && (
+            <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200">
+                <h3 className="text-sm font-bold text-gray-900">Product Comparison</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Field</th>
+                      {comparedProducts.map((item) => (
+                        <th key={item.id} className="text-left px-4 py-3 font-semibold text-gray-900 min-w-[220px]">{item.name}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-700">Price</td>
+                      {comparedProducts.map((item) => (
+                        <td key={`${item.id}-price`} className="px-4 py-3 text-[#0205A6] font-bold">SAR {item.price.toFixed(2)}</td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-700">SKU</td>
+                      {comparedProducts.map((item) => (
+                        <td key={`${item.id}-sku`} className="px-4 py-3 text-gray-700">{item.sku || '-'}</td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-700">Filter Type</td>
+                      {comparedProducts.map((item) => (
+                        <td key={`${item.id}-type`} className="px-4 py-3 text-gray-700">{item.filterType || '-'}</td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-700">Material</td>
+                      {comparedProducts.map((item) => (
+                        <td key={`${item.id}-material`} className="px-4 py-3 text-gray-700">{item.material || '-'}</td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-700">Dimensions</td>
+                      {comparedProducts.map((item) => (
+                        <td key={`${item.id}-dimensions`} className="px-4 py-3 text-gray-700">{item.dimensions || '-'}</td>
+                      ))}
+                    </tr>
+                    <tr className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-700">Action</td>
+                      {comparedProducts.map((item) => (
+                        <td key={`${item.id}-action`} className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/products/${item.id}`)}
+                            className="text-xs font-semibold text-[#0205A6] hover:underline"
+                          >
+                            View Product
+                          </button>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading
-              ? Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => <SkeletonCard key={i} />)
+              ? Array.from({ length: PRODUCTS_ITEMS_PER_PAGE }).map((_, i) => <SkeletonCard key={i} />)
               : products.length === 0
                 ? (
                     <div className="col-span-3 text-center py-24 space-y-4">
@@ -884,13 +994,25 @@ function ProductsContent() {
                       )}
                     </div>
                   )
-                : products.map(p => <ProductCard key={p.id} product={p} tab={activeTab} t={t} isRTL={isRTL} isAuthenticated={isAuthenticated} onProductClick={() => setDetailProduct(p)} />)
+                : products.map(p => (
+                    <ProductCard
+                      key={p.id}
+                      product={p}
+                      tab={activeTab}
+                      t={t}
+                      isRTL={isRTL}
+                      isAuthenticated={isAuthenticated}
+                      onProductClick={() => setDetailProduct(p)}
+                      isCompared={comparedProducts.some((item) => item.id === p.id)}
+                      onToggleCompare={handleToggleCompare}
+                    />
+                  ))
             }
           </div>
 
           {/* Pagination */}
           {!loading && (
-            <Pagination page={page} total={total} perPage={ITEMS_PER_PAGE}
+            <Pagination page={page} total={total} perPage={PRODUCTS_ITEMS_PER_PAGE}
               onChange={handlePageChange} isRTL={isRTL} />
           )}
         </div>

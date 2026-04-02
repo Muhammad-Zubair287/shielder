@@ -127,7 +127,12 @@ export class EPGService {
         throw new BadRequestError('Payment gateway error. Please try again.');
       }
 
-      const data: any = await response.json();
+      const data = (await response.json()) as {
+        id: string;
+        url?: string;
+        payment_url?: string;
+        source?: { transaction_url?: string };
+      };
       const sessionId = data.id as string;
 
       // Store the EPG session ID so we can match the callback
@@ -145,7 +150,7 @@ export class EPGService {
         paymentUrl:  data.url ?? data.payment_url ?? data.source?.transaction_url,
         testMode:    config.testMode,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof BadRequestError) throw err;
       logger.error('[EPG] initializePayment error:', err);
       throw new BadRequestError('Unable to connect to payment gateway. Please try again.');
@@ -222,8 +227,14 @@ export class EPGService {
    * Handle server-to-server webhook notification from EPG.
    * Verifies the HMAC-SHA256 signature before processing.
    */
-  async handleWebhook(payload: any, signatureHeader: string) {
+  async handleWebhook(payload: unknown, signatureHeader: string) {
     const config = await this.getConfig();
+    const normalizedPayload: Record<string, unknown> =
+      payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
+    const payloadData =
+      normalizedPayload.data && typeof normalizedPayload.data === 'object'
+        ? (normalizedPayload.data as Record<string, unknown>)
+        : normalizedPayload;
 
     // Verify signature if secret key is set
     if (config.secretKey && signatureHeader) {
@@ -238,9 +249,8 @@ export class EPGService {
       }
     }
 
-    const event  = payload?.type   || payload?.event || '';
-    const data   = payload?.data   || payload;
-    const status = (data?.status   || '').toLowerCase();
+    const event = String(normalizedPayload.type || normalizedPayload.event || '');
+    const status = String(payloadData.status || '').toLowerCase();
 
     if (
       event.includes('payment_paid') ||
@@ -248,8 +258,12 @@ export class EPGService {
       status === 'paid'
     ) {
       await this.handleCallback({
-        id:       data?.id || payload?.id || '',
-        order_id: data?.order_id || data?.metadata?.order_id || '',
+        id: String(payloadData.id || normalizedPayload.id || ''),
+        order_id: String(
+          payloadData.order_id ||
+            (payloadData.metadata as { order_id?: string } | undefined)?.order_id ||
+            ''
+        ),
         status:   'paid',
       });
     }

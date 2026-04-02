@@ -37,6 +37,7 @@ export interface QuotationItemResult {
 export interface QuotationResult {
   id: string;
   quotationNumber: string;
+  status: string;
   companyName: string;
   customerAddress: string;
   customerEmail: string;
@@ -95,6 +96,23 @@ const customerQuotationService = {
     a.click();
     a.remove();
     URL.revokeObjectURL(objUrl);
+  },
+
+  /**
+   * Customer accepts a quotation.
+   */
+  async accept(id: string): Promise<QuotationResult> {
+    const res = await apiClient.post(API_ENDPOINTS.CUSTOMER_QUOTATIONS.ACCEPT(id), {});
+    return res.data.data as QuotationResult;
+  },
+
+  /**
+   * Customer rejects a quotation.
+   */
+  async reject(id: string, reason?: string): Promise<QuotationResult> {
+    const payload = reason?.trim() ? { reason: reason.trim() } : {};
+    const res = await apiClient.post(API_ENDPOINTS.CUSTOMER_QUOTATIONS.REJECT(id), payload);
+    return res.data.data as QuotationResult;
   },
 };
 

@@ -12,6 +12,7 @@ const multerMemory = multer({ storage: multer.memoryStorage() });
 
 // Public routes (order matters: specific paths before dynamic /:id)
 router.get('/', validate(productValidation.list, 'query'), productController.list);
+router.get('/filters', validate(productValidation.filters, 'query'), productController.getFilters);
 router.get('/summary', authenticate, requireAdmin, productController.getSummary);
 router.get('/management', authenticate, requireAdmin, productController.listForManagement);
 router.get('/template', authenticate, requireAdmin, productController.downloadTemplate);

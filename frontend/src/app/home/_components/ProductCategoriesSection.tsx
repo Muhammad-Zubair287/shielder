@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCategories } from '@/hooks/useCategories';
 // keyword is matched against the category name from the DB (case-insensitive)
 const CATEGORIES = [
   { nameKey: 'landingCat1Name', descKey: 'landingCat1Desc', keyword: 'air',    image: '/images/landing/product-cat-1.jpeg', href: '/products?category=air' },
@@ -13,29 +14,14 @@ const CATEGORIES = [
 
 export default function ProductCategoriesSection() {
   const { t, isRTL, locale } = useLanguage();
-  const [counts, setCounts] = useState<(number | null)[]>([null, null, null]);
+  const { categories } = useCategories(locale || 'en');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api').replace(/\/$/, '');
-        const res  = await fetch(`${apiUrl}/inventory/categories?limit=100&locale=${locale || 'en'}`);
-        const json = await res.json();
-        const cats: { name: string; _count?: { products?: number } }[] =
-          json?.categories ?? json?.data ?? [];
-
-        const resolved = CATEGORIES.map(({ keyword }) => {
-          const match = cats.find(c =>
-            c.name?.toLowerCase().includes(keyword.toLowerCase())
-          );
-          return match?._count?.products ?? null;
-        });
-        setCounts(resolved);
-      } catch {
-        // silently fall back to translation strings
-      }
-    })();
-  }, [locale]);
+  const counts: (number | null)[] = CATEGORIES.map(({ keyword }) => {
+    const match = categories.find(c =>
+      c.name?.toLowerCase().includes(keyword.toLowerCase())
+    );
+    return match?.productCount ?? null;
+  });
 
   const countLabel = (idx: number): string => {
     const n = counts[idx];

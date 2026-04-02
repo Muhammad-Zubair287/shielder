@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Send, Trash2, Search, Loader2 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
-import apiClient from '@/services/api.service';
 
 interface CartItem {
     productId: string;
@@ -74,7 +73,7 @@ export default function EditQuotationPage() {
     useEffect(() => {
         if (!productSearch.trim()) { setProductResults([]); return; }
         const t = setTimeout(async () => {
-            const res = await apiClient.get('/inventory/products', { params: { search: productSearch, limit: 5 } });
+            const res = await quotationService.searchProducts(productSearch, 5);
             setProductResults(res.data?.data?.products || []);
         }, 350);
         return () => clearTimeout(t);

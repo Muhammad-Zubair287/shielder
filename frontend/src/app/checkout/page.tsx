@@ -74,6 +74,8 @@ function MethodCard({
     <button
       type="button"
       onClick={onSelect}
+      aria-pressed={selected}
+      aria-label={title}
       className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all
         ${selected
           ? 'border-[#F97316] bg-orange-50'
@@ -289,12 +291,13 @@ function CheckoutPageInner() {
                   <div className="space-y-4">
                     {/* Full Name */}
                     <div>
-                      <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <label htmlFor="checkout-customer-name" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                         {t('checkout.fullName')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <UserIcon size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
                         <input
+                          id="checkout-customer-name"
                           type="text"
                           name="customerName"
                           value={form.customerName}
@@ -310,12 +313,13 @@ function CheckoutPageInner() {
 
                     {/* Phone */}
                     <div>
-                      <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <label htmlFor="checkout-phone-number" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                         {t('checkout.phone')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <Phone size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
                         <input
+                          id="checkout-phone-number"
                           type="tel"
                           name="phoneNumber"
                           value={form.phoneNumber}
@@ -331,10 +335,11 @@ function CheckoutPageInner() {
 
                     {/* Shipping Address */}
                     <div>
-                      <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <label htmlFor="checkout-shipping-address" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                         {t('checkout.shippingAddress')} <span className="text-red-500">*</span>
                       </label>
                       <textarea
+                        id="checkout-shipping-address"
                         name="shippingAddress"
                         value={form.shippingAddress}
                         onChange={handleChange}
@@ -349,10 +354,11 @@ function CheckoutPageInner() {
 
                     {/* Notes (optional) */}
                     <div>
-                      <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <label htmlFor="checkout-notes" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                         {t('checkout.notes')}
                       </label>
                       <input
+                        id="checkout-notes"
                         type="text"
                         name="notes"
                         value={form.notes}

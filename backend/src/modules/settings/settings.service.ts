@@ -5,25 +5,26 @@
 import prisma from '@/config/database';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/common/errors/api.error';
 import bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 
 class SettingsService {
   /**
    * Get Current Settings
    */
   async getSettings() {
-    let settings = await (prisma as any).systemSettings.findUnique({
+    let settings = await prisma.systemSettings.findUnique({
       where: { id: 'CURRENT' }
     });
 
     if (!settings) {
       // Initialize if not exists
-      settings = await (prisma as any).systemSettings.create({
+      settings = await prisma.systemSettings.create({
         data: { id: 'CURRENT' }
       });
     }
 
     // Mask sensitive fields
-    const maskedSettings = { ...settings } as any;
+    const maskedSettings = { ...settings };
     if (maskedSettings.paymentGatewayApiKey) {
       maskedSettings.paymentGatewayApiKey = '********' + maskedSettings.paymentGatewayApiKey.slice(-4);
     }
@@ -37,8 +38,13 @@ class SettingsService {
   /**
    * Update Settings with Audit & Snapshot
    */
-  async updateSettings(userId: string, section: string, data: any, ipAddress?: string) {
-    const oldSettings = await (prisma as any).systemSettings.findUnique({
+  async updateSettings(
+    userId: string,
+    section: string,
+    data: Record<string, unknown>,
+    ipAddress?: string
+  ) {
+    const oldSettings = await prisma.systemSettings.findUnique({
       where: { id: 'CURRENT' }
     });
 
@@ -50,7 +56,7 @@ class SettingsService {
     // In this simplified version, we'll create a snapshot for every update to allow rollback
     await this.createSnapshot(userId, 'Auto-snapshot before updating ' + section, oldSettings);
 
-    const updatedSettings = await (prisma as any).systemSettings.update({
+    const updatedSettings = await prisma.systemSettings.update({
       where: { id: 'CURRENT' },
       data: {
         ...data,
@@ -84,16 +90,20 @@ class SettingsService {
   /**
    * Create Configuration Snapshot
    */
-  private async createSnapshot(userId: string, description: string, config: any) {
-    const lastSnapshot = await (prisma as any).systemConfigSnapshot.findFirst({
+  private async createSnapshot(
+    userId: string,
+    description: string,
+    config: Prisma.InputJsonValue
+  ) {
+    const lastSnapshot = await prisma.systemConfigSnapshot.findFirst({
       orderBy: { version: 'desc' }
     });
 
     const nextVersion = (lastSnapshot?.version || 0) + 1;
 
-    return (prisma as any).systemConfigSnapshot.create({
+    return prisma.systemConfigSnapshot.create({
       data: {
-        config: config as any,
+        config,
         version: nextVersion,
         description,
         createdById: userId
@@ -105,7 +115,7 @@ class SettingsService {
    * Get Snapshots
    */
   async getSnapshots() {
-    return (prisma as any).systemConfigSnapshot.findMany({
+    return prisma.systemConfigSnapshot.findMany({
       orderBy: { createdAt: 'desc' },
       take: 20
     });
@@ -114,11 +124,17 @@ class SettingsService {
   /**
    * Get Audit Logs for Settings
    */
-  async getSettingsLogs(filters: any) {
+  async getSettingsLogs(filters: {
+    page?: number;
+    limit?: number;
+    module?: string;
+    adminId?: string;
+    date?: string;
+  }) {
     const { page = 1, limit = 20, module, adminId, date } = filters;
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.AuditLogWhereInput = {
       entityType: 'SystemSettings'
     };
 
@@ -171,7 +187,7 @@ class SettingsService {
    */
   async triggerBackup(userId: string) {
     // In a real app, this would trigger an actual DB dump or cloud snapshot
-    await (prisma as any).systemSettings.update({
+    await prisma.systemSettings.update({
       where: { id: 'CURRENT' },
       data: { 
         lastBackupDate: new Date(),

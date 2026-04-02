@@ -72,6 +72,9 @@ export const productValidation = {
     limit: Joi.number().integer().min(1).max(100).optional(),
     locale: Joi.string().length(2).optional(),
   }).unknown(true), // allow spec_... keys
+  filters: Joi.object({
+    locale: Joi.string().length(2).optional(),
+  }),
   addAttachment: attachmentSchema,
   assignSpecifications: Joi.object({
     specifications: Joi.array().items(productSpecificationSchema).min(1).required(),

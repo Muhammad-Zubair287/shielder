@@ -5,6 +5,7 @@
 import { Request, Response } from 'express';
 import { quotationService } from './quotation.service';
 import { asyncHandler } from '@/common/middleware/error.middleware';
+import { AuthRequest } from '@/types/global';
 
 export class QuotationController {
 
@@ -78,8 +79,8 @@ export class QuotationController {
      *       201:
      *         description: Quotation created
      */
-    create = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    create = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const quotation = await quotationService.createQuotation(req.body, userId);
         res.status(201).json({ success: true, data: quotation });
     });
@@ -129,8 +130,8 @@ export class QuotationController {
      *       200:
      *         description: Quotation updated
      */
-    update = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    update = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const quotation = await quotationService.updateQuotation(req.params.id as string, req.body, userId);
         res.json({ success: true, data: quotation });
     });
@@ -151,8 +152,8 @@ export class QuotationController {
      *       200:
      *         description: Quotation deleted
      */
-    delete = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    delete = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const result = await quotationService.deleteQuotation(req.params.id as string, userId);
         res.json({ success: true, data: result });
     });
@@ -173,8 +174,8 @@ export class QuotationController {
      *       200:
      *         description: Quotation sent
      */
-    send = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    send = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const quotation = await quotationService.sendQuotation(req.params.id as string, userId);
         res.json({ success: true, data: quotation, message: 'Quotation sent successfully.' });
     });
@@ -195,8 +196,8 @@ export class QuotationController {
      *       200:
      *         description: Quotation approved
      */
-    approve = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    approve = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const quotation = await quotationService.approveQuotation(req.params.id as string, userId);
         res.json({ success: true, data: quotation, message: 'Quotation approved.' });
     });
@@ -226,8 +227,8 @@ export class QuotationController {
      *       200:
      *         description: Quotation rejected
      */
-    reject = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    reject = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const { reason } = req.body;
         const quotation = await quotationService.rejectQuotation(req.params.id as string, reason, userId);
         res.json({ success: true, data: quotation, message: 'Quotation rejected.' });
@@ -249,8 +250,8 @@ export class QuotationController {
      *       201:
      *         description: Quotation converted to order
      */
-    convertToOrder = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    convertToOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const result = await quotationService.convertToOrder(req.params.id as string, userId);
         res.status(201).json({ success: true, data: result, message: 'Quotation converted to order successfully.' });
     });
@@ -279,8 +280,8 @@ export class QuotationController {
      *       200:
      *         description: Quotation reactivated
      */
-    reactivate = asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
+    reactivate = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const userId = req.user!.id;
         const { expiryDate } = req.body;
         const quotation = await quotationService.reactivateExpired(req.params.id as string, expiryDate, userId);
         res.json({ success: true, data: quotation, message: 'Quotation reactivated successfully.' });

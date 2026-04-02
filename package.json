@@ -1,4 +1,13 @@
 {
+  "scripts": {
+    "test:backend:auth": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts src/modules/auth/__tests__/auth.security.test.ts --runInBand --silent",
+    "test:backend:auth:login-smoke": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts --runInBand --silent -t \"Login Endpoint\"",
+    "test:backend:auth:core-smoke": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts --testNamePattern=\"TC-016|TC-017|TC-018\" --runInBand --silent",
+    "test:backend:newsletter": "cd backend && npm test -- src/modules/newsletter/__tests__/newsletter.test.ts --runInBand --silent",
+    "test:backend:admin-contact": "cd backend && npm test -- src/modules/admin/contact/__tests__/admin-contact.test.ts --runInBand --silent",
+    "test:backend:smoke": "npm run test:backend:auth:core-smoke && npm run test:backend:newsletter && npm run test:backend:admin-contact",
+    "test:backend:matrix": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts src/modules/auth/__tests__/auth.security.test.ts src/modules/order/__tests__/order.checkout.integration.test.ts src/modules/order/__tests__/order.admin-actions.integration.test.ts src/modules/quotation/__tests__/quotation.notifications.integration.test.ts src/modules/customer-quotation/__tests__/customer-quotation.workflow.integration.test.ts src/modules/inventory/product/__tests__/product.security.integration.test.ts src/modules/inventory/product/__tests__/product.moderation.test.ts --runInBand --silent"
+  },
   "dependencies": {
     "pdfkit": "^0.17.2",
     "xlsx": "^0.18.5"

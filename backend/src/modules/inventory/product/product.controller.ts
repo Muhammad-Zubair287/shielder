@@ -3,6 +3,16 @@ import { productService } from './product.service';
 import { ProductStatus } from '@prisma/client';
 
 export class ProductController {
+  async getFilters(req: Request, res: Response, next: NextFunction) {
+    try {
+      const locale = (req.query.locale as string) || (req.headers['accept-language'] as string) || 'en';
+      const filters = await productService.getFiltersMetadata(locale);
+      res.json({ success: true, data: filters });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * @swagger
    * /api/inventory/products:

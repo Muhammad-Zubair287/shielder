@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { orderService } from './order.service';
 import { getPaginationParams } from '../../common/utils/pagination';
+import { AuthRequest } from '@/types/global';
 
 export class OrderController {
   /**
@@ -32,7 +33,13 @@ export class OrderController {
    */
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
-      const order = await orderService.createOrder(req.body);
+      const authReq = req as AuthRequest;
+      const payload = {
+        ...req.body,
+        userId: authReq.user?.role === 'USER' ? authReq.user.id : (req.body.userId || authReq.user?.id),
+      };
+
+      const order = await orderService.createOrder(payload);
       res.status(201).json({
         success: true,
         message: 'Order created successfully',
@@ -100,10 +107,10 @@ export class OrderController {
    *       404:
    *         description: Order not found
    */
-  async getOrderById(req: Request, res: Response, next: NextFunction) {
+  async getOrderById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const order = await orderService.getOrderById(id as string);
+      const order = await orderService.getOrderById(id as string, req.user);
       res.json({
         success: true,
         message: 'Order retrieved successfully',
@@ -139,11 +146,10 @@ export class OrderController {
    *       200:
    *         description: Order status updated
    */
-  async updateStatus(req: Request, res: Response, next: NextFunction) {
+  async updateStatus(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const user = (req as any).user;
-      const performedBy = user ? `${user.role}: ${user.email}` : 'Unknown Admin';
+      const performedBy = req.user ? `${req.user.role}: ${req.user.email}` : 'Unknown Admin';
       const order = await orderService.updateOrderStatus(id as string, { ...req.body, performedBy });
       res.json({
         success: true,
@@ -183,9 +189,9 @@ export class OrderController {
    * GET /api/orders/my
    * Authenticated customer fetches their own orders.
    */
-  async getMyOrders(req: Request, res: Response, next: NextFunction) {
+  async getMyOrders(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user?.id as string;
+      const userId = req.user?.id as string;
       const page   = parseInt(req.query.page  as string || '1',  10);
       const limit  = parseInt(req.query.limit as string || '10', 10);
       const result = await orderService.getMyOrders(userId, page, limit);

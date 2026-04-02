@@ -17,8 +17,11 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest",
+    "test:auth": "jest src/modules/auth/__tests__/auth.test.ts src/modules/auth/__tests__/auth.security.test.ts",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "perf:baseline": "tsx scripts/performance-baseline.ts",
+    "email:check": "tsx -r tsconfig-paths/register scripts/check-email-config.ts"
   },
   "keywords": [
     "shielder",
@@ -46,7 +49,6 @@
     "multer": "^2.0.2",
     "nodemailer": "^8.0.0",
     "pdfkit": "^0.17.2",
-    "prisma": "^5.22.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "xlsx": "^0.18.5"
@@ -56,6 +58,7 @@
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
     "@types/joi": "^17.2.3",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/morgan": "^1.9.9",
@@ -63,13 +66,19 @@
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^7.0.9",
     "@types/pdfkit": "^0.17.5",
+    "@types/supertest": "^7.2.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^8.18.2",
     "@typescript-eslint/parser": "^8.18.2",
     "eslint": "^9.17.0",
+    "jest": "^30.3.0",
     "prettier": "^3.4.2",
+    "prisma": "^7.6.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
     "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },

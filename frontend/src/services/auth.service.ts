@@ -9,11 +9,15 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
-  RefreshTokenRequest,
   ApiResponse,
   User,
   ChangePasswordRequest,
 } from '@/types';
+
+type StorableAuthData = Partial<AuthResponse> & {
+  accessToken?: string;
+  refreshToken?: string;
+};
 
 /**
  * Auth Service Class
@@ -52,8 +56,60 @@ class AuthService {
 
       const authData = response.data.data!;
 
-      // Store tokens and user
-      this.storeAuthData(authData);
+      // Only store auth data if 2FA is not required (i.e., we have valid tokens)
+      if (
+        !authData.requiresTwoFactor &&
+        authData.tokens?.accessToken &&
+        authData.tokens?.refreshToken
+      ) {
+        this.storeAuthData(authData);
+      }
+
+      return authData;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Request password reset email
+   */
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(token: string, password: string): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+        token,
+        newPassword: password,
+      });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Verify OTP and complete 2FA login flow
+   */
+  async verifyOTP(data: { userId: string; code: string; otpSessionToken?: string }): Promise<AuthResponse> {
+    try {
+      const response = await apiClient.post<ApiResponse<AuthResponse>>(
+        API_ENDPOINTS.AUTH.VERIFY_OTP,
+        data
+      );
+
+      const authData = response.data.data!;
+      if (authData.tokens?.accessToken && authData.tokens?.refreshToken) {
+        this.storeAuthData(authData);
+      }
 
       return authData;
     } catch (error) {
@@ -144,7 +200,7 @@ class AuthService {
   /**
    * Store authentication data in localStorage
    */
-  private storeAuthData(authData: any): void {
+  private storeAuthData(authData: StorableAuthData): void {
     if (!authData) return;
 
     // Extraction logic that handles both {user, tokens: {at, rt}} and {at, rt}
@@ -205,4 +261,5 @@ class AuthService {
   }
 }
 
-export default new AuthService();
+export const authService = new AuthService();
+export default authService;

@@ -5,9 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Send, Trash2, Search, Loader2 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
-import apiClient from '@/services/api.service';
 import SARSymbol from '@/components/SARSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useProductSearch, type ProductSearchItem } from '@/hooks/useProductSearch';
 
 interface CartItem {
     productId: string;
@@ -18,13 +18,37 @@ interface CartItem {
     totalPrice: number;
 }
 
+interface EditableQuotationItem {
+    productId: string;
+    productName: string;
+    unitPrice: number | string;
+    quantity: number;
+    discount?: number | string;
+    totalPrice: number | string;
+}
+
+interface EditableQuotation {
+    status: string;
+    quotationNumber: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    companyName?: string;
+    expiryDate?: string;
+    notes?: string;
+    terms?: string;
+    discount?: number | string;
+    items?: EditableQuotationItem[];
+}
+
 export default function EditQuotationPage() {
     const { t, isRTL } = useLanguage();
     const { id } = useParams();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [quotation, setQuotation] = useState<any>(null);
+    const [quotation, setQuotation] = useState<EditableQuotation | null>(null);
 
     // Customer
     const [customerName, setCustomerName] = useState('');
@@ -36,7 +60,7 @@ export default function EditQuotationPage() {
     // Products
     const [items, setItems] = useState<CartItem[]>([]);
     const [productSearch, setProductSearch] = useState('');
-    const [productResults, setProductResults] = useState<any[]>([]);
+    const { results: productResults } = useProductSearch(productSearch, 5);
 
     // Settings
     const [expiryDate, setExpiryDate] = useState('');
@@ -60,7 +84,7 @@ export default function EditQuotationPage() {
                 setNotes(q.notes || '');
                 setTerms(q.terms || '');
                 setOverallDiscount(Number(q.discount || 0));
-                setItems((q.items || []).map((item: any) => ({
+                setItems((q.items || []).map((item: EditableQuotationItem) => ({
                     productId: item.productId,
                     productName: item.productName,
                     unitPrice: Number(item.unitPrice),
@@ -74,16 +98,7 @@ export default function EditQuotationPage() {
         load();
     }, [id]);
 
-    useEffect(() => {
-        if (!productSearch.trim()) { setProductResults([]); return; }
-        const t = setTimeout(async () => {
-            const res = await apiClient.get('/inventory/products', { params: { search: productSearch, limit: 5 } });
-            setProductResults(res.data?.data?.products || []);
-        }, 350);
-        return () => clearTimeout(t);
-    }, [productSearch]);
-
-    const addProduct = (p: any) => {
+    const addProduct = (p: ProductSearchItem) => {
         const exists = items.find(i => i.productId === p.id);
         if (exists) {
             setItems(prev => prev.map(i => i.productId === p.id ? { ...i, quantity: i.quantity + 1, totalPrice: i.unitPrice * (i.quantity + 1) - i.discount } : i));
@@ -91,7 +106,7 @@ export default function EditQuotationPage() {
             const price = Number(p.price || 0);
             setItems(prev => [...prev, { productId: p.id, productName: p.translations?.[0]?.name || 'Product', unitPrice: price, quantity: 1, discount: 0, totalPrice: price }]);
         }
-        setProductSearch(''); setProductResults([]);
+        setProductSearch('');
     };
 
     const updateItem = (idx: number, field: 'quantity' | 'discount', value: number) => {
@@ -120,7 +135,10 @@ export default function EditQuotationPage() {
             });
             if (sendAfter) await quotationService.send(id as string);
             router.push(`/superadmin/quotations/${id}`);
-        } catch (e: any) { alert(e?.response?.data?.message || 'Failed to save'); }
+        } catch (e: unknown) {
+            const maybeAxios = e as { response?: { data?: { message?: string } } };
+            alert(maybeAxios?.response?.data?.message || 'Failed to save');
+        }
         finally { setSaving(false); }
     };
 

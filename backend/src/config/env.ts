@@ -42,6 +42,22 @@ const validateEnv = (): void => {
         'Please update your DATABASE_URL in the Railway Environment Variables tab to use your Railway PostgreSQL connection string.'
       );
     }
+
+    const provider = (process.env.EMAIL_PROVIDER || 'smtp').toLowerCase();
+    if (provider === 'smtp') {
+      const missingSmtp = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD'].filter(
+        (key) => !process.env[key]
+      );
+      if (missingSmtp.length > 0) {
+        throw new Error(
+          `Missing required SMTP environment variables for production: ${missingSmtp.join(', ')}`
+        );
+      }
+    }
+
+    if (provider === 'sendgrid' && !process.env.SENDGRID_API_KEY) {
+      throw new Error('Missing SENDGRID_API_KEY for production email provider configuration');
+    }
   }
 };
 

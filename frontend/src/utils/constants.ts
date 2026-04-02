@@ -38,6 +38,9 @@ export const API_ENDPOINTS = {
     REFRESH_TOKEN: 'auth/refresh',
     ME: 'auth/me',
     VERIFY_EMAIL: 'auth/verify-email', // Note: backend expects GET /verify-email/:token
+    FORGOT_PASSWORD: 'auth/forgot-password',
+    RESET_PASSWORD: 'auth/reset-password',
+    VERIFY_OTP: 'auth/verify-otp',
     CHANGE_PASSWORD: 'auth/change-password',
   },
   // Users
@@ -96,6 +99,8 @@ export const API_ENDPOINTS = {
     GENERATE: 'customer-quotations/generate',
     BY_ID:    (id: string) => `customer-quotations/${id}`,
     PDF:      (id: string) => `customer-quotations/${id}/pdf`,
+    ACCEPT:   (id: string) => `customer-quotations/${id}/accept`,
+    REJECT:   (id: string) => `customer-quotations/${id}/reject`,
   },
   // Orders
   ORDERS: {
@@ -103,6 +108,9 @@ export const API_ENDPOINTS = {
     MY:            'orders/my',
     BY_ID:         (id: string) => `orders/${id}`,
     UPDATE_STATUS: (id: string) => `orders/${id}/status`,
+  },
+  CONTACT: {
+    SUBMIT: 'contact',
   },
   // EPG Card Payment
   EPG: {

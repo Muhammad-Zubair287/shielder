@@ -2,9 +2,23 @@
 
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
 import { useLanguage } from '@/contexts/LanguageContext';
+import CaptchaChallenge from '@/components/CaptchaChallenge';
+import {
+  CONTACT_ALLOWED_FILE_TYPES,
+  CONTACT_INFO,
+  CONTACT_PAGE_LIMITS,
+  CONTACT_SUBJECTS,
+} from './contact.constants';
+import {
+  ContactFormValues,
+  ContactSubmissionPayload,
+} from './contact.types';
+import contactService from '@/services/contact.service';
+import { validateContactForm } from '@/services/validation/contact.validation';
 
 // ── Social icons (simple SVG) ─────────────────────────────────────────────────
 function TwitterIcon() {
@@ -42,35 +56,63 @@ const BUSINESS_HOURS = [
   { day: 'Sunday',    from: '',       to: '',        closed: true  },
 ];
 
-const SUBJECTS = [
-  'General Inquiry',
-  'Product Support',
-  'Quotation Request',
-  'Other',
-];
+const initialFormValues: ContactFormValues = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  subject: CONTACT_SUBJECTS[0],
+  message: '',
+  captchaConfirmed: false,
+};
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ContactPage() {
   const { t, isRTL } = useLanguage();
 
-  const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phone: '', subject: 'General Inquiry', message: '',
-  });
+  const [form, setForm] = useState<ContactFormValues>(initialFormValues);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>('');
 
   const field = (key: keyof typeof form, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const errors = validateContactForm(form, attachment);
+    if (errors.length > 0) {
+      const mapped: Record<string, string> = {};
+      errors.forEach(err => { mapped[err.field] = err.message; });
+      setFieldErrors(mapped);
+      return;
+    }
+
+    setFieldErrors({});
     setSending(true);
-    // Simulate send — replace with real API call
-    await new Promise(r => setTimeout(r, 1200));
-    setSending(false);
-    setSent(true);
-    setForm({ firstName: '', lastName: '', email: '', phone: '', subject: 'General Inquiry', message: '' });
-    setTimeout(() => setSent(false), 4000);
+
+    try {
+      const payload: ContactSubmissionPayload = {
+        values: form,
+        attachment,
+        captchaToken,
+      };
+
+      await contactService.submit(payload);
+
+      setSent(true);
+      setAttachment(null);
+      setCaptchaToken('');
+      setForm(initialFormValues);
+      setTimeout(() => setSent(false), 4000);
+    } catch (error) {
+      toast.error('Unable to send your message right now. Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputCls = `w-full border-0 border-b border-gray-300 pb-2 text-sm text-gray-900 placeholder-gray-400
@@ -101,21 +143,35 @@ export default function ContactPage() {
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                     <Phone size={15} className="text-white" />
                   </div>
-                  <span className="text-sm text-gray-200">+1 (555) 123-4567</span>
+                  <a href={CONTACT_INFO.phoneHref} className="text-sm text-gray-200 hover:text-white transition-colors">
+                    {CONTACT_INFO.phoneDisplay}
+                  </a>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                     <Mail size={15} className="text-white" />
                   </div>
-                  <span className="text-sm text-gray-200">info@devflx.com</span>
+                  <a href={CONTACT_INFO.emailHref} className="text-sm text-gray-200 hover:text-white transition-colors">
+                    {CONTACT_INFO.emailDisplay}
+                  </a>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
                     <MapPin size={15} className="text-white" />
                   </div>
                   <span className="text-sm text-gray-200 leading-relaxed">
-                    123 Filter Street<br />Auto City, 12345 United States
+                    {CONTACT_INFO.address}
                   </span>
+                </div>
+                <div>
+                  <a
+                    href={CONTACT_INFO.whatsAppHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center bg-[#F97316] hover:bg-[#e8650a] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                  >
+                    WhatsApp Chat
+                  </a>
                 </div>
               </div>
 
@@ -126,7 +182,7 @@ export default function ContactPage() {
                   { Icon: InstagramIcon, label: 'Instagram' },
                   { Icon: DiscordIcon,   label: 'Discord'  },
                 ].map(({ Icon, label }) => (
-                  <button key={label} aria-label={label}
+                  <button key={label} type="button" aria-label={label}
                     className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
                     <Icon />
                   </button>
@@ -148,14 +204,14 @@ export default function ContactPage() {
                 {/* Row 1: First / Last Name */}
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">{t('contactFirstName')}</label>
-                    <input type="text" required placeholder={t('contactFirstNamePH')}
+                    <label htmlFor="contact-first-name" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactFirstName')}</label>
+                    <input id="contact-first-name" type="text" required placeholder={t('contactFirstNamePH')}
                       value={form.firstName} onChange={e => field('firstName', e.target.value)}
                       className={inputCls} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">{t('contactLastName')}</label>
-                    <input type="text" required placeholder={t('contactLastNamePH')}
+                    <label htmlFor="contact-last-name" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactLastName')}</label>
+                    <input id="contact-last-name" type="text" required placeholder={t('contactLastNamePH')}
                       value={form.lastName} onChange={e => field('lastName', e.target.value)}
                       className={inputCls} />
                   </div>
@@ -164,14 +220,14 @@ export default function ContactPage() {
                 {/* Row 2: Email / Phone */}
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">{t('contactEmail')}</label>
-                    <input type="email" required placeholder={t('contactEmailPH')}
+                    <label htmlFor="contact-email" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactEmail')}</label>
+                    <input id="contact-email" type="email" required placeholder={t('contactEmailPH')}
                       value={form.email} onChange={e => field('email', e.target.value)}
                       className={inputCls} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">{t('contactPhone')}</label>
-                    <input type="tel" placeholder={t('contactPhonePH')}
+                    <label htmlFor="contact-phone" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactPhone')}</label>
+                    <input id="contact-phone" type="tel" placeholder={t('contactPhonePH')}
                       value={form.phone} onChange={e => field('phone', e.target.value)}
                       className={inputCls} />
                   </div>
@@ -179,16 +235,16 @@ export default function ContactPage() {
 
                 {/* Subject radios */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-3">{t('contactSubject')}</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-3" htmlFor="contact-subject-general">{t('contactSubject')}</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-4">
-                    {SUBJECTS.map(s => (
+                    {CONTACT_SUBJECTS.map((s, idx) => (
                       <label key={s} className="flex items-center gap-2 cursor-pointer group">
                         {/* radio circle */}
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
                           ${form.subject === s ? 'border-[#0205A6]' : 'border-gray-300 group-hover:border-gray-400'}`}>
                           {form.subject === s && <div className="w-2 h-2 rounded-full bg-[#0205A6]" />}
                         </div>
-                        <input type="radio" className="sr-only" name="subject" value={s}
+                        <input id={`contact-subject-${idx === 0 ? 'general' : idx}`} type="radio" className="sr-only" name="subject" value={s}
                           checked={form.subject === s} onChange={() => field('subject', s)} />
                         <span className={`text-xs font-medium ${form.subject === s ? 'text-[#0205A6]' : 'text-gray-600'}`}>
                           {s}
@@ -200,10 +256,45 @@ export default function ContactPage() {
 
                 {/* Message */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">{t('contactMessage')}</label>
-                  <textarea required rows={4} placeholder={t('contactMessagePH')}
+                  <label htmlFor="contact-message" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactMessage')}</label>
+                  <textarea id="contact-message" required rows={4} placeholder={t('contactMessagePH')}
                     value={form.message} onChange={e => field('message', e.target.value)}
+                    maxLength={CONTACT_PAGE_LIMITS.MAX_MESSAGE_CHARACTERS}
                     className={`${inputCls} resize-none`} />
+                  <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
+                    <span>{fieldErrors.message || ''}</span>
+                    <span>{form.message.length}/{CONTACT_PAGE_LIMITS.MAX_MESSAGE_CHARACTERS}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="contact-attachment" className="block text-xs font-semibold text-gray-700 mb-1">Attachment</label>
+                  <input
+                    id="contact-attachment"
+                    type="file"
+                    onChange={e => setAttachment(e.target.files?.[0] || null)}
+                    className="w-full text-sm text-gray-600"
+                    accept={CONTACT_ALLOWED_FILE_TYPES.join(',')}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Max {CONTACT_PAGE_LIMITS.MAX_ATTACHMENT_MB}MB. PDF, DOC, DOCX, JPG, PNG.
+                  </p>
+                  {fieldErrors.attachment && (
+                    <p className="mt-1 text-xs text-red-500">{fieldErrors.attachment}</p>
+                  )}
+                </div>
+
+                <div>
+                  <CaptchaChallenge
+                    isVerified={form.captchaConfirmed}
+                    onVerify={(verified, token) => {
+                      setForm(prev => ({ ...prev, captchaConfirmed: verified }));
+                      setCaptchaToken(token || '');
+                    }}
+                  />
+                  {fieldErrors.captchaConfirmed && (
+                    <p className="mt-2 text-xs text-red-500">{fieldErrors.captchaConfirmed}</p>
+                  )}
                 </div>
 
                 {/* Submit */}
@@ -247,6 +338,20 @@ export default function ContactPage() {
                 )}
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ── Map ────────────────────────────────────────────────────────── */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Location</h2>
+          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+            <iframe
+              title="Company location map"
+              src={CONTACT_INFO.mapEmbedUrl}
+              className="w-full h-80"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </section>
 

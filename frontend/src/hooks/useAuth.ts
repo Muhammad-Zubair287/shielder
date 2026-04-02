@@ -68,8 +68,27 @@ export const useAuth = () => {
       router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
 
       const response = await authService.login(data);
-      setUser(response.user);
 
+      // ⚠️ SECURITY: Handle mandatory 2FA for admin and super-admin users
+      if (response.requiresTwoFactor && response.otpSessionToken) {
+        // Don't store user yet; they're pending 2FA verification
+        toast.success('Login successful. Please verify with 2FA.');
+        
+        // Store temporary session tokens for 2FA verification
+        if (response.user.role === 'SUPER_ADMIN') {
+          sessionStorage.setItem('superadmin_2fa_user_id', response.user.id);
+          sessionStorage.setItem('superadmin_otp_session_token', response.otpSessionToken);
+          router.replace('/superadmin/superadmin-2fa');
+        } else if (response.user.role === 'ADMIN') {
+          sessionStorage.setItem('admin_2fa_user_id', response.user.id);
+          sessionStorage.setItem('admin_otp_session_token', response.otpSessionToken);
+          router.replace('/admin/admin-2fa');
+        }
+        return response;
+      }
+
+      // Normal login flow (no 2FA needed)
+      setUser(response.user);
       toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
 
       // Redirect based on role

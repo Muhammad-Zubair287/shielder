@@ -5,13 +5,28 @@
 
 import { prisma } from '@/config/database';
 
+type RevenueMonthlyRow = {
+  month: Date;
+  revenue: number;
+};
+
+type OrdersMonthlyRow = {
+  month: Date;
+  orderCount: number;
+};
+
+type UserGrowthRow = {
+  month: Date;
+  userCount: number;
+};
+
 class AnalyticsService {
   /**
    * Aggregate monthly revenue for the last 12 months
    * Only includes PAID orders
    */
   static async getRevenueMonthly() {
-    const result: any[] = await prisma.$queryRaw`
+    const result = await prisma.$queryRaw<RevenueMonthlyRow[]>`
       SELECT 
         DATE_TRUNC('month', created_at) AS month,
         SUM(total)::FLOAT AS revenue
@@ -29,7 +44,7 @@ class AnalyticsService {
    * Excludes CANCELLED orders
    */
   static async getOrdersMonthly() {
-    const result: any[] = await prisma.$queryRaw`
+    const result = await prisma.$queryRaw<OrdersMonthlyRow[]>`
       SELECT 
         DATE_TRUNC('month', created_at) AS month,
         COUNT(id)::INT AS "orderCount"
@@ -85,7 +100,7 @@ class AnalyticsService {
    * Aggregate user growth by month
    */
   static async getUserGrowth() {
-    const result: any[] = await prisma.$queryRaw`
+    const result = await prisma.$queryRaw<UserGrowthRow[]>`
       SELECT 
         DATE_TRUNC('month', created_at) AS month,
         COUNT(id)::INT AS "userCount"

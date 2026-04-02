@@ -5,10 +5,47 @@
 
 import { prisma } from '@/config/database';
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
-// @ts-ignore
 import { QuotationStatus, QuotationActivityType, NotificationType, UserRole, Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 import NotificationService from '@/modules/notification/notification.service';
 import { emailService } from '@/common/services/email.service';
+import { QuotationItem } from './quotation.types';
+
+type QuotationListFilters = {
+    search?: string;
+    status?: QuotationStatus;
+    dateFrom?: string;
+    dateTo?: string;
+    sortBy?: keyof Prisma.QuotationOrderByWithRelationInput;
+    sortOrder?: Prisma.SortOrder;
+};
+
+type QuotationPagination = {
+    skip: number;
+    limit: number;
+};
+
+type CreateQuotationItemInput = {
+    productId: string;
+    quantity: number;
+    discount?: number;
+};
+
+type CreateQuotationInput = {
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    companyName?: string;
+    items: CreateQuotationItemInput[];
+    discount?: number;
+    taxRate?: number;
+    notes?: string;
+    terms?: string;
+    quotationDate?: string;
+    expiryDate: string;
+};
+
+type UpdateQuotationInput = Partial<CreateQuotationInput>;
 
 export class QuotationService {
 
@@ -37,8 +74,8 @@ export class QuotationService {
     /**
      * Create a new quotation
      */
-    async createQuotation(data: any, userId: string) {
-        const { customerName, customerEmail, customerPhone, customerAddress, companyName,
+    async createQuotation(data: CreateQuotationInput, userId: string) {
+            const { customerName, customerEmail, customerPhone, customerAddress, companyName,
             items, discount = 0, taxRate = 0, notes, terms, quotationDate, expiryDate } = data;
 
         if (!items || items.length === 0) {
@@ -49,7 +86,7 @@ export class QuotationService {
         }
 
         // Validate products and compute per-item totals
-        const resolvedItems: any[] = [];
+            const resolvedItems: QuotationItem[] = [];
         let subtotal = new Prisma.Decimal(0);
 
         for (const item of items) {
@@ -132,11 +169,11 @@ export class QuotationService {
     /**
      * Get paginated list of quotations
      */
-    async getQuotations(filters: any, pagination: any) {
+    async getQuotations(filters: QuotationListFilters, pagination: QuotationPagination) {
         const { search, status, dateFrom, dateTo, sortBy = 'createdAt', sortOrder = 'desc' } = filters;
         const { skip, limit } = pagination;
 
-        const where: any = {};
+        const where: Prisma.QuotationWhereInput = {};
 
         if (search) {
             where.OR = [
@@ -197,7 +234,7 @@ export class QuotationService {
     /**
      * Update quotation (only DRAFT or SENT)
      */
-    async updateQuotation(id: string, data: any, userId: string) {
+    async updateQuotation(id: string, data: UpdateQuotationInput, userId: string) {
         const quotation = await prisma.quotation.findUnique({ where: { id } });
         if (!quotation) throw new NotFoundError('Quotation not found');
 
@@ -207,11 +244,11 @@ export class QuotationService {
 
         const { items, discount = 0, taxRate = 0, ...rest } = data;
 
-        let updateData: any = { ...rest, updatedAt: new Date() };
+        let updateData: Prisma.QuotationUpdateInput = { ...rest, updatedAt: new Date() };
 
         if (items && items.length > 0) {
             let subtotal = new Prisma.Decimal(0);
-            const resolvedItems: any[] = [];
+            const resolvedItems: QuotationItem[] = [];
 
             for (const item of items) {
                 const product = await prisma.product.findUnique({
@@ -295,7 +332,16 @@ export class QuotationService {
 
         // Send email
         try {
-            await (emailService as any).sendQuotationEmail(quotation.customerEmail, quotation.customerName, quotation);
+                        const maybeQuotationEmailSender = emailService as {
+                            sendQuotationEmail?: (to: string, name: string, data: unknown) => Promise<void>;
+                        };
+                        if (maybeQuotationEmailSender.sendQuotationEmail) {
+                            await maybeQuotationEmailSender.sendQuotationEmail(
+                                quotation.customerEmail,
+                                quotation.customerName,
+                                quotation
+                            );
+                        }
         } catch (e) {
             console.error('Quotation email failed:', e);
         }
@@ -375,7 +421,7 @@ export class QuotationService {
 
         const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-        const order = await prisma.$transaction(async (tx: any) => {
+        const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const newOrder = await tx.order.create({
                 data: {
                     orderNumber,

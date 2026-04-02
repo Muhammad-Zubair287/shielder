@@ -16,7 +16,7 @@ import SARSymbol from '@/components/SARSymbol';
 import { getImageUrl } from '@/utils/helpers';
 import {
   ArrowLeft, ArrowRight, Download, FileText,
-  Building2, MapPin, Hash, Calendar,
+  Building2, MapPin, Hash, Calendar, CheckCircle2, XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
@@ -81,6 +81,7 @@ export default function MyQuotationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<'accept' | 'reject' | null>(null);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
@@ -114,6 +115,39 @@ export default function MyQuotationPage() {
       toast.error(t('quot.serverError'));
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const canRespondToQuotation =
+    quotation?.status === 'SENT' || quotation?.status === 'VIEWED';
+
+  const handleAccept = async () => {
+    if (!quotation || !canRespondToQuotation) return;
+    setActionLoading('accept');
+    try {
+      const updated = await customerQuotationService.accept(quotation.id);
+      setQuotation((prev) => (prev ? { ...prev, ...updated } : prev));
+      toast.success(t('quot.acceptSuccess'));
+    } catch {
+      toast.error(t('quot.actionError'));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!quotation || !canRespondToQuotation) return;
+    const reason = window.prompt(t('quot.rejectReasonPrompt')) || '';
+
+    setActionLoading('reject');
+    try {
+      const updated = await customerQuotationService.reject(quotation.id, reason);
+      setQuotation((prev) => (prev ? { ...prev, ...updated } : prev));
+      toast.success(t('quot.rejectSuccess'));
+    } catch {
+      toast.error(t('quot.actionError'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -171,6 +205,9 @@ export default function MyQuotationPage() {
                   <p className={`text-sm text-[#F97316] font-bold ${isRTL ? 'text-right' : ''}`}>
                     #{quotation.quotationNumber}
                   </p>
+                  <p className={`text-xs text-white/80 mt-1 ${isRTL ? 'text-right' : ''}`}>
+                    {t('quot.statusLabel')}: {quotation.status}
+                  </p>
                 </div>
 
                 {/* Download button */}
@@ -199,6 +236,28 @@ export default function MyQuotationPage() {
 
               {/* ── Product table ─────────────────────────────────────────── */}
               <div className="px-8 py-5">
+
+                {canRespondToQuotation && (
+                  <div className={`mb-5 flex items-center gap-2 ${isRTL ? 'justify-start flex-row-reverse' : 'justify-end'}`}>
+                    <button
+                      onClick={handleReject}
+                      disabled={actionLoading !== null}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-60 ${isRTL ? 'flex-row-reverse' : ''}`}
+                    >
+                      <XCircle size={16} />
+                      {actionLoading === 'reject' ? t('quot.processingAction') : t('quot.rejectQuotation')}
+                    </button>
+
+                    <button
+                      onClick={handleAccept}
+                      disabled={actionLoading !== null}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 ${isRTL ? 'flex-row-reverse' : ''}`}
+                    >
+                      <CheckCircle2 size={16} />
+                      {actionLoading === 'accept' ? t('quot.processingAction') : t('quot.acceptQuotation')}
+                    </button>
+                  </div>
+                )}
 
                 {/* Table header */}
                 <div className={`hidden sm:grid grid-cols-12 gap-2 text-xs font-bold text-gray-500 uppercase tracking-wide mb-3 ${isRTL ? 'text-right' : ''}`}>

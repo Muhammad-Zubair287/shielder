@@ -27,6 +27,7 @@ model User {
   updatedBy               String?                 @map("updated_by")
   verificationToken       String?                 @map("verification_token")
   verificationTokenExpiry DateTime?               @map("verification_token_expiry")
+  otpSessionToken         String?                 @map("otp_session_token") // Temporary token for 2FA-pending admin sessions
   role                    UserRole                @default(USER)
   status                  UserStatus              @default(PENDING)
   lastLoginIp             String?                 @map("last_login_ip")
@@ -41,6 +42,8 @@ model User {
   products                Product[]
   quotationsCreated       Quotation[]             @relation("QuotationCreator")
   refreshTokens           RefreshToken[]
+  twoFactorOTP            TwoFactorOTP?
+  reviews                 ProductReview[]         @relation(name: "UserReviews")
   profile                 UserProfile?
 
   @@index([email])
@@ -175,6 +178,8 @@ model Product {
   specifications        ProductSpecification[]
   translations          ProductTranslation[]
   product_variants      product_variants[]
+  reviews               ProductReview[]       @relation(name: "ProductReviews")
+  inventoryAlert        InventoryAlert?       @relation(name: "InventoryAlerts")
   brand                 brands?                @relation(fields: [brandId], references: [id])
   category              Category               @relation(fields: [categoryId], references: [id])
   subcategory           Subcategory            @relation(fields: [subcategoryId], references: [id])
@@ -327,9 +332,54 @@ model AuditLog {
   changes    Json?
   ipAddress  String?
   userAgent  String?
+  location   String?
   user       User?    @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
+}
+
+model TwoFactorOTP {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  code      String
+  method    String   @default("EMAIL")
+  attempts  Int      @default(0)
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([used])
+  @@map("two_factor_otps")
+}
+
+model Contact {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  fileUrl   String?       @map("file_url")
+  status    ContactStatus @default(PENDING)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("contacts")
+}
+
+model NewsletterSubscription {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  active       Boolean  @default(true)
+  subscribedAt DateTime @default(now()) @map("subscribed_at")
+
+  @@index([active])
+  @@index([subscribedAt])
+  @@map("newsletter_subscriptions")
 }
 
 model Cart {
@@ -699,4 +749,56 @@ enum QuotationActivityType {
   DELETED
   EXPIRED
   REACTIVATED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AlertStatus {
+  ACTIVE
+  INACTIVE
+  TRIGGERED
+}
+
+model ProductReview {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  rating    Int      @db.SmallInt // 1-5
+  title     String
+  comment   String   @db.Text
+  status    ReviewStatus @default(PENDING)
+  approvedBy String?  // Super Admin who approved
+  approvedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(name: "ProductReviews", fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(name: "UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@index([status])
+  @@map("product_reviews")
+}
+
+model InventoryAlert {
+  id        String   @id @default(uuid())
+  productId String   @unique
+  threshold Int
+  status    AlertStatus @default(ACTIVE)
+  lastTriggeredAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(name: "InventoryAlerts", fields: [productId], references: [id], onDelete: Cascade)
+  @@index([status])
+  @@index([productId])
+  @@map("inventory_alerts")
+}
+
+enum ContactStatus {
+  PENDING
+  RESOLVED
 }

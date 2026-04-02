@@ -7,8 +7,31 @@ import { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { AuthRequest } from '@/types/global';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { ExportFormat } from './reports.types';
 
 const reportsService = new ReportsService();
+
+const parsePaymentStatus = (value: unknown): PaymentStatus | undefined => {
+  if (typeof value !== 'string') return undefined;
+  return Object.values(PaymentStatus).includes(value as PaymentStatus)
+    ? (value as PaymentStatus)
+    : undefined;
+};
+
+const parseOrderStatus = (value: unknown): OrderStatus | undefined => {
+  if (typeof value !== 'string') return undefined;
+  return Object.values(OrderStatus).includes(value as OrderStatus)
+    ? (value as OrderStatus)
+    : undefined;
+};
+
+const parseExportFormat = (value: unknown): ExportFormat => {
+  if (value === 'pdf' || value === 'excel' || value === 'csv') {
+    return value;
+  }
+  return 'excel';
+};
 
 class ReportsController {
   /**
@@ -82,8 +105,8 @@ class ReportsController {
       from: dateFrom,
       to: dateTo,
       categoryId: categoryId as string,
-      paymentStatus: paymentStatus as any,
-      orderStatus: orderStatus as any
+      paymentStatus: parsePaymentStatus(paymentStatus),
+      orderStatus: parseOrderStatus(orderStatus)
     });
     
     res.json({
@@ -114,7 +137,8 @@ class ReportsController {
    *         description: File download
    */
   exportSalesReport = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { from, to, categoryId, paymentStatus, orderStatus, format = 'excel' } = req.query;
+    const { from, to, categoryId, paymentStatus, orderStatus, format } = req.query;
+    const exportFormat = parseExportFormat(format);
     const dateTo = to ? new Date(to as string) : new Date();
     const dateFrom = from ? new Date(from as string) : new Date();
     if (!from) dateFrom.setDate(dateTo.getDate() - 30);
@@ -123,15 +147,15 @@ class ReportsController {
       from: dateFrom,
       to: dateTo,
       categoryId: categoryId as string,
-      paymentStatus: paymentStatus as any,
-      orderStatus: orderStatus as any
+      paymentStatus: parsePaymentStatus(paymentStatus),
+      orderStatus: parseOrderStatus(orderStatus)
     });
 
-    const buffer = await reportsService.exportSalesReport(data, format as any);
+    const buffer = await reportsService.exportSalesReport(data, exportFormat);
 
-    const filename = `sales-report-${new Date().getTime()}.${format === 'excel' ? 'xlsx' : format}`;
-    const contentType = format === 'pdf' ? 'application/pdf' : 
-                        format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 
+    const filename = `sales-report-${new Date().getTime()}.${exportFormat === 'excel' ? 'xlsx' : exportFormat}`;
+    const contentType = exportFormat === 'pdf' ? 'application/pdf' : 
+                        exportFormat === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 
                         'text/csv';
 
     res.setHeader('Content-Type', contentType);
@@ -139,7 +163,7 @@ class ReportsController {
     res.send(buffer);
 
     // Log the export action
-    await reportsService.logExport(req.user?.id || 'system', 'SALES_REPORT', format as string);
+    await reportsService.logExport(req.user?.id || 'system', 'SALES_REPORT', exportFormat);
   });
 
   /**
@@ -161,12 +185,16 @@ class ReportsController {
    *         description: Order report data
    */
   getOrderReport = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { from, to } = req.query;
+    const { from, to, orderStatus, paymentStatus, categoryId } = req.query;
     const dateTo = to ? new Date(to as string) : new Date();
     const dateFrom = from ? new Date(from as string) : new Date();
     if (!from) dateFrom.setDate(dateTo.getDate() - 30);
 
-    const data = await reportsService.getOrderReport(dateFrom, dateTo);
+    const data = await reportsService.getOrderReport(dateFrom, dateTo, {
+      orderStatus: parseOrderStatus(orderStatus),
+      paymentStatus: parsePaymentStatus(paymentStatus),
+      categoryId: categoryId as string | undefined,
+    });
     
     res.json({
       success: true,
@@ -213,12 +241,15 @@ class ReportsController {
    *         description: Payment report data
    */
   getPaymentReport = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { from, to } = req.query;
+    const { from, to, status, method } = req.query;
     const dateTo = to ? new Date(to as string) : new Date();
     const dateFrom = from ? new Date(from as string) : new Date();
     if (!from) dateFrom.setDate(dateTo.getDate() - 30);
 
-    const data = await reportsService.getPaymentReport(dateFrom, dateTo);
+    const data = await reportsService.getPaymentReport(dateFrom, dateTo, {
+      status: parsePaymentStatus(status),
+      method: method as string | undefined,
+    });
     
     res.json({
       success: true,

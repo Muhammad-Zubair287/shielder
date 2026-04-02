@@ -84,6 +84,30 @@ router.post(
  */
 router.get('/verify-email/:token', authController.verifyEmail);
 
+/**
+ * POST /api/auth/send-otp
+ * Send OTP for 2FA
+ * Rate limit: 3 requests per 15 minutes
+ */
+router.post(
+  '/send-otp',
+  rateLimitAuth({ maxRequests: 3, windowMinutes: 15 }),
+  validate(authValidation.sendOTP),
+  authController.sendOTP
+);
+
+/**
+ * POST /api/auth/verify-otp
+ * Verify OTP for 2FA
+ * Rate limit: 5 requests per 15 minutes
+ */
+router.post(
+  '/verify-otp',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 15 }),
+  validate(authValidation.verifyOTP),
+  authController.verifyOTP
+);
+
 // ==================== PROTECTED ROUTES ====================
 // All routes below require authentication
 

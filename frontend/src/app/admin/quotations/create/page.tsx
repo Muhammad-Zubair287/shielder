@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Search, Package, Save, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import quotationService from '@/services/quotation.service';
-import apiClient from '@/services/api.service';
 
 interface CartItem {
     productId: string;
@@ -47,7 +46,7 @@ export default function CreateQuotationPage() {
         const timer = setTimeout(async () => {
             try {
                 setSearchingProducts(true);
-                const res = await apiClient.get('/inventory/products', { params: { search: productSearch, limit: 5 } });
+                const res = await quotationService.searchProducts(productSearch, 5);
                 setProductResults(res.data?.data?.products || []);
             } catch { setProductResults([]); }
             finally { setSearchingProducts(false); }

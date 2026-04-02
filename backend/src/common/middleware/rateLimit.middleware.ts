@@ -17,10 +17,15 @@ interface RateLimitConfig {
 // TODO: Use Redis for production multi-server setup
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
+// Test-only helper to isolate rate limiter state between test cases.
+export const resetRateLimitStore = (): void => {
+  rateLimitStore.clear();
+};
+
 /**
  * Clean up expired entries periodically
  */
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, value] of rateLimitStore.entries()) {
     if (now > value.resetTime) {
@@ -29,12 +34,20 @@ setInterval(() => {
   }
 }, 60000); // Clean every minute
 
+// Do not keep process alive solely for this interval (important for tests/shutdown).
+cleanupInterval.unref();
+
 /**
  * Rate Limit Middleware Factory
  */
 export const rateLimitAuth = (config: RateLimitConfig) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
+      if (process.env.DISABLE_RATE_LIMIT === 'true') {
+        next();
+        return;
+      }
+
       const identifier = config.identifierFn
         ? config.identifierFn(req)
         : req.ip || req.connection.remoteAddress || 'unknown';

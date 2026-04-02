@@ -1,18 +1,22 @@
 import { prisma } from '../../config/database';
+import { Prisma } from '@prisma/client';
+
+type AuditLogInput = {
+  userId?: string;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  changes?: Prisma.InputJsonValue;
+  ipAddress?: string;
+  userAgent?: string;
+  location?: string;
+};
 
 export class AuditService {
   /**
    * Log an action to the audit_logs table
    */
-  static async log(data: {
-    userId?: string;
-    action: string;
-    entityType?: string;
-    entityId?: string;
-    changes?: any;
-    ipAddress?: string;
-    userAgent?: string;
-  }) {
+  static async log(data: AuditLogInput) {
     try {
       await prisma.auditLog.create({
         data: {
@@ -23,6 +27,7 @@ export class AuditService {
           changes: data.changes,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
+          location: data.location,
         },
       });
     } catch (error) {

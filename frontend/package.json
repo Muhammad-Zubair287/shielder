@@ -10,7 +10,9 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:e2e": "cypress run",
+    "test:e2e:auth": "cypress run --spec \"cypress/e2e/auth.cy.ts,cypress/e2e/auth.advanced.cy.ts,cypress/e2e/auth.recovery.cy.ts\""
   },
   "dependencies": {
     "@types/nprogress": "^0.2.3",
@@ -28,12 +30,14 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@types/cypress": "^0.1.6",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "autoprefixer": "^10.4.20",
+    "cypress": "^15.13.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.21",
     "postcss": "^8.4.49",

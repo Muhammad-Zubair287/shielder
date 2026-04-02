@@ -33,6 +33,10 @@ import reportsRoutes from './modules/reports/reports.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import quotationRoutes from './modules/quotation/quotation.routes';
 import customerQuotationRoutes from './modules/customer-quotation/customer-quotation.routes';
+import contactRoutes from './modules/contact/contact.routes';
+import newsletterRoutes from './modules/newsletter/newsletter.routes';
+import productReviewRoutes from './modules/product-review/product-review.routes';
+import inventoryAlertRoutes from './modules/inventory-alert/inventory-alert.routes';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
@@ -143,6 +147,10 @@ export const createApp = (): Application => {
     app.use(`${prefix}/settings`, settingsRoutes);
     app.use(`${prefix}/quotations`, quotationRoutes);
     app.use(`${prefix}/customer-quotations`, customerQuotationRoutes);
+    app.use(`${prefix}/contact`, contactRoutes);
+    app.use(`${prefix}/newsletter`, newsletterRoutes);
+    app.use(`${prefix}/reviews`, productReviewRoutes);
+    app.use(`${prefix}/admin/inventory-alerts`, inventoryAlertRoutes);
   };
 
   mountRoutes(apiPrefix);

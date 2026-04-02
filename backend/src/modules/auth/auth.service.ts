@@ -16,13 +16,34 @@ import {
 } from '@/common/errors/api.error';
 import { AuditService } from '@/common/services/audit.service';
 import { logger } from '@/common/logger/logger';
+import { UserRole } from '@/types/rbac.types';
 import type {
+  AuthResponse,
   RegisterRequest,
   LoginRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
 } from './auth.types';
+
+type SanitizedAuthUser = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  lastLoginAt?: Date | null;
+  profile?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    companyName?: string;
+    locale?: string;
+  };
+};
 
 /**
  * Authentication Service Class
@@ -45,7 +66,7 @@ export class AuthService {
       return _secSettingsCache.value;
     }
     try {
-      const s = await (prisma as any).systemSettings.findUnique({ where: { id: 'CURRENT' } });
+      const s = await prisma.systemSettings.findUnique({ where: { id: 'CURRENT' } });
       const value = {
         maxLoginAttempts: s?.maxLoginAttempts ?? 5,
         lockDurationMinutes: s?.accountLockDurationMinutes ?? 30,
@@ -63,7 +84,7 @@ export class AuthService {
    * 1️⃣ USER REGISTRATION (SIGNUP)
    */
   static async register(data: RegisterRequest): Promise<{
-    user: any;
+    user: SanitizedAuthUser;
     tokens: { accessToken: string; refreshToken: string };
   }> {
     try {
@@ -158,7 +179,7 @@ export class AuthService {
         {
           userId: user.id,
           email: user.email,
-          role: user.role as any,
+          role: user.role as UserRole,
           preferredLanguage: user.profile?.preferredLanguage || 'en',
         },
         deviceInfo
@@ -183,16 +204,36 @@ export class AuthService {
   static async login(
     data: LoginRequest,
     deviceInfo?: DeviceInfo
-  ): Promise<{
-    user: any;
-    tokens: { accessToken: string; refreshToken: string };
-  }> {
+  ): Promise<AuthResponse> {
     try {
       logger.info(`Login attempt for: ${data.email.toLowerCase()}`);
       // Find user by email
       const user = await prisma.user.findUnique({
         where: { email: data.email.toLowerCase() },
-        include: { profile: true },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          isActive: true,
+          emailVerified: true,
+          lockedUntil: true,
+          failedLoginAttempts: true,
+          passwordHash: true,
+          lastLoginAt: true,
+          profile: {
+            select: {
+              id: true,
+              userId: true,
+              fullName: true,
+              phoneNumber: true,
+              address: true,
+              companyName: true,
+              preferredLanguage: true,
+              profileImage: true,
+            },
+          },
+        },
       });
 
       if (!user) {
@@ -246,12 +287,37 @@ export class AuthService {
         ipAddress: deviceInfo?.ipAddress,
       }).catch(err => logger.error('Audit Log failed for login:', err));
 
-      // Generate tokens with device info
+      // ⚠️ SECURITY: Enforce mandatory 2FA for Admin and Super Admin users
+      // They must complete OTP verification before receiving final access tokens
+      if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        logger.info(`Admin/Super Admin login requires 2FA: ${user.email}`);
+        
+        // Generate a temporary session token for 2FA verification (short-lived, OTP-only)
+        // This token can only be used with /api/auth/verify-otp endpoint
+        const tempOtpToken = crypto.randomBytes(32).toString('hex');
+        await prisma.$executeRaw`
+          UPDATE users
+          SET otp_session_token = ${tempOtpToken}
+          WHERE id = ${user.id}
+        `.catch(err => logger.error('Failed to store OTP session token:', err));
+
+        return {
+          user: this.sanitizeUser(user),
+          tokens: {
+            accessToken: '', // Empty, pending 2FA
+            refreshToken: '' // Empty, pending 2FA
+          },
+          requiresTwoFactor: true, // Signal frontend that 2FA is required
+          otpSessionToken: tempOtpToken // Temporary token to use with verify-otp
+        };
+      }
+
+      // Generate tokens with device info (regular users skip 2FA)
       const tokens = await TokenService.generateTokenPair(
         {
           userId: user.id,
           email: user.email,
-          role: user.role as any,
+          role: user.role as UserRole,
           preferredLanguage: user.profile?.preferredLanguage || 'en',
         },
         deviceInfo
@@ -333,8 +399,14 @@ export class AuthService {
     try {
       const user = await prisma.user.findUnique({
         where: { email: data.email.toLowerCase() },
-        include: {
-          profile: true,
+        select: {
+          id: true,
+          email: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
         },
       });
 
@@ -438,8 +510,15 @@ export class AuthService {
       // Get user
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: {
-          profile: true,
+        select: {
+          id: true,
+          email: true,
+          passwordHash: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
         },
       });
 
@@ -495,11 +574,32 @@ export class AuthService {
   /**
    * Get Current User
    */
-  static async getCurrentUser(userId: string): Promise<any> {
+  static async getCurrentUser(userId: string): Promise<SanitizedAuthUser> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { profile: true },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          isActive: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          profile: {
+            select: {
+              id: true,
+              userId: true,
+              fullName: true,
+              phoneNumber: true,
+              address: true,
+              companyName: true,
+              preferredLanguage: true,
+              profileImage: true,
+            },
+          },
+        },
       });
 
       if (!user) {
@@ -582,6 +682,11 @@ export class AuthService {
       }
 
       await TokenService.revokeToken(session.tokenHash, 'user_revoked');
+
+      // Fire-and-forget audit log
+      this.createAuditLog(userId, 'SESSION_REVOKED', 'User revoked a session', { sessionId }).catch(
+        (err) => logger.error('Audit log failed for session revocation:', err)
+      );
 
       logger.info(`Session revoked: ${sessionId} for user: ${userId}`);
     } catch (error) {
@@ -674,9 +779,46 @@ export class AuthService {
   /**
    * Sanitize User (Remove sensitive data)
    */
-  private static sanitizeUser(user: any) {
-    const { passwordHash, resetToken, resetTokenExpiry, verificationToken, ...sanitized } = user;
-    return sanitized;
+  private static sanitizeUser<T extends Record<string, unknown>>(user: T): SanitizedAuthUser {
+    const { passwordHash, resetToken, resetTokenExpiry, verificationToken, ...sanitized } = user as unknown as {
+      passwordHash?: unknown;
+      resetToken?: unknown;
+      resetTokenExpiry?: unknown;
+      verificationToken?: unknown;
+      id: string;
+      email: string;
+      role: string;
+      status?: string;
+      isActive?: boolean;
+      emailVerified?: boolean;
+      profile?: {
+        fullName?: string;
+        phoneNumber?: string | null;
+        companyName?: string | null;
+        preferredLanguage?: string;
+      } | null;
+    };
+
+    const [firstName = '', ...restName] = (sanitized.profile?.fullName || '').trim().split(' ');
+    const lastName = restName.join(' ').trim();
+
+    return {
+      id: sanitized.id,
+      email: sanitized.email,
+      role: sanitized.role,
+      status: sanitized.status || 'ACTIVE',
+      isActive: sanitized.isActive ?? true,
+      emailVerified: sanitized.emailVerified ?? false,
+      profile: sanitized.profile
+        ? {
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            phone: sanitized.profile.phoneNumber || undefined,
+            companyName: sanitized.profile.companyName || undefined,
+            locale: sanitized.profile.preferredLanguage || undefined,
+          }
+        : undefined,
+    };
   }
 
   /**
@@ -686,7 +828,7 @@ export class AuthService {
     userId: string,
     action: string,
     description: string,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     try {
       await prisma.auditLog.create({
@@ -699,6 +841,123 @@ export class AuthService {
     } catch (error) {
       logger.error('Error creating audit log:', error);
       // Don't throw - audit logs should not break main flow
+    }
+  }
+
+  /**
+   * Send OTP for 2FA
+   */
+  static async sendOTP(userId: string, method: 'EMAIL' | 'SMS' = 'EMAIL'): Promise<void> {
+    try {
+      const { TwoFactorService } = await import('./twofa.service');
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, id: true },
+      });
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      const { otp } = await TwoFactorService.createOTP(userId, method);
+
+      if (method === 'EMAIL') {
+        await TwoFactorService.sendOTPEmail(user.email, otp);
+      }
+      // TODO: Implement SMS sending when SMS service is available
+
+      logger.info(`OTP sent to user ${userId} via ${method}`);
+    } catch (error) {
+      logger.error('Error sending OTP:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify OTP and get token pair
+   */
+  static async verifyOTPAndGetTokens(
+    userId: string,
+    code: string,
+    otpSessionToken: string,
+    deviceInfo?: DeviceInfo
+  ): Promise<{
+    user: SanitizedAuthUser;
+    tokens: { accessToken: string; refreshToken: string };
+  }> {
+    try {
+      const { TwoFactorService } = await import('./twofa.service');
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          isActive: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          profile: {
+            select: {
+              id: true,
+              userId: true,
+              fullName: true,
+              phoneNumber: true,
+              address: true,
+              companyName: true,
+              preferredLanguage: true,
+              profileImage: true,
+            },
+          },
+          otpSessionToken: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      if (!otpSessionToken || user.otpSessionToken !== otpSessionToken) {
+        throw new UnauthorizedError('Invalid or expired two-factor session');
+      }
+
+      await TwoFactorService.verifyOTP(userId, code);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { otpSessionToken: null },
+      });
+
+      const tokens = await TokenService.generateTokenPair(
+        {
+          userId: user.id,
+          email: user.email,
+          role: user.role as UserRole,
+          preferredLanguage: user.profile?.preferredLanguage || 'en',
+        },
+        deviceInfo
+      );
+
+      AuditService.log({
+        userId: user.id,
+        action: 'USER_2FA_VERIFIED',
+        entityType: 'USER',
+        entityId: user.id,
+        ipAddress: deviceInfo?.ipAddress,
+      }).catch((err) => logger.error('Audit log failed for 2FA:', err));
+
+      logger.info(`2FA verification successful for user ${userId}`);
+
+      return {
+        user: this.sanitizeUser(user),
+        tokens,
+      };
+    } catch (error) {
+      logger.error('Error verifying OTP:', error);
+      throw error;
     }
   }
 }

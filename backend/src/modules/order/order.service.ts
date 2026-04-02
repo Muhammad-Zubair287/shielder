@@ -1,10 +1,48 @@
 import { prisma } from '@/config/database';
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
 import crypto from 'crypto';
-// @ts-ignore
 import { OrderStatus, PaymentStatus, StockChangeType, Prisma, NotificationType, UserRole } from '@prisma/client';
 import NotificationService from '@/modules/notification/notification.service';
 import { StockAlertService } from '../inventory/stock-alert/stock-alert.service';
+import { orderRepository } from './order.repository';
+
+type OrderItemInput = {
+  productId: string;
+  quantity: number;
+  variantId?: string | null;
+};
+
+type CreateOrderInput = {
+  userId: string;
+  items: OrderItemInput[];
+  customerName?: string;
+  phoneNumber?: string;
+  shippingAddress?: string;
+  paymentMethod?: string;
+  paymentStatus?: PaymentStatus;
+  status?: OrderStatus;
+  notes?: string;
+};
+
+type OrderFilters = {
+  search?: string;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: keyof Prisma.OrderOrderByWithRelationInput;
+  sortOrder?: Prisma.SortOrder;
+};
+
+type PaginationInput = {
+  skip: number;
+  limit: number;
+};
+
+type AuthenticatedUser = {
+  userId: string;
+  role: UserRole;
+};
 
 export class OrderService {
   /**
@@ -12,7 +50,7 @@ export class OrderService {
    */
   private async getOrderSettings() {
     try {
-      const s = await (prisma as any).systemSettings.findUnique({ where: { id: 'CURRENT' } });
+      const s = await prisma.systemSettings.findUnique({ where: { id: 'CURRENT' } });
       return {
         defaultOrderStatus: (s?.defaultOrderStatus as OrderStatus) ?? OrderStatus.PENDING,
         allowOrderCancellation: s?.allowOrderCancellation ?? true,
@@ -32,7 +70,7 @@ export class OrderService {
   /**
    * Create a new order with stock deduction
    */
-  async createOrder(data: any) {
+  async createOrder(data: CreateOrderInput) {
     const { userId, items, ...orderData } = data;
 
     // Read configured default order status
@@ -47,7 +85,7 @@ export class OrderService {
     // Generate a human-readable order number
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    const order = await prisma.$transaction(async (tx: any) => {
+    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Prepare order items and check basic existence
       const orderItemsData = [];
       
@@ -109,6 +147,9 @@ export class OrderService {
       });
 
       return result;
+    }, {
+      timeout: 15000,
+      maxWait: 5000,
     });
 
     // 5. Trigger Notifications (fire-and-forget — never block the order response)
@@ -127,7 +168,7 @@ export class OrderService {
   /**
    * Get all orders with filtering and pagination
    */
-  async getOrders(filters: any, pagination: any) {
+  async getOrders(filters: OrderFilters, pagination: PaginationInput) {
     const { skip, limit } = pagination;
     const { search, status, paymentStatus, dateFrom, dateTo, sortBy, sortOrder } = filters;
 
@@ -149,35 +190,11 @@ export class OrderService {
       if (dateTo) where.createdAt.lte = new Date(dateTo);
     }
 
+    const orderBy: Prisma.OrderOrderByWithRelationInput = { [sortBy]: sortOrder } as Prisma.OrderOrderByWithRelationInput;
+
     const [total, orders] = await Promise.all([
-      prisma.order.count({ where }),
-      prisma.order.findMany({
-        where,
-        include: {
-          users: {
-            select: {
-              email: true,
-              profile: {
-                select: {
-                  fullName: true
-                }
-              }
-            }
-          },
-          payments: {
-            select: {
-              amount: true,
-              status: true
-            }
-          },
-          _count: {
-            select: { orderItems: true }
-          }
-        },
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder }
-      })
+      orderRepository.count(where),
+      orderRepository.list(where, skip, limit, orderBy),
     ]);
 
     return {
@@ -193,31 +210,20 @@ export class OrderService {
 
   /**
    * Get a single order by ID
+   * Enforces ownership check: customers can only access their own orders
+   * Admin/Super Admin can access any order
    */
-  async getOrderById(id: string) {
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        orderItems: {
-          include: {
-            product: {
-              include: {
-                translations: true,
-                specifications: true
-              }
-            }
-          }
-        },
-        users: {
-          include: {
-            profile: true
-          }
-        }
-      }
-    });
+  async getOrderById(id: string, user?: AuthenticatedUser) {
+    const order = await orderRepository.findByIdWithDetails(id);
 
     if (!order) {
       throw new NotFoundError('Order not found');
+    }
+
+    // Ownership check: customer can only access their own orders
+    // Admin/Super Admin bypass this check
+    if (user && user.role === UserRole.USER && order.userId !== user.userId) {
+      throw new NotFoundError('Order not found'); // Return 404 to avoid leaking existence
     }
 
     return order;
@@ -271,7 +277,7 @@ export class OrderService {
     const newStatus = data.status;
     const performedBy = data.performedBy || 'System/Admin';
 
-    const updatedOrder = await prisma.$transaction(async (tx: any) => {
+    const updatedOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Handle "Completed" (DELIVERED) logic
       if (newStatus === OrderStatus.DELIVERED && previousStatus !== OrderStatus.DELIVERED) {
         for (const item of order.orderItems) {

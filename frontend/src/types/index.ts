@@ -61,10 +61,12 @@ export interface ChangePasswordRequest {
 
 export interface AuthResponse {
   user: User;
-  tokens: {
+  tokens?: {
     accessToken: string;
     refreshToken: string;
   };
+  requiresTwoFactor?: boolean;
+  otpSessionToken?: string;
 }
 
 export interface RefreshTokenRequest {

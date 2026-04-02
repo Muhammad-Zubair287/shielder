@@ -8,9 +8,24 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../types/global';
 import { prisma } from '../../config/database';
 import { BadRequestError, NotFoundError } from '../../common/errors/api.error';
-// @ts-ignore
 import { Prisma } from '@prisma/client';
+import { QuotationStatus, QuotationActivityType } from '@prisma/client';
 import PDFDocument from 'pdfkit';
+import { customerQuotationRepository } from './customer-quotation.repository';
+
+type RequestedQuotationItem = {
+  productId: string;
+  quantity: number;
+};
+
+type ResolvedQuotationItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: Prisma.Decimal;
+  discount: Prisma.Decimal;
+  totalPrice: Prisma.Decimal;
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -79,9 +94,9 @@ export class CustomerQuotationController {
       // ── Fetch real prices & validate products ──────────────────────────────
 
       let subtotal = new Prisma.Decimal(0);
-      const resolvedItems: any[] = [];
+      const resolvedItems: ResolvedQuotationItem[] = [];
 
-      for (const item of products) {
+      for (const item of products as RequestedQuotationItem[]) {
         const qty = Number(item.quantity) || 1;
         if (qty < 1) throw new BadRequestError('Quantity must be at least 1');
 
@@ -95,8 +110,8 @@ export class CustomerQuotationController {
         if (!product.isActive) throw new BadRequestError(`Product is no longer available: ${item.productId}`);
 
         const translation =
-          product.translations.find((t: any) => t.locale === lang) ||
-          product.translations.find((t: any) => t.locale === 'en') ||
+          product.translations.find((t) => t.locale === lang) ||
+          product.translations.find((t) => t.locale === 'en') ||
           product.translations[0];
 
         const productName = translation?.name || 'Product';
@@ -152,7 +167,7 @@ export class CustomerQuotationController {
           items: { create: resolvedItems },
           activities: {
             create: {
-              action:      'CREATED' as any,
+              action:      QuotationActivityType.CREATED,
               performedBy: userId,
               note:        'Customer self-generated quotation',
             },
@@ -173,9 +188,9 @@ export class CustomerQuotationController {
       });
 
       // Enrich items with thumbnail
-      const enrichedItems = quotation.items.map((item: any) => ({
+      const enrichedItems = quotation.items.map((item) => ({
         ...item,
-        thumbnail: item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
+        thumbnail: item.product.attachments?.[0]?.fileUrl || null,
       }));
 
       res.status(201).json({
@@ -215,35 +230,21 @@ export class CustomerQuotationController {
       const userId = req.user!.userId;
       const id     = req.params.id as string;
 
-      const quotation: any = await prisma.quotation.findUnique({
-        where: { id },
-        include: {
-          items: {
-            include: {
-              product: {
-                include: {
-                  translations: true,
-                  attachments: { where: { type: 'IMAGE' }, take: 1 },
-                },
-              },
-            },
-          },
-        },
-      });
+      const quotation = await customerQuotationRepository.findByIdWithItems(id);
 
       if (!quotation) throw new NotFoundError('Quotation not found');
       if (quotation.createdById !== userId) throw new NotFoundError('Quotation not found');
 
       const lang = req.user!.preferredLanguage || req.locale || 'en';
-      const enrichedItems = (quotation.items as any[]).map((item: any) => {
+      const enrichedItems = quotation.items.map((item) => {
         const translation =
-          item.product.translations.find((t: any) => t.locale === lang) ||
-          item.product.translations.find((t: any) => t.locale === 'en') ||
+          item.product.translations.find((t) => t.locale === lang) ||
+          item.product.translations.find((t) => t.locale === 'en') ||
           item.product.translations[0];
         return {
           ...item,
           productName: translation?.name || item.productName,
-          thumbnail:   item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
+          thumbnail:   item.product.attachments?.[0]?.fileUrl || null,
         };
       });
 
@@ -292,7 +293,7 @@ export class CustomerQuotationController {
       const userId = req.user!.userId;
       const id     = req.params.id as string;
 
-      const quotation: any = await prisma.quotation.findUnique({
+      const quotation = await prisma.quotation.findUnique({
         where: { id },
         include: {
           items: {
@@ -404,7 +405,7 @@ export class CustomerQuotationController {
       // ── Table rows ─────────────────────────────────────────────────────────
 
       let rowY = tableTop + 28;
-      for (const item of (quotation.items as any[])) {
+      for (const item of quotation.items) {
         const rowHeight = 28;
 
         doc
@@ -477,6 +478,91 @@ export class CustomerQuotationController {
         .text(`Generated: ${new Date().toLocaleString()}`, PAGE_WIDTH - MARGIN - 200, footerY + 24, { width: 200, align: 'right' });
 
       doc.end();
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Customer accepts their quotation.
+   * Allowed from SENT or VIEWED states.
+   */
+  static async accept(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const id = req.params.id as string;
+
+      const quotation = await prisma.quotation.findUnique({ where: { id } });
+      if (!quotation || quotation.createdById !== userId) {
+        throw new NotFoundError('Quotation not found');
+      }
+
+      if (quotation.status !== QuotationStatus.SENT && quotation.status !== QuotationStatus.VIEWED) {
+        throw new BadRequestError('Quotation cannot be accepted in its current status');
+      }
+
+      const updated = await prisma.quotation.update({
+        where: { id },
+        data: {
+          status: QuotationStatus.APPROVED,
+          activities: {
+            create: {
+              action: QuotationActivityType.APPROVED,
+              performedBy: userId,
+              note: 'Customer accepted quotation',
+            },
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: updated,
+        message: 'Quotation accepted successfully',
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Customer rejects their quotation.
+   * Allowed from SENT or VIEWED states.
+   */
+  static async reject(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const id = req.params.id as string;
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+
+      const quotation = await prisma.quotation.findUnique({ where: { id } });
+      if (!quotation || quotation.createdById !== userId) {
+        throw new NotFoundError('Quotation not found');
+      }
+
+      if (quotation.status !== QuotationStatus.SENT && quotation.status !== QuotationStatus.VIEWED) {
+        throw new BadRequestError('Quotation cannot be rejected in its current status');
+      }
+
+      const updated = await prisma.quotation.update({
+        where: { id },
+        data: {
+          status: QuotationStatus.REJECTED,
+          activities: {
+            create: {
+              action: QuotationActivityType.REJECTED,
+              performedBy: userId,
+              note: reason || 'Customer rejected quotation',
+            },
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: updated,
+        message: 'Quotation rejected successfully',
+      });
     } catch (err) {
       next(err);
     }

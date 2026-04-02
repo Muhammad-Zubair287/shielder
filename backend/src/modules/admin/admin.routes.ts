@@ -12,6 +12,8 @@ import {
 } from '../../common/middleware/rbac.middleware';
 import { validate } from '../../common/middleware/validation.middleware';
 import { adminValidation } from './admin.validation';
+import adminContactRoutes from './contact/admin-contact.routes';
+import adminNewsletterRoutes from '@/modules/newsletter/admin-newsletter.routes';
 
 const router = Router();
 
@@ -82,5 +84,17 @@ router.patch(
  * Soft delete user
  */
 router.delete('/users/:id', adminController.deleteUser.bind(adminController));
+
+/**
+ * /api/admin/contacts
+ * Admin/Super Admin contact management
+ */
+router.use('/contacts', adminContactRoutes);
+
+/**
+ * /api/admin/newsletter
+ * Admin/Super Admin newsletter subscriber management
+ */
+router.use('/newsletter', adminNewsletterRoutes);
 
 export default router;

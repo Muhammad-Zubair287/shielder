@@ -42,7 +42,7 @@ class StockAlertService {
       const skip = (page - 1) * limit;
 
       // We use raw query here because Prisma currently doesn't support column-to-column comparison natively in 'where' clause
-      const products: any[] = await prisma.$queryRaw`
+      const products = await prisma.$queryRaw<Array<{ id: string }>>`
         SELECT p.*, c.id as "categoryId", b.id as "brandId"
         FROM products p
         LEFT JOIN categories c ON p."categoryId" = c.id
@@ -52,7 +52,7 @@ class StockAlertService {
         LIMIT ${limit} OFFSET ${skip}
       `;
 
-      const totalCountResult: any[] = await prisma.$queryRaw`
+      const totalCountResult = await prisma.$queryRaw<Array<{ count: number | string }>>`
         SELECT COUNT(*) as count
         FROM products
         WHERE is_active = true AND stock <= minimum_stock_threshold
@@ -87,7 +87,7 @@ class StockAlertService {
           totalPages,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('ERROR in getLowStockProducts:', error);
       throw error;
     }
@@ -97,7 +97,7 @@ class StockAlertService {
    * Get low stock count for dashboard
    */
   static async getLowStockCount() {
-    const result: any[] = await prisma.$queryRaw`
+    const result = await prisma.$queryRaw<Array<{ count: number | string }>>`
       SELECT COUNT(*) as count
       FROM products
       WHERE is_active = true AND stock <= minimum_stock_threshold
@@ -126,7 +126,7 @@ class StockAlertService {
 
     const updated = await prisma.product.update({
       where: { id: productId },
-      data: { stock } as any,
+      data: { stock },
     });
 
     // Check if we need to alert
@@ -153,7 +153,7 @@ class StockAlertService {
 
     return prisma.product.update({
       where: { id: productId },
-      data: { minimumStockThreshold: threshold } as any,
+      data: { minimumStockThreshold: threshold },
     });
   }
 }

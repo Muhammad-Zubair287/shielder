@@ -372,6 +372,39 @@ class AuthController {
       message: 'Session revoked successfully',
     });
   });
+
+  /**
+   * Send OTP for 2FA
+   */
+  sendOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { userId, method = 'EMAIL' } = req.body;
+
+    await AuthService.sendOTP(userId, method);
+
+    res.status(200).json({
+      success: true,
+      message: `OTP has been sent to your ${method.toLowerCase()}`,
+    });
+  });
+
+  /**
+   * Verify OTP for 2FA
+   */
+  verifyOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { userId, code, otpSessionToken } = req.body;
+    const deviceInfo: DeviceInfo = {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || req.connection.remoteAddress,
+    };
+
+    const result = await AuthService.verifyOTPAndGetTokens(userId, code, otpSessionToken, deviceInfo);
+
+    res.status(200).json({
+      success: true,
+      message: '2FA verification successful',
+      data: result,
+    });
+  });
 }
 
 export default new AuthController();
