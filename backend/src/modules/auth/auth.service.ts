@@ -86,9 +86,20 @@ export class AuthService {
       return true;
     }
 
+    // Explicit hard-disable for environments that must enforce normal flow.
+    if (process.env.AUTH_BYPASS_EMAIL === 'false') {
+      return false;
+    }
+
+    // Auto-bypass when email delivery is not configured/usable.
+    // This avoids blocking authentication with "Please verify your email".
+    if (!this.hasUsableEmailConfig()) {
+      return true;
+    }
+
     // Enabled by default in development when email isn't configured.
     const bypassEnabled = process.env.AUTH_DEV_BYPASS_EMAIL !== 'false';
-    return env.isDevelopment && bypassEnabled && !this.hasUsableEmailConfig();
+    return env.isDevelopment && bypassEnabled;
   }
 
   /**
