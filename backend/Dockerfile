@@ -1,6 +1,6 @@
 # Dockerfile for Shielder Backend
 
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Install openssl and other dependencies for Prisma
 RUN apk add --no-cache openssl libc6-compat
@@ -25,7 +25,7 @@ RUN npx prisma generate --schema=./src/database/prisma/schema.prisma
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Install openssl for Prisma runtime
 RUN apk add --no-cache openssl
