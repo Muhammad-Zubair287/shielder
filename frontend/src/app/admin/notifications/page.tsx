@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
 import notificationService from '@/services/notification.service';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import NotificationsList from './NotificationsList';
 import type { AdminNotification, NotificationFilter, Pagination } from './types';
 
@@ -309,39 +310,22 @@ export default function AdminNotificationsPage() {
 
         {/* Pagination */}
         {!loading && pagination.totalPages > 1 && (
-          <div className={`flex items-center justify-between gap-3 pt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <p className="text-sm text-gray-400">
-              {t('notifPaginationInfo')
-                .replace('{{from}}', String((currentPage - 1) * 15 + 1))
-                .replace('{{to}}', String(Math.min(currentPage * 15, pagination.total)))
-                .replace('{{total}}', String(pagination.total))}
-            </p>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - currentPage) <= 1)
-                .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
-                  acc.push(p);
-                  return acc;
-                }, [])
-                .map((p, i) =>
-                  p === '...' ? (
-                    <span key={`e${i}`} className="px-2 text-gray-400 text-sm">…</span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setCurrentPage(p as number)}
-                      className={[
-                        'w-8 h-8 rounded-xl text-sm font-semibold transition-all',
-                        currentPage === p ? 'bg-[#5B5FC7] text-white' : 'text-gray-500 hover:bg-gray-100',
-                      ].join(' ')}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-            </div>
-          </div>
+          <UnifiedPagination
+            page={currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            pageSize={15}
+            onPageChange={setCurrentPage}
+            isRTL={isRTL}
+            className="px-0 pt-2"
+            labels={{
+              showing: t('showing'),
+              of: t('of'),
+              results: t('results'),
+              previous: t('previous'),
+              next: t('next'),
+            }}
+          />
         )}
       </div>
     </>

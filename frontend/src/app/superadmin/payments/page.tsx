@@ -13,8 +13,6 @@ import {
   Banknote,
   Building2,
   Wallet,
-  ChevronLeft,
-  ChevronRight,
   ArrowRight
 } from 'lucide-react';
 import { paymentService, Payment } from '@/services/payment.service';
@@ -22,6 +20,7 @@ import { orderService } from '@/services/order.service';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import SARSymbol from '@/components/SARSymbol';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function PaymentsPage() {
@@ -347,28 +346,22 @@ export default function PaymentsPage() {
           </table>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <div className="text-xs text-gray-500 font-medium italic">
-            {t('showing')} <span className="font-bold text-shielder-dark">{payments.length}</span> {t('of')} <span className="font-bold text-shielder-dark">{pagination.total}</span> {t('records')}
-          </div>
-          <div className="flex items-center space-x-2">
-            <button 
-              disabled={pagination.page === 1}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-white disabled:opacity-30 transition-all shadow-sm"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-xs font-black text-shielder-dark px-2 uppercase tracking-tighter">{t('page').toUpperCase()} {pagination.page} {t('of').toUpperCase()} {pagination.totalPages}</span>
-            <button 
-              disabled={pagination.page === pagination.totalPages}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-white disabled:opacity-30 transition-all shadow-sm"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          isRTL={isRTL}
+          labels={{
+            showing: t('showing'),
+            of: t('of'),
+            results: t('records'),
+            previous: t('previous'),
+            next: t('next'),
+          }}
+          className="px-6"
+        />
       </div>
 
       {showRecordModal && (

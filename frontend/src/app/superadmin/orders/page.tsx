@@ -9,14 +9,13 @@ import {
   XCircle, 
   RefreshCcw, 
   TrendingUp, 
-  Package, 
-  ChevronRight,
-  ChevronLeft
+  Package
 } from 'lucide-react';
 import { orderService } from '@/services/order.service';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export default function OrdersPage() {
   const { t, isRTL } = useLanguage();
@@ -280,28 +279,14 @@ export default function OrdersPage() {
           </table>
         </div>
         
-        {/* Pagination */}
-        <div className="px-6 py-4 bg-gray-50/50 flex items-center justify-between border-t border-gray-100">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-            {t('page')} {pagination.page} {t('of')} {pagination.pages}
-          </span>
-          <div className="flex items-center space-x-2">
-            <button 
-              disabled={pagination.page <= 1}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-              className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30 hover:bg-gray-50 transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button 
-              disabled={pagination.page >= pagination.pages}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-              className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30 hover:bg-gray-50 transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          isRTL={isRTL}
+        />
       </div>
     </div>
   );

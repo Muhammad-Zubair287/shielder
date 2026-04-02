@@ -9,13 +9,12 @@ import {
   ToggleRight,
   Users,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import RoleBadge from './RoleBadge';
 import StatusBadge from './StatusBadge';
 import ConfirmModal from './ConfirmModal';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import type { AdminUser, UserPagination } from './types';
 
 interface Props {
@@ -82,20 +81,6 @@ export default function UsersTable({
   ];
 
   const skeletonRows = Array.from({ length: 6 });
-
-  // ── Pagination helpers ──────────────────────────────────────────────────────
-  const { page, totalPages } = pagination;
-  const pages: (number | '…')[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (page > 3) pages.push('…');
-    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++)
-      pages.push(i);
-    if (page < totalPages - 2) pages.push('…');
-    pages.push(totalPages);
-  }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleConfirmToggle() {
@@ -278,51 +263,20 @@ export default function UsersTable({
         </div>
 
         {/* ── Pagination ── */}
-        {!loading && totalPages > 1 && (
-          <div
-            className={`flex items-center justify-between px-5 py-4 border-t border-gray-100 ${
-              isRTL ? 'flex-row-reverse' : ''
-            }`}
-          >
-            <p className="text-[11px] text-gray-400 font-medium">
-              {pagination.total} {t('totalItems')}
-            </p>
-            <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <button
-                onClick={() => onPageChange(page - 1)}
-                disabled={page === 1}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                {isRTL ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-              </button>
-              {pages.map((p, i) =>
-                p === '…' ? (
-                  <span key={`ellipsis-${i}`} className="px-1.5 text-gray-300 text-xs select-none">
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => onPageChange(p)}
-                    className={`min-w-[32px] h-8 rounded-lg text-xs font-bold transition-colors ${
-                      p === page
-                        ? 'bg-[#5B5FC7] text-white'
-                        : 'text-gray-500 hover:bg-gray-100'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-              <button
-                onClick={() => onPageChange(page + 1)}
-                disabled={page === totalPages}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                {isRTL ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-              </button>
-            </div>
-          </div>
+        {!loading && pagination.totalPages > 1 && (
+          <UnifiedPagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            onPageChange={onPageChange}
+            isRTL={isRTL}
+            labels={{
+              total: t('total'),
+              results: t('totalItems'),
+              previous: t('previous'),
+              next: t('next'),
+            }}
+          />
         )}
       </div>
 

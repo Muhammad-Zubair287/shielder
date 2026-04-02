@@ -20,6 +20,27 @@ function unwrap<T>(res: any): T {
   return res?.data?.data ?? res?.data ?? res;
 }
 
+const getMonthKey = (value: unknown): string => {
+  const date = value ? new Date(String(value)) : new Date();
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
+};
+
+const buildLast12MonthKeys = (): string[] => {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const keys: string[] = [];
+
+  for (let i = 11; i >= 0; i--) {
+    const monthDate = new Date(start);
+    monthDate.setUTCMonth(start.getUTCMonth() - i);
+    keys.push(getMonthKey(monthDate));
+  }
+
+  return keys;
+};
+
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
@@ -95,26 +116,38 @@ export default function AdminDashboardPage() {
         ordersRes.status === 'fulfilled' ? unwrap<any[]>(ordersRes.value) ?? [] : [];
 
       const merged: Record<string, MonthlyDataPoint> = {};
-      revenueArr.forEach((r: any) => {
-        const key = String(r.month);
-        merged[key] = { month: key, revenue: Number(r.revenue ?? r.value ?? 0) };
+      buildLast12MonthKeys().forEach((month) => {
+        merged[month] = { month, revenue: 0, orders: 0 };
       });
+
+      revenueArr.forEach((r: any) => {
+        const key = getMonthKey(r.month);
+        merged[key] = {
+          month: key,
+          revenue: Number(r.revenue ?? r.amount ?? r.value ?? 0),
+          orders: merged[key]?.orders ?? 0,
+        };
+      });
+
       ordersArr.forEach((o: any) => {
-        const key = String(o.month);
+        const key = getMonthKey(o.month);
         const count = Number(o.orderCount ?? o.orders ?? o.value ?? o.count ?? 0);
         if (merged[key]) {
           merged[key].orders = count;
         } else {
-          merged[key] = { month: key, orders: count };
+          merged[key] = { month: key, revenue: 0, orders: count };
         }
       });
+
       setChartData(Object.values(merged).sort((a, b) => a.month.localeCompare(b.month)));
 
       // ── Order Trend (monthly orders as bar chart) ──
-      const trendPoints: OrderTrendPoint[] = ordersArr.map((o: any) => ({
-        label: String(o.month ?? '').slice(0, 7), // e.g. "2026-01"
-        orders: Number(o.orderCount ?? o.orders ?? o.count ?? 0),
-      }));
+      const trendPoints: OrderTrendPoint[] = Object.values(merged)
+        .sort((a, b) => a.month.localeCompare(b.month))
+        .map((entry) => ({
+          label: String(entry.month).slice(0, 7),
+          orders: Number(entry.orders ?? 0),
+        }));
       setOrderTrend(trendPoints);
 
       // ── Top Products by category ──

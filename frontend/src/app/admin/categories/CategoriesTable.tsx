@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Edit2, Trash2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl } from '@/utils/helpers';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import type { Category } from './types';
 
 interface Props {
@@ -185,36 +186,19 @@ export default function CategoriesTable({
       </div>
 
       {/* Pagination */}
-      <div
-        className={`px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center gap-4 ${
-          isRTL ? 'sm:flex-row-reverse' : 'justify-between'
-        }`}
-      >
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-          {t('page')} <span className="text-gray-700">{pagination.page}</span>{' '}
-          {t('of')} <span className="text-gray-700">{pagination.pages}</span>
-          {' — '}
-          {t('total')} <span className="text-gray-700">{pagination.total}</span> {t('results')}
-        </p>
-        <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <button
-            onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
-            disabled={pagination.page <= 1}
-            className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-30 transition-all"
-            aria-label={t('previous')}
-          >
-            {isRTL ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-          <button
-            onClick={() => onPageChange(Math.min(pagination.pages, pagination.page + 1))}
-            disabled={pagination.page >= pagination.pages}
-            className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-30 transition-all"
-            aria-label={t('next')}
-          >
-            {isRTL ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-          </button>
-        </div>
-      </div>
+      <UnifiedPagination
+        page={pagination.page}
+        totalPages={pagination.pages}
+        totalItems={pagination.total}
+        onPageChange={onPageChange}
+        isRTL={isRTL}
+        labels={{
+          total: t('total'),
+          results: t('results'),
+          previous: t('previous'),
+          next: t('next'),
+        }}
+      />
     </div>
   );
 }

@@ -13,8 +13,6 @@ import {
   Mail,
   Phone,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   RefreshCcw,
   X,
   Eye,
@@ -26,6 +24,7 @@ import adminService from '@/services/admin.service';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 // --- Types ---
 interface Admin {
@@ -512,42 +511,14 @@ export default function AdminManagementPage() {
         </div>
         
         {/* Pagination */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-500 font-medium">
-            Showing <span className="text-[#0A1E36] font-bold">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="text-[#0A1E36] font-bold">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="text-[#0A1E36] font-bold">{pagination.total}</span> records
-          </p>
-          <div className="flex gap-1.5">
-            <button 
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-              disabled={pagination.page === 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-30 transition-all flex items-center gap-1"
-            >
-              <ChevronLeft size={14} /> {t('previous')}
-            </button>
-            <div className="flex items-center gap-1 mx-2">
-              {[...Array(pagination.pages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPagination(prev => ({ ...prev, page: i + 1 }))}
-                  className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${
-                    pagination.page === i + 1 
-                      ? 'bg-[#FF6B35] text-white shadow-md' 
-                      : 'bg-white border border-gray-100 text-gray-400 hover:border-gray-300'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-            <button 
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.min(pagination.pages, prev.page + 1) }))}
-              disabled={pagination.page === pagination.pages}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-30 transition-all flex items-center gap-1"
-            >
-              {t('next')} <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          isRTL={isRTL}
+        />
       </div>
 
       {/* --- Modals --- */}

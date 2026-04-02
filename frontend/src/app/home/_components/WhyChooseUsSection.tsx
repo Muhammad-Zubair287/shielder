@@ -41,7 +41,7 @@ export default function WhyChooseUsSection() {
               <div className="w-16 h-16 rounded-full border-2 border-[#F97316] flex items-center justify-center flex-shrink-0">
                 <Icon size={30} className="text-[#F97316]" strokeWidth={1.6} />
               </div>
-              <div className={isRTL ? 'text-right' : 'text-left'}>
+              <div className="text-left">
                 <h3 className="font-bold text-gray-900 text-lg mb-2">{t(titleKey)}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{t(descKey)}</p>
               </div>

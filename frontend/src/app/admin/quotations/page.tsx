@@ -4,11 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
     Search, Plus, Eye, Edit3, Trash2, RefreshCcw,
-    CheckCircle2, XCircle, FileText, ChevronLeft, ChevronRight,
+    CheckCircle2, XCircle, FileText,
     Send, ArrowRightLeft
 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 const STATUS_COLORS: Record<string, string> = {
     DRAFT: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -191,13 +192,13 @@ export default function AdminQuotationsPage() {
                     </table>
                 </div>
                 {/* Pagination */}
-                <div className="px-5 py-4 bg-gray-50/50 flex items-center justify-between border-t border-gray-100">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Page {pagination.page} of {pagination.pages} — {pagination.total} total</span>
-                    <div className="flex items-center space-x-2">
-                        <button disabled={pagination.page <= 1} onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronLeft size={16} /></button>
-                        <button disabled={pagination.page >= pagination.pages} onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronRight size={16} /></button>
-                    </div>
-                </div>
+                <UnifiedPagination
+                    page={pagination.page}
+                    totalPages={pagination.pages}
+                    totalItems={pagination.total}
+                    pageSize={pagination.limit}
+                    onPageChange={(page) => setPagination((p) => ({ ...p, page }))}
+                />
             </div>
         </div>
     );

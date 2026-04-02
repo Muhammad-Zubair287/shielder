@@ -18,8 +18,6 @@ import {
   ArrowRight,
   Loader2,
   RefreshCcw,
-  ChevronRight,
-  ChevronLeft,
   CreditCard,
   Banknote,
   Building2,
@@ -33,6 +31,7 @@ import { format } from 'date-fns';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
 import SARSymbol from '@/components/SARSymbol';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import { orderService } from '@/services/order.service';
@@ -324,24 +323,22 @@ export default function MyOrdersPage() {
 
               {/* Pagination */}
               {pagination.pages > 1 && (
-                <div className={`flex items-center justify-center gap-3 mt-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <button
-                    onClick={() => fetchOrders(pagination.page - 1)}
-                    disabled={pagination.page <= 1 || refreshing}
-                    className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-[#F97316] hover:text-[#F97316] disabled:opacity-40 transition-colors"
-                  >
-                    {isRTL ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-                  </button>
-                  <span className="text-sm text-gray-600 font-medium">
-                    {pagination.page} / {pagination.pages}
-                  </span>
-                  <button
-                    onClick={() => fetchOrders(pagination.page + 1)}
-                    disabled={pagination.page >= pagination.pages || refreshing}
-                    className="p-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-[#F97316] hover:text-[#F97316] disabled:opacity-40 transition-colors"
-                  >
-                    {isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-                  </button>
+                <div className="mt-8">
+                  <UnifiedPagination
+                    page={pagination.page}
+                    totalPages={pagination.pages}
+                    totalItems={pagination.total}
+                    pageSize={pagination.limit}
+                    onPageChange={fetchOrders}
+                    isRTL={isRTL}
+                    labels={{
+                      showing: 'Showing',
+                      of: 'of',
+                      results: 'orders',
+                      previous: 'Previous',
+                      next: 'Next',
+                    }}
+                  />
                 </div>
               )}
             </>

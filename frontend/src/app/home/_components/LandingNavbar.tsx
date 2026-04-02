@@ -25,7 +25,7 @@ export default function LandingNavbar() {
   const navLinks = [
     { label: t('landingNavHome'),     href: '/home'     },
     { label: t('landingNavProducts'), href: '/products' },
-    { label: 'Request a Quote',       href: '/generate-quotation' },
+    { label: t('landingNavRequestQuote'), href: '/generate-quotation' },
     { label: t('landingNavContact'),  href: '/contact'  },
     { label: t('landingNavLogin'),    href: '/login'    },
   ];

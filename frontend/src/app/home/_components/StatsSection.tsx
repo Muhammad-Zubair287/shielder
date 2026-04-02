@@ -69,10 +69,8 @@ function AnimatedStat({ rawValue, label, isRTL, active, index }: AnimatedStatPro
         <CheckCircle size={20} className="text-emerald-400" strokeWidth={2.5} />
       </div>
       <div>
-        <p className="text-2xl font-extrabold text-white leading-none tabular-nums">
-          {isRTL
-            ? `${suffix}${localActive ? displayCount : 0}${prefix}`
-            : `${prefix}${localActive ? displayCount : 0}${suffix}`}
+        <p className="text-2xl font-extrabold text-white leading-none tabular-nums" dir="ltr">
+          {`${prefix}${localActive ? displayCount : 0}${suffix}`}
         </p>
         <p className="text-slate-400 text-xs font-medium mt-1 leading-tight">{label}</p>
       </div>

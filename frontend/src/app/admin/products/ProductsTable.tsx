@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Edit2, Trash2, ChevronLeft, ChevronRight, PackageSearch, Package } from 'lucide-react';
+import { Edit2, Trash2, PackageSearch, Package } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import StockStatusBadge from './StockStatusBadge';
 import { getImageUrl } from '@/utils/helpers';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import type { Product } from './types';
 
 interface Pagination {
@@ -68,9 +69,6 @@ export default function ProductsTable({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(price);
-
-  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
-  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
 
   const cellAlign = isRTL ? 'text-right' : 'text-left';
   const actionsAlign = isRTL ? 'text-left' : 'text-right';
@@ -231,71 +229,21 @@ export default function ProductsTable({
 
       {/* ── Pagination ── */}
       {!loading && products.length > 0 && (
-        <div
-          className={`px-4 py-3 border-t border-gray-100 flex flex-wrap items-center gap-3 ${
-            isRTL ? 'flex-row-reverse' : ''
-          } justify-between`}
-        >
-          <p className="text-xs text-gray-400">
-            {t('showing')}{' '}
-            <span className="font-bold text-gray-700">
-              {(pagination.page - 1) * pagination.limit + 1}–
-              {Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span>{' '}
-            {t('of')}{' '}
-            <span className="font-bold text-gray-700">{pagination.total}</span>{' '}
-            {t('results')}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onPageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label={t('previous')}
-            >
-              <PrevIcon size={16} />
-            </button>
-            {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter(
-                (n) =>
-                  n === 1 ||
-                  n === pagination.pages ||
-                  Math.abs(n - pagination.page) <= 1
-              )
-              .reduce<(number | 'ellipsis')[]>((acc, n, idx, arr) => {
-                if (idx > 0 && Number(arr[idx - 1]) < n - 1) acc.push('ellipsis');
-                acc.push(n);
-                return acc;
-              }, [])
-              .map((item, idx) =>
-                item === 'ellipsis' ? (
-                  <span key={`e-${idx}`} className="px-1 text-gray-400 text-xs">
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    onClick={() => onPageChange(item as number)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                      pagination.page === item
-                        ? 'bg-[#5B5FC7] text-white'
-                        : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-            <button
-              onClick={() => onPageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.pages}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label={t('next')}
-            >
-              <NextIcon size={16} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={onPageChange}
+          isRTL={isRTL}
+          labels={{
+            showing: t('showing'),
+            of: t('of'),
+            results: t('results'),
+            previous: t('previous'),
+            next: t('next'),
+          }}
+        />
       )}
     </div>
   );

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { FileText, Eye, Edit3, Send, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { FileText, Eye, Edit3, Send, Plus } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export default function DraftQuotationsPage() {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -84,13 +85,13 @@ export default function DraftQuotationsPage() {
                         </tbody>
                     </table>
                 </div>
-                <div className="px-5 py-4 bg-gray-50/50 flex items-center justify-between border-t border-gray-100">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{pagination.total} total drafts</span>
-                    <div className="flex space-x-2">
-                        <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30"><ChevronLeft size={16} /></button>
-                        <button disabled={page >= pagination.pages} onClick={() => setPage(p => p + 1)} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30"><ChevronRight size={16} /></button>
-                    </div>
-                </div>
+                <UnifiedPagination
+                    page={page}
+                    totalPages={pagination.pages}
+                    totalItems={pagination.total}
+                    pageSize={10}
+                    onPageChange={setPage}
+                />
             </div>
         </div>
     );

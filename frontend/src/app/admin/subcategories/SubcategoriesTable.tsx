@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Edit2, Trash2, ChevronLeft, ChevronRight, Shapes } from 'lucide-react';
+import { Edit2, Trash2, Shapes } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl } from '@/utils/helpers';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import type { Subcategory } from './types';
 
 interface Pagination {
@@ -54,9 +55,6 @@ export default function SubcategoriesTable({
       month: 'short',
       day: 'numeric',
     }).format(new Date(d));
-
-  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
-  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
 
   const SKELETONS = Array.from({ length: 6 });
 
@@ -194,39 +192,19 @@ export default function SubcategoriesTable({
 
       {/* Pagination */}
       {!loading && subcategories.length > 0 && (
-        <div
-          className={`px-4 py-3 border-t border-gray-100 flex flex-wrap items-center gap-3 ${
-            isRTL ? 'flex-row-reverse' : 'flex-row'
-          } justify-between`}
-          dir={isRTL ? 'rtl' : 'ltr'}
-        >
-          <p className="text-xs text-gray-400">
-            {t('totalEntries').replace('{total}', String(pagination.total))}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onPageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              aria-label="Previous page"
-            >
-              <PrevIcon size={16} />
-            </button>
-            <span className="text-xs text-gray-600 px-2 font-medium">
-              {t('pageOf')
-                .replace('{page}', String(pagination.page))
-                .replace('{pages}', String(pagination.pages))}
-            </span>
-            <button
-              onClick={() => onPageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.pages}
-              className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              aria-label="Next page"
-            >
-              <NextIcon size={16} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={onPageChange}
+          isRTL={isRTL}
+          labels={{
+            total: t('total'),
+            results: t('results'),
+            previous: t('previous'),
+            next: t('next'),
+          }}
+        />
       )}
     </div>
   );

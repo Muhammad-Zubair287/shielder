@@ -17,12 +17,11 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  ChevronLeft,
-  ChevronRight
 } from 'lucide-react';
 import adminService from '@/services/admin.service';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 interface UserStats {
   totalUsers: number;
@@ -347,27 +346,19 @@ export default function UserManagement() {
         </div>
         
         {/* Pagination Toolbar */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            {t('page')} {page} {t('of')} {totalPages}
-          </p>
-          <div className="flex items-center space-x-2">
-            <button 
-              disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              className="p-1.5 border border-gray-200 rounded-lg bg-white disabled:opacity-30 hover:bg-gray-50 transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button 
-              disabled={page === totalPages}
-              onClick={() => setPage(p => p + 1)}
-              className="p-1.5 border border-gray-200 rounded-lg bg-white disabled:opacity-30 hover:bg-gray-50 transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={stats?.totalUsers || users.length}
+          onPageChange={setPage}
+          isRTL={isRTL}
+          labels={{
+            total: t('total'),
+            results: t('results'),
+            previous: t('previous'),
+            next: t('next'),
+          }}
+        />
       </div>
 
       {/* Add/Edit User Modal */}

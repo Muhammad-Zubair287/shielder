@@ -13,8 +13,6 @@ import {
   AlertTriangle,
   Upload,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   Image as ImageIcon
 } from 'lucide-react';
@@ -22,6 +20,7 @@ import adminService from '@/services/admin.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 // --- Types ---
 interface Category {
@@ -419,27 +418,18 @@ export default function CategoryManagementPage() {
         </div>
         
         {/* Pagination */}
-        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Page <span className="text-[#0A1E36]">{pagination.page}</span> of <span className="text-[#0A1E36]">{pagination.pages}</span> — Total <span className="text-[#0A1E36]">{pagination.total}</span> entries
-          </p>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-              disabled={pagination.page === 1}
-              className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-30 transition-all"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button 
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.min(pagination.pages, prev.page + 1) }))}
-              disabled={pagination.page === pagination.pages}
-              className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-30 transition-all"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <UnifiedPagination
+          page={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          labels={{
+            total: 'Total',
+            results: 'entries',
+            previous: 'Previous',
+            next: 'Next',
+          }}
+        />
       </div>
 
       {/* --- Modals --- */}

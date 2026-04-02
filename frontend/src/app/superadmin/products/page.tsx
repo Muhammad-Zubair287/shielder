@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   Upload,
   Loader2,
-  ChevronLeft,
   ChevronRight,
   Filter,
   Eye,
@@ -32,6 +31,7 @@ import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
 import { ApiErrorResponse } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 // --- Types ---
 interface Product {
@@ -725,40 +725,14 @@ const ProductManagement = () => {
 
         {/* 5. Pagination */}
         {pagination.pages > 1 && (
-          <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-500 font-medium">
-              Showing <span className="font-bold">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-bold">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-bold">{pagination.total}</span> products
-            </p>
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setPagination(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
-                disabled={pagination.page === 1}
-                className="p-2 text-gray-400 hover:text-[#0205A6] disabled:opacity-30 transition-colors"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              {[...Array(pagination.pages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPagination(p => ({ ...p, page: i + 1 }))}
-                  className={`min-w-[32px] h-8 text-xs font-black rounded-lg transition-all ${
-                    pagination.page === i + 1 
-                      ? 'bg-[#FF6B35] text-white shadow-sm' 
-                      : 'text-gray-400 hover:bg-gray-100'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button 
-                onClick={() => setPagination(p => ({ ...p, page: Math.min(pagination.pages, p.page + 1) }))}
-                disabled={pagination.page === pagination.pages}
-                className="p-2 text-gray-400 hover:text-[#0205A6] disabled:opacity-30 transition-colors"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
+          <UnifiedPagination
+            page={pagination.page}
+            totalPages={pagination.pages}
+            totalItems={pagination.total}
+            pageSize={pagination.limit}
+            onPageChange={(page) => setPagination((p) => ({ ...p, page }))}
+            isRTL={isRTL}
+          />
         )}
       </div>
 

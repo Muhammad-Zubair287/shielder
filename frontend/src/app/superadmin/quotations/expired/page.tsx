@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Eye, RotateCcw, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
+import { AlertCircle, Eye, RotateCcw, Loader2, X } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export default function ExpiredQuotationsPage() {
     const { t, isRTL } = useLanguage();
@@ -89,13 +90,14 @@ export default function ExpiredQuotationsPage() {
                         </tbody>
                     </table>
                 </div>
-                <div className="px-5 py-4 bg-gray-50/50 flex items-center justify-between border-t border-gray-100">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{pagination.total} expired quotations</span>
-                    <div className="flex space-x-2">
-                        <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30"><ChevronLeft size={16} /></button>
-                        <button disabled={page >= pagination.pages} onClick={() => setPage(p => p + 1)} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 disabled:opacity-30"><ChevronRight size={16} /></button>
-                    </div>
-                </div>
+                <UnifiedPagination
+                    page={page}
+                    totalPages={pagination.pages}
+                    totalItems={pagination.total}
+                    pageSize={10}
+                    onPageChange={setPage}
+                    isRTL={isRTL}
+                />
             </div>
 
             {/* Reactivate Modal */}

@@ -26,6 +26,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import notificationService, { Notification, NotificationPreference } from '@/services/notification.service';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export default function NotificationsPage() {
   const { t, isRTL } = useLanguage();
@@ -513,27 +514,22 @@ export default function NotificationsPage() {
         
         {/* Pagination */}
         {activeTab !== 'preferences' && pagination.pages > 1 && (
-          <div className="p-6 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">
-              {t('page')} <span className="text-shielder-dark">{pagination.page}</span> {t('of')} {pagination.pages}
-            </p>
-            <div className="flex gap-2">
-              <button 
-                disabled={pagination.page === 1}
-                onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
-                className="p-2 rounded-xl bg-white border border-gray-200 text-shielder-dark disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button 
-                disabled={pagination.page === pagination.pages}
-                onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
-                className="p-2 rounded-xl bg-white border border-gray-200 text-shielder-dark disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
+          <UnifiedPagination
+            page={pagination.page}
+            totalPages={pagination.pages}
+            totalItems={pagination.total}
+            pageSize={pagination.limit}
+            onPageChange={(page) => setPagination((p) => ({ ...p, page }))}
+            isRTL={isRTL}
+            labels={{
+              showing: t('showing'),
+              of: t('of'),
+              results: t('results'),
+              previous: t('previous'),
+              next: t('next'),
+            }}
+            className="p-6"
+          />
         )}
       </div>
 

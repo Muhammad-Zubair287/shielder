@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Eye, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Package } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import OrderStatusBadge from './OrderStatusBadge';
 import PaymentStatusBadge from './PaymentStatusBadge';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import type { Order, Pagination } from './types';
 
 interface Props {
@@ -175,73 +176,19 @@ export default function OrdersTable({ orders, loading, pagination, onPageChange 
       </div>
 
       {/* Pagination */}
-      <div
-        className="px-5 py-3.5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-4"
-        dir={isRTL ? 'rtl' : 'ltr'}
-      >
-        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-          {t('pageOf')
-            .replace('{page}', String(pagination.page))
-            .replace('{pages}', String(pagination.pages || 1))}
-          {' · '}
-          {t('totalEntries').replace('{total}', String(pagination.total))}
-        </span>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            disabled={pagination.page <= 1}
-            onClick={() => onPageChange(pagination.page - 1)}
-            className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 disabled:opacity-30 transition-colors"
-            aria-label={t('prevPage')}
-          >
-            {isRTL ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-          </button>
-
-          {Array.from({ length: Math.min(pagination.pages, 7) }, (_, i) => {
-            const p = i + 1;
-            const isCurrent = p === pagination.page;
-            return (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={`w-8 h-8 text-xs font-bold rounded-lg transition-colors ${
-                  isCurrent
-                    ? 'bg-[#5B5FC7] text-white'
-                    : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US').format(p)}
-              </button>
-            );
-          })}
-
-          {pagination.pages > 7 && pagination.page < pagination.pages - 2 && (
-            <span className="text-gray-400 text-xs px-1">…</span>
-          )}
-
-          {pagination.pages > 7 && (
-            <button
-              onClick={() => onPageChange(pagination.pages)}
-              className={`w-8 h-8 text-xs font-bold rounded-lg transition-colors ${
-                pagination.page === pagination.pages
-                  ? 'bg-[#5B5FC7] text-white'
-                  : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              {new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US').format(pagination.pages)}
-            </button>
-          )}
-
-          <button
-            disabled={pagination.page >= pagination.pages}
-            onClick={() => onPageChange(pagination.page + 1)}
-            className="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:bg-gray-50 disabled:opacity-30 transition-colors"
-            aria-label={t('nextPage')}
-          >
-            {isRTL ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
-          </button>
-        </div>
-      </div>
+      <UnifiedPagination
+        page={pagination.page}
+        totalPages={pagination.pages}
+        totalItems={pagination.total}
+        onPageChange={onPageChange}
+        isRTL={isRTL}
+        labels={{
+          total: t('total'),
+          results: t('results'),
+          previous: t('prevPage'),
+          next: t('nextPage'),
+        }}
+      />
     </div>
   );
 }

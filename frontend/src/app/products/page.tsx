@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Filter, ShoppingCart, ChevronLeft, ChevronRight, Search, X, Check, Plus, Minus, Download, ImageOff } from 'lucide-react';
+import { Filter, ShoppingCart, Search, X, Check, Plus, Minus, Download, ImageOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
@@ -24,6 +24,7 @@ import {
 } from './products.constants';
 import { ActiveFilters, Category, Product, ProductTab } from './products.types';
 import { PRODUCT_COMPARE, TOAST_MESSAGES } from '@/constants/ui.constants';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -377,47 +378,6 @@ function SkeletonCard() {
         <div className="h-4 bg-gray-200 rounded w-1/3 mt-2" />
         <div className="h-9 bg-gray-200 rounded-full mt-2" />
       </div>
-    </div>
-  );
-}
-
-// ── Pagination ────────────────────────────────────────────────────────────────
-function Pagination({ page, total, perPage, onChange, isRTL }: {
-  page: number; total: number; perPage: number; onChange: (p: number) => void; isRTL: boolean;
-}) {
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  if (totalPages <= 1) return null;
-
-  const pages: (number | '...')[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1, 2, 3);
-    if (page > 4) pages.push('...');
-    if (page > 3 && page < totalPages - 2) pages.push(page);
-    if (page < totalPages - 3) pages.push('...');
-    pages.push(totalPages);
-  }
-
-  const btn = (content: React.ReactNode, target: number, active = false, disabled = false) => (
-    <button key={`${target}-${active}`} onClick={() => !disabled && onChange(target)} disabled={disabled}
-      className={`w-9 h-9 text-sm font-semibold rounded-full flex items-center justify-center transition-colors
-        ${active ? 'bg-[#0205A6] text-white' : 'text-gray-700 hover:bg-gray-100'}
-        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-      {content}
-    </button>
-  );
-
-  return (
-    <div className={`flex items-center justify-center gap-1 mt-12 ${isRTL ? 'flex-row-reverse' : ''}`}>
-      {btn('«', 1, false, page === 1)}
-      {btn(<ChevronLeft size={16} />, page - 1, false, page === 1)}
-      {pages.map((p, i) => p === '...'
-        ? <span key={`dots-${i}`} className="w-9 text-center text-gray-400">…</span>
-        : btn(p, p as number, p === page)
-      )}
-      {btn(<ChevronRight size={16} />, page + 1, false, page === totalPages)}
-      {btn('»', totalPages, false, page === totalPages)}
     </div>
   );
 }
@@ -1013,8 +973,16 @@ function ProductsContent() {
 
           {/* Pagination */}
           {!loading && (
-            <Pagination page={page} total={total} perPage={PRODUCTS_ITEMS_PER_PAGE}
-              onChange={handlePageChange} isRTL={isRTL} />
+            <div className="mt-10">
+              <UnifiedPagination
+                page={page}
+                totalPages={Math.max(1, Math.ceil(total / PRODUCTS_ITEMS_PER_PAGE))}
+                totalItems={total}
+                pageSize={PRODUCTS_ITEMS_PER_PAGE}
+                onPageChange={handlePageChange}
+                isRTL={isRTL}
+              />
+            </div>
           )}
         </div>
       </main>
