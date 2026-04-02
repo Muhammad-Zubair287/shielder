@@ -6,6 +6,7 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/config/database';
+import { env } from '@/config/env';
 import { TokenService, type DeviceInfo } from './token.service';
 import { emailService } from '@/common/services/email.service';
 import {
@@ -57,6 +58,34 @@ export class AuthService {
   private static readonly RESET_TOKEN_EXPIRY_MINUTES = 15;
   private static readonly VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 
+  private static hasUsableEmailConfig(): boolean {
+    const provider = (env.EMAIL_PROVIDER || 'smtp').toLowerCase();
+
+    if (provider === 'smtp') {
+      const user = (env.SMTP_USER || '').trim();
+      const pass = (env.SMTP_PASSWORD || '').trim();
+      const hasPlaceholders =
+        user === 'your-email@gmail.com' || pass === 'your-email-password';
+      return !!user && !!pass && !hasPlaceholders;
+    }
+
+    if (provider === 'sendgrid') {
+      return !!(env.SENDGRID_API_KEY || '').trim();
+    }
+
+    if (provider === 'ses') {
+      return !!(env.AWS_SES_ACCESS_KEY || '').trim() && !!(env.AWS_SES_SECRET_KEY || '').trim();
+    }
+
+    return false;
+  }
+
+  private static shouldBypassEmailFlows(): boolean {
+    // Enabled by default in development when email isn't configured.
+    const bypassEnabled = process.env.AUTH_DEV_BYPASS_EMAIL !== 'false';
+    return env.isDevelopment && bypassEnabled && !this.hasUsableEmailConfig();
+  }
+
   /**
    * Load security settings from DB (with safe defaults if not configured)
    */
@@ -103,12 +132,18 @@ export class AuthService {
       // Hash password with bcrypt
       const passwordHash = await bcrypt.hash(data.password, this.SALT_ROUNDS);
 
-      // Generate email verification token
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      const verificationTokenExpiry = new Date();
-      verificationTokenExpiry.setHours(
-        verificationTokenExpiry.getHours() + this.VERIFICATION_TOKEN_EXPIRY_HOURS
-      );
+      const bypassEmailFlows = this.shouldBypassEmailFlows();
+
+      // Generate email verification token when email delivery is enabled
+      let verificationToken: string | null = null;
+      let verificationTokenExpiry: Date | null = null;
+      if (!bypassEmailFlows) {
+        verificationToken = crypto.randomBytes(32).toString('hex');
+        verificationTokenExpiry = new Date();
+        verificationTokenExpiry.setHours(
+          verificationTokenExpiry.getHours() + this.VERIFICATION_TOKEN_EXPIRY_HOURS
+        );
+      }
 
       // Create user with profile (transaction)
       const user = await prisma.user.create({
@@ -116,7 +151,8 @@ export class AuthService {
           email: data.email.toLowerCase(),
           passwordHash,
           role: data.role || 'USER',
-          status: 'PENDING',
+          status: bypassEmailFlows ? 'ACTIVE' : 'PENDING',
+          emailVerified: bypassEmailFlows,
           verificationToken,
           verificationTokenExpiry,
           profile: {
@@ -181,23 +217,29 @@ export class AuthService {
       // Return sanitized user
       const sanitizedUser = this.sanitizeUser(user);
 
-      // Send welcome and verification emails in the background so slow SMTP
-      // does not delay or fail the registration HTTP response.
-      const displayName = user.profile?.fullName || 'User';
-      void Promise.allSettled([
-        emailService.sendWelcomeEmail(user.email, displayName),
-        emailService.sendVerificationEmail(user.email, displayName, verificationToken),
-      ]).then((results) => {
-        results.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            logger.error('Background registration email failed', {
-              email: user.email,
-              type: index === 0 ? 'welcome' : 'verification',
-              error: result.reason,
-            });
-          }
+      if (bypassEmailFlows) {
+        logger.warn('DEV MODE: Email delivery unavailable, auto-verified newly registered account', {
+          email: user.email,
         });
-      });
+      } else {
+        // Send welcome and verification emails in the background so slow SMTP
+        // does not delay or fail the registration HTTP response.
+        const displayName = user.profile?.fullName || 'User';
+        void Promise.allSettled([
+          emailService.sendWelcomeEmail(user.email, displayName),
+          emailService.sendVerificationEmail(user.email, displayName, verificationToken as string),
+        ]).then((results) => {
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              logger.error('Background registration email failed', {
+                email: user.email,
+                type: index === 0 ? 'welcome' : 'verification',
+                error: result.reason,
+              });
+            }
+          });
+        });
+      }
 
       return {
         user: sanitizedUser,
@@ -219,7 +261,7 @@ export class AuthService {
     try {
       logger.info(`Login attempt for: ${data.email.toLowerCase()}`);
       // Find user by email
-      const user = await prisma.user.findUnique({
+      let user = await prisma.user.findUnique({
         where: { email: data.email.toLowerCase() },
         select: {
           id: true,
@@ -269,8 +311,22 @@ export class AuthService {
       }
 
       if (user.role === 'USER' && !user.emailVerified) {
-        logger.warn(`Login failed: Email not verified - ${user.email}`);
-        throw new UnauthorizedError('Please verify your email before logging in');
+        if (this.shouldBypassEmailFlows()) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              emailVerified: true,
+              status: 'ACTIVE',
+              verificationToken: null,
+              verificationTokenExpiry: null,
+            },
+          });
+          user = { ...user, emailVerified: true, status: 'ACTIVE' };
+          logger.warn(`DEV MODE: auto-verified user at login because email delivery is unavailable - ${user.email}`);
+        } else {
+          logger.warn(`Login failed: Email not verified - ${user.email}`);
+          throw new UnauthorizedError('Please verify your email before logging in');
+        }
       }
 
       // Verify password
@@ -305,7 +361,7 @@ export class AuthService {
 
       // ⚠️ SECURITY: Enforce mandatory 2FA for Admin and Super Admin users
       // They must complete OTP verification before receiving final access tokens
-      if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      if ((user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && !this.shouldBypassEmailFlows()) {
         logger.info(`Admin/Super Admin login requires 2FA: ${user.email}`);
 
         // Generate a temporary session token for 2FA verification (short-lived, OTP-only)
@@ -331,6 +387,10 @@ export class AuthService {
           requiresTwoFactor: true, // Signal frontend that 2FA is required
           otpSessionToken: tempOtpToken // Temporary token to use with verify-otp
         };
+      }
+
+      if ((user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && this.shouldBypassEmailFlows()) {
+        logger.warn(`DEV MODE: bypassed mandatory 2FA because email delivery is unavailable - ${user.email}`);
       }
 
       // Generate tokens with device info (regular users skip 2FA)
@@ -473,7 +533,7 @@ export class AuthService {
   /**
    * Resend email verification link
    */
-  static async resendVerificationEmail(email: string): Promise<void> {
+  static async resendVerificationEmail(email: string): Promise<{ bypassed: boolean }> {
     try {
       const user = await prisma.user.findUnique({
         where: { email: email.toLowerCase() },
@@ -492,13 +552,27 @@ export class AuthService {
       // Do not reveal whether user exists
       if (!user) {
         logger.warn(`Resend verification requested for non-existent email: ${email}`);
-        return;
+        return { bypassed: false };
       }
 
       // If already verified, silently succeed
       if (user.emailVerified) {
         logger.info(`Resend verification skipped for already verified email: ${user.email}`);
-        return;
+        return { bypassed: false };
+      }
+
+      if (this.shouldBypassEmailFlows()) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            status: 'ACTIVE',
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          },
+        });
+        logger.warn(`DEV MODE: auto-verified via resend endpoint because email delivery is unavailable: ${user.email}`);
+        return { bypassed: true };
       }
 
       const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -523,6 +597,8 @@ export class AuthService {
         'EMAIL_VERIFICATION_RESENT',
         'Verification email link was resent'
       );
+
+      return { bypassed: false };
     } catch (error) {
       logger.error('Resend verification email error:', error);
       throw error;

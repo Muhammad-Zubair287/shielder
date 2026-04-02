@@ -237,12 +237,14 @@ class AuthController {
   resendVerificationEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { email } = req.body as { email: string };
 
-    await AuthService.resendVerificationEmail(email);
+    const result = await AuthService.resendVerificationEmail(email);
 
     // Always return success (don't reveal if email exists)
     res.status(200).json({
       success: true,
-      message: 'If the email exists and is unverified, a verification link has been sent',
+      message: result.bypassed
+        ? 'Development mode: email delivery unavailable, account auto-verified'
+        : 'If the email exists and is unverified, a verification link has been sent',
     });
   });
 
