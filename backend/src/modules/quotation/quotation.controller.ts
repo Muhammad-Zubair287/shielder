@@ -3,6 +3,7 @@
  */
 
 import { Request, Response } from 'express';
+import { Prisma, QuotationStatus } from '@prisma/client';
 import { quotationService } from './quotation.service';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { AuthRequest } from '@/types/global';
@@ -40,10 +41,35 @@ export class QuotationController {
      *         description: Paginated quotation list
      */
     getAll = asyncHandler(async (req: Request, res: Response) => {
+        const asString = (value: unknown): string | undefined => {
+            if (typeof value === 'string') return value;
+            if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+            return undefined;
+        };
+
         const { page = 1, limit = 10, search, status, dateFrom, dateTo, sortBy, sortOrder } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
+
+        const normalizedStatusRaw = asString(status);
+        const normalizedStatus = normalizedStatusRaw && Object.values(QuotationStatus).includes(normalizedStatusRaw as QuotationStatus)
+            ? (normalizedStatusRaw as QuotationStatus)
+            : undefined;
+
+        const normalizedSortBy = asString(sortBy) as keyof Prisma.QuotationOrderByWithRelationInput | undefined;
+        const normalizedSortOrderRaw = asString(sortOrder);
+        const normalizedSortOrder = normalizedSortOrderRaw === 'asc' || normalizedSortOrderRaw === 'desc'
+            ? normalizedSortOrderRaw
+            : undefined;
+
         const result = await quotationService.getQuotations(
-            { search, status, dateFrom, dateTo, sortBy, sortOrder },
+            {
+                search: asString(search),
+                status: normalizedStatus,
+                dateFrom: asString(dateFrom),
+                dateTo: asString(dateTo),
+                sortBy: normalizedSortBy,
+                sortOrder: normalizedSortOrder,
+            },
             { skip, limit: Number(limit) }
         );
         res.json({ success: true, data: result });

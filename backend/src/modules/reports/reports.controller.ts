@@ -7,7 +7,7 @@ import { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { AuthRequest } from '@/types/global';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { ExportFormat } from './reports.types';
 
 const reportsService = new ReportsService();
@@ -16,6 +16,13 @@ const parsePaymentStatus = (value: unknown): PaymentStatus | undefined => {
   if (typeof value !== 'string') return undefined;
   return Object.values(PaymentStatus).includes(value as PaymentStatus)
     ? (value as PaymentStatus)
+    : undefined;
+};
+
+const parsePaymentMethod = (value: unknown): PaymentMethod | undefined => {
+  if (typeof value !== 'string') return undefined;
+  return Object.values(PaymentMethod).includes(value as PaymentMethod)
+    ? (value as PaymentMethod)
     : undefined;
 };
 
@@ -248,7 +255,7 @@ class ReportsController {
 
     const data = await reportsService.getPaymentReport(dateFrom, dateTo, {
       status: parsePaymentStatus(status),
-      method: method as string | undefined,
+      method: parsePaymentMethod(method),
     });
     
     res.json({

@@ -1,6 +1,6 @@
 import { prisma } from '@/config/database';
 import { ApiError } from '@/common/errors/api.error';
-import { Prisma, ProductStatus } from '@prisma/client';
+import { AttachmentType, Prisma, ProductStatus } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
 import { translate } from '@vitalets/google-translate-api';
@@ -49,7 +49,7 @@ type ProductSpecificationInput = {
 };
 
 type ProductAttachmentInput = {
-  type: string;
+  type: AttachmentType;
   fileName: string;
   fileUrl: string;
   mimeType?: string;
@@ -202,14 +202,14 @@ export class ProductService {
     const categoryNameMap = new Map(
       categories.map((category) => [
         category.id,
-        category.translations?.[0]?.name || category.name || 'Category',
+        category.translations?.[0]?.name || 'Category',
       ])
     );
 
     const brandNameMap = new Map(
       brands.map((brand) => [
         brand.id,
-        brand.brand_translations?.[0]?.name || brand.name || 'Brand',
+        brand.name || 'Brand',
       ])
     );
 
@@ -452,11 +452,11 @@ export class ProductService {
     return await prisma.productAttachment.create({
       data: {
         productId: id,
-        type: data.type,
-        fileName: data.fileName,
-        fileUrl: data.fileUrl,
-        mimeType: data.mimeType,
-        size: data.size,
+        type: data.type as AttachmentType,
+        fileName: data.fileName || '',
+        fileUrl: data.fileUrl || '',
+        mimeType: data.mimeType || 'application/octet-stream',
+        size: data.size ?? 0,
         language: data.language || 'en',
       },
     });
@@ -625,6 +625,8 @@ export class ProductService {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const data = XLSX.utils.sheet_to_json<Record<string, string | number | undefined>>(workbook.Sheets[sheetName]);
+    const asString = (value: unknown): string =>
+      value === undefined || value === null ? '' : String(value).trim();
 
     if (data.length === 0) {
       throw new ApiError('The uploaded file is empty', 400);
@@ -690,9 +692,9 @@ export class ProductService {
       prisma.brands.findMany({ include: { brand_translations: { where: { locale: 'en' } } } }),
     ]);
 
-    const catMap = new Map(categories.map((c) => [c.translations[0]?.name.toLowerCase() || '', c.id]));
-    const subMap = new Map(subcategories.map((s) => [s.translations[0]?.name.toLowerCase() || '', s.id]));
-    const brandMap = new Map(allBrands.map((b) => [b.name.toLowerCase() || '', b.id]));
+    const catMap = new Map(categories.map((c) => [asString(c.translations[0]?.name).toLowerCase(), c.id]));
+    const subMap = new Map(subcategories.map((s) => [asString(s.translations[0]?.name).toLowerCase(), s.id]));
+    const brandMap = new Map(allBrands.map((b) => [asString(b.name).toLowerCase(), b.id]));
 
     const results = {
       total: data.length,
@@ -706,27 +708,28 @@ export class ProductService {
       const rowNum = i + 2; // +1 for 0-index, +1 for header
       
       try {
-        const name = row['Product Name'];
-        const sku = row['SKU']?.toString();
-        const price = parseFloat(row['Price']);
-        const stock = parseInt(row['Stock']);
-        const minStock = parseInt(row['Minimum Stock']) || 5;
-        const catName = row['Category Name']?.toLowerCase();
-        const subName = row['Subcategory Name']?.toLowerCase();
-        const brandName = row['Brand Name']?.toLowerCase();
-        const description = row['Description'] || '';
-        const nameArInput: string = row['Arabic Name']?.toString().trim() || '';
-        const descArInput: string = row['Arabic Description']?.toString().trim() || '';
-        const filterNumber: string | undefined = row['Filter Number']?.toString().trim() || undefined;
-        const alternateNumbers: string | undefined = row['Alternate Numbers']?.toString().trim() || undefined;
-        const filterType: string | undefined = row['Filter Type']?.toString().trim() || undefined;
-        const material: string | undefined = row['Material']?.toString().trim() || undefined;
-        const dimensions: string | undefined = row['Dimensions']?.toString().trim() || undefined;
+        const name = asString(row['Product Name']);
+        const sku = asString(row['SKU']) || undefined;
+        const price = Number(row['Price']);
+        const stock = Number(row['Stock']);
+        const minimumStockRaw = Number(row['Minimum Stock']);
+        const minStock = Number.isFinite(minimumStockRaw) && minimumStockRaw > 0 ? minimumStockRaw : 5;
+        const catName = asString(row['Category Name']).toLowerCase();
+        const subName = asString(row['Subcategory Name']).toLowerCase();
+        const brandName = asString(row['Brand Name']).toLowerCase();
+        const description = asString(row['Description']);
+        const nameArInput = asString(row['Arabic Name']);
+        const descArInput = asString(row['Arabic Description']);
+        const filterNumber: string | undefined = asString(row['Filter Number']) || undefined;
+        const alternateNumbers: string | undefined = asString(row['Alternate Numbers']) || undefined;
+        const filterType: string | undefined = asString(row['Filter Type']) || undefined;
+        const material: string | undefined = asString(row['Material']) || undefined;
+        const dimensions: string | undefined = asString(row['Dimensions']) || undefined;
 
         // Auto-translate if Arabic fields are not provided
         const nameAr = nameArInput || await toArabic(name);
         const descriptionAr = descArInput || (description ? await toArabic(description) : '');
-        const rawImage: string | undefined = row['Image']?.toString().trim() || undefined;
+        const rawImage: string | undefined = asString(row['Image']) || undefined;
         // Prefer an image embedded directly in the Excel cell (floating image anchored to this row).
         // excelRow is 0-based; row 0 = header, so data row i (0-based) sits at excelRow i+1.
         const embeddedDataUrl = embeddedImages.get(i + 1);
@@ -752,7 +755,7 @@ export class ProductService {
         // Auto-create category if it doesn't exist
         let categoryId = catMap.get(catName);
         if (!categoryId) {
-          const displayName = row['Category Name']?.toString().trim() || catName;
+          const displayName = asString(row['Category Name']) || catName;
           const newCat = await prisma.category.create({
             data: {
               translations: {
@@ -770,7 +773,7 @@ export class ProductService {
         // Auto-create subcategory if it doesn't exist (linked to the category above)
         let subcategoryId = subMap.get(subName);
         if (!subcategoryId) {
-          const displayName = row['Subcategory Name']?.toString().trim() || subName;
+          const displayName = asString(row['Subcategory Name']) || subName;
           const newSub = await prisma.subcategory.create({
             data: {
               categoryId,
@@ -786,7 +789,7 @@ export class ProductService {
           subMap.set(subName, subcategoryId);
         }
 
-        const brandId = brandName ? brandMap.get(brandName) : null;
+        const brandId = brandName ? (brandMap.get(brandName) || undefined) : undefined;
 
         // Check SKU uniqueness
         if (sku) {
@@ -839,7 +842,7 @@ export class ProductService {
         results.failed++;
         results.errors.push({
           row: rowNum,
-          sku: row['SKU'],
+          sku: asString(row['SKU']) || undefined,
           error: err instanceof Error ? err.message : 'Unknown upload error'
         });
       }

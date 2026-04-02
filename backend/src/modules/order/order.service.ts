@@ -101,7 +101,7 @@ export class OrderService {
 
         // Handle variant if provided
         if (item.variantId) {
-          const variant = await tx.productVariant.findUnique({
+          const variant = await tx.product_variants.findUnique({
             where: { id: item.variantId }
           });
           if (!variant) throw new NotFoundError(`Variant with ID ${item.variantId} not found`);
@@ -190,7 +190,11 @@ export class OrderService {
       if (dateTo) where.createdAt.lte = new Date(dateTo);
     }
 
-    const orderBy: Prisma.OrderOrderByWithRelationInput = { [sortBy]: sortOrder } as Prisma.OrderOrderByWithRelationInput;
+    const sortField: keyof Prisma.OrderOrderByWithRelationInput = sortBy ?? 'createdAt';
+    const resolvedSortOrder: Prisma.SortOrder = sortOrder ?? 'desc';
+    const orderBy = {
+      [sortField as string]: resolvedSortOrder,
+    } as Prisma.OrderOrderByWithRelationInput;
 
     const [total, orders] = await Promise.all([
       orderRepository.count(where),

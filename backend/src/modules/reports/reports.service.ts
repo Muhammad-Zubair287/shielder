@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '../../config/database';
-import { PaymentStatus, OrderStatus, Prisma } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, OrderStatus, Prisma } from '@prisma/client';
 import { AuditService } from '../../common/services/audit.service';
 import * as XLSX from 'xlsx';
 import PDFDocument from 'pdfkit';
@@ -210,7 +210,8 @@ export class ReportsService {
    */
   async exportSalesReport(data: SalesReportResponse, format: ExportFormat) {
     if (format === 'excel' || format === 'csv') {
-      const worksheet = XLSX.utils.json_to_sheet(data.salesByProduct);
+      const salesByProduct = data.salesByProduct ?? [];
+      const worksheet = XLSX.utils.json_to_sheet(salesByProduct);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Sales By Product');
       
@@ -461,7 +462,7 @@ export class ReportsService {
     to: Date,
     filters?: {
       status?: PaymentStatus;
-      method?: string;
+      method?: PaymentMethod;
     }
   ) {
     const where: Prisma.PaymentWhereInput = {
@@ -469,7 +470,7 @@ export class ReportsService {
     };
 
     if (filters?.status) where.status = filters.status;
-    if (filters?.method) where.method = filters.method;
+    if (filters?.method) where.method = filters.method as PaymentMethod;
 
     const [stats, trend] = await Promise.all([
       prisma.payment.groupBy({

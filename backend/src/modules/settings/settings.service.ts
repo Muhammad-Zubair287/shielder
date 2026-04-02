@@ -67,17 +67,37 @@ class SettingsService {
     // Log individual changes to Audit Log
     for (const key in data) {
       if (oldSettings[key as keyof typeof oldSettings] !== data[key]) {
+        const jsonValue = (value: unknown): Prisma.InputJsonValue | null => {
+          if (value === null || value === undefined) return null;
+          if (value instanceof Date) return value.toISOString();
+          if (Array.isArray(value)) return value.map(item => jsonValue(item) ?? null);
+          if (typeof value === 'object') {
+            const output: Record<string, Prisma.InputJsonValue> = {
+            };
+            for (const [objectKey, objectValue] of Object.entries(value as Record<string, unknown>)) {
+              const converted = jsonValue(objectValue);
+              if (converted !== null) {
+                output[objectKey] = converted;
+              }
+            }
+            return output;
+          }
+          return value as Prisma.InputJsonValue;
+        };
+
+        const changePayload: Prisma.InputJsonObject = {
+          field: key,
+          old: jsonValue(oldSettings[key as keyof typeof oldSettings]) ?? null,
+          new: jsonValue(data[key]) ?? null,
+        };
+
         await prisma.auditLog.create({
           data: {
             userId,
             action: `UPDATE_SETTING_${section.toUpperCase()}`,
             entityType: 'SystemSettings',
             entityId: 'CURRENT',
-            changes: {
-              field: key,
-              old: oldSettings[key as keyof typeof oldSettings],
-              new: data[key]
-            },
+            changes: changePayload,
             ipAddress
           }
         });
