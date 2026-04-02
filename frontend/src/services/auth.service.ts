@@ -87,6 +87,17 @@ class AuthService {
   }
 
   /**
+   * Resend email verification link
+   */
+  async resendVerificationEmail(email: string): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
    * Reset password with token
    */
   async resetPassword(token: string, password: string): Promise<void> {

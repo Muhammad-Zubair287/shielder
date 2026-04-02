@@ -83,6 +83,13 @@ export const authValidation = {
   }),
 
   /**
+   * Resend email verification validation
+   */
+  resendVerificationEmail: Joi.object({
+    email: emailSchema,
+  }),
+
+  /**
    * Reset password validation
    */
   resetPassword: Joi.object({

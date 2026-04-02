@@ -67,6 +67,18 @@ router.post(
 );
 
 /**
+ * POST /api/auth/resend-verification
+ * Resend email verification link
+ * Rate limit: 3 requests per hour per IP
+ */
+router.post(
+  '/resend-verification',
+  rateLimitAuth({ maxRequests: 3, windowMinutes: 60 }),
+  validate(authValidation.resendVerificationEmail),
+  authController.resendVerificationEmail
+);
+
+/**
  * POST /api/auth/reset-password
  * Reset password with token
  * Rate limit: 5 requests per hour

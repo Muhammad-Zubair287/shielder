@@ -231,6 +231,22 @@ class AuthController {
   });
 
   /**
+   * POST /api/auth/resend-verification
+   * Resend email verification link
+   */
+  resendVerificationEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { email } = req.body as { email: string };
+
+    await AuthService.resendVerificationEmail(email);
+
+    // Always return success (don't reveal if email exists)
+    res.status(200).json({
+      success: true,
+      message: 'If the email exists and is unverified, a verification link has been sent',
+    });
+  });
+
+  /**
    * @swagger
    * /api/auth/reset-password:
    *   post:

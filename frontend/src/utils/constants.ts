@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
     REFRESH_TOKEN: 'auth/refresh',
     ME: 'auth/me',
     VERIFY_EMAIL: 'auth/verify-email', // Note: backend expects GET /verify-email/:token
+    RESEND_VERIFICATION: 'auth/resend-verification',
     FORGOT_PASSWORD: 'auth/forgot-password',
     RESET_PASSWORD: 'auth/reset-password',
     VERIFY_OTP: 'auth/verify-otp',

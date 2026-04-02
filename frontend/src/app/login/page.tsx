@@ -17,6 +17,7 @@ import type { LoginRequest } from '@/types';
 import toast from 'react-hot-toast';
 import { validateLoginForm } from '@/services/validation.service';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import authService from '@/services/auth.service';
 
 function LoginPageContent() {
   // Clear auth state if session expired
@@ -130,6 +131,16 @@ function LoginPageContent() {
   });
   const [errors, setErrors] = useState<Partial<LoginRequest>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+
+  const isUnverifiedEmailError = (message: string) => {
+    const normalized = message.toLowerCase();
+    return (
+      normalized.includes('verify your email') ||
+      normalized.includes('email not verified')
+    );
+  };
 
   /**
    * Validate form
@@ -161,10 +172,37 @@ function LoginPageContent() {
 
     redirectHandled.current = true;
     try {
+      setShowResendVerification(false);
       await login(formData);
-    } catch (error) {
+    } catch (error: unknown) {
       redirectHandled.current = false;
+      const message = error instanceof Error ? error.message : '';
+      setShowResendVerification(isUnverifiedEmailError(message));
       console.error('Login error:', error);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const email = formData.email?.trim();
+    if (!email) {
+      toast.error('Please enter your email first.');
+      return;
+    }
+
+    if (!VALIDATION_RULES.EMAIL_REGEX.test(email)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
+    try {
+      setIsResendingVerification(true);
+      await authService.resendVerificationEmail(email);
+      toast.success('If your account exists and is unverified, a new verification link has been sent.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to resend verification email';
+      toast.error(message);
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -341,6 +379,17 @@ function LoginPageContent() {
                   >
                     {isSubmitting ? t('loading') || 'Loading...' : 'Continue'}
                   </button>
+
+              {showResendVerification && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={isResendingVerification || isSubmitting}
+                  className="w-full mt-3 border border-[#FF6B35] text-[#FF6B35] hover:bg-[#FFF2EC] font-medium py-3 rounded-xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isResendingVerification ? 'Sending verification email...' : 'Resend verification email'}
+                </button>
+              )}
             </form>
 
             <div className="mt-8 text-center text-gray-600">

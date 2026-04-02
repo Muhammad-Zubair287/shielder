@@ -471,6 +471,65 @@ export class AuthService {
   }
 
   /**
+   * Resend email verification link
+   */
+  static async resendVerificationEmail(email: string): Promise<void> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      });
+
+      // Do not reveal whether user exists
+      if (!user) {
+        logger.warn(`Resend verification requested for non-existent email: ${email}`);
+        return;
+      }
+
+      // If already verified, silently succeed
+      if (user.emailVerified) {
+        logger.info(`Resend verification skipped for already verified email: ${user.email}`);
+        return;
+      }
+
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpiry = new Date();
+      verificationTokenExpiry.setHours(
+        verificationTokenExpiry.getHours() + this.VERIFICATION_TOKEN_EXPIRY_HOURS
+      );
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verificationToken,
+          verificationTokenExpiry,
+        },
+      });
+
+      const fullName = user.profile?.fullName || 'User';
+      await emailService.sendVerificationEmail(user.email, fullName, verificationToken);
+
+      await this.createAuditLog(
+        user.id,
+        'EMAIL_VERIFICATION_RESENT',
+        'Verification email link was resent'
+      );
+    } catch (error) {
+      logger.error('Resend verification email error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 6️⃣ RESET PASSWORD
    */
   static async resetPassword(data: ResetPasswordRequest): Promise<void> {

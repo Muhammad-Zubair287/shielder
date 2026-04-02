@@ -45,6 +45,7 @@ export function getPasswordStrength(password: string): {
     'Fair',
     'Good',
     'Strong',
+    'Strong',
   ];
 
   const colors = [
@@ -53,12 +54,15 @@ export function getPasswordStrength(password: string): {
     'bg-yellow-500',
     'bg-lime-500',
     'bg-green-500',
+    'bg-green-500',
   ];
+
+  const safeIndex = Math.max(0, Math.min(score, labels.length - 1));
 
   return {
     score,
-    label: labels[score],
-    color: colors[score],
+    label: labels[safeIndex],
+    color: colors[safeIndex],
     percentage: (score / 5) * 100,
   };
 }
