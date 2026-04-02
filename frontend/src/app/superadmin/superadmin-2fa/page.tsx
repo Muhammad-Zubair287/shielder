@@ -59,7 +59,7 @@ export default function SuperAdminTwoFactorPage() {
             <h1 className="text-2xl font-bold">Super Admin 2FA Verification</h1>
           </div>
           <p className="text-base text-slate-600 dark:text-slate-300">
-            Enter the 6-digit code from your authenticator app
+            Enter the 6-digit code sent to your email
           </p>
         </div>
 

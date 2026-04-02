@@ -302,6 +302,10 @@ export class AuthService {
       // They must complete OTP verification before receiving final access tokens
       if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
         logger.info(`Admin/Super Admin login requires 2FA: ${user.email}`);
+
+        // Generate and deliver OTP before returning the 2FA challenge.
+        // Without this step, users reach the 2FA page but never receive a code.
+        await this.sendOTP(user.id, 'EMAIL');
         
         // Generate a temporary session token for 2FA verification (short-lived, OTP-only)
         // This token can only be used with /api/auth/verify-otp endpoint

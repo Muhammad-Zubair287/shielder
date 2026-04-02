@@ -99,11 +99,15 @@ export class TwoFactorService {
         <p>If you didn't request this code, please ignore this email.</p>
       `;
 
-      await emailService.sendEmail({
+      const sent = await emailService.sendEmail({
         to: email,
         subject: 'Your Two-Factor Authentication Code',
         html,
       });
+
+      if (!sent) {
+        throw new BadRequestError('Unable to deliver OTP email. Please try again later.');
+      }
 
       logger.info(`OTP email sent to ${email}`);
     } catch (error) {

@@ -57,7 +57,7 @@ export default function AdminTwoFactorPage() {
         <div className="space-y-2 p-6">
           <h1 className="text-2xl font-bold">Admin 2FA Verification</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Enter the 6-digit code from your authenticator app
+            Enter the 6-digit code sent to your email
           </p>
         </div>
 

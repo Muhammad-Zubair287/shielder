@@ -63,7 +63,7 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setItems(JSON.parse(raw));
     } catch { /* ignore */ }
-  }, [removeItem]);
+  }, []);
 
   // Persist helper — updates state and localStorage together
   const persist = useCallback((updated: QuotationBasketItem[]) => {
