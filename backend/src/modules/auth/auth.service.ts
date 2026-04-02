@@ -162,13 +162,6 @@ export class AuthService {
         }
       }
 
-      // Send welcome and verification emails
-      const displayName = user.profile?.fullName || 'User';
-      await Promise.all([
-        emailService.sendWelcomeEmail(user.email, displayName),
-        emailService.sendVerificationEmail(user.email, displayName, verificationToken),
-      ]);
-
       // Generate tokens
       const deviceInfo: DeviceInfo = {
         userAgent: data.userAgent,
@@ -187,6 +180,24 @@ export class AuthService {
 
       // Return sanitized user
       const sanitizedUser = this.sanitizeUser(user);
+
+      // Send welcome and verification emails in the background so slow SMTP
+      // does not delay or fail the registration HTTP response.
+      const displayName = user.profile?.fullName || 'User';
+      void Promise.allSettled([
+        emailService.sendWelcomeEmail(user.email, displayName),
+        emailService.sendVerificationEmail(user.email, displayName, verificationToken),
+      ]).then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            logger.error('Background registration email failed', {
+              email: user.email,
+              type: index === 0 ? 'welcome' : 'verification',
+              error: result.reason,
+            });
+          }
+        });
+      });
 
       return {
         user: sanitizedUser,
@@ -299,7 +310,7 @@ export class AuthService {
           UPDATE users
           SET otp_session_token = ${tempOtpToken}
           WHERE id = ${user.id}
-        `.catch(err => logger.error('Failed to store OTP session token:', err));
+        `.catch((err: unknown) => logger.error('Failed to store OTP session token:', err));
 
         return {
           user: this.sanitizeUser(user),

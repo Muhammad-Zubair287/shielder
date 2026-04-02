@@ -30,7 +30,11 @@ class AuthService {
     try {
       const response = await apiClient.post<ApiResponse<AuthResponse>>(
         API_ENDPOINTS.AUTH.REGISTER,
-        data
+        data,
+        {
+          // Signup can be slower on cold starts; keep this higher than default.
+          timeout: 120000,
+        }
       );
 
       const authData = response.data.data!;
