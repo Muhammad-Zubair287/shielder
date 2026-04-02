@@ -268,6 +268,11 @@ export class AuthService {
         throw new UnauthorizedError('Account has been deactivated');
       }
 
+      if (user.role === 'USER' && !user.emailVerified) {
+        logger.warn(`Login failed: Email not verified - ${user.email}`);
+        throw new UnauthorizedError('Please verify your email before logging in');
+      }
+
       // Verify password
       const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
 
@@ -303,10 +308,6 @@ export class AuthService {
       if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
         logger.info(`Admin/Super Admin login requires 2FA: ${user.email}`);
 
-        // Generate and deliver OTP before returning the 2FA challenge.
-        // Without this step, users reach the 2FA page but never receive a code.
-        await this.sendOTP(user.id, 'EMAIL');
-        
         // Generate a temporary session token for 2FA verification (short-lived, OTP-only)
         // This token can only be used with /api/auth/verify-otp endpoint
         const tempOtpToken = crypto.randomBytes(32).toString('hex');
@@ -315,6 +316,11 @@ export class AuthService {
           SET otp_session_token = ${tempOtpToken}
           WHERE id = ${user.id}
         `.catch((err: unknown) => logger.error('Failed to store OTP session token:', err));
+
+        // Deliver the OTP in the background so the login response is immediate.
+        void this.sendOTP(user.id, 'EMAIL').catch((err: unknown) =>
+          logger.error('Background OTP delivery failed:', err)
+        );
 
         return {
           user: this.sanitizeUser(user),

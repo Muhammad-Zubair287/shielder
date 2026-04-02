@@ -29,17 +29,11 @@ export const useAuth = () => {
       router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
 
       const response = await authService.register(data);
-      setUser(response.user);
+      setUser(null);
 
       toast.success(SUCCESS_MESSAGES.REGISTER_SUCCESS);
 
-      const redirectTo = typeof window !== 'undefined' ? sessionStorage.getItem('post_login_redirect') : null;
-      if (redirectTo) {
-        sessionStorage.removeItem('post_login_redirect');
-        router.replace(redirectTo);
-      } else {
-        router.replace(ROUTES.CUSTOMER_DASHBOARD);
-      }
+      router.replace(ROUTES.LOGIN);
 
       return response;
     } catch (error) {

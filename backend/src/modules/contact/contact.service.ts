@@ -1,7 +1,7 @@
 import { prisma } from '@/config/database';
 import { logger } from '@/common/logger/logger';
 import { BadRequestError } from '@/common/errors/api.error';
-import { Prisma } from '@prisma/client';
+import { emailService } from '@/common/services/email.service';
 
 const ALLOWED_FILE_TYPES = new Set([
   'application/pdf',
@@ -33,6 +33,13 @@ interface CaptchaVerificationResult {
   valid: boolean;
   reason?: string;
 }
+
+type AdminRecipient = {
+  email: string;
+  profile: { fullName: string | null } | null;
+};
+
+type JsonRecord = Record<string, unknown>;
 
 class ContactService {
   private async verifyCaptchaToken(token: string, remoteIp?: string): Promise<CaptchaVerificationResult> {
@@ -121,7 +128,7 @@ class ContactService {
 
     const attachment = this.buildAttachmentMetadata(file);
 
-    const attachmentJson: Prisma.InputJsonObject | null = attachment
+    const attachmentJson: JsonRecord | null = attachment
       ? {
           originalName: attachment.originalName,
           mimeType: attachment.mimeType,
@@ -129,7 +136,7 @@ class ContactService {
         }
       : null;
 
-    const changePayload: Prisma.InputJsonObject = {
+    const changePayload: JsonRecord = {
       firstName: input.firstName,
       lastName: input.lastName,
       email: input.email,
@@ -160,10 +167,55 @@ class ContactService {
         action: 'CONTACT_SUBMISSION',
         entityType: 'CONTACT',
         entityId: contact.id,
-        changes: changePayload,
+        changes: changePayload as any,
         ipAddress: remoteIp,
         userAgent,
       },
+    });
+
+    const adminRecipients = (await prisma.user.findMany({
+      where: {
+        role: { in: ['ADMIN', 'SUPER_ADMIN'] },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: {
+        email: true,
+        profile: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    })) as AdminRecipient[];
+
+    void Promise.allSettled(
+      adminRecipients.map((recipient) =>
+        emailService.sendEmail({
+          to: recipient.email,
+          subject: `[Shielder] New contact submission: ${input.subject}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px; color: #1f2937;">
+              <h2 style="margin: 0 0 16px; color: #0d1637;">New contact submission</h2>
+              <p style="margin: 0 0 12px;"><strong>Name:</strong> ${input.firstName} ${input.lastName}</p>
+              <p style="margin: 0 0 12px;"><strong>Email:</strong> ${input.email}</p>
+              <p style="margin: 0 0 12px;"><strong>Phone:</strong> ${input.phone || '—'}</p>
+              <p style="margin: 0 0 12px;"><strong>Subject:</strong> ${input.subject}</p>
+              <p style="margin: 0 0 12px;"><strong>Message:</strong></p>
+              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; white-space: pre-wrap;">${input.message}</div>
+            </div>
+          `,
+        })
+      )
+    ).then((results) => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          logger.error('Failed to send contact notification email', {
+            recipient: adminRecipients[index]?.email,
+            error: result.reason,
+          });
+        }
+      });
     });
 
     // Keep response shape unchanged; return a stable id for the submission.

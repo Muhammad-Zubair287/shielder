@@ -39,9 +39,6 @@ class AuthService {
 
       const authData = response.data.data!;
 
-      // Store tokens and user
-      this.storeAuthData(authData);
-
       return authData;
     } catch (error) {
       throw new Error(handleApiError(error));
@@ -55,7 +52,10 @@ class AuthService {
     try {
       const response = await apiClient.post<ApiResponse<AuthResponse>>(
         API_ENDPOINTS.AUTH.LOGIN,
-        data
+        data,
+        {
+          timeout: 120000,
+        }
       );
 
       const authData = response.data.data!;
