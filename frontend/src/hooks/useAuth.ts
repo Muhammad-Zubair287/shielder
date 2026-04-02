@@ -62,6 +62,16 @@ export const useAuth = () => {
       router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
 
       const response = await authService.login(data);
+      const role = String(response.user?.role ?? '').toUpperCase();
+
+      const goToTwoFactorPage = (targetPath: string) => {
+        if (typeof window !== 'undefined') {
+          window.location.replace(targetPath);
+          return;
+        }
+
+        router.replace(targetPath);
+      };
 
       // ⚠️ SECURITY: Handle mandatory 2FA for admin and super-admin users
       if (response.requiresTwoFactor && response.otpSessionToken) {
@@ -69,14 +79,16 @@ export const useAuth = () => {
         toast.success('Login successful. Please verify with 2FA.');
         
         // Store temporary session tokens for 2FA verification
-        if (response.user.role === 'SUPER_ADMIN') {
+        if (role === 'SUPER_ADMIN') {
           sessionStorage.setItem('superadmin_2fa_user_id', response.user.id);
           sessionStorage.setItem('superadmin_otp_session_token', response.otpSessionToken);
-          router.replace('/superadmin/superadmin-2fa');
-        } else if (response.user.role === 'ADMIN') {
+          goToTwoFactorPage('/superadmin/superadmin-2fa');
+        } else if (role === 'ADMIN') {
           sessionStorage.setItem('admin_2fa_user_id', response.user.id);
           sessionStorage.setItem('admin_otp_session_token', response.otpSessionToken);
-          router.replace('/admin/admin-2fa');
+          goToTwoFactorPage('/admin/admin-2fa');
+        } else {
+          toast.error('Unable to continue to 2FA. Please try logging in again.');
         }
         return response;
       }
@@ -86,9 +98,9 @@ export const useAuth = () => {
       toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
 
       // Redirect based on role
-      if (response.user.role === 'SUPER_ADMIN') {
+      if (role === 'SUPER_ADMIN') {
         router.replace(ROUTES.SUPER_ADMIN_DASHBOARD);
-      } else if (response.user.role === 'ADMIN') {
+      } else if (role === 'ADMIN') {
         router.replace('/admin/dashboard');
       } else {
         const redirectTo = typeof window !== 'undefined'
