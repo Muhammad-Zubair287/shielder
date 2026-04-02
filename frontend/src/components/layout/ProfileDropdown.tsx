@@ -25,6 +25,7 @@ export const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +38,10 @@ export const ProfileDropdown = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [user?.profile?.profileImage]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -117,12 +122,12 @@ export const ProfileDropdown = () => {
         <div className="relative w-10 h-10 rounded-xl bg-dark flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all">
           {isUploadingPhoto ? (
             <Loader2 size={18} className="animate-spin" />
-          ) : user?.profile?.profileImage ? (
+          ) : user?.profile?.profileImage && !profileImageFailed ? (
             <img 
               src={getImageUrl(user.profile.profileImage) || ''} 
               alt="Profile" 
               className="w-full h-full rounded-xl object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              onError={() => setProfileImageFailed(true)}
             />
           ) : (
             <User size={20} />
@@ -150,12 +155,12 @@ export const ProfileDropdown = () => {
             <div className="flex items-center gap-3 mb-2">
               <div className="relative flex-shrink-0">
                 <div className="w-12 h-12 rounded-xl bg-dark flex items-center justify-center text-white overflow-hidden">
-                  {user?.profile?.profileImage ? (
+                  {user?.profile?.profileImage && !profileImageFailed ? (
                     <img
                       src={getImageUrl(user.profile.profileImage) || ''}
                       alt="Profile"
                       className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onError={() => setProfileImageFailed(true)}
                     />
                   ) : (
                     <User size={22} />

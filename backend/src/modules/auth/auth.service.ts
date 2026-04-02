@@ -38,10 +38,13 @@ type SanitizedAuthUser = {
   updatedAt?: Date;
   lastLoginAt?: Date | null;
   profile?: {
+    fullName?: string;
     firstName?: string;
     lastName?: string;
+    phoneNumber?: string;
     phone?: string;
     companyName?: string;
+    profileImage?: string;
     locale?: string;
   };
 };
@@ -967,6 +970,7 @@ export class AuthService {
         fullName?: string;
         phoneNumber?: string | null;
         companyName?: string | null;
+        profileImage?: string | null;
         preferredLanguage?: string;
       } | null;
     };
@@ -983,10 +987,13 @@ export class AuthService {
       emailVerified: sanitized.emailVerified ?? false,
       profile: sanitized.profile
         ? {
+            fullName: sanitized.profile.fullName || undefined,
             firstName: firstName || undefined,
             lastName: lastName || undefined,
+            phoneNumber: sanitized.profile.phoneNumber || undefined,
             phone: sanitized.profile.phoneNumber || undefined,
             companyName: sanitized.profile.companyName || undefined,
+            profileImage: sanitized.profile.profileImage || undefined,
             locale: sanitized.profile.preferredLanguage || undefined,
           }
         : undefined,

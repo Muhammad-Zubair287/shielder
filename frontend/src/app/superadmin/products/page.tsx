@@ -457,9 +457,25 @@ const ProductManagement = () => {
   };
 
   const StockBadge = ({ stock, threshold }: { stock: number, threshold: number }) => {
-    if (stock === 0) return <span className="px-2 py-0.5 bg-[#DC2626] text-white rounded text-[9px] font-black uppercase">OUT OF STOCK</span>;
-    if (stock <= threshold) return <span className="px-2 py-0.5 bg-[#FACC15] text-[#0A1E36] rounded text-[9px] font-black uppercase">LOW STOCK</span>;
-    return <span className="text-gray-500 text-xs font-semibold">{stock} units</span>;
+    if (stock === 0) {
+      return (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 bg-[#DC2626]/10 text-[#B91C1C] border border-[#DC2626]/20 rounded-full text-[11px] font-bold tracking-wide uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+          Out of stock
+        </span>
+      );
+    }
+
+    if (stock <= threshold) {
+      return (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 bg-[#FACC15]/15 text-[#8A6700] border border-[#FACC15]/30 rounded-full text-[11px] font-bold tracking-wide uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+          Low stock
+        </span>
+      );
+    }
+
+    return <span className="text-gray-600 text-xs font-semibold whitespace-nowrap">{stock} units</span>;
   };
 
   if (loading && !refreshing) {

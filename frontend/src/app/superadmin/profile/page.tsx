@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
 
   // Password change state
   const [showPassword, setShowPassword] = useState(false);
@@ -50,6 +51,10 @@ export default function ProfilePage() {
       if (tab === 'security') setActiveTab('security');
     }
   }, []);
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [user?.profile?.profileImage]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,12 +139,12 @@ export default function ProfilePage() {
           <div className="absolute -bottom-12 left-8">
             <div className="w-24 h-24 rounded-2xl bg-white p-1 shadow-lg relative group">
               <div className="w-full h-full rounded-xl bg-gray-100 flex items-center justify-center text-shielder-dark relative overflow-hidden">
-                {user?.profile?.profileImage && getImageUrl(user.profile.profileImage) ? (
+                {user?.profile?.profileImage && getImageUrl(user.profile.profileImage) && !profileImageFailed ? (
                   <img
                     src={getImageUrl(user.profile.profileImage) || ''}
                     alt="Profile"
                     className="w-full h-full rounded-xl object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    onError={() => setProfileImageFailed(true)}
                   />
                 ) : (
                   <User size={40} />

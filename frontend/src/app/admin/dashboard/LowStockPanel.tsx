@@ -88,11 +88,13 @@ export default function LowStockPanel({ items, loading }: Props) {
                   <div className="flex justify-between items-start mb-2 gap-2">
                     <h4 className="font-bold line-clamp-1 text-gray-800 flex-1">{name}</h4>
                     {product.stock <= 2 ? (
-                      <span className="px-2 py-1 bg-red-100 text-red-500 text-[10px] font-black rounded uppercase flex-shrink-0">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 bg-[#DC2626]/10 text-[#B91C1C] border border-[#DC2626]/20 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
                         {t('criticalBadge')}
                       </span>
                     ) : (
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-black rounded uppercase flex-shrink-0">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 bg-[#FACC15]/15 text-[#8A6700] border border-[#FACC15]/30 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
                         {t('lowBadge')}
                       </span>
                     )}

@@ -234,8 +234,8 @@ export default function SuperAdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('salesGraph')}</h3>
           </div>
-          <div className="flex-1 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-[320px] min-h-[320px]">
+            <ResponsiveContainer width="100%" height={320}>
               <LineChart data={analytics}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
@@ -272,8 +272,8 @@ export default function SuperAdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('orderTrend')}</h3>
           </div>
-          <div className="flex-1 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-[320px] min-h-[320px]">
+            <ResponsiveContainer width="100%" height={320}>
               <BarChart data={analytics}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />

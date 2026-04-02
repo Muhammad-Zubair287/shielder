@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import authService from '@/services/auth.service';
 import type { LoginRequest, RegisterRequest } from '@/types';
-import { ROUTES, SUCCESS_MESSAGES } from '@/utils/constants';
+import { ROUTES, STORAGE_KEYS, SUCCESS_MESSAGES } from '@/utils/constants';
 import toast from 'react-hot-toast';
 
 export const useAuth = () => {
@@ -54,6 +54,18 @@ export const useAuth = () => {
       setIsSubmitting(true);
       setError(null);
 
+      // Prevent cross-account redirects by clearing any stale in-memory/session auth
+      // before starting a fresh login attempt.
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+      }
+
       // Prefetch all possible destination routes BEFORE the API call so
       // Next.js starts downloading their JS chunks while the network request
       // is in-flight. This cuts the perceived redirect delay significantly.
@@ -75,7 +87,9 @@ export const useAuth = () => {
 
       // ⚠️ SECURITY: Handle mandatory 2FA for admin and super-admin users
       if (response.requiresTwoFactor && response.otpSessionToken) {
-        // Don't store user yet; they're pending 2FA verification
+        // Don't store user yet; they're pending 2FA verification.
+        // Ensure no stale user remains in the store while waiting for OTP.
+        setUser(null);
         toast.success('Login successful. Please verify with 2FA.');
         
         // Store temporary session tokens for 2FA verification
