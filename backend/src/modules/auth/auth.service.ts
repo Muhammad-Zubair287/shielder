@@ -81,6 +81,11 @@ export class AuthService {
   }
 
   private static shouldBypassEmailFlows(): boolean {
+    // Explicit override for temporary non-email testing on deployed environments.
+    if (process.env.AUTH_BYPASS_EMAIL === 'true') {
+      return true;
+    }
+
     // Enabled by default in development when email isn't configured.
     const bypassEnabled = process.env.AUTH_DEV_BYPASS_EMAIL !== 'false';
     return env.isDevelopment && bypassEnabled && !this.hasUsableEmailConfig();
