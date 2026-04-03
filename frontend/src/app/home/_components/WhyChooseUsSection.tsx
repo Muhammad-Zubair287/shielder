@@ -36,12 +36,12 @@ export default function WhyChooseUsSection() {
         {/* Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {FEATURES.map(({ icon: Icon, titleKey, descKey }, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col items-start gap-4 hover:shadow-lg transition-shadow duration-300">
+            <div key={i} className={`bg-white border border-gray-200 rounded-2xl p-8 flex flex-col gap-4 hover:shadow-lg transition-shadow duration-300 ${isRTL ? 'items-end' : 'items-start'}`}>
               {/* Icon in orange circle border */}
               <div className="w-16 h-16 rounded-full border-2 border-[#F97316] flex items-center justify-center flex-shrink-0">
                 <Icon size={30} className="text-[#F97316]" strokeWidth={1.6} />
               </div>
-              <div className="text-left">
+              <div className={isRTL ? 'text-right' : 'text-left'}>
                 <h3 className="font-bold text-gray-900 text-lg mb-2">{t(titleKey)}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{t(descKey)}</p>
               </div>

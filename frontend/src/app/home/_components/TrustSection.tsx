@@ -51,7 +51,7 @@ export default function TrustSection() {
 
             <ul className="space-y-3 py-1">
               {POINTS.map(key => (
-                <li key={key} className={`flex items-center gap-3 text-gray-700 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <li key={key} className="flex items-center gap-3 text-gray-700 text-sm font-medium">
                   <CheckCircle2 size={18} className="text-[#F97316] flex-shrink-0" />
                   {t(key)}
                 </li>
@@ -65,7 +65,7 @@ export default function TrustSection() {
             </Link>
 
             {/* Mini stats */}
-            <div className={`flex items-center gap-8 pt-4 border-t border-gray-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className="flex items-center gap-8 pt-4 border-t border-gray-200">
               {stats.map((s, i) => (
                 <div key={i} className={isRTL ? 'text-right' : 'text-left'}>
                   <p className="text-2xl font-extrabold text-gray-900 leading-none">{s.v}</p>

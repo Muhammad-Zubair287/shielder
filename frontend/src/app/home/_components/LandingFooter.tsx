@@ -77,15 +77,15 @@ export default function LandingFooter() {
               {t('landingFooterContact')}
             </h4>
             <ul className="space-y-4">
-              <li className={`flex items-start gap-3 text-sm ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+              <li className={`flex items-start gap-3 text-sm ${isRTL ? 'text-right' : ''}`}>
                 <MapPin size={15} className="text-[#F97316] mt-0.5 flex-shrink-0" />
                 <span>{t('landingFooterAddress')}</span>
               </li>
-              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'text-right' : ''}`}>
                 <Phone size={15} className="text-[#F97316] flex-shrink-0" />
                 <a href="tel:+966506814416" className="hover:text-[#F97316] transition-colors" dir="ltr">+966 50 681 4416</a>
               </li>
-              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'text-right' : ''}`}>
                 <Mail size={15} className="text-[#F97316] flex-shrink-0" />
                 <a href="mailto:info@filterpro.com" className="hover:text-[#F97316] transition-colors">info@filterpro.com</a>
               </li>

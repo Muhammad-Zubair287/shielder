@@ -5,8 +5,10 @@ import { Search, X, Package, ShoppingCart, User, Tag, ChevronRight, Loader2 } fr
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '../../hooks/useDebounce';
 import { clsx } from 'clsx';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const GlobalSearch = () => {
+  const { isRTL } = useLanguage();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<any[]>([]);
@@ -119,7 +121,7 @@ export const GlobalSearch = () => {
       </div>
 
       {isOpen && (query || isLoading) && (
-        <div className="absolute top-full left-0 right-0 lg:left-0 lg:right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 w-[calc(100vw-2rem)] lg:w-full -ml-[calc((100vw-100%-2rem)/2)] lg:ml-0">
+        <div className="absolute top-full left-0 right-0 lg:left-0 lg:right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 w-[calc(100vw-2rem)] lg:w-full -ml-[calc((100vw-100%-2rem)/2)] lg:ml-0" dir={isRTL ? 'rtl' : 'ltr'}>
           {isLoading ? (
             <div className="p-8 flex items-center justify-center space-x-3 text-gray-500">
               <Loader2 className="animate-spin text-shielder-primary" size={20} />
@@ -138,9 +140,9 @@ export const GlobalSearch = () => {
                     setIsOpen(false);
                     setQuery('');
                   }}
-                  className="w-full flex items-center justify-between p-3 hover:bg-shielder-primary/5 rounded-xl transition-all group/item"
+                  className={`w-full flex items-center justify-between p-3 hover:bg-shielder-primary/5 rounded-xl transition-all group/item ${isRTL ? 'flex-row-reverse' : ''}`}
                 >
-                  <div className="flex items-center space-x-3 text-left">
+                  <div className={`flex items-center gap-3 ${isRTL ? 'text-right' : 'text-left'}`}>
                     <div className="p-2 bg-gray-100 rounded-lg group-hover/item:bg-white transition-colors">
                       {getIcon(result.type)}
                     </div>
@@ -153,7 +155,7 @@ export const GlobalSearch = () => {
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={16} className="text-gray-300 group-hover/item:text-shielder-primary translate-x-0 group-hover/item:translate-x-1 transition-all" />
+                  <ChevronRight size={16} className={`text-gray-300 group-hover/item:text-shielder-primary transition-all ${isRTL ? 'rotate-180 translate-x-0 group-hover/item:-translate-x-1' : 'translate-x-0 group-hover/item:translate-x-1'}`} />
                 </button>
               ))}
             </div>
