@@ -67,6 +67,54 @@ router.post(
 );
 
 /**
+ * POST /api/auth/forgot-password/send-otp
+ * Send forgot-password OTP to user's email
+ * Rate limit: 3 requests per hour per IP
+ */
+router.post(
+  '/forgot-password/send-otp',
+  rateLimitAuth({ maxRequests: 3, windowMinutes: 60 }),
+  validate(authValidation.forgotPasswordSendOtp),
+  authController.sendForgotPasswordOtp
+);
+
+/**
+ * POST /api/auth/forgot-password/resend-otp
+ * Resend forgot-password OTP to user's email
+ * Rate limit: 5 requests per 15 minutes
+ */
+router.post(
+  '/forgot-password/resend-otp',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 15 }),
+  validate(authValidation.forgotPasswordResendOtp),
+  authController.resendForgotPasswordOtp
+);
+
+/**
+ * POST /api/auth/forgot-password/verify-otp
+ * Verify forgot-password OTP and issue reset session token
+ * Rate limit: 5 requests per 15 minutes
+ */
+router.post(
+  '/forgot-password/verify-otp',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 15 }),
+  validate(authValidation.forgotPasswordVerifyOtp),
+  authController.verifyForgotPasswordOtp
+);
+
+/**
+ * POST /api/auth/forgot-password/reset
+ * Reset password using verified forgot-password OTP session
+ * Rate limit: 5 requests per hour
+ */
+router.post(
+  '/forgot-password/reset',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 60 }),
+  validate(authValidation.forgotPasswordResetWithOtp),
+  authController.resetPasswordWithForgotOtp
+);
+
+/**
  * POST /api/auth/resend-verification
  * Resend email verification link
  * Rate limit: 3 requests per hour per IP

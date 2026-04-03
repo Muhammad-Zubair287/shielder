@@ -42,6 +42,7 @@ export class ProfileController {
    *           schema:
    *             type: object
    *             properties:
+   *               email: { type: string, format: email }
    *               fullName: { type: string }
    *               address: { type: string }
    *               phoneNumber: { type: string }

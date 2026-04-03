@@ -83,6 +83,48 @@ export const authValidation = {
   }),
 
   /**
+   * Send forgot-password OTP validation
+   */
+  forgotPasswordSendOtp: Joi.object({
+    email: emailSchema,
+  }),
+
+  /**
+   * Resend forgot-password OTP validation
+   */
+  forgotPasswordResendOtp: Joi.object({
+    email: emailSchema,
+  }),
+
+  /**
+   * Verify forgot-password OTP validation
+   */
+  forgotPasswordVerifyOtp: Joi.object({
+    email: emailSchema,
+    code: Joi.string()
+      .length(6)
+      .pattern(/^\d+$/)
+      .required()
+      .messages({
+        'string.empty': 'OTP code is required',
+        'string.length': 'OTP code must be 6 digits',
+        'string.pattern.base': 'OTP code must contain only numbers',
+        'any.required': 'OTP code is required',
+      }),
+  }),
+
+  /**
+   * Reset password using verified forgot-password OTP session
+   */
+  forgotPasswordResetWithOtp: Joi.object({
+    resetSessionToken: Joi.string().required().messages({
+      'string.empty': 'Reset session token is required',
+      'any.required': 'Reset session token is required',
+    }),
+    newPassword: passwordSchema,
+  }),
+
+  /**
    * Resend email verification validation
    */
   resendVerificationEmail: Joi.object({

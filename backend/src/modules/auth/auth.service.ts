@@ -23,6 +23,9 @@ import type {
   RegisterRequest,
   LoginRequest,
   ForgotPasswordRequest,
+  ForgotPasswordSendOtpRequest,
+  ForgotPasswordVerifyOtpRequest,
+  ForgotPasswordResetWithOtpRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
 } from './auth.types';
@@ -59,6 +62,7 @@ export class AuthService {
   // Constants
   private static readonly SALT_ROUNDS = 10;
   private static readonly RESET_TOKEN_EXPIRY_MINUTES = 15;
+  private static readonly RESET_OTP_SESSION_EXPIRY_MINUTES = 10;
   private static readonly VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 
   private static hasUsableEmailConfig(): boolean {
@@ -545,6 +549,174 @@ export class AuthService {
       await this.createAuditLog(user.id, 'PASSWORD_RESET_REQUESTED', 'Password reset requested');
     } catch (error) {
       logger.error('Forgot password error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Forgot password OTP: send OTP to email
+   */
+  static async sendForgotPasswordOtp(data: ForgotPasswordSendOtpRequest): Promise<void> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: data.email.toLowerCase() },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          isActive: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      });
+
+      // Don't reveal if email exists or account type/status
+      if (!user || user.role !== 'USER' || !user.isActive) {
+        logger.warn(`Forgot-password OTP requested for invalid account: ${data.email}`);
+        return;
+      }
+
+      const { TwoFactorService } = await import('./twofa.service');
+      const { otp } = await TwoFactorService.createOTP(user.id, 'EMAIL');
+      await TwoFactorService.sendOTPEmail(user.email, otp);
+
+      await this.createAuditLog(user.id, 'PASSWORD_RESET_OTP_SENT', 'Forgot-password OTP sent');
+    } catch (error) {
+      logger.error('Forgot password OTP send error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Forgot password OTP: resend OTP to email
+   */
+  static async resendForgotPasswordOtp(data: ForgotPasswordSendOtpRequest): Promise<void> {
+    await this.sendForgotPasswordOtp(data);
+  }
+
+  /**
+   * Forgot password OTP: verify OTP and issue short-lived reset session token
+   */
+  static async verifyForgotPasswordOtp(
+    data: ForgotPasswordVerifyOtpRequest
+  ): Promise<{ resetSessionToken: string; expiresInMinutes: number }> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: data.email.toLowerCase() },
+        select: {
+          id: true,
+          role: true,
+          isActive: true,
+        },
+      });
+
+      if (!user || user.role !== 'USER' || !user.isActive) {
+        throw new BadRequestError('Invalid OTP or email');
+      }
+
+      const { TwoFactorService } = await import('./twofa.service');
+      await TwoFactorService.verifyOTP(user.id, data.code);
+
+      const resetSessionToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenHash = crypto.createHash('sha256').update(resetSessionToken).digest('hex');
+      const resetTokenExpiry = new Date();
+      resetTokenExpiry.setMinutes(
+        resetTokenExpiry.getMinutes() + this.RESET_OTP_SESSION_EXPIRY_MINUTES
+      );
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken: resetTokenHash,
+          resetTokenExpiry,
+        },
+      });
+
+      await this.createAuditLog(
+        user.id,
+        'PASSWORD_RESET_OTP_VERIFIED',
+        'Forgot-password OTP verified'
+      );
+
+      return {
+        resetSessionToken,
+        expiresInMinutes: this.RESET_OTP_SESSION_EXPIRY_MINUTES,
+      };
+    } catch (error) {
+      logger.error('Forgot password OTP verify error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Forgot password OTP: reset password using verified session token
+   */
+  static async resetPasswordWithForgotOtp(
+    data: ForgotPasswordResetWithOtpRequest
+  ): Promise<void> {
+    try {
+      const resetTokenHash = crypto
+        .createHash('sha256')
+        .update(data.resetSessionToken)
+        .digest('hex');
+
+      const user = await prisma.user.findFirst({
+        where: {
+          resetToken: resetTokenHash,
+          resetTokenExpiry: { gt: new Date() },
+          role: 'USER',
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          passwordHash: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new BadRequestError('Invalid or expired reset session token');
+      }
+
+      await this.validatePasswordWithSettings(data.newPassword);
+
+      const isSamePassword = await bcrypt.compare(data.newPassword, user.passwordHash);
+      if (isSamePassword) {
+        throw new BadRequestError('New password must be different from current password');
+      }
+
+      const passwordHash = await bcrypt.hash(data.newPassword, this.SALT_ROUNDS);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          resetToken: null,
+          resetTokenExpiry: null,
+          lastPasswordChange: new Date(),
+        },
+      });
+
+      await TokenService.revokeAllUserTokens(user.id, 'password_reset_otp');
+
+      const fullName = user.profile?.fullName || 'User';
+      await emailService.sendPasswordChangedEmail(user.email, fullName);
+
+      await this.createAuditLog(
+        user.id,
+        'PASSWORD_RESET_OTP_COMPLETED',
+        'Password reset completed via OTP flow'
+      );
+    } catch (error) {
+      logger.error('Forgot password OTP reset error:', error);
       throw error;
     }
   }

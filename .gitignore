@@ -79,6 +79,7 @@ write_landing.py
 
 POSTMAN_GUIDE.md
 Shielder-API-Collection.postman_collection.json
+Shielder-Mobile-API-Collection.postman_collection.json
 
 # Markdown files
 *.md

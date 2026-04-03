@@ -35,6 +35,29 @@ export interface ForgotPasswordRequest {
 }
 
 /**
+ * Forgot Password OTP Send Request
+ */
+export interface ForgotPasswordSendOtpRequest {
+  email: string;
+}
+
+/**
+ * Forgot Password OTP Verify Request
+ */
+export interface ForgotPasswordVerifyOtpRequest {
+  email: string;
+  code: string;
+}
+
+/**
+ * Forgot Password OTP Reset Request
+ */
+export interface ForgotPasswordResetWithOtpRequest {
+  resetSessionToken: string;
+  newPassword: string;
+}
+
+/**
  * Reset Password Request
  */
 export interface ResetPasswordRequest {

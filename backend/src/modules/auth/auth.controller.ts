@@ -11,6 +11,9 @@ import type {
   RegisterRequest,
   LoginRequest,
   ForgotPasswordRequest,
+  ForgotPasswordSendOtpRequest,
+  ForgotPasswordVerifyOtpRequest,
+  ForgotPasswordResetWithOtpRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
   DeviceInfo,
@@ -227,6 +230,69 @@ class AuthController {
     res.status(200).json({
       success: true,
       message: 'If the email exists, a password reset link has been sent',
+    });
+  });
+
+  /**
+   * POST /api/auth/forgot-password/send-otp
+   * Send OTP for forgot-password flow
+   */
+  sendForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: ForgotPasswordSendOtpRequest = req.body;
+
+    await AuthService.sendForgotPasswordOtp(data);
+
+    // Always return success (don't reveal if email exists)
+    res.status(200).json({
+      success: true,
+      message: 'If the email exists, an OTP has been sent',
+    });
+  });
+
+  /**
+   * POST /api/auth/forgot-password/resend-otp
+   * Resend OTP for forgot-password flow
+   */
+  resendForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: ForgotPasswordSendOtpRequest = req.body;
+
+    await AuthService.resendForgotPasswordOtp(data);
+
+    // Always return success (don't reveal if email exists)
+    res.status(200).json({
+      success: true,
+      message: 'If the email exists, a new OTP has been sent',
+    });
+  });
+
+  /**
+   * POST /api/auth/forgot-password/verify-otp
+   * Verify forgot-password OTP and return temporary reset session token
+   */
+  verifyForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: ForgotPasswordVerifyOtpRequest = req.body;
+
+    const result = await AuthService.verifyForgotPasswordOtp(data);
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully',
+      data: result,
+    });
+  });
+
+  /**
+   * POST /api/auth/forgot-password/reset
+   * Reset password using verified forgot-password OTP session token
+   */
+  resetPasswordWithForgotOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: ForgotPasswordResetWithOtpRequest = req.body;
+
+    await AuthService.resetPasswordWithForgotOtp(data);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful. Please login with your new password.',
     });
   });
 

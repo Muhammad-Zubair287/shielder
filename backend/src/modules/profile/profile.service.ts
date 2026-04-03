@@ -1,6 +1,17 @@
 import { prisma } from '../../config/database';
-import { NotFoundError } from '../../common/errors/api.error';
+import { ConflictError, NotFoundError } from '../../common/errors/api.error';
 import { logger } from '../../common/logger/logger';
+
+type UpdateProfileInput = {
+  email?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  address?: string;
+  profileImage?: string;
+  companyName?: string;
+  taxId?: string;
+  preferences?: unknown;
+};
 
 export class ProfileService {
   /**
@@ -31,12 +42,54 @@ export class ProfileService {
   /**
    * Update user profile
    */
-  static async updateProfile(userId: string, data: any) {
+  static async updateProfile(userId: string, data: UpdateProfileInput) {
     try {
-      const profile = await prisma.userProfile.update({
-        where: { userId },
-        data,
+      const normalizedEmail = data.email?.trim().toLowerCase();
+      const { email: _email, ...profileData } = data;
+
+      const profile = await prisma.$transaction(async (tx) => {
+        if (normalizedEmail) {
+          const existingUser = await tx.user.findFirst({
+            where: {
+              email: normalizedEmail,
+              NOT: { id: userId },
+            },
+            select: { id: true },
+          });
+
+          if (existingUser) {
+            throw new ConflictError('Email is already in use');
+          }
+
+          await tx.user.update({
+            where: { id: userId },
+            data: { email: normalizedEmail },
+          });
+        }
+
+        await tx.userProfile.update({
+          where: { userId },
+          data: profileData,
+        });
+
+        return tx.userProfile.findUnique({
+          where: { userId },
+          include: {
+            user: {
+              select: {
+                email: true,
+                role: true,
+                status: true,
+                createdAt: true,
+              },
+            },
+          },
+        });
       });
+
+      if (!profile) {
+        throw new NotFoundError('Profile not found');
+      }
 
       logger.info(`Profile updated for user: ${userId}`);
       return profile;

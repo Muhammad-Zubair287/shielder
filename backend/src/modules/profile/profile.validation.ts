@@ -2,6 +2,7 @@ import Joi from 'joi';
 
 export const profileValidation = {
   updateProfile: Joi.object({
+    email: Joi.string().trim().email().optional(),
     fullName: Joi.string().trim().max(100).optional(),
     phoneNumber: Joi.string()
       .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)

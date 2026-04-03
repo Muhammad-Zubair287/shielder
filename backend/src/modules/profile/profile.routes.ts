@@ -27,19 +27,19 @@ const profileImageUpload = multer({
 router.use(authenticate);
 
 // GET /api/profile - Get own profile
-router.get('/', ProfileController.getMyProfile);
+router.get('/', authorize(UserRole.USER), ProfileController.getMyProfile);
 
 // PUT /api/profile - Update own profile
-router.put('/', validate(profileValidation.updateProfile), ProfileController.updateMyProfile);
+router.put('/', authorize(UserRole.USER), validate(profileValidation.updateProfile), ProfileController.updateMyProfile);
 
 // PATCH /api/profile/language - Update language preference
-router.patch('/language', validate(profileValidation.updateLanguage), ProfileController.updateLanguage);
+router.patch('/language', authorize(UserRole.USER), validate(profileValidation.updateLanguage), ProfileController.updateLanguage);
 
 // PATCH /api/profile/preferences - Update theme/other preferences
-router.patch('/preferences', ProfileController.updatePreferences);
+router.patch('/preferences', authorize(UserRole.USER), ProfileController.updatePreferences);
 
 // POST /api/profile/upload-image - Upload profile image (stored as base64 in DB)
-router.post('/upload-image', profileImageUpload.single('profileImage'), ProfileController.uploadProfileImage);
+router.post('/upload-image', authorize(UserRole.USER), profileImageUpload.single('profileImage'), ProfileController.uploadProfileImage);
 
 // GET /api/profile/:userId - Admin view any profile (Read-only)
 router.get('/:userId', authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), ProfileController.getProfileById);
