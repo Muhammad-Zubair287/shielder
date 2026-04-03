@@ -57,11 +57,12 @@ export class CustomerQuotationController {
    *         application/json:
    *           schema:
    *             type: object
-   *             required: [companyName, vatNumber, address, products]
+  *             required: [companyName, vatNumber]
    *             properties:
    *               companyName: { type: string }
    *               vatNumber: { type: string, description: 10-20 digit Saudi VAT number }
-   *               address: { type: string }
+  *               address: { type: string, description: Preferred shipping/location address }
+  *               notes: { type: string, description: Legacy mobile fallback for address/notes }
    *               products:
    *                 type: array
    *                 items:
@@ -69,6 +70,14 @@ export class CustomerQuotationController {
    *                   properties:
    *                     productId: { type: string }
    *                     quantity: { type: integer, minimum: 1 }
+  *               items:
+  *                 type: array
+  *                 description: Legacy mobile alias for products
+  *                 items:
+  *                   type: object
+  *                   properties:
+  *                     productId: { type: string }
+  *                     quantity: { type: integer, minimum: 1 }
    *     responses:
    *       201:
    *         description: Quotation generated successfully
@@ -80,15 +89,23 @@ export class CustomerQuotationController {
       const userId = req.user!.userId;
       const lang   = req.user!.preferredLanguage || req.locale || 'en';
 
-      const { companyName, vatNumber, address, products } = req.body;
+      const { companyName, vatNumber, address, products, items, notes } = req.body;
+      const requestedItems =
+        Array.isArray(products) && products.length > 0
+          ? products
+          : (Array.isArray(items) ? items : []);
+      const normalizedAddress =
+        typeof address === 'string' && address.trim()
+          ? address.trim()
+          : (typeof notes === 'string' ? notes.trim() : '');
 
       // ── Validate inputs ────────────────────────────────────────────────────
 
       if (!companyName?.trim()) throw new BadRequestError('Company name is required');
       if (!vatNumber?.trim())   throw new BadRequestError('VAT number is required');
       if (!validateVAT(vatNumber)) throw new BadRequestError('VAT number format is invalid (10–20 digits)');
-      if (!address?.trim())     throw new BadRequestError('Address is required');
-      if (!Array.isArray(products) || products.length === 0)
+      if (!normalizedAddress)   throw new BadRequestError('Address is required');
+      if (!Array.isArray(requestedItems) || requestedItems.length === 0)
         throw new BadRequestError('At least one product is required');
 
       // ── Fetch real prices & validate products ──────────────────────────────
@@ -96,7 +113,7 @@ export class CustomerQuotationController {
       let subtotal = new Prisma.Decimal(0);
       const resolvedItems: ResolvedQuotationItem[] = [];
 
-      for (const item of products as RequestedQuotationItem[]) {
+      for (const item of requestedItems as RequestedQuotationItem[]) {
         const qty = Number(item.quantity) || 1;
         if (qty < 1) throw new BadRequestError('Quantity must be at least 1');
 
@@ -149,13 +166,15 @@ export class CustomerQuotationController {
 
       // ── Persist ────────────────────────────────────────────────────────────
 
+      const sanitizedNotes = typeof notes === 'string' ? notes.trim() : '';
+
       const quotation = await prisma.quotation.create({
         data: {
           quotationNumber,
           customerName:    req.user!.email,
           customerEmail:   req.user!.email,
           companyName:     companyName.trim(),
-          customerAddress: address.trim(),
+          customerAddress: normalizedAddress,
           subtotal,
           discount:        new Prisma.Decimal(0),
           tax:             new Prisma.Decimal(0),
@@ -163,7 +182,9 @@ export class CustomerQuotationController {
           quotationDate:   new Date(),
           expiryDate,
           createdById:     userId,
-          notes:           `VAT: ${vatNumber.trim()}`,
+          notes:           sanitizedNotes
+            ? `VAT: ${vatNumber.trim()} | Note: ${sanitizedNotes}`
+            : `VAT: ${vatNumber.trim()}`,
           items: { create: resolvedItems },
           activities: {
             create: {
