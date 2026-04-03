@@ -76,11 +76,11 @@ function MethodCard({
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={title}
-      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all
+      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all
         ${selected
           ? 'border-[#F97316] bg-orange-50'
           : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
-        ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+        ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
     >
       <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center
         ${selected ? 'bg-[#F97316] text-white' : 'bg-gray-100 text-gray-500'}`}>
@@ -495,7 +495,7 @@ function CheckoutPageInner() {
                     )}
                   </button>
 
-                  <p className={`text-xs text-gray-400 text-center mt-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                  <p className="text-xs text-gray-400 text-center mt-3">
                     {t('checkout.secureCheckout')}
                   </p>
                 </div>

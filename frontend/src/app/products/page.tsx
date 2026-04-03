@@ -883,9 +883,9 @@ function ProductsContent() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Field</th>
+                      <th className={`px-4 py-3 font-semibold text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>Field</th>
                       {comparedProducts.map((item) => (
-                        <th key={item.id} className="text-left px-4 py-3 font-semibold text-gray-900 min-w-[220px]">{item.name}</th>
+                        <th key={item.id} className={`px-4 py-3 font-semibold text-gray-900 min-w-[220px] ${isRTL ? 'text-right' : 'text-left'}`}>{item.name}</th>
                       ))}
                     </tr>
                   </thead>
