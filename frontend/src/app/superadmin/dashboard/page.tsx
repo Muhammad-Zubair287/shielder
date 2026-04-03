@@ -404,6 +404,7 @@ export default function SuperAdminDashboard() {
             chip={item.chip}
             icon={item.icon}
             href={item.href}
+            detailsLabel={t('kpiDetails')}
             gradientClass={KPI_CARD_STYLES[index % KPI_CARD_STYLES.length].gradient}
             chipClass={KPI_CARD_STYLES[index % KPI_CARD_STYLES.length].chip}
           />
@@ -659,6 +660,7 @@ function StatsCard({
   chip,
   icon: Icon,
   href,
+  detailsLabel,
   gradientClass,
   chipClass,
 }: {
@@ -667,6 +669,7 @@ function StatsCard({
   chip: string,
   icon: any,
   href: string,
+  detailsLabel: string,
   gradientClass: string,
   chipClass: string,
 }) {
@@ -683,7 +686,7 @@ function StatsCard({
         <div className="flex items-end justify-between gap-2">
           <h3 className="text-2xl font-black text-white tracking-tight leading-tight break-words">{value}</h3>
           <span className="inline-flex items-center gap-1 text-xs text-white/90 font-semibold">
-            {t('kpiDetails')}
+            {detailsLabel}
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
           </span>
         </div>
