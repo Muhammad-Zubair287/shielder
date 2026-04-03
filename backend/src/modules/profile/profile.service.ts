@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database';
+import { Prisma } from '@prisma/client';
 import { ConflictError, NotFoundError } from '../../common/errors/api.error';
 import { logger } from '../../common/logger/logger';
 
@@ -10,7 +11,7 @@ type UpdateProfileInput = {
   profileImage?: string;
   companyName?: string;
   taxId?: string;
-  preferences?: unknown;
+  preferences?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 };
 
 export class ProfileService {
