@@ -108,6 +108,10 @@ export default function UserManagement() {
     setIsModalOpen(true);
   };
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, roleFilter, statusFilter]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

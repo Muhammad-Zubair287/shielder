@@ -225,6 +225,10 @@ const ProductManagement = () => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, [openMenuId]);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [search, categoryFilter, subcategoryFilter, supplierFilter, statusFilter]);
   // Fetch subcategories when category filter changes
   useEffect(() => {
     const fetchSubs = async () => {
@@ -724,10 +728,10 @@ const ProductManagement = () => {
         </div>
 
         {/* 5. Pagination */}
-        {pagination.pages > 1 && (
+        {(pagination.totalPages || pagination.pages || 1) > 1 && (
           <UnifiedPagination
             page={pagination.page}
-            totalPages={pagination.pages}
+            totalPages={pagination.totalPages || pagination.pages || 1}
             totalItems={pagination.total}
             pageSize={pagination.limit}
             onPageChange={(page) => setPagination((p) => ({ ...p, page }))}

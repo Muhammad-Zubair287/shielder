@@ -50,6 +50,11 @@ export default function AllQuotationsPage() {
 
     useEffect(() => { fetchQuotations(); fetchAnalytics(); }, [fetchQuotations]);
 
+    // Reset pagination when filters change
+    useEffect(() => {
+        setPagination((p) => ({ ...p, page: 1 }));
+    }, [filters.search, filters.status, filters.sortBy, filters.sortOrder]);
+
     const handleAction = async (action: string, id: string) => {
         try {
             setActionLoading(id + action);
@@ -205,7 +210,7 @@ export default function AllQuotationsPage() {
                 {/* Pagination */}
                 <UnifiedPagination
                     page={pagination.page}
-                    totalPages={pagination.pages || 1}
+                    totalPages={pagination.totalPages || pagination.pages || 1}
                     totalItems={pagination.total}
                     pageSize={pagination.limit}
                     onPageChange={(page) => setPagination((p) => ({ ...p, page }))}

@@ -116,6 +116,10 @@ export default function NotificationsPage() {
     }
   }, [activeTab, fetchNotifications]);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeTab]);
   // Real-time auto refresh (Requirement 7)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -513,10 +517,10 @@ export default function NotificationsPage() {
         )}
         
         {/* Pagination */}
-        {activeTab !== 'preferences' && pagination.pages > 1 && (
+        {activeTab !== 'preferences' && (pagination.totalPages || pagination.pages || 1) > 1 && (
           <UnifiedPagination
             page={pagination.page}
-            totalPages={pagination.pages}
+            totalPages={pagination.totalPages || pagination.pages || 1}
             totalItems={pagination.total}
             pageSize={pagination.limit}
             onPageChange={(page) => setPagination((p) => ({ ...p, page }))}

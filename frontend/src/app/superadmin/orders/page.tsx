@@ -75,6 +75,10 @@ export default function OrdersPage() {
     fetchSummary();
   }, [fetchOrders]);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [search, statusFilter, paymentStatusFilter]);
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
@@ -281,7 +285,7 @@ export default function OrdersPage() {
         
         <UnifiedPagination
           page={pagination.page}
-          totalPages={pagination.pages}
+          totalPages={pagination.totalPages || pagination.pages || 1}
           totalItems={pagination.total}
           pageSize={pagination.limit}
           onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}

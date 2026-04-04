@@ -161,6 +161,10 @@ export default function SubcategoryManagementPage() {
 
   // --- Handlers ---
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [search, statusFilter, categoryFilter]);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -462,7 +466,7 @@ export default function SubcategoryManagementPage() {
         {/* Pagination */}
         <UnifiedPagination
           page={pagination.page}
-          totalPages={pagination.pages}
+          totalPages={pagination.totalPages || pagination.pages || 1}
           totalItems={pagination.total}
           onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
           labels={{

@@ -119,7 +119,7 @@ export default function CategoryManagementPage() {
       setPagination(prev => ({
         ...prev,
         total: categoriesRes.data.pagination?.total || 0,
-        pages: categoriesRes.data.pagination?.pages || 1
+        pages: categoriesRes.data.pagination?.totalPages || categoriesRes.data.pagination?.pages || 1
       }));
       setSummary(summaryRes.data.data || { totalCategories: 0, activeCategories: 0, disabledCategories: 0 });
     } catch (error: any) {
@@ -138,6 +138,10 @@ export default function CategoryManagementPage() {
 
   // --- Handlers ---
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [search, statusFilter]);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -420,7 +424,7 @@ export default function CategoryManagementPage() {
         {/* Pagination */}
         <UnifiedPagination
           page={pagination.page}
-          totalPages={pagination.pages}
+          totalPages={pagination.totalPages || pagination.pages || 1}
           totalItems={pagination.total}
           onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
           labels={{

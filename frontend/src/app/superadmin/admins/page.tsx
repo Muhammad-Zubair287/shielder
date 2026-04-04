@@ -162,6 +162,10 @@ export default function AdminManagementPage() {
 
   // --- Handlers ---
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [search, roleFilter, statusFilter]);
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -513,7 +517,7 @@ export default function AdminManagementPage() {
         {/* Pagination */}
         <UnifiedPagination
           page={pagination.page}
-          totalPages={pagination.pages}
+          totalPages={pagination.totalPages || pagination.pages || 1}
           totalItems={pagination.total}
           pageSize={pagination.limit}
           onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
