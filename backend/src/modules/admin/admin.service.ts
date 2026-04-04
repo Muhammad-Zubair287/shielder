@@ -18,6 +18,37 @@ const prisma = new PrismaClient();
 
 export class AdminService {
   /**
+   * Get user stats for cards
+   * ADMIN: only USER-role accounts
+   * SUPER_ADMIN: all non-deleted accounts
+   */
+  async getUserStats(adminRole: UserRole) {
+    const baseWhere = {
+      deletedAt: null,
+      ...(adminRole === UserRole.ADMIN ? { role: UserRole.USER } : {}),
+    };
+
+    const [totalUsers, activeUsers, inactiveUsers, newlyRegistered] = await Promise.all([
+      prisma.user.count({ where: baseWhere }),
+      prisma.user.count({ where: { ...baseWhere, isActive: true } }),
+      prisma.user.count({ where: { ...baseWhere, isActive: false } }),
+      prisma.user.count({
+        where: {
+          ...baseWhere,
+          createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+        },
+      }),
+    ]);
+
+    return {
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+      newlyRegistered,
+    };
+  }
+
+  /**
    * Get all users with search, filter, and pagination
    * Admin can only see USER role
    */

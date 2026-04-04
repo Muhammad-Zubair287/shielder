@@ -13,6 +13,25 @@ import { UserRole } from '../../common/constants/roles';
 
 export class AdminController {
   /**
+   * GET /api/admin/users/stats
+   * Get user stats for admin cards
+   */
+  async getUserStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const adminRole = req.user?.role as UserRole;
+      const stats = await adminService.getUserStats(adminRole);
+
+      res.json({
+        success: true,
+        message: 'User stats retrieved successfully',
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * @swagger
    * /api/admin/users:
    *   get:

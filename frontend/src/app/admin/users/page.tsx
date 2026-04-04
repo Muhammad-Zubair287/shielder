@@ -43,6 +43,11 @@ export default function AdminUsersPage() {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+  });
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
     status: '',
@@ -61,9 +66,13 @@ export default function AdminUsersPage() {
       if (filters.status)      params.status   = filters.status;
       if (filters.isActive !== '') params.isActive = filters.isActive === 'true';
 
-      const res = await adminService.getAdminManagedUsers(params as any);
-      const list: AdminUser[] = res.data ?? [];
-      const pg = res.pagination ?? {
+      const [usersRes, statsRes] = await Promise.all([
+        adminService.getAdminManagedUsers(params as any),
+        adminService.getAdminManagedUserStats(),
+      ]);
+
+      const list: AdminUser[] = usersRes.data ?? [];
+      const pg = usersRes.pagination ?? {
         page: 1, limit: 10, total: list.length, totalPages: 1,
       };
 
@@ -73,6 +82,11 @@ export default function AdminUsersPage() {
         limit: pg.limit,
         total: pg.total,
         totalPages: pg.totalPages,
+      });
+      setStats({
+        totalUsers: statsRes?.data?.totalUsers ?? pg.total ?? 0,
+        activeUsers: statsRes?.data?.activeUsers ?? 0,
+        inactiveUsers: statsRes?.data?.inactiveUsers ?? 0,
       });
     } catch {
       toast.error(t('fetchUsersFailed'));
@@ -124,19 +138,19 @@ export default function AdminUsersPage() {
   const summaryCards = [
     {
       label: t('totalUsers'),
-      value: pagination.total,
+      value: stats.totalUsers,
       Icon: Users,
       color: 'text-[#5B5FC7] bg-[#5B5FC7]/10',
     },
     {
       label: t('activeUsers'),
-      value: users.filter((u) => u.isActive).length,
+      value: stats.activeUsers,
       Icon: UserCheck,
       color: 'text-green-700 bg-green-100',
     },
     {
       label: t('inactiveUsers'),
-      value: users.filter((u) => !u.isActive).length,
+      value: stats.inactiveUsers,
       Icon: UserX,
       color: 'text-red-700 bg-red-100',
     },

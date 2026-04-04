@@ -101,6 +101,11 @@ class AdminService {
     return response.data;
   }
 
+  async getAdminManagedUserStats() {
+    const response = await apiClient.get(`${API_ENDPOINTS.ADMIN_USERS.BASE}/stats`);
+    return response.data;
+  }
+
   async createAdminManagedUser(data: {
     email: string;
     password: string;

@@ -25,6 +25,8 @@ router.use(authenticate, requireAdmin);
  * Get all users with search, filter, and pagination
  * Query params: page, limit, search, status, isActive, dateFrom, dateTo
  */
+router.get('/users/stats', adminController.getUserStats.bind(adminController));
+
 router.get(
   '/users',
   validate(adminValidation.queryParams),
