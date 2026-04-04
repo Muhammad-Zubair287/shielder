@@ -109,6 +109,7 @@ const KPI_CARD_STYLES = [
 ];
 
 const PIE_COLORS = ['#5B5FC7', '#16A34A', '#FF6B35', '#0891B2', '#E11D48', '#374151'];
+const ORDERS_PIE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#0EA5E9'];
 
 export default function SuperAdminDashboard() {
   const { t, isRTL } = useLanguage();
@@ -249,6 +250,11 @@ export default function SuperAdminDashboard() {
         },
       ];
 
+  const summaryModeFallback =
+    breakdownMode === 'orders'
+      ? [{ name: t('totalOrders'), value: Number(summary?.totalOrders || 0) }]
+      : [{ name: t('totalRevenue'), value: Number(summary?.totalRevenue || 0) }];
+
   const chartBreakdownData =
     revenueBreakdownData.length > 0
       ? revenueBreakdownData
@@ -257,7 +263,22 @@ export default function SuperAdminDashboard() {
           .map((item) => ({ name: item.name, value: item.revenueValue }))
           .filter((item) => item.value > 0);
 
-  const breakdownTotal = chartBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+  const safeBreakdownData =
+    chartBreakdownData.length > 0
+      ? chartBreakdownData
+      : summaryModeFallback;
+
+  const donutColors = breakdownMode === 'orders' ? ORDERS_PIE_COLORS : PIE_COLORS;
+
+  const breakdownTotal = safeBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+
+  const resetDashboardFilters = () => {
+    setDatePreset('6M');
+    setCustomFrom('');
+    setCustomTo('');
+    setSelectedCategory('ALL');
+    setBreakdownMode('comparison');
+  };
 
   const filteredActivities = activities.filter((activity) => {
     const matchesText = `${activity.action} ${activity.user}`
@@ -535,12 +556,21 @@ export default function SuperAdminDashboard() {
               ))}
             </div>
           </div>
+
+          <div className="w-full xl:w-auto xl:self-end">
+            <button
+              onClick={resetDashboardFilters}
+              className="w-full xl:w-auto px-4 py-2.5 rounded-lg text-sm font-semibold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              {t('reset')}
+            </button>
+          </div>
         </div>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 5. ANALYTICS SECTION */}
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[450px]">
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-h-[520px]">
           <div className="flex items-center gap-2 mb-6">
             <div className="bg-blue-50 p-2 rounded-lg text-[#5B5FC7]">
               <TrendingUp size={20} />
@@ -609,8 +639,8 @@ export default function SuperAdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('dashboardRevenueBreakdown')}</h3>
           </div>
-          <div className="w-full h-[320px] min-h-[320px] flex flex-col animate-in fade-in duration-500">
-            <div className="relative flex-1">
+          <div className="w-full flex flex-col animate-in fade-in duration-500">
+            <div className="relative h-[330px] sm:h-[360px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Tooltip
@@ -622,13 +652,13 @@ export default function SuperAdminDashboard() {
                     }) as any}
                   />
                   <Pie
-                    data={chartBreakdownData}
+                    data={safeBreakdownData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    outerRadius={108}
-                    innerRadius={66}
+                    outerRadius="72%"
+                    innerRadius="44%"
                     paddingAngle={2}
                     stroke="#ffffff"
                     strokeWidth={3}
@@ -636,8 +666,8 @@ export default function SuperAdminDashboard() {
                     animationDuration={900}
                     animationEasing="ease-out"
                   >
-                    {chartBreakdownData.map((entry, index) => (
-                      <Cell key={`cell-${entry.name}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    {safeBreakdownData.map((entry, index) => (
+                      <Cell key={`cell-${entry.name}`} fill={donutColors[index % donutColors.length]} />
                     ))}
                   </Pie>
                 </PieChart>
@@ -652,12 +682,12 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {chartBreakdownData.map((item, index) => {
+              {safeBreakdownData.map((item, index) => {
                 const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
                 return (
                   <div key={item.name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 bg-gray-50/60">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: donutColors[index % donutColors.length] }} />
                       <span className="text-xs font-semibold text-gray-700 truncate">{item.name}</span>
                     </div>
                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{share}%</span>
