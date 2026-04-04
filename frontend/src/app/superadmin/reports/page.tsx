@@ -37,6 +37,7 @@ import { format, subDays, startOfDay } from 'date-fns';
 import toast from 'react-hot-toast';
 import { ApiErrorResponse } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 const COLORS = ['#1a1a1a', '#eab308', '#22c55e', '#ef4444', '#3b82f6', '#a855f7'];
 
@@ -53,6 +54,10 @@ export default function ReportsDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [salesTablePage, setSalesTablePage] = useState(1);
+  const [ordersTablePage, setOrdersTablePage] = useState(1);
+
+  const REPORT_TABLE_PAGE_SIZE = 10;
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -112,6 +117,11 @@ export default function ReportsDashboard() {
       fetchData();
     }
   }, [fetchData, dateRange, customRange.from, customRange.to]);
+
+  useEffect(() => {
+    setSalesTablePage(1);
+    setOrdersTablePage(1);
+  }, [activeTab, dateRange, filters.categoryId, filters.paymentStatus, filters.orderStatus, customRange.from, customRange.to]);
 
   const handleExport = async (formatSelection: string) => {
     try {
@@ -309,8 +319,24 @@ export default function ReportsDashboard() {
       ) : (
         <div className="space-y-6 animate-in fade-in duration-500">
           {activeTab === 'OVERVIEW' && <OverviewTab data={data} />}
-          {activeTab === 'SALES' && <SalesTab data={data} />}
-          {activeTab === 'ORDERS' && <OrdersTab data={data} />}
+          {activeTab === 'SALES' && (
+            <SalesTab
+              data={data}
+              page={salesTablePage}
+              pageSize={REPORT_TABLE_PAGE_SIZE}
+              onPageChange={setSalesTablePage}
+              isRTL={isRTL}
+            />
+          )}
+          {activeTab === 'ORDERS' && (
+            <OrdersTab
+              data={data}
+              page={ordersTablePage}
+              pageSize={REPORT_TABLE_PAGE_SIZE}
+              onPageChange={setOrdersTablePage}
+              isRTL={isRTL}
+            />
+          )}
           {activeTab === 'INVENTORY' && <InventoryTab data={data} />}
           {activeTab === 'PAYMENTS' && <PaymentsTab data={data} />}
           {activeTab === 'PROFIT' && <ProfitLossTab data={data} />}
@@ -373,12 +399,14 @@ function OverviewTab({ data }: { data: Record<string, any> | null }) {
   );
 }
 
-function SalesTab({ data }: any) {
+function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
   if (!data) {
     return <NoDataState title="Sales" />;
   }
 
   const { summary = {}, salesByDate = [], salesByCategory = [], salesByProduct = [], topSellingProducts = [] } = data;
+  const salesTotalPages = Math.max(1, Math.ceil(salesByProduct.length / pageSize));
+  const pagedSalesByProduct = salesByProduct.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="space-y-6">
@@ -531,7 +559,7 @@ function SalesTab({ data }: any) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {salesByProduct.map((product: any) => (
+              {pagedSalesByProduct.map((product: any) => (
                 <tr key={product.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-4 font-bold text-sm text-shielder-dark">{product.name}</td>
                   <td className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">{product.categoryName}</td>
@@ -547,6 +575,16 @@ function SalesTab({ data }: any) {
             </tbody>
           </table>
         </div>
+        {salesByProduct.length > 0 && (
+          <UnifiedPagination
+            page={page}
+            totalPages={salesTotalPages}
+            totalItems={salesByProduct.length}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            isRTL={isRTL}
+          />
+        )}
       </div>
     </div>
   );
@@ -564,12 +602,15 @@ function NoDataState({ title }: { title: string }) {
   );
 }
 
-function OrdersTab({ data }: any) {
+function OrdersTab({ data, page, pageSize, onPageChange, isRTL }: any) {
   if (!data || !data.stats) {
     return <NoDataState title="Orders" />;
   }
   const stats = data.stats || {};
   const total = Object.values(stats || {}).reduce((acc: number, curr: any) => acc + (Number(curr) || 0), 0);
+  const recentLargeOrders = data.recentLargeOrders || [];
+  const ordersTotalPages = Math.max(1, Math.ceil(recentLargeOrders.length / pageSize));
+  const pagedRecentLargeOrders = recentLargeOrders.slice((page - 1) * pageSize, page * pageSize);
   
   return (
     <div className="space-y-6">
@@ -623,7 +664,7 @@ function OrdersTab({ data }: any) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {(data.recentLargeOrders || []).map((order: any) => (
+              {pagedRecentLargeOrders.map((order: any) => (
                 <tr key={order.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-4 font-bold text-sm text-shielder-dark">#{order.orderNumber}</td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-600">{order.customerName}</td>
@@ -631,7 +672,7 @@ function OrdersTab({ data }: any) {
                   <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{(order.totalAmount || 0).toLocaleString()}</span></td>
                 </tr>
               ))}
-              {(!data.recentLargeOrders || data.recentLargeOrders.length === 0) && (
+              {recentLargeOrders.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-8 py-12 text-center text-gray-400 text-xs font-bold uppercase tracking-widest">No High-Value Orders Found</td>
                 </tr>
@@ -639,6 +680,16 @@ function OrdersTab({ data }: any) {
             </tbody>
           </table>
         </div>
+        {recentLargeOrders.length > 0 && (
+          <UnifiedPagination
+            page={page}
+            totalPages={ordersTotalPages}
+            totalItems={recentLargeOrders.length}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            isRTL={isRTL}
+          />
+        )}
       </div>
     </div>
   );

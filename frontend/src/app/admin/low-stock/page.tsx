@@ -4,18 +4,24 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ChevronRight, Search, Filter } from 'lucide-react';
 import adminService from '@/services/admin.service';
 import Link from 'next/link';
+import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LowStockPage() {
+  const { isRTL } = useLanguage();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const fetchLowStock = async () => {
       try {
         setLoading(true);
         const { data } = await adminService.getLowStockProducts();
-        setProducts(data.data);
+        setProducts(data.products || data.data?.products || data.data || []);
       } catch (err) {
         console.error('Failed to fetch low stock products');
         // Mock data for demo
@@ -37,6 +43,14 @@ export default function LowStockPage() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const pagedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -88,7 +102,7 @@ export default function LowStockPage() {
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">No low stock items found.</td>
               </tr>
             ) : (
-              filteredProducts.map((product: any) => (
+              pagedProducts.map((product: any) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-5">
                     <div className="font-semibold text-gray-800">{product.name}</div>
@@ -130,6 +144,17 @@ export default function LowStockPage() {
             )}
           </tbody>
         </table>
+
+        {!loading && filteredProducts.length > 0 && (
+          <UnifiedPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+            isRTL={isRTL}
+          />
+        )}
       </div>
     </div>
   );
