@@ -4,11 +4,12 @@
 
 import Joi from 'joi';
 import { UserRole, UserStatus } from '../../common/constants/roles';
+import { sharedValidationSchemas } from '../../common/validation/shared.schemas';
 
 export const superAdminValidation = {
   createAdmin: Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().min(8).required(),
+    password: sharedValidationSchemas.password,
     fullName: Joi.string().optional(),
     phoneNumber: Joi.string().optional(),
   }),
@@ -21,6 +22,13 @@ export const superAdminValidation = {
 
   updateStatus: Joi.object({
     isActive: Joi.boolean().required(),
+    suspensionReason: Joi.string().trim().max(500).allow('').optional(),
+    suspensionUntil: Joi.date().iso().optional(),
+  }),
+
+  deleteAdmin: Joi.object({
+    reason: Joi.string().trim().min(3).max(500).required(),
+    mode: Joi.string().valid('ARCHIVE', 'PERMANENT').default('ARCHIVE'),
   }),
 
   updateAdmin: Joi.object({

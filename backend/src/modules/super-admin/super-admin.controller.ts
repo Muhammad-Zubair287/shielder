@@ -205,7 +205,11 @@ export class SuperAdminController {
       const deletedBy = req.user?.id!;
       const result = await superAdminService.deleteUser(
         String(req.params.id),
-        deletedBy
+        deletedBy,
+        {
+          reason: req.body?.reason,
+          mode: req.body?.mode,
+        }
       );
 
       res.json(result);

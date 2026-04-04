@@ -202,6 +202,16 @@ export class SuperAdminService {
       updatedBy,
     };
 
+    const isStatusUpdate = typeof data.isActive === 'boolean' || typeof data.status === 'string';
+    const isSuspending = (data.isActive === false) || data.status === UserStatus.SUSPENDED;
+    const isReactivating = (data.isActive === true) || data.status === UserStatus.ACTIVE;
+
+    if (isStatusUpdate) {
+      updateData.isActive = isReactivating ? true : false;
+      updateData.status = isReactivating ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
+      updateData.lockedUntil = isSuspending && data.suspensionUntil ? new Date(data.suspensionUntil) : null;
+    }
+
     if (data.role) updateData.role = data.role;
     if (data.status) {
       updateData.isActive = data.status === 'ACTIVE';
@@ -231,10 +241,16 @@ export class SuperAdminService {
     // Audit Log
     await AuditService.log({
       userId: updatedBy,
-      action: 'USER_UPDATED',
+      action: isSuspending ? 'USER_SUSPENDED' : isReactivating ? 'USER_REACTIVATED' : 'USER_UPDATED',
       entityType: 'USER',
       entityId: id,
-      changes: data,
+      changes: {
+        ...data,
+        suspensionReason: data.suspensionReason,
+        suspensionUntil: data.suspensionUntil ? new Date(data.suspensionUntil).toISOString() : null,
+        previousStatus: targetUser.status,
+        previousIsActive: targetUser.isActive,
+      },
     });
 
     return updatedUser;
@@ -243,9 +259,20 @@ export class SuperAdminService {
   /**
    * Delete User (Soft Delete)
    */
-  async deleteUser(id: string, deletedBy: string) {
+  async deleteUser(
+    id: string,
+    deletedBy: string,
+    options?: { reason?: string; mode?: 'ARCHIVE' | 'PERMANENT' }
+  ) {
     const targetUser = await prisma.user.findUnique({ where: { id } });
     if (!targetUser) throw new ApiError('User not found', 404);
+
+    const reason = options?.reason?.trim();
+    const mode = options?.mode || 'ARCHIVE';
+
+    if (!reason) {
+      throw new ApiError('Deletion reason is required.', 400);
+    }
 
     // 1. Super Admin Protection
     if (targetUser.role === UserRole.SUPER_ADMIN) {
@@ -255,6 +282,32 @@ export class SuperAdminService {
     // 2. Self Protection
     if (id === deletedBy) {
       throw new ApiError('Self-protection rule: You cannot delete your own account.', 403);
+    }
+
+    if (mode === 'PERMANENT') {
+      try {
+        await prisma.user.delete({ where: { id } });
+
+        await AuditService.log({
+          userId: deletedBy,
+          action: 'USER_PERMANENTLY_DELETED',
+          entityType: 'USER',
+          entityId: id,
+          changes: {
+            mode,
+            reason,
+            email: targetUser.email,
+            role: targetUser.role,
+          },
+        });
+
+        return { success: true, message: 'User permanently deleted successfully.' };
+      } catch (error) {
+        throw new ApiError(
+          'Permanent deletion failed because this account has linked records. Use archive mode instead.',
+          400
+        );
+      }
     }
 
     await prisma.user.update({
@@ -270,12 +323,18 @@ export class SuperAdminService {
     // Audit Log
     await AuditService.log({
       userId: deletedBy,
-      action: 'USER_DELETED',
+      action: 'USER_ARCHIVED',
       entityType: 'USER',
       entityId: id,
+      changes: {
+        mode,
+        reason,
+        email: targetUser.email,
+        role: targetUser.role,
+      },
     });
 
-    return { success: true, message: 'User moved to trash successfully.' };
+    return { success: true, message: 'User archived successfully.' };
   }
 
   // --- Keep other methods like getStatistics, getDashboardSummary, etc. ---

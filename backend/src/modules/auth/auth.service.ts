@@ -327,6 +327,19 @@ export class AuthService {
         );
       }
 
+      // Auto-reactivate temporarily suspended accounts once the suspension expires
+      if (user.lockedUntil && new Date() >= user.lockedUntil && !user.isActive && user.status === 'SUSPENDED') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            isActive: true,
+            status: 'ACTIVE',
+            lockedUntil: null,
+          },
+        });
+        user = { ...user, isActive: true, status: 'ACTIVE', lockedUntil: null };
+      }
+
       // Check if user is active
       if (!user.isActive) {
         logger.warn(`Login failed: Account inactive - ${user.email}`);

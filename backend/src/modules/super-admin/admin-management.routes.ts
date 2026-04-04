@@ -28,7 +28,7 @@ router.get('/', validate(superAdminValidation.queryParams, 'query'), superAdminC
 /**
  * POST /api/admins
  */
-router.post('/', superAdminController.createUser.bind(superAdminController));
+router.post('/', validate(superAdminValidation.createAdmin, 'body'), superAdminController.createUser.bind(superAdminController));
 
 /**
  * PUT /api/admins/:id
@@ -38,11 +38,11 @@ router.put('/:id', superAdminController.updateUser.bind(superAdminController));
 /**
  * PATCH /api/admins/:id/status
  */
-router.patch('/:id/status', superAdminController.updateUser.bind(superAdminController));
+router.patch('/:id/status', validate(superAdminValidation.updateStatus, 'body'), superAdminController.updateUser.bind(superAdminController));
 
 /**
  * DELETE /api/admins/:id
  */
-router.delete('/:id', superAdminController.deleteUser.bind(superAdminController));
+router.delete('/:id', validate(superAdminValidation.deleteAdmin, 'body'), superAdminController.deleteUser.bind(superAdminController));
 
 export default router;

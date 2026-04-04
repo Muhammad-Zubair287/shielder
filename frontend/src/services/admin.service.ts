@@ -169,13 +169,16 @@ class AdminService {
     return response.data;
   }
 
-  async updateAdminStatus(id: string, isActive: boolean) {
-    const response = await apiClient.patch(API_ENDPOINTS.ADMINS.STATUS(id), { isActive });
+  async updateAdminStatus(
+    id: string,
+    data: { isActive: boolean; suspensionReason?: string; suspensionUntil?: string }
+  ) {
+    const response = await apiClient.patch(API_ENDPOINTS.ADMINS.STATUS(id), data);
     return response.data;
   }
 
-  async deleteAdmin(id: string) {
-    const response = await apiClient.delete(API_ENDPOINTS.ADMINS.BY_ID(id));
+  async deleteAdmin(id: string, data: { reason: string; mode: 'ARCHIVE' | 'PERMANENT' }) {
+    const response = await apiClient.delete(API_ENDPOINTS.ADMINS.BY_ID(id), { data });
     return response.data;
   }
 

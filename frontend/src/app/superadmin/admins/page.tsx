@@ -75,6 +75,8 @@ const RoleBadge = ({ role }: { role: string }) => (
   </span>
 );
 
+const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+
 export default function AdminManagementPage() {
   const { user: currentUser } = useAuth();
   const { t, isRTL } = useLanguage();
@@ -109,6 +111,11 @@ export default function AdminManagementPage() {
   // Selected Admin for actions
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [suspensionReason, setSuspensionReason] = useState('');
+  const [temporarySuspension, setTemporarySuspension] = useState(false);
+  const [suspensionUntil, setSuspensionUntil] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteMode, setDeleteMode] = useState<'ARCHIVE' | 'PERMANENT'>('ARCHIVE');
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -182,6 +189,10 @@ export default function AdminManagementPage() {
       return toast.error("Password must be at least 8 characters");
     }
 
+    if (!PASSWORD_POLICY.test(formData.password)) {
+      return toast.error('Password must include uppercase, lowercase, number, and special character');
+    }
+
     try {
       setFormLoading(true);
       await adminService.createAdmin({
@@ -251,11 +262,32 @@ export default function AdminManagementPage() {
   const handleToggleStatus = async () => {
     if (!selectedAdmin) return;
 
+    if (selectedAdmin.isActive) {
+      if (!suspensionReason.trim()) {
+        return toast.error('Please provide a suspension reason');
+      }
+
+      if (temporarySuspension && !suspensionUntil) {
+        return toast.error('Please select an expiry date for temporary suspension');
+      }
+
+      if (temporarySuspension && suspensionUntil && new Date(suspensionUntil) <= new Date()) {
+        return toast.error('Suspension expiry must be in the future');
+      }
+    }
+
     try {
       setFormLoading(true);
-      await adminService.updateAdminStatus(selectedAdmin.id, !selectedAdmin.isActive);
+      await adminService.updateAdminStatus(selectedAdmin.id, {
+        isActive: !selectedAdmin.isActive,
+        suspensionReason: selectedAdmin.isActive ? suspensionReason.trim() : undefined,
+        suspensionUntil: selectedAdmin.isActive && temporarySuspension ? suspensionUntil : undefined,
+      });
       toast.success(`Admin ${selectedAdmin.isActive ? 'suspended' : 'activated'} successfully`);
       setShowStatusModal(false);
+      setSuspensionReason('');
+      setTemporarySuspension(false);
+      setSuspensionUntil('');
       fetchData();
     } catch (err) {
       const error = err as ApiErrorResponse;
@@ -274,11 +306,20 @@ export default function AdminManagementPage() {
   const handleDeleteAdmin = async () => {
     if (!selectedAdmin) return;
 
+    if (!deleteReason.trim()) {
+      return toast.error('Please provide a deletion reason');
+    }
+
     try {
       setFormLoading(true);
-      await adminService.deleteAdmin(selectedAdmin.id);
-      toast.success('Admin deleted successfully');
+      await adminService.deleteAdmin(selectedAdmin.id, {
+        reason: deleteReason.trim(),
+        mode: deleteMode,
+      });
+      toast.success(deleteMode === 'PERMANENT' ? 'Admin permanently deleted' : 'Admin archived successfully');
       setShowDeleteModal(false);
+      setDeleteReason('');
+      setDeleteMode('ARCHIVE');
       fetchData();
     } catch (err) {
       const error = err as ApiErrorResponse;
@@ -469,7 +510,13 @@ export default function AdminManagementPage() {
                       </button>
 
                       <button 
-                        onClick={() => { setSelectedAdmin(admin); setShowStatusModal(true); }}
+                        onClick={() => {
+                          setSelectedAdmin(admin);
+                          setSuspensionReason('');
+                          setTemporarySuspension(false);
+                          setSuspensionUntil('');
+                          setShowStatusModal(true);
+                        }}
                         className={`w-24 flex items-center justify-center gap-1.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent disabled:opacity-20 ${
                           admin.isActive 
                             ? 'text-[#DC2626] bg-[#DC2626]/5 hover:bg-[#DC2626]/10 hover:border-[#DC2626]/20' 
@@ -482,7 +529,12 @@ export default function AdminManagementPage() {
                       </button>
 
                       <button 
-                        onClick={() => { setSelectedAdmin(admin); setShowDeleteModal(true); }}
+                        onClick={() => {
+                          setSelectedAdmin(admin);
+                          setDeleteReason('');
+                          setDeleteMode('ARCHIVE');
+                          setShowDeleteModal(true);
+                        }}
                         className="w-24 flex items-center justify-center gap-1.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#DC2626] bg-[#DC2626]/5 hover:bg-[#DC2626]/10 rounded-lg transition-all border border-transparent hover:border-[#DC2626]/20 disabled:opacity-20"
                         disabled={admin.id === currentUser?.id}
                       >
@@ -604,6 +656,9 @@ export default function AdminManagementPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                   />
+                  <p className="mt-1 text-[10px] text-gray-400">
+                    Use at least 8 characters with uppercase, lowercase, number, and special character.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm Password</label>
@@ -730,19 +785,57 @@ export default function AdminManagementPage() {
       {/* 7. STATUS TOGGLE MODAL */}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A1E36]/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-[24px] shadow-2xl p-8 text-center animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-lg rounded-[24px] shadow-2xl p-8 animate-in zoom-in-95 duration-200 border-t-8 border-[#0205A6]">
             <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-5 rotate-12 transition-transform hover:rotate-0 duration-300 ${selectedAdmin?.isActive ? 'bg-[#DC2626] bg-opacity-10 text-[#DC2626]' : 'bg-[#16A34A] bg-opacity-10 text-[#16A34A]'}`}>
               {selectedAdmin?.isActive ? <EyeOff size={32} /> : <Eye size={32} />}
             </div>
-            <h2 className="text-2xl font-black text-[#0A1E36] mb-2 uppercase tracking-tight">
+            <h2 className="text-2xl font-black text-[#0A1E36] mb-2 uppercase tracking-tight text-center">
               {selectedAdmin?.isActive ? t('confirmSuspendTitle') : t('confirmActivateAdminTitle')}
             </h2>
-            <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed text-center">
               Admin: <span className="font-bold text-gray-800">{selectedAdmin?.profile?.fullName || selectedAdmin?.email}</span>.
               {selectedAdmin?.isActive 
-                ? ' This will disable their access to the admin portal.' 
+                ? ' This will immediately disable their access to the admin portal.' 
                 : ' This will restore their access to the admin portal.'}
             </p>
+            {selectedAdmin?.isActive && (
+              <div className="space-y-4 text-left mb-6">
+                <div>
+                  <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Reason for suspension</label>
+                  <textarea
+                    rows={3}
+                    value={suspensionReason}
+                    onChange={(e) => setSuspensionReason(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm resize-none"
+                    placeholder="e.g. misconduct, inactivity, policy violation"
+                  />
+                </div>
+                <label className="flex items-center gap-3 text-sm font-semibold text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={temporarySuspension}
+                    onChange={(e) => setTemporarySuspension(e.target.checked)}
+                    className="h-4 w-4 accent-[#0205A6]"
+                  />
+                  Temporary suspension with expiry date
+                </label>
+                {temporarySuspension && (
+                  <div>
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Suspension expiry</label>
+                    <input
+                      type="date"
+                      value={suspensionUntil}
+                      onChange={(e) => setSuspensionUntil(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                    />
+                  </div>
+                )}
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+                  <p className="font-black uppercase tracking-widest text-[10px] mb-1">Warning</p>
+                  <p>This action will block access immediately and will be recorded in the audit trail for Super Admin review.</p>
+                </div>
+              </div>
+            )}
             <div className="flex gap-4">
               <button
                 onClick={() => setShowStatusModal(false)}
@@ -766,18 +859,67 @@ export default function AdminManagementPage() {
       {/* 8. DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A1E36]/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-[24px] shadow-2xl p-8 text-center animate-in zoom-in-95 duration-200 border-b-8 border-[#DC2626]">
+          <div className="bg-white w-full max-w-lg rounded-[24px] shadow-2xl p-8 animate-in zoom-in-95 duration-200 border-b-8 border-[#DC2626]">
             <div className="mx-auto w-16 h-16 rounded-full bg-[#DC2626] bg-opacity-10 text-[#DC2626] flex items-center justify-center mb-6">
               <Trash2 size={32} />
             </div>
-            <h2 className="text-2xl font-black text-[#0A1E36] mb-3 uppercase tracking-tight">{t('confirmDeleteAdminTitle')}</h2>
-            <div className="bg-red-50 p-3 rounded-lg border border-red-100 mb-6">
+            <h2 className="text-2xl font-black text-[#0A1E36] mb-3 uppercase tracking-tight text-center">{t('confirmDeleteAdminTitle')}</h2>
+            <div className="bg-red-50 p-3 rounded-lg border border-red-100 mb-4">
               <p className="text-[#DC2626] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
                 <AlertTriangle size={14} /> Attention
               </p>
               <p className="text-gray-600 text-xs mt-1 leading-relaxed px-2">
-                You are about to delete <b>{selectedAdmin?.profile?.fullName || selectedAdmin?.email}</b> permanently from the system.
+                You are about to remove <b>{selectedAdmin?.profile?.fullName || selectedAdmin?.email}</b>. This action is logged in the audit trail.
               </p>
+            </div>
+            <div className="space-y-4 mb-6 text-left">
+              <div>
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Deletion mode</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label className={`border rounded-xl p-3 cursor-pointer transition-all ${deleteMode === 'ARCHIVE' ? 'border-[#0205A6] bg-[#0205A6]/5' : 'border-gray-200'}`}>
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        name="deleteMode"
+                        value="ARCHIVE"
+                        checked={deleteMode === 'ARCHIVE'}
+                        onChange={() => setDeleteMode('ARCHIVE')}
+                        className="mt-1 accent-[#0205A6]"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">Archive (Soft Delete)</p>
+                        <p className="text-xs text-gray-500">Keeps record for audit/history.</p>
+                      </div>
+                    </div>
+                  </label>
+                  <label className={`border rounded-xl p-3 cursor-pointer transition-all ${deleteMode === 'PERMANENT' ? 'border-[#DC2626] bg-red-50' : 'border-gray-200'}`}>
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        name="deleteMode"
+                        value="PERMANENT"
+                        checked={deleteMode === 'PERMANENT'}
+                        onChange={() => setDeleteMode('PERMANENT')}
+                        className="mt-1 accent-[#DC2626]"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">Permanent Delete</p>
+                        <p className="text-xs text-gray-500">Removes account permanently.</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Reason for deletion</label>
+                <textarea
+                  rows={3}
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm resize-none"
+                  placeholder="e.g. duplicate account, policy violation, employee exit"
+                />
+              </div>
             </div>
             <div className="flex gap-4">
               <button
@@ -789,10 +931,10 @@ export default function AdminManagementPage() {
               <button
                 onClick={handleDeleteAdmin}
                 disabled={formLoading}
-                className="flex-1 px-4 py-3 bg-[#DC2626] text-white rounded-xl hover:bg-red-700 font-bold text-xs uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-2"
+                className={`flex-1 px-4 py-3 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 ${deleteMode === 'PERMANENT' ? 'bg-[#DC2626] hover:bg-red-700' : 'bg-[#0205A6] hover:bg-[#01048f]'}`}
               >
                 {formLoading && <Loader2 className="animate-spin" size={16} />}
-                {t('delete')} {t('admins')}
+                {deleteMode === 'PERMANENT' ? `${t('delete')} ${t('admins')}` : 'Archive Admin'}
               </button>
             </div>
           </div>
