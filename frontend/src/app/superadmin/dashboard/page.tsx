@@ -152,7 +152,7 @@ export default function SuperAdminDashboard() {
           .map((item: any) => {
             const revenueValue = Number(item.revenue ?? item.totalRevenue ?? item.sales ?? item.value ?? 0);
             const ordersValue = Number(item.orders ?? item.orderCount ?? item.productCount ?? item.count ?? 0);
-            const comparisonValue = Number(item.comparison ?? item.score ?? revenueValue || 0);
+            const comparisonValue = Number(item.comparison ?? item.score ?? revenueValue ?? 0);
 
             return {
               name: item.categoryName ?? item.name ?? 'Unknown',
@@ -191,7 +191,15 @@ export default function SuperAdminDashboard() {
     }).format(date);
   };
 
-  const filteredAnalytics = analytics.filter((item) => {
+  const normalizedAnalytics = (Array.isArray(analytics) ? analytics : [])
+    .map((item) => ({
+      month: item?.month,
+      orders: Number(item?.orders || 0),
+      revenue: Number(item?.revenue || 0),
+    }))
+    .filter((item) => !!item.month);
+
+  const filteredAnalytics = normalizedAnalytics.filter((item) => {
     const itemDate = new Date(item.month);
     if (Number.isNaN(itemDate.getTime())) {
       return true;
@@ -532,44 +540,52 @@ export default function SuperAdminDashboard() {
             <h3 className="font-bold text-gray-800 text-lg">{t('salesGraph')}</h3>
           </div>
           <div className="w-full h-[320px] min-h-[320px]">
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={filteredAnalytics}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{fill: '#6B7280', fontSize: 12}}
-                  dy={10}
-                  tickFormatter={formatShortDate}
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  formatter={((value: any) => [`${(Number(value) || 0).toLocaleString()} ${t('sarCurrency')}`, t('revenueLabel')]) as any}
-                />
-                {(breakdownMode === 'comparison' || breakdownMode === 'revenue') && (
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#5B5FC7"
-                    strokeWidth={3}
-                    dot={{ r: 5, fill: '#5B5FC7', strokeWidth: 2, stroke: '#FFF' }}
-                    activeDot={{ r: 7 }}
+            {filteredAnalytics.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={filteredAnalytics}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{fill: '#6B7280', fontSize: 12}}
+                    dy={10}
+                    tickFormatter={formatShortDate}
                   />
-                )}
-                {(breakdownMode === 'comparison' || breakdownMode === 'orders') && (
-                  <Line
-                    type="monotone"
-                    dataKey="orders"
-                    stroke="#FF6B35"
-                    strokeWidth={3}
-                    dot={{ r: 5, fill: '#FF6B35', strokeWidth: 2, stroke: '#FFF' }}
-                    activeDot={{ r: 7 }}
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    formatter={((value: any) => [`${(Number(value) || 0).toLocaleString()} ${t('sarCurrency')}`, t('revenueLabel')]) as any}
                   />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
+                  {(breakdownMode === 'comparison' || breakdownMode === 'revenue') && (
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#5B5FC7"
+                      strokeWidth={3}
+                      dot={{ r: 5, fill: '#5B5FC7', strokeWidth: 2, stroke: '#FFF' }}
+                      activeDot={{ r: 7 }}
+                    />
+                  )}
+                  {(breakdownMode === 'comparison' || breakdownMode === 'orders') && (
+                    <Line
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#FF6B35"
+                      strokeWidth={3}
+                      dot={{ r: 5, fill: '#FF6B35', strokeWidth: 2, stroke: '#FFF' }}
+                      activeDot={{ r: 7 }}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 text-gray-500">
+                <TrendingUp size={36} className="mb-3 opacity-40" />
+                <p className="text-sm font-semibold">No monthly sales data for the selected range</p>
+                <p className="text-xs text-gray-400 mt-1">Try changing date range or refresh after new orders</p>
+              </div>
+            )}
           </div>
         </section>
 
