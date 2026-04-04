@@ -116,6 +116,8 @@ export default function AdminManagementPage() {
   const [suspensionUntil, setSuspensionUntil] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteMode, setDeleteMode] = useState<'ARCHIVE' | 'PERMANENT'>('ARCHIVE');
+  const [showAddPassword, setShowAddPassword] = useState(false);
+  const [showAddConfirmPassword, setShowAddConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -345,6 +347,8 @@ export default function AdminManagementPage() {
       role: 'ADMIN',
       isActive: true
     });
+    setShowAddPassword(false);
+    setShowAddConfirmPassword(false);
     setSelectedAdmin(null);
   };
 
@@ -648,28 +652,48 @@ export default function AdminManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Access Password</label>
-                  <input
-                    type="password"
-                    required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showAddPassword ? 'text' : 'password'}
+                      required
+                      className="w-full px-4 pr-11 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0205A6]"
+                      aria-label={showAddPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showAddPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <p className="mt-1 text-[10px] text-gray-400">
                     Use at least 8 characters with uppercase, lowercase, number, and special character.
                   </p>
                 </div>
                 <div>
                   <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm Password</label>
-                  <input
-                    type="password"
-                    required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showAddConfirmPassword ? 'text' : 'password'}
+                      required
+                      className="w-full px-4 pr-11 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAddConfirmPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0205A6]"
+                      aria-label={showAddConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    >
+                      {showAddConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
               </div>
               </div>

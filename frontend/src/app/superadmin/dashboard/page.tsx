@@ -73,6 +73,9 @@ interface Activity {
 interface CategoryBreakdown {
   name: string;
   value: number;
+  revenueValue: number;
+  ordersValue: number;
+  comparisonValue: number;
 }
 
 type DatePreset = '3M' | '6M' | '12M' | 'ALL' | 'CUSTOM';
@@ -146,12 +149,23 @@ export default function SuperAdminDashboard() {
           : [];
       setCategories(
         categoryPayload
-          .map((item: any) => ({
-            name: item.categoryName ?? item.name ?? 'Unknown',
-            value: Number(item.revenue ?? item.totalRevenue ?? item.productCount ?? item.count ?? item.value ?? 0),
-          }))
-          .filter((item: CategoryBreakdown) => item.value > 0)
-          .sort((a: CategoryBreakdown, b: CategoryBreakdown) => b.value - a.value)
+          .map((item: any) => {
+            const revenueValue = Number(item.revenue ?? item.totalRevenue ?? item.sales ?? item.value ?? 0);
+            const ordersValue = Number(item.orders ?? item.orderCount ?? item.productCount ?? item.count ?? 0);
+            const comparisonValue = Number(item.comparison ?? item.score ?? revenueValue || 0);
+
+            return {
+              name: item.categoryName ?? item.name ?? 'Unknown',
+              value: revenueValue,
+              revenueValue,
+              ordersValue,
+              comparisonValue,
+            };
+          })
+          .filter((item: CategoryBreakdown) =>
+            item.revenueValue > 0 || item.ordersValue > 0 || item.comparisonValue > 0
+          )
+          .sort((a: CategoryBreakdown, b: CategoryBreakdown) => b.revenueValue - a.revenueValue)
           .slice(0, 8)
       );
       setActivities(activityRes.data.data);
@@ -204,11 +218,30 @@ export default function SuperAdminDashboard() {
   });
 
   const revenueBreakdownData = categories.length
-    ? categories.filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
+    ? categories
+        .filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
+        .map((item) => ({
+          name: item.name,
+          value:
+            breakdownMode === 'revenue'
+              ? item.revenueValue
+              : breakdownMode === 'orders'
+                ? item.ordersValue
+                : item.comparisonValue,
+        }))
+        .filter((item) => item.value > 0)
     : [
-        { name: t('totalRevenue'), value: summary?.totalRevenue ?? 0 },
-        { name: t('inventoryValue'), value: summary?.inventoryValue ?? 0 },
+        {
+          name: breakdownMode === 'orders' ? t('totalOrders') : t('totalRevenue'),
+          value: breakdownMode === 'orders' ? summary?.totalOrders ?? 0 : summary?.totalRevenue ?? 0,
+        },
+        {
+          name: t('inventoryValue'),
+          value: summary?.inventoryValue ?? 0,
+        },
       ];
+
+  const breakdownTotal = revenueBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   const filteredActivities = activities.filter((activity) => {
     const matchesText = `${activity.action} ${activity.user}`
@@ -547,30 +580,79 @@ export default function SuperAdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('dashboardRevenueBreakdown')}</h3>
           </div>
-          <div className="w-full h-[320px] min-h-[320px]">
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  formatter={((value: any) => `${(Number(value) || 0).toLocaleString()} ${t('sarCurrency')}`) as any}
-                />
-                <Pie
-                  data={revenueBreakdownData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={110}
-                  innerRadius={60}
-                  paddingAngle={3}
-                  label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {revenueBreakdownData.map((entry, index) => (
-                    <Cell key={`cell-${entry.name}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="w-full h-[320px] min-h-[320px] flex flex-col animate-in fade-in duration-500">
+            <div className="relative flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <defs>
+                    <linearGradient id="pieGlow" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity={0.7} />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 18px rgba(0,0,0,0.12)' }}
+                    formatter={((value: any) => {
+                      const suffix = breakdownMode === 'orders' ? t('ordersLabel') : t('sarCurrency');
+                      const label = breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel');
+                      return [`${(Number(value) || 0).toLocaleString()} ${suffix}`, label];
+                    }) as any}
+                  />
+                  <Pie
+                    data={revenueBreakdownData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={108}
+                    innerRadius={66}
+                    paddingAngle={2}
+                    stroke="#ffffff"
+                    strokeWidth={3}
+                    isAnimationActive
+                    animationDuration={900}
+                    animationEasing="ease-out"
+                  >
+                    {revenueBreakdownData.map((entry, index) => (
+                      <Cell key={`cell-${entry.name}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Pie
+                    data={[{ name: 'glow', value: 1 }]}
+                    dataKey="value"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={66}
+                    outerRadius={108}
+                    fill="url(#pieGlow)"
+                    stroke="none"
+                    isAnimationActive={false}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  {breakdownMode === 'orders' ? t('totalOrders') : t('totalRevenue')}
+                </p>
+                <p className="text-lg font-black text-gray-800 mt-1">
+                  {(Number(breakdownTotal) || 0).toLocaleString()} {breakdownMode === 'orders' ? '' : t('sarCurrency')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {revenueBreakdownData.map((item, index) => {
+                const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
+                return (
+                  <div key={item.name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 bg-gray-50/60">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                      <span className="text-xs font-semibold text-gray-700 truncate">{item.name}</span>
+                    </div>
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{share}%</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
       </div>
