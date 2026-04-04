@@ -22,6 +22,9 @@ function unwrap<T>(res: any): T {
 
 const getMonthKey = (value: unknown): string => {
   const date = value ? new Date(String(value)) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   return `${year}-${month}-01`;
@@ -122,6 +125,7 @@ export default function AdminDashboardPage() {
 
       revenueArr.forEach((r: any) => {
         const key = getMonthKey(r.month);
+        if (!key) return;
         merged[key] = {
           month: key,
           revenue: Number(r.revenue ?? r.amount ?? r.value ?? 0),
@@ -131,6 +135,7 @@ export default function AdminDashboardPage() {
 
       ordersArr.forEach((o: any) => {
         const key = getMonthKey(o.month);
+        if (!key) return;
         const count = Number(o.orderCount ?? o.orders ?? o.value ?? o.count ?? 0);
         if (merged[key]) {
           merged[key].orders = count;

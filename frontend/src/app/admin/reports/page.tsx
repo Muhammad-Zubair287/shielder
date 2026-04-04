@@ -84,9 +84,8 @@ export default function AdminReportsPage() {
     setError(null);
 
     try {
-      const [orderSummaryRes, ordersRes, lowStockRes, productsRes, usersRes] =
+      const [ordersRes, lowStockRes, productsRes, usersRes] =
         await Promise.allSettled([
-          orderService.getOrderSummary(),
           orderService.getOrders({
             limit: 500,
             dateFrom: dateRange.from,
@@ -97,15 +96,20 @@ export default function AdminReportsPage() {
           adminService.getAdminManagedUsers({ limit: 1 }),
         ]);
 
-      // ── Order summary ──────────────────────────────────────────────────────
-      const os =
-        orderSummaryRes.status === 'fulfilled' ? ((orderSummaryRes.value?.data as any) ?? (orderSummaryRes.value as any)) : null;
+      // ── Revenue from orders ────────────────────────────────────────────────
+      const ordersData =
+        ordersRes.status === 'fulfilled'
+          ? ((ordersRes.value?.data as any)?.orders ?? (ordersRes.value as any)?.orders ?? [])
+          : [];
 
-      const totalOrders = os?.totalOrders ?? 0;
-      const pendingOrders = os?.pendingOrders ?? 0;
-      const processingOrders = os?.processingOrders ?? 0;
-      const completedOrders = os?.completedOrders ?? 0;
-      const cancelledOrders = os?.cancelledOrders ?? 0;
+      const pendingOrders = ordersData.filter((o: any) => String(o.status || '').toUpperCase() === 'PENDING').length;
+      const processingOrders = ordersData.filter((o: any) => String(o.status || '').toUpperCase() === 'PROCESSING').length;
+      const completedOrders = ordersData.filter((o: any) => {
+        const s = String(o.status || '').toUpperCase();
+        return s === 'COMPLETED' || s === 'DELIVERED';
+      }).length;
+      const cancelledOrders = ordersData.filter((o: any) => String(o.status || '').toUpperCase() === 'CANCELLED').length;
+      const totalOrders = ordersData.length;
 
       // ── Order status chart data ────────────────────────────────────────────
       const newStatusData: OrderStatusPoint[] = [
@@ -115,12 +119,6 @@ export default function AdminReportsPage() {
         { name: 'Cancelled', nameKey: 'orderStatusCancelled', value: cancelledOrders, color: STATUS_COLORS.cancelled },
       ].filter((d) => d.value > 0);
       setStatusData(newStatusData);
-
-      // ── Revenue from orders ────────────────────────────────────────────────
-      const ordersData =
-        ordersRes.status === 'fulfilled'
-          ? ((ordersRes.value?.data as any)?.orders ?? (ordersRes.value as any)?.orders ?? [])
-          : [];
 
       let totalRevenue = 0;
       const dayMap: Record<string, { revenue: number; orders: number }> = {};

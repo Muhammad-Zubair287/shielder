@@ -59,6 +59,7 @@ export default function SalesChart({ data, loading }: Props) {
     ...d,
     monthLabel: formatMonthLabel(d.month, locale),
   }));
+  const hasSignal = chartData.some((d) => Number(d.revenue || 0) > 0 || Number(d.orders || 0) > 0);
 
   return (
     <section
@@ -78,7 +79,7 @@ export default function SalesChart({ data, loading }: Props) {
       <div className="flex-1" style={{ minHeight: 280 }}>
         {loading ? (
           <ChartSkeleton />
-        ) : chartData.length === 0 ? (
+        ) : chartData.length === 0 || !hasSignal ? (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm">
             {t('noDataAvailable')}
           </div>

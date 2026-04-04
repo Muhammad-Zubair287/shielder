@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
 import { Download, Calendar, TrendingUp } from 'lucide-react';
+import adminService from '@/services/admin.service';
 
 const COLORS = ['#045870', '#0205A6', '#10B981', '#F59E0B', '#EF4444'];
 
@@ -26,31 +27,68 @@ export default function AnalyticsPage() {
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   const [userGrowth, setUserGrowth] = useState<UserGrowthData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const monthLabel = (raw: any) => {
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return String(raw || 'N/A');
+    return d.toLocaleString('en-US', { month: 'short' });
+  };
 
   useEffect(() => {
-    // Mocking data for analytics specifically
-    setRevenueData([
-      { name: 'Week 1', revenue: 45000, orders: 120 },
-      { name: 'Week 2', revenue: 52000, orders: 145 },
-      { name: 'Week 3', revenue: 48000, orders: 132 },
-      { name: 'Week 4', revenue: 61000, orders: 156 },
-    ]);
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const [revenueRes, ordersRes, categoryRes, userRes] = await Promise.all([
+          adminService.getMonthlyRevenue(),
+          adminService.getMonthlyOrders(),
+          adminService.getByCategory(),
+          adminService.getUserGrowth(),
+        ]);
 
-    setCategoryData([
-      { name: 'Excavators', value: 400 },
-      { name: 'Bulldozers', value: 300 },
-      { name: 'Cranes', value: 200 },
-      { name: 'Loaders', value: 150 },
-    ]);
+        const revenueRows = revenueRes?.data?.data || revenueRes?.data || [];
+        const orderRows = ordersRes?.data?.data || ordersRes?.data || [];
+        const categoryRows = categoryRes?.data?.data || categoryRes?.data || [];
+        const userRows = userRes?.data?.data || userRes?.data || [];
 
-    setUserGrowth([
-      { name: 'Jan', count: 120 },
-      { name: 'Feb', count: 210 },
-      { name: 'Mar', count: 320 },
-      { name: 'Apr', count: 480 },
-      { name: 'May', count: 650 },
-      { name: 'Jun', count: 890 },
-    ]);
+        const mergedMap: Record<string, RevenueData> = {};
+        revenueRows.forEach((r: any) => {
+          const key = monthLabel(r.month);
+          mergedMap[key] = {
+            name: key,
+            revenue: Number(r.revenue || 0),
+            orders: mergedMap[key]?.orders || 0,
+          };
+        });
+        orderRows.forEach((o: any) => {
+          const key = monthLabel(o.month);
+          mergedMap[key] = {
+            name: key,
+            revenue: mergedMap[key]?.revenue || 0,
+            orders: Number(o.orderCount || o.orders || 0),
+          };
+        });
+        setRevenueData(Object.values(mergedMap));
+
+        setCategoryData(
+          (Array.isArray(categoryRows) ? categoryRows : []).map((c: any) => ({
+            name: c.categoryName || c.name || 'Unknown',
+            value: Number(c.productCount || c.value || c.count || 0),
+          }))
+        );
+
+        setUserGrowth(
+          (Array.isArray(userRows) ? userRows : []).map((u: any) => ({
+            name: monthLabel(u.month),
+            count: Number(u.userCount || u.count || 0),
+          }))
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
   }, []);
 
   return (
@@ -82,6 +120,9 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="h-80 w-full">
+            {loading ? (
+              <div className="h-full w-full rounded-xl bg-gray-100 animate-pulse" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
@@ -100,6 +141,7 @@ export default function AnalyticsPage() {
                 <Area type="monotone" dataKey="revenue" stroke="#045870" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -107,6 +149,9 @@ export default function AnalyticsPage() {
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-bold text-gray-800 mb-8">Category Share</h3>
           <div className="h-64 w-full relative">
+            {loading ? (
+              <div className="h-full w-full rounded-xl bg-gray-100 animate-pulse" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -125,8 +170,9 @@ export default function AnalyticsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            )}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-              <span className="text-2xl font-bold text-gray-800">1,050</span>
+              <span className="text-2xl font-bold text-gray-800">{categoryData.reduce((sum, x) => sum + x.value, 0)}</span>
               <p className="text-[10px] text-gray-400 font-bold uppercase">Total Units</p>
             </div>
           </div>
@@ -137,7 +183,11 @@ export default function AnalyticsPage() {
                   <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                   {entry.name}
                 </div>
-                <span className="text-sm font-bold text-gray-800">{((entry.value / 1050) * 100).toFixed(0)}%</span>
+                <span className="text-sm font-bold text-gray-800">
+                  {categoryData.reduce((sum, x) => sum + x.value, 0) > 0
+                    ? ((entry.value / categoryData.reduce((sum, x) => sum + x.value, 0)) * 100).toFixed(0)
+                    : 0}%
+                </span>
               </div>
             ))}
           </div>
@@ -147,6 +197,9 @@ export default function AnalyticsPage() {
         <div className="lg:col-span-3 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-bold text-gray-800 mb-8">User Acquisition</h3>
           <div className="h-64 w-full">
+            {loading ? (
+              <div className="h-full w-full rounded-xl bg-gray-100 animate-pulse" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={userGrowth}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
@@ -159,6 +212,7 @@ export default function AnalyticsPage() {
                 <Bar dataKey="count" fill="#0205A6" radius={[6, 6, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
