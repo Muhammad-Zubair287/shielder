@@ -249,7 +249,15 @@ export default function SuperAdminDashboard() {
         },
       ];
 
-  const breakdownTotal = revenueBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+  const chartBreakdownData =
+    revenueBreakdownData.length > 0
+      ? revenueBreakdownData
+      : categories
+          .filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
+          .map((item) => ({ name: item.name, value: item.revenueValue }))
+          .filter((item) => item.value > 0);
+
+  const breakdownTotal = chartBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   const filteredActivities = activities.filter((activity) => {
     const matchesText = `${activity.action} ${activity.user}`
@@ -555,7 +563,12 @@ export default function SuperAdminDashboard() {
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    formatter={((value: any) => [`${(Number(value) || 0).toLocaleString()} ${t('sarCurrency')}`, t('revenueLabel')]) as any}
+                    formatter={((value: any, name: any) => {
+                      if (name === 'orders') {
+                        return [`${(Number(value) || 0).toLocaleString()} ${t('ordersLabel')}`, t('ordersLabel')];
+                      }
+                      return [`${(Number(value) || 0).toLocaleString()} ${t('sarCurrency')}`, t('revenueLabel')];
+                    }) as any}
                   />
                   {(breakdownMode === 'comparison' || breakdownMode === 'revenue') && (
                     <Line
@@ -600,12 +613,6 @@ export default function SuperAdminDashboard() {
             <div className="relative flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <defs>
-                    <linearGradient id="pieGlow" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity={0.7} />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
                   <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 18px rgba(0,0,0,0.12)' }}
                     formatter={((value: any) => {
@@ -615,7 +622,7 @@ export default function SuperAdminDashboard() {
                     }) as any}
                   />
                   <Pie
-                    data={revenueBreakdownData}
+                    data={chartBreakdownData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -629,21 +636,10 @@ export default function SuperAdminDashboard() {
                     animationDuration={900}
                     animationEasing="ease-out"
                   >
-                    {revenueBreakdownData.map((entry, index) => (
+                    {chartBreakdownData.map((entry, index) => (
                       <Cell key={`cell-${entry.name}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Pie
-                    data={[{ name: 'glow', value: 1 }]}
-                    dataKey="value"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={66}
-                    outerRadius={108}
-                    fill="url(#pieGlow)"
-                    stroke="none"
-                    isAnimationActive={false}
-                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
@@ -656,7 +652,7 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {revenueBreakdownData.map((item, index) => {
+              {chartBreakdownData.map((item, index) => {
                 const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
                 return (
                   <div key={item.name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 bg-gray-50/60">
