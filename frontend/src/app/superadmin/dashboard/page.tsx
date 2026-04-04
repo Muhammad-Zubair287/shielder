@@ -35,7 +35,6 @@ const LineChart = dynamic(() => import('recharts').then(m => ({ default: m.LineC
 const Line = dynamic(() => import('recharts').then(m => ({ default: m.Line })), { ssr: false });
 const PieChart = dynamic(() => import('recharts').then(m => ({ default: m.PieChart })), { ssr: false });
 const Pie = dynamic(() => import('recharts').then(m => ({ default: m.Pie })), { ssr: false });
-const Cell = dynamic(() => import('recharts').then(m => ({ default: m.Cell })), { ssr: false });
 
 interface DashboardSummary {
   totalProducts: number;
@@ -271,6 +270,17 @@ export default function SuperAdminDashboard() {
   const donutColors = breakdownMode === 'orders' ? ORDERS_PIE_COLORS : PIE_COLORS;
 
   const breakdownTotal = safeBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+
+  const visualBreakdownData =
+    breakdownTotal > 0
+      ? safeBreakdownData
+      : (safeBreakdownData.length > 1
+          ? safeBreakdownData.map((item) => ({ ...item, value: 1 }))
+          : [
+              { name: t('dashboardModeComparison'), value: 1 },
+              { name: t('dashboardModeRevenue'), value: 1 },
+              { name: t('dashboardModeOrders'), value: 1 },
+            ]);
 
   const resetDashboardFilters = () => {
     setDatePreset('6M');
@@ -632,7 +642,7 @@ export default function SuperAdminDashboard() {
           </div>
         </section>
 
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[450px]">
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-h-[560px]">
           <div className="flex items-center gap-2 mb-6">
             <div className="bg-blue-50 p-2 rounded-lg text-[#5B5FC7]">
               <Layers size={20} />
@@ -652,7 +662,10 @@ export default function SuperAdminDashboard() {
                     }) as any}
                   />
                   <Pie
-                    data={safeBreakdownData}
+                    data={visualBreakdownData.map((entry, index) => ({
+                      ...entry,
+                      fill: donutColors[index % donutColors.length],
+                    }))}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -665,11 +678,7 @@ export default function SuperAdminDashboard() {
                     isAnimationActive
                     animationDuration={900}
                     animationEasing="ease-out"
-                  >
-                    {safeBreakdownData.map((entry, index) => (
-                      <Cell key={`cell-${entry.name}`} fill={donutColors[index % donutColors.length]} />
-                    ))}
-                  </Pie>
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
@@ -681,7 +690,7 @@ export default function SuperAdminDashboard() {
                 </p>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
               {safeBreakdownData.map((item, index) => {
                 const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
                 return (
