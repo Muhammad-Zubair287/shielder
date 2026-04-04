@@ -45,7 +45,7 @@ export class SuperAdminService {
    * Get all users with filters and pagination
    */
   async getAllUsers(filters: any, pagination: PaginationParams) {
-    const { search, role, status, dateFrom, dateTo } = filters;
+    const { search, role, roles, status, dateFrom, dateTo } = filters;
 
     const where: any = {
       deletedAt: null,
@@ -54,15 +54,20 @@ export class SuperAdminService {
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
-        { profile: { fullName: { contains: search, mode: 'insensitive' } } },
-        { profile: { phoneNumber: { contains: search, mode: 'insensitive' } } },
+        { profile: { is: { fullName: { contains: search, mode: 'insensitive' } } } },
+        { profile: { is: { phoneNumber: { contains: search, mode: 'insensitive' } } } },
       ];
     }
 
-    if (role) where.role = role;
+    if (role) {
+      where.role = role;
+    } else if (Array.isArray(roles) && roles.length > 0) {
+      where.role = { in: roles };
+    }
+
     if (status) {
       if (status === 'ACTIVE') where.isActive = true;
-      if (status === 'INACTIVE') where.isActive = false;
+      if (status === 'INACTIVE' || status === 'SUSPENDED') where.isActive = false;
     }
 
     if (dateFrom || dateTo) {

@@ -12,6 +12,7 @@ interface Pagination {
   limit: number;
   total: number;
   pages: number;
+  totalPages?: number;
 }
 
 interface Props {
@@ -191,7 +192,7 @@ export default function SubcategoriesTable({
       </div>
 
       {/* Pagination */}
-      {!loading && subcategories.length > 0 && (
+      {!loading && pagination.total > 0 && (
         <UnifiedPagination
           page={pagination.page}
           totalPages={pagination.totalPages || pagination.pages || 1}

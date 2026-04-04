@@ -78,7 +78,15 @@ export class SuperAdminController {
   async getAdmins(req: Request, res: Response, next: NextFunction) {
     try {
       const pagination = getPaginationParams(req);
-      const filters = { role: 'ADMIN' };
+      const filters = {
+        search: req.query.search,
+        role: req.query.role,
+        status: req.query.status,
+        dateFrom: req.query.dateFrom,
+        dateTo: req.query.dateTo,
+        // Keep admins endpoint scoped to admin-tier roles unless an explicit role is requested.
+        roles: req.query.role ? undefined : ['ADMIN', 'SUPER_ADMIN'],
+      };
       const result = await superAdminService.getAllUsers(filters, pagination);
       res.json({ success: true, message: 'Admins retrieved', ...result });
     } catch (error) {

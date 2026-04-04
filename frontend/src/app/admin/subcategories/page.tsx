@@ -89,7 +89,7 @@ export default function AdminSubcategoriesPage() {
       setPagination((prev) => ({
         ...prev,
         total: subRes.data.pagination?.total || 0,
-        pages: subRes.data.pagination?.pages || 1,
+        pages: subRes.data.pagination?.totalPages || subRes.data.pagination?.pages || 1,
       }));
       setSummary(
         summaryRes.data.data || {

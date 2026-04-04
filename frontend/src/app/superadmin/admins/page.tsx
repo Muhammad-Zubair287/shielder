@@ -388,6 +388,7 @@ export default function AdminManagementPage() {
           >
             <option value="">{t('all')} {t('admins')}</option>
             <option value="ADMIN">{t('roleAdmin')}</option>
+            <option value="SUPER_ADMIN">Super Admin</option>
           </select>
           <select 
             className="flex-1 md:w-40 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0205A6] bg-white"
