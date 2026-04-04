@@ -117,6 +117,9 @@ export const env = {
   // SendGrid Configuration
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
 
+  // Contact form CAPTCHA verification secret (reCAPTCHA or compatible provider)
+  contactCaptchaSecret: process.env.CONTACT_CAPTCHA_SECRET || '',
+
   // AWS SES Configuration
   AWS_REGION: process.env.AWS_REGION || 'us-east-1',
   AWS_SES_ACCESS_KEY: process.env.AWS_SES_ACCESS_KEY || '',

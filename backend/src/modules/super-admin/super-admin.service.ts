@@ -301,7 +301,7 @@ export class SuperAdminService {
   async getDashboardSummary() {
     const activePublishedFilter = { isActive: true, status: 'PUBLISHED' as const };
 
-    const [totalStockResult, totalProducts, totalOrders, revenueResult, products, totalCategories] = await Promise.all([
+    const [totalStockResult, totalProducts, totalOrders, revenueResult, products, totalCategories, totalUsers] = await Promise.all([
       // Only sum stock for active + published products
       prisma.product.aggregate({
         where: activePublishedFilter,
@@ -322,7 +322,9 @@ export class SuperAdminService {
         select: { stock: true, price: true }
       }),
       // Count all active categories
-      prisma.category.count({ where: { isActive: true } })
+      prisma.category.count({ where: { isActive: true } }),
+      // Count all non-deleted users for platform KPI card
+      prisma.user.count({ where: { deletedAt: null } })
     ]);
 
     const totalStock = totalStockResult._sum.stock || 0;
@@ -334,7 +336,8 @@ export class SuperAdminService {
       totalOrders,
       totalRevenue: Number(revenueResult._sum.total || 0),
       inventoryValue,
-      totalCategories
+      totalCategories,
+      totalUsers
     };
   }
 

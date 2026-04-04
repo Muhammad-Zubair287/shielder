@@ -1,4 +1,5 @@
 import { prisma } from '@/config/database';
+import { env } from '@/config/env';
 import { logger } from '@/common/logger/logger';
 import { BadRequestError } from '@/common/errors/api.error';
 import { emailService } from '@/common/services/email.service';
@@ -43,7 +44,7 @@ type JsonRecord = Record<string, unknown>;
 
 class ContactService {
   private async verifyCaptchaToken(token: string, remoteIp?: string): Promise<CaptchaVerificationResult> {
-    const secret = process.env.CONTACT_CAPTCHA_SECRET;
+    const secret = env.contactCaptchaSecret;
 
     if (!secret) {
       // Local/dev fallback to keep the form testable without a CAPTCHA provider.

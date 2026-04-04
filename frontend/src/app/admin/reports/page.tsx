@@ -146,7 +146,9 @@ export default function AdminReportsPage() {
       const lowStockRaw =
         lowStockRes.status === 'fulfilled' ? lowStockRes.value : null;
       const lowStockCount =
-        (lowStockRaw?.data as any)?.count ?? 0;
+        (lowStockRaw?.data as any)?.lowStockCount ??
+        (lowStockRaw?.data as any)?.count ??
+        0;
 
       // ── Top products ───────────────────────────────────────────────────────
       const prodRaw =
