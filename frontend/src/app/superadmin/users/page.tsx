@@ -40,6 +40,7 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
 
@@ -68,7 +69,8 @@ export default function UserManagement() {
       ]);
 
       setUsers(usersRes.data || []);
-      setTotalPages(usersRes.pagination?.pages || 1);
+      setTotalPages(usersRes.pagination?.totalPages || usersRes.pagination?.pages || 1);
+      setTotalItems(usersRes.pagination?.total || 0);
       setStats(statsRes.data);
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('fetchUsersFailed'));
@@ -349,7 +351,8 @@ export default function UserManagement() {
         <UnifiedPagination
           page={page}
           totalPages={totalPages}
-          totalItems={stats?.totalUsers || users.length}
+          totalItems={totalItems}
+          pageSize={10}
           onPageChange={setPage}
           isRTL={isRTL}
           labels={{

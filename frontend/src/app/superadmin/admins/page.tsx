@@ -139,7 +139,7 @@ export default function AdminManagementPage() {
       setPagination(prev => ({
         ...prev,
         total: adminsRes.pagination?.total || 0,
-        pages: adminsRes.pagination?.pages || 1
+        pages: adminsRes.pagination?.totalPages || adminsRes.pagination?.pages || 1
       }));
       setSummary(summaryRes.data || { totalAdmins: 0, activeAdmins: 0, suspendedAdmins: 0 });
     } catch (err) {

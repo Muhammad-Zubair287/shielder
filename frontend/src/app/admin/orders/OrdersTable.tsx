@@ -178,7 +178,7 @@ export default function OrdersTable({ orders, loading, pagination, onPageChange 
       {/* Pagination */}
       <UnifiedPagination
         page={pagination.page}
-        totalPages={pagination.pages}
+        totalPages={pagination.totalPages || pagination.pages || 1}
         totalItems={pagination.total}
         onPageChange={onPageChange}
         isRTL={isRTL}

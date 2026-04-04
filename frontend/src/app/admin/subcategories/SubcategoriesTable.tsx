@@ -194,7 +194,7 @@ export default function SubcategoriesTable({
       {!loading && subcategories.length > 0 && (
         <UnifiedPagination
           page={pagination.page}
-          totalPages={pagination.pages}
+          totalPages={pagination.totalPages || pagination.pages || 1}
           totalItems={pagination.total}
           onPageChange={onPageChange}
           isRTL={isRTL}

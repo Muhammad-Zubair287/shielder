@@ -64,7 +64,7 @@ export default function AdminCategoriesPage() {
       setPagination((prev) => ({
         ...prev,
         total: catRes.data.pagination?.total || 0,
-        pages: catRes.data.pagination?.pages || 1,
+        pages: catRes.data.pagination?.totalPages || catRes.data.pagination?.pages || 1,
       }));
       setSummary(
         summaryRes.data.data || {

@@ -194,7 +194,7 @@ export default function AdminQuotationsPage() {
                 {/* Pagination */}
                 <UnifiedPagination
                     page={pagination.page}
-                    totalPages={pagination.pages}
+                    totalPages={pagination.totalPages || pagination.pages || 1}
                     totalItems={pagination.total}
                     pageSize={pagination.limit}
                     onPageChange={(page) => setPagination((p) => ({ ...p, page }))}

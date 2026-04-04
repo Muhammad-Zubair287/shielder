@@ -87,7 +87,7 @@ export default function DraftQuotationsPage() {
                 </div>
                 <UnifiedPagination
                     page={page}
-                    totalPages={pagination.pages}
+                    totalPages={pagination.totalPages || pagination.pages || 1}
                     totalItems={pagination.total}
                     pageSize={10}
                     onPageChange={setPage}
