@@ -6,6 +6,54 @@
 import apiClient from './api.service';
 import { API_ENDPOINTS } from '@/utils/constants';
 
+type MonthlySalesPoint = {
+  month: string;
+  revenue: number;
+  orders: number;
+};
+
+const unwrap = <T = any>(res: any): T => res?.data?.data ?? res?.data ?? res;
+
+const asArray = <T = any>(value: any): T[] => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.rows)) return value.rows;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
+};
+
+const getMonthKey = (value: unknown): string => {
+  const date = value ? new Date(String(value)) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
+};
+
+const getMonthKeyFromRow = (row: any): string => {
+  if (!row || typeof row !== 'object') return '';
+  return getMonthKey(
+    row.month ?? row.date ?? row.period ?? row.createdAt ?? row.created_at ?? row.label
+  );
+};
+
+const buildLast12MonthKeys = (): string[] => {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const keys: string[] = [];
+
+  for (let i = 11; i >= 0; i--) {
+    const monthDate = new Date(start);
+    monthDate.setUTCMonth(start.getUTCMonth() - i);
+    keys.push(getMonthKey(monthDate));
+  }
+
+  return keys;
+};
+
 class AdminService {
   /**
    * Analytics
@@ -20,6 +68,49 @@ class AdminService {
 
   async getMonthlyOrders() {
     return apiClient.get('analytics/orders/monthly');
+  }
+
+  async getMonthlySalesSeries(): Promise<MonthlySalesPoint[]> {
+    const [revenueRes, ordersRes] = await Promise.all([
+      this.getMonthlyRevenue(),
+      this.getMonthlyOrders(),
+    ]);
+
+    const revenueArr = asArray<any>(unwrap<any>(revenueRes));
+    const ordersArr = asArray<any>(unwrap<any>(ordersRes));
+
+    const merged: Record<string, MonthlySalesPoint> = {};
+    buildLast12MonthKeys().forEach((month) => {
+      merged[month] = { month, revenue: 0, orders: 0 };
+    });
+
+    revenueArr.forEach((r: any) => {
+      const key = getMonthKeyFromRow(r);
+      if (!key) return;
+      const revenue = Number(
+        r.revenue ?? r.totalRevenue ?? r.total ?? r.amount ?? r.value ?? r.sum ?? 0
+      );
+      merged[key] = {
+        month: key,
+        revenue: Number.isFinite(revenue) ? revenue : 0,
+        orders: merged[key]?.orders ?? 0,
+      };
+    });
+
+    ordersArr.forEach((o: any) => {
+      const key = getMonthKeyFromRow(o);
+      if (!key) return;
+      const count = Number(
+        o.orderCount ?? o.orders ?? o.totalOrders ?? o.value ?? o.count ?? o.order_count ?? 0
+      );
+      if (merged[key]) {
+        merged[key].orders = Number.isFinite(count) ? count : 0;
+      } else {
+        merged[key] = { month: key, revenue: 0, orders: Number.isFinite(count) ? count : 0 };
+      }
+    });
+
+    return Object.values(merged).sort((a, b) => a.month.localeCompare(b.month));
   }
 
   async getQuotationsTotalCount() {

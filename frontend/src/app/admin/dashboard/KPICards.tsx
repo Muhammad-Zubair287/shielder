@@ -64,7 +64,11 @@ const KPICard = ({
         <div className="bg-white/10 p-3 rounded-xl backdrop-blur-sm">
           <Icon className="text-white" size={24} aria-hidden="true" />
         </div>
-        <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${chipClass}`}>{chip}</span>
+        {chip ? (
+          <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${chipClass}`}>{chip}</span>
+        ) : (
+          <span />
+        )}
       </div>
 
       <p className="text-white/80 font-medium text-sm mb-2">{label}</p>
@@ -138,7 +142,7 @@ export default function KPICards({ data, loading }: Props) {
       value: formatNum(data?.totalQuotations ?? 0, locale),
       icon: FileText,
       href: '/admin/quotations',
-      chip: t('drilldownLabelQuotations') || t('totalQuotations'),
+      chip: '',
     },
   ];
 

@@ -39,13 +39,6 @@ const getMonthKey = (value: unknown): string => {
   return `${year}-${month}-01`;
 };
 
-const getMonthKeyFromRow = (row: any): string => {
-  if (!row || typeof row !== 'object') return '';
-  return getMonthKey(
-    row.month ?? row.date ?? row.period ?? row.createdAt ?? row.created_at ?? row.label
-  );
-};
-
 const buildLast12MonthKeys = (): string[] => {
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -94,12 +87,11 @@ export default function AdminDashboardPage() {
     setError(null);
 
     try {
-      const [overviewRes, lowStockRes, revenueRes, ordersRes, quotationsRes, categoryRes] =
+      const [overviewRes, lowStockRes, salesSeriesRes, quotationsRes, categoryRes] =
         await Promise.allSettled([
           adminService.getOverview(),
           adminService.getLowStockProducts(),
-          adminService.getMonthlyRevenue(),
-          adminService.getMonthlyOrders(),
+          adminService.getMonthlySalesSeries(),
           adminService.getQuotationsTotalCount(),
           adminService.getByCategory(),
         ]);
@@ -130,44 +122,20 @@ export default function AdminDashboardPage() {
       }
 
       // ── Chart: merge revenue + orders by month ──
-      const revenueArr: any[] =
-        revenueRes.status === 'fulfilled'
-          ? asArray<any>(unwrap<any>(revenueRes.value))
-          : [];
-      const ordersArr: any[] =
-        ordersRes.status === 'fulfilled'
-          ? asArray<any>(unwrap<any>(ordersRes.value))
-          : [];
-
       const merged: Record<string, MonthlyDataPoint> = {};
       buildLast12MonthKeys().forEach((month) => {
         merged[month] = { month, revenue: 0, orders: 0 };
       });
 
-      revenueArr.forEach((r: any) => {
-        const key = getMonthKeyFromRow(r);
+      const monthlySeries = salesSeriesRes.status === 'fulfilled' ? salesSeriesRes.value : [];
+      monthlySeries.forEach((entry: any) => {
+        const key = getMonthKey(entry?.month);
         if (!key) return;
-        const revenue = Number(
-          r.revenue ?? r.totalRevenue ?? r.total ?? r.amount ?? r.value ?? r.sum ?? 0
-        );
         merged[key] = {
           month: key,
-          revenue: Number.isFinite(revenue) ? revenue : 0,
-          orders: merged[key]?.orders ?? 0,
+          revenue: Number(entry?.revenue ?? 0),
+          orders: Number(entry?.orders ?? 0),
         };
-      });
-
-      ordersArr.forEach((o: any) => {
-        const key = getMonthKeyFromRow(o);
-        if (!key) return;
-        const count = Number(
-          o.orderCount ?? o.orders ?? o.totalOrders ?? o.value ?? o.count ?? o.order_count ?? 0
-        );
-        if (merged[key]) {
-          merged[key].orders = Number.isFinite(count) ? count : 0;
-        } else {
-          merged[key] = { month: key, revenue: 0, orders: Number.isFinite(count) ? count : 0 };
-        }
       });
 
       setChartData(Object.values(merged).sort((a, b) => a.month.localeCompare(b.month)));

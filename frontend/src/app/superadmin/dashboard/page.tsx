@@ -134,14 +134,14 @@ export default function SuperAdminDashboard() {
       const [summaryRes, lowStockRes, analyticsRes, categoryRes, activityRes] = await Promise.all([
         adminService.getDashboardSummary(),
         adminService.getLowStockProducts(),
-        adminService.getMonthlyAnalytics(),
+        adminService.getMonthlySalesSeries(),
         adminService.getByCategory(),
         adminService.getActivity()
       ]);
 
       setSummary(summaryRes.data.data);
       setLowStock(lowStockRes.data.products || []);
-      setAnalytics(analyticsRes.data.data);
+      setAnalytics(Array.isArray(analyticsRes) ? analyticsRes : []);
       const categoryPayload = Array.isArray(categoryRes?.data?.data)
         ? categoryRes.data.data
         : Array.isArray(categoryRes?.data)
