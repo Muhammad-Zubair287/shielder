@@ -523,10 +523,10 @@ function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
                   <YAxis 
                     dataKey="name" 
                     type="category" 
-                    width={150}
+                    width={190}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }}
+                    tick={{ fontSize: 11, fontWeight: 800, fill: '#0A1E36' }}
                   />
                   <Tooltip 
                     cursor={{ fill: '#f8fafc' }}

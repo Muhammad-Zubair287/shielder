@@ -157,6 +157,12 @@ export default function AdminProductsPage() {
   const closeDelete = () => setDeleteTarget(null);
   const onMutationSuccess = () => fetchData();
 
+  const clearFilters = () => {
+    setSearch('');
+    setCategoryFilter('');
+    setSubcategoryFilter('');
+  };
+
   const optionLabel = (o: DropdownOption) =>
     locale === 'ar' && o.nameAr ? o.nameAr : o.nameEn || o.name || '';
 
@@ -301,6 +307,13 @@ export default function AdminProductsPage() {
             aria-label={t('refresh')}
           >
             <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+          <button
+            onClick={clearFilters}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <X size={16} />
+            {t('clearFilters') || 'Clear Filters'}
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, RefreshCcw } from 'lucide-react';
+import { Calendar, RefreshCcw, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { ReportDateRange } from './types';
 
@@ -34,6 +34,13 @@ export default function DateFilter({ dateRange, loading, onApply, onRefresh }: P
     if (p === '7D')  onApply({ from: daysAgo(7), to: today() });
     if (p === '30D') onApply({ from: daysAgo(30), to: today() });
     if (p === '90D') onApply({ from: daysAgo(90), to: today() });
+  }
+
+  function clearFilters() {
+    const range = { from: daysAgo(30), to: today() };
+    setPreset('30D');
+    setCustom(range);
+    onApply(range);
   }
 
   const presets: { key: Preset; labelKey: string }[] = [
@@ -108,6 +115,15 @@ export default function DateFilter({ dateRange, loading, onApply, onRefresh }: P
 
         {/* Spacer + refresh */}
         <div className={`flex-1 flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
+          <button
+            onClick={clearFilters}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3 py-2 mr-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:text-[#5B5FC7] hover:border-[#5B5FC7]/30 transition-colors disabled:opacity-40"
+            aria-label={t('clearFilters') || 'Clear Filters'}
+          >
+            <X size={14} />
+            <span className="text-xs font-bold uppercase tracking-widest">{t('clearFilters') || 'Clear'}</span>
+          </button>
           <button
             onClick={onRefresh}
             disabled={loading}

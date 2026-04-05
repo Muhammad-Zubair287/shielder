@@ -393,6 +393,14 @@ const ProductManagement = () => {
     }
   };
 
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setCategoryFilter('');
+    setSubcategoryFilter('');
+    setSupplierFilter('');
+  };
+
   const handleApprove = async () => {
     if (!selectedProduct) return;
     try {
@@ -606,6 +614,13 @@ const ProductManagement = () => {
               <option value="PENDING">{t('pending')}</option>
               <option value="REJECTED">{t('rejected')}</option>
             </select>
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <X size={16} />
+              {t('clearFilters') || 'Clear Filters'}
+            </button>
           </div>
         </div>
       </div>
