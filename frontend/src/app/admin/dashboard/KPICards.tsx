@@ -94,7 +94,7 @@ export default function KPICards({ data, loading }: Props) {
 
   const cardStyles = [
     { gradientClass: 'from-indigo-600 to-indigo-500', chipClass: 'bg-indigo-200/30 text-indigo-100' },
-    { gradientClass: 'from-slate-700 to-slate-600', chipClass: 'bg-slate-200/20 text-slate-100' },
+    { gradientClass: 'from-[#F97216] to-[#e56510]', chipClass: 'bg-orange-200/25 text-orange-100' },
     { gradientClass: 'from-amber-600 to-orange-500', chipClass: 'bg-orange-200/25 text-orange-100' },
     { gradientClass: 'from-emerald-600 to-green-500', chipClass: 'bg-emerald-200/30 text-emerald-100' },
     { gradientClass: 'from-cyan-600 to-sky-500', chipClass: 'bg-cyan-200/30 text-cyan-100' },
