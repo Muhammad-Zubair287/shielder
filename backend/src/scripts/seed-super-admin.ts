@@ -16,7 +16,7 @@ async function main() {
   console.log('🌱 Seeding Super Admin...');
 
   const email = 'superadmin@shielder.com';
-  const password = 'SuperAdmin@2026';
+  const password = 'Super@123';
 
   // Check if super admin already exists
   const existing = await prisma.user.findUnique({
