@@ -5,6 +5,7 @@ import { Plus, Edit2, X, ChevronDown, Loader2, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import adminService from '@/services/admin.service';
+import settingsService from '@/services/settings.service';
 import type { Product, ProductFormData, DropdownOption } from './types';
 import { EMPTY_PRODUCT_FORM } from './types';
 import { getImageUrl } from '@/utils/helpers';
@@ -33,6 +34,31 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
   const [subcategories, setSubcategories] = useState<DropdownOption[]>([]);
   const [catsLoading, setCatsLoading] = useState(true);
   const [subLoading, setSubLoading] = useState(false);
+  const [defaultLowStockThreshold, setDefaultLowStockThreshold] = useState<string>('10');
+
+  // ── Load global low stock default for create mode ────────────────────────
+  useEffect(() => {
+    let mounted = true;
+    settingsService
+      .getSettings()
+      .then((res: any) => {
+        if (!mounted) return;
+        const threshold = res?.data?.data?.lowStockThreshold;
+        if (typeof threshold === 'number' && Number.isFinite(threshold)) {
+          const value = String(threshold);
+          setDefaultLowStockThreshold(value);
+          // ProductFormModal mounts fresh for create, so safe to seed current form.
+          if (mode === 'create') {
+            setForm((prev) => ({ ...prev, minimumStockThreshold: value }));
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [mode]);
 
   // ── Load categories once ─────────────────────────────────────────────────
   useEffect(() => {
@@ -100,7 +126,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
           sku: p.sku || '',
           price: String(p.price),
           stock: String(p.stock),
-          minimumStockThreshold: String(p.minimumStockThreshold ?? 10),
+          minimumStockThreshold: String(p.minimumStockThreshold ?? Number(defaultLowStockThreshold)),
           categoryId: p.categoryId || p.category?.id || '',
           subcategoryId: p.subcategoryId || p.subcategory?.id || '',
           isActive: p.isActive,
@@ -124,7 +150,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
           sku: product.sku || '',
           price: String(product.price),
           stock: String(product.stock),
-          minimumStockThreshold: String(product.minimumStockThreshold ?? 10),
+          minimumStockThreshold: String(product.minimumStockThreshold ?? Number(defaultLowStockThreshold)),
           categoryId: product.categoryId || '',
           subcategoryId: product.subcategoryId || '',
           isActive: product.isActive,
@@ -136,7 +162,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
         });
       });
     return () => { mounted = false; };
-  }, [mode, product]);
+  }, [mode, product, defaultLowStockThreshold]);
 
   // ── Image handling ────────────────────────────────────────────────────────
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

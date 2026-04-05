@@ -27,6 +27,7 @@ import {
 import SARSymbol from '@/components/SARSymbol';
 import Image from 'next/image';
 import adminService from '@/services/admin.service';
+import settingsService from '@/services/settings.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
 import { ApiErrorResponse } from '@/types';
@@ -132,6 +133,7 @@ const ProductManagement = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [defaultLowStockThreshold, setDefaultLowStockThreshold] = useState<number>(5);
   const [formData, setFormData] = useState<{
     sku: string;
     name: string;
@@ -158,6 +160,25 @@ const ProductManagement = () => {
     specifications: [],
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Load global low-stock threshold from system settings for product form defaults
+  useEffect(() => {
+    let mounted = true;
+    settingsService
+      .getSettings()
+      .then((res: any) => {
+        if (!mounted) return;
+        const threshold = res?.data?.data?.lowStockThreshold;
+        if (typeof threshold === 'number' && Number.isFinite(threshold)) {
+          setDefaultLowStockThreshold(threshold);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Fetch Data
   const fetchData = useCallback(async () => {
@@ -290,7 +311,7 @@ const ProductManagement = () => {
       supplierId: '',
       price: '',
       stock: '',
-      minimumStockThreshold: '5',
+      minimumStockThreshold: String(defaultLowStockThreshold),
       isActive: true,
       specifications: [],
     });
