@@ -118,6 +118,7 @@ export default function AdminDashboardPage() {
           totalStock:     d.totalStock     ?? 0,
           inventoryValue: d.inventoryValue ?? 0,
           totalRevenue:   d.totalRevenue   ?? 0,
+          totalCategories: d.totalCategories ?? 0,
           totalQuotations,
         });
       }

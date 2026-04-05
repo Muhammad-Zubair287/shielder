@@ -95,6 +95,7 @@ export default function SalesChart({ data, loading }: Props) {
                 dy={10}
               />
               <YAxis
+                yAxisId="revenue"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#6B7280', fontSize: 10 }}
@@ -107,6 +108,17 @@ export default function SalesChart({ data, loading }: Props) {
                   }).format(Number(v))
                 }
                 width={72}
+              />
+              <YAxis
+                yAxisId="orders"
+                orientation="right"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#6B7280', fontSize: 10 }}
+                tickFormatter={(v) =>
+                  new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-SA').format(Number(v))
+                }
+                width={44}
               />
               <Tooltip
                 contentStyle={{
@@ -132,6 +144,7 @@ export default function SalesChart({ data, loading }: Props) {
               <Line
                 type="monotone"
                 dataKey="revenue"
+                yAxisId="revenue"
                 stroke="#5B5FC7"
                 strokeWidth={3}
                 dot={{ r: 4, fill: '#5B5FC7', strokeWidth: 2, stroke: '#FFF' }}
@@ -140,6 +153,7 @@ export default function SalesChart({ data, loading }: Props) {
               <Line
                 type="monotone"
                 dataKey="orders"
+                yAxisId="orders"
                 stroke="#FF6B35"
                 strokeWidth={3}
                 dot={{ r: 4, fill: '#FF6B35', strokeWidth: 2, stroke: '#FFF' }}
