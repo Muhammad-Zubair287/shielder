@@ -19,9 +19,9 @@ router.post('/logo', requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), Setting
 
 /**
  * @route   GET /api/settings
- * @desc    Get all system settings (Super Admin only)
+ * @desc    Get all system settings (Admin + Super Admin)
  */
-router.get('/', requireRoles(UserRole.SUPER_ADMIN), SettingsController.getSettings);
+router.get('/', requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), SettingsController.getSettings);
 
 /**
  * @route   GET /api/settings/logs
@@ -51,9 +51,9 @@ router.post('/backup', requireRoles(UserRole.SUPER_ADMIN), SettingsController.tr
  * @route   PUT /api/settings/:section
  * @desc    Update specific settings sections
  */
-router.put('/general', requireRoles(UserRole.SUPER_ADMIN), validate(settingsValidation.updateGeneral), SettingsController.updateSettings);
-router.put('/notification',  requireRoles(UserRole.SUPER_ADMIN), validate(settingsValidation.updateNotification), SettingsController.updateSettings);
-router.put('/security',     requireRoles(UserRole.SUPER_ADMIN), validate(settingsValidation.updateSecurity),     SettingsController.updateSettings);
+router.put('/general', requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate(settingsValidation.updateGeneral), SettingsController.updateSettings);
+router.put('/notification',  requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate(settingsValidation.updateNotification), SettingsController.updateSettings);
+router.put('/security',     requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate(settingsValidation.updateSecurity),     SettingsController.updateSettings);
 router.put('/order',        requireRoles(UserRole.SUPER_ADMIN), validate(settingsValidation.updateOrder),        SettingsController.updateSettings);
 router.put('/payment',      requireRoles(UserRole.SUPER_ADMIN), validate(settingsValidation.updatePayment),       SettingsController.updateSettings);
 

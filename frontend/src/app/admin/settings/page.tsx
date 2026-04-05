@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Auth guard — ADMIN or SUPER_ADMIN only
+  // Auth guard — ADMIN or SUPER_ADMIN only.
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN'))) {
       router.replace('/login');
