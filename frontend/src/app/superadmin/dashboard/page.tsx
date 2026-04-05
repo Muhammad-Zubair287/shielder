@@ -90,8 +90,8 @@ const KPI_CARD_STYLES = [
     chip: 'bg-orange-200/25 text-orange-100',
   },
   {
-    gradient: 'from-amber-600 to-orange-500',
-    chip: 'bg-orange-200/25 text-orange-100',
+    gradient: 'from-violet-600 to-purple-500',
+    chip: 'bg-violet-200/30 text-violet-100',
   },
   {
     gradient: 'from-emerald-600 to-green-500',

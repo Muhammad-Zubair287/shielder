@@ -192,8 +192,8 @@ export const Sidebar = () => {
 
       {/* Navigation Items */}
       <nav className={cn(
-        "flex-1 px-4 space-y-1.5 overflow-y-auto scrollbar-hide py-4 transition-all duration-300",
-        collapsed ? "px-2" : "px-4"
+        "flex-1 overflow-y-auto scrollbar-hide py-2 space-y-0.5 transition-all duration-300",
+        collapsed ? "px-2" : "px-3"
       )}>
         {menuItems.map((item) => {
           // Group item with children
@@ -206,8 +206,8 @@ export const Sidebar = () => {
                 <button
                   onClick={() => !collapsed && toggleExpanded(item.nameKey)}
                   className={cn(
-                    'w-full flex items-center py-3 rounded-lg transition-all duration-300 group relative',
-                    collapsed ? 'justify-center px-0' : 'px-4',
+                    'w-full flex items-center py-3 rounded-xl transition-all duration-200 group relative',
+                    collapsed ? 'justify-center px-2' : 'px-3',
                     isGroupActive
                       ? 'bg-[#FF6B35] text-white shadow-md'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -215,25 +215,25 @@ export const Sidebar = () => {
                   title={collapsed ? label : ''}
                 >
                   <item.icon
-                    size={20}
-                    className={cn('min-w-[20px]', isGroupActive ? 'text-white scale-110' : 'text-gray-500 group-hover:text-gray-900')}
+                    size={19}
+                    className={cn('shrink-0', isGroupActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900')}
                   />
                   <span className={cn(
-                    'ms-4 font-medium transition-all duration-500 whitespace-nowrap flex-1 text-start',
+                    'ms-3 text-sm font-semibold transition-all duration-300 whitespace-nowrap flex-1 text-start',
                     collapsed ? 'opacity-0 invisible w-0 ms-0 overflow-hidden' : 'opacity-100 visible w-auto'
                   )}>
                     {label}
                   </span>
                   {!collapsed && (
                     <ChevronDown
-                      size={14}
+                      size={13}
                       className={cn('transition-transform duration-300', isExpanded ? 'rotate-180' : '')}
                     />
                   )}
                 </button>
                 {/* Sub-items */}
                 {isExpanded && !collapsed && (
-                  <div className={cn('ms-4 mt-1 space-y-1', isRTL ? 'border-r border-gray-200 ps-3' : 'border-l border-gray-200 ps-3')}>
+                  <div className={cn('ms-3 mt-0.5 space-y-0.5 ps-4', isRTL ? 'border-r border-gray-200' : 'border-l border-gray-200')}>
                     {item.children.map(child => {
                       const childLabel = t(child.nameKey);
                       const isChildActive = pathname === child.href || pathname.startsWith(child.href + '/');
@@ -244,13 +244,13 @@ export const Sidebar = () => {
                           onClick={() => setIsMobileOpen(false)}
                           prefetch={true}
                           className={cn(
-                            'flex items-center py-2 px-3 rounded-lg text-sm transition-all duration-200 group',
+                            'flex items-center py-2 px-3 rounded-lg text-xs transition-all duration-200 group',
                             isChildActive
                               ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-semibold'
                               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                           )}
                         >
-                          <child.icon size={15} className="min-w-[15px] me-3" />
+                          <child.icon size={13} className="me-2.5 shrink-0" />
                           <span className="whitespace-nowrap">{childLabel}</span>
                         </Link>
                       );
@@ -271,8 +271,8 @@ export const Sidebar = () => {
               onClick={() => setIsMobileOpen(false)}
               prefetch={true}
               className={cn(
-                'flex items-center py-3 rounded-lg transition-all duration-300 group relative',
-                collapsed ? 'justify-center px-0' : 'px-4',
+                'flex items-center py-3 rounded-xl transition-all duration-200 group relative',
+                collapsed ? 'justify-center px-2' : 'px-3',
                 isActive
                   ? 'bg-[#FF6B35] text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -280,15 +280,14 @@ export const Sidebar = () => {
               title={collapsed ? label : ''}
             >
               <item.icon
-                size={20}
+                size={19}
                 className={cn(
-                  'min-w-[20px] transition-colors',
-                  isActive ? 'text-white scale-110' : 'text-gray-500 group-hover:text-gray-900'
+                  'shrink-0 transition-colors',
+                  isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'
                 )}
               />
               <span className={cn(
-                'ms-4 font-medium transition-all duration-500 whitespace-nowrap',
-                isActive ? 'text-white font-bold' : '',
+                'ms-3 text-sm font-semibold transition-all duration-300 whitespace-nowrap',
                 collapsed ? 'opacity-0 invisible w-0 ms-0 overflow-hidden' : 'opacity-100 visible w-auto'
               )}>
                 {label}
