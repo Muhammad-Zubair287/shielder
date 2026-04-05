@@ -122,10 +122,14 @@ export default function SettingsPage() {
   const fetchLogs = async () => {
     setLogsLoading(true);
     try {
-      const { data } = await settingsService.getLogs({});
-      setLogs(data.data.logs);
-    } catch (err) {
-      toast.error(t('settingLogsFailed'));
+      const response = await settingsService.getLogs({ page: 1, limit: 100 });
+      // Handle different response structures
+      const logsData = response.data?.logs || response.data?.data?.logs || [];
+      setLogs(Array.isArray(logsData) ? logsData : []);
+    } catch (err: any) {
+      console.error('Failed to fetch logs:', err);
+      toast.error(t('settingLogsFailed') || 'Failed to load audit logs');
+      setLogs([]);
     } finally {
       setLogsLoading(false);
     }
@@ -943,20 +947,53 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
 
   const getActionLabel = (action: string) => action.replace('UPDATE_SETTING_', '');
 
-  const admins = Array.from(new Set(logs.map(l => l.user?.profile?.fullName || 'Admin')));
-  const actions = Array.from(new Set(logs.map(l => getActionLabel(l.action))));
+  // Safely build admin and action lists
+  const admins = Array.from(new Set(
+    (logs || []).map(l => l?.user?.profile?.fullName || 'Admin').filter(Boolean)
+  ));
+  const actions = Array.from(new Set(
+    (logs || []).map(l => getActionLabel(l?.action || '')).filter(Boolean)
+  ));
 
   const filtered = logs.filter(log => {
     const name = log.user?.profile?.fullName || 'Admin';
     const label = getActionLabel(log.action);
     const field = log.changes?.field || '';
-    const matchSearch = !search || name.toLowerCase().includes(search.toLowerCase()) || field.toLowerCase().includes(search.toLowerCase());
+    const searchLower = search.toLowerCase();
+    
+    // Enhanced search: searches in admin name, field, action, and values
+    const matchSearch = !search || 
+      name.toLowerCase().includes(searchLower) || 
+      field.toLowerCase().includes(searchLower) ||
+      label.toLowerCase().includes(searchLower) ||
+      String(log.changes?.old || '').toLowerCase().includes(searchLower) ||
+      String(log.changes?.new || '').toLowerCase().includes(searchLower);
+    
     const matchAdmin = filterAdmin === 'all' || name === filterAdmin;
     const matchAction = filterAction === 'all' || label === filterAction;
     return matchSearch && matchAdmin && matchAction;
   });
 
-  if (loading) return <div className="text-center py-20 text-sm text-gray-400">{t('settingParsingRecords')}</div>;
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-shielder-primary mx-auto mb-4"></div>
+        <p className="text-sm text-gray-400">{t('settingParsingRecords') || 'Loading audit logs...'}</p>
+      </div>
+    );
+  }
+
+  // Show empty state if no logs at all
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="text-center py-20 px-4">
+        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+          <p className="text-sm text-gray-500 font-medium mb-2">{t('settingNoAuditEvents') || 'No audit logs found'}</p>
+          <p className="text-xs text-gray-400">Audit logs will appear here when settings are modified by administrators.</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderModification = (log: SystemLog) => {
     const oldVal = String(log.changes?.old ?? '');
@@ -1008,17 +1045,17 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
         </div>
         <select value={filterAdmin} onChange={e => setFilterAdmin(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none bg-white">
           <option value="all">All Admins</option>
-          {admins.map(a => <option key={a} value={a}>{a}</option>)}
+          {admins.filter(Boolean).map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <select value={filterAction} onChange={e => setFilterAction(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none bg-white">
           <option value="all">All Actions</option>
-          {actions.map(a => <option key={a} value={a}>{a}</option>)}
+          {actions.filter(Boolean).map(a => <option key={a} value={a}>{a}</option>)}
         </select>
-        <div className="border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-gray-500">
+        <div className="border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-gray-500 shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          Date Range: Last 30 Days
+          Last 30 Days
         </div>
-        <span className="ml-auto text-xs text-gray-400">Viewing {filtered.length} of {logs.length} logs</span>
+        <span className="text-xs text-gray-400 shrink-0 ml-auto">{filtered.length} of {logs.length} logs</span>
       </div>
 
       {/* Table */}
@@ -1058,7 +1095,12 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-16 text-center text-sm text-gray-400">{t('settingNoAuditEvents')}</td>
+                <td colSpan={5} className="py-12 text-center">
+                  <div className="text-sm text-gray-400">
+                    <p className="font-medium">{t('settingNoAuditEvents') || 'No matching audit logs'}</p>
+                    <p className="text-xs text-gray-500 mt-1">Try adjusting your search or filters</p>
+                  </div>
+                </td>
               </tr>
             )}
           </tbody>
