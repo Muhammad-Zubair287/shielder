@@ -59,26 +59,22 @@ const KPICard = ({
   loading: boolean;
 }) => (
   <Link href={href} className="block group" role="listitem" aria-label={label}>
-    <div className={`rounded-2xl p-5 transition-all duration-300 shadow-sm hover:-translate-y-1 hover:shadow-lg bg-gradient-to-br ${gradientClass}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-white/80 text-[11px] font-black uppercase tracking-[0.18em] leading-tight break-words">
-            {label}
-          </p>
-          {loading ? (
-            <div className="h-7 w-20 bg-white/20 rounded-lg mt-2 animate-pulse" aria-label="Loading" />
-          ) : (
-            <h3 className="text-white text-[28px] leading-[1.1] font-black mt-2 break-words">{value}</h3>
-          )}
+    <div className={`rounded-2xl p-6 transition-all duration-300 shadow-sm hover:-translate-y-1 hover:shadow-lg bg-gradient-to-br ${gradientClass}`}>
+      <div className="flex justify-between items-start mb-6">
+        <div className="bg-white/10 p-3 rounded-xl backdrop-blur-sm">
+          <Icon className="text-white" size={24} aria-hidden="true" />
         </div>
-        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-          <Icon size={22} className="text-white" aria-hidden="true" />
-        </div>
+        <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${chipClass}`}>{chip}</span>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-xs">
-        <span className={`px-2.5 py-1 rounded-full font-semibold ${chipClass}`}>{chip}</span>
-        <span className="inline-flex items-center gap-1 text-white/90 font-semibold">
+      <p className="text-white/80 font-medium text-sm mb-2">{label}</p>
+      <div className="flex items-end justify-between gap-2">
+        {loading ? (
+          <div className="h-8 w-24 bg-white/20 rounded-lg animate-pulse" aria-label="Loading" />
+        ) : (
+          <h3 className="text-2xl font-black text-white tracking-tight leading-tight break-words">{value}</h3>
+        )}
+        <span className="inline-flex items-center gap-1 text-xs text-white/90 font-semibold">
           {detailsLabel}
           <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
         </span>
@@ -148,7 +144,7 @@ export default function KPICards({ data, loading }: Props) {
 
   return (
     <div
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4"
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
       role="list"
       aria-label={t('adminDashboard')}
     >
