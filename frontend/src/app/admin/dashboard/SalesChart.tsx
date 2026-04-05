@@ -81,7 +81,7 @@ export default function SalesChart({ data, loading }: Props) {
           <ChartSkeleton />
         ) : chartData.length === 0 || !hasSignal ? (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-            {t('noDataAvailable')}
+            {t('noDataAvailable') || 'No data available'}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

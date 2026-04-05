@@ -600,7 +600,25 @@ export default function SuperAdminDashboard() {
                     dy={10}
                     tickFormatter={formatShortDate}
                   />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                  <YAxis
+                    yAxisId="revenue"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{fill: '#6B7280', fontSize: 12}}
+                    tickFormatter={(value) => `${(Number(value) || 0).toLocaleString()} ${t('sarCurrency')}`}
+                    hide={!(breakdownMode === 'comparison' || breakdownMode === 'revenue')}
+                    width={72}
+                  />
+                  <YAxis
+                    yAxisId="orders"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{fill: '#6B7280', fontSize: 12}}
+                    tickFormatter={(value) => (Number(value) || 0).toLocaleString()}
+                    hide={!(breakdownMode === 'comparison' || breakdownMode === 'orders')}
+                    width={48}
+                  />
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                     formatter={((value: any, name: any) => {
@@ -614,6 +632,7 @@ export default function SuperAdminDashboard() {
                     <Line
                       type="monotone"
                       dataKey="revenue"
+                      yAxisId="revenue"
                       stroke="#5B5FC7"
                       strokeWidth={3}
                       dot={{ r: 5, fill: '#5B5FC7', strokeWidth: 2, stroke: '#FFF' }}
@@ -624,6 +643,7 @@ export default function SuperAdminDashboard() {
                     <Line
                       type="monotone"
                       dataKey="orders"
+                      yAxisId="orders"
                       stroke="#FF6B35"
                       strokeWidth={3}
                       dot={{ r: 5, fill: '#FF6B35', strokeWidth: 2, stroke: '#FFF' }}
