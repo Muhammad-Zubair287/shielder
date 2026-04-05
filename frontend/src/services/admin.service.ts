@@ -71,13 +71,27 @@ class AdminService {
   }
 
   async getMonthlySalesSeries(): Promise<MonthlySalesPoint[]> {
-    const [revenueRes, ordersRes] = await Promise.all([
+    const [revenueRes, ordersRes] = await Promise.allSettled([
       this.getMonthlyRevenue(),
       this.getMonthlyOrders(),
     ]);
 
-    const revenueArr = asArray<any>(unwrap<any>(revenueRes));
-    const ordersArr = asArray<any>(unwrap<any>(ordersRes));
+    const revenueArr =
+      revenueRes.status === 'fulfilled' ? asArray<any>(unwrap<any>(revenueRes.value)) : [];
+    const ordersArr =
+      ordersRes.status === 'fulfilled' ? asArray<any>(unwrap<any>(ordersRes.value)) : [];
+
+    // Fallback for environments where only super-admin monthly analytics is available.
+    // This call may fail for admin users; failures are intentionally ignored.
+    let monthlyAnalyticsArr: any[] = [];
+    if (revenueArr.length === 0 && ordersArr.length === 0) {
+      try {
+        const analyticsRes = await this.getMonthlyAnalytics();
+        monthlyAnalyticsArr = asArray<any>(unwrap<any>(analyticsRes));
+      } catch {
+        monthlyAnalyticsArr = [];
+      }
+    }
 
     const merged: Record<string, MonthlySalesPoint> = {};
     buildLast12MonthKeys().forEach((month) => {
@@ -108,6 +122,20 @@ class AdminService {
       } else {
         merged[key] = { month: key, revenue: 0, orders: Number.isFinite(count) ? count : 0 };
       }
+    });
+
+    monthlyAnalyticsArr.forEach((item: any) => {
+      const key = getMonthKeyFromRow(item);
+      if (!key) return;
+      const revenue = Number(item.revenue ?? item.totalRevenue ?? item.value ?? 0);
+      const orders = Number(item.orders ?? item.orderCount ?? item.totalOrders ?? item.count ?? 0);
+
+      if (!merged[key]) {
+        merged[key] = { month: key, revenue: 0, orders: 0 };
+      }
+
+      merged[key].revenue = Number.isFinite(revenue) ? revenue : merged[key].revenue;
+      merged[key].orders = Number.isFinite(orders) ? orders : merged[key].orders;
     });
 
     return Object.values(merged).sort((a, b) => a.month.localeCompare(b.month));
