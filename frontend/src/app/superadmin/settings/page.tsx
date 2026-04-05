@@ -955,7 +955,7 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
     (logs || []).map(l => getActionLabel(l?.action || '')).filter(Boolean)
   ));
 
-  const filtered = logs.filter(log => {
+  const filtered = (logs || []).filter(log => {
     const name = log.user?.profile?.fullName || 'Admin';
     const label = getActionLabel(log.action);
     const field = log.changes?.field || '';
@@ -979,18 +979,6 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
       <div className="text-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-shielder-primary mx-auto mb-4"></div>
         <p className="text-sm text-gray-400">{t('settingParsingRecords') || 'Loading audit logs...'}</p>
-      </div>
-    );
-  }
-
-  // Show empty state if no logs at all
-  if (!logs || logs.length === 0) {
-    return (
-      <div className="text-center py-20 px-4">
-        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-          <p className="text-sm text-gray-500 font-medium mb-2">{t('settingNoAuditEvents') || 'No audit logs found'}</p>
-          <p className="text-xs text-gray-400">Audit logs will appear here when settings are modified by administrators.</p>
-        </div>
       </div>
     );
   }
@@ -1055,7 +1043,7 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
           Last 30 Days
         </div>
-        <span className="text-xs text-gray-400 shrink-0 ml-auto">{filtered.length} of {logs.length} logs</span>
+        <span className="text-xs text-gray-400 shrink-0 ml-auto">{filtered.length} of {(logs || []).length} logs</span>
       </div>
 
       {/* Table */}
