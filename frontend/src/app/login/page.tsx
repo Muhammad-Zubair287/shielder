@@ -276,10 +276,11 @@ function LoginPageContent() {
           {/* Back Button */}
           <button
             onClick={() => window.history.length > 1 ? router.back() : router.push(ROUTES.HOME)}
-            className={`absolute top-8 ${isRTL ? 'right-8' : 'left-8'} text-gray-400 hover:text-gray-700 transition-colors`}
+            className={`absolute top-5 z-10 ${isRTL ? 'right-8' : 'left-8'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors`}
             aria-label={isRTL ? 'Back to previous page' : 'Back to previous page'}
           >
             <ChevronLeft className={`w-6 h-6 ${isRTL ? 'rotate-180' : ''}`} />
+            <span>{t('back')}</span>
           </button>
 
           {/* Language Switcher */}
