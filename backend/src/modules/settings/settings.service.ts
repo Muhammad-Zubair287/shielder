@@ -64,6 +64,25 @@ class SettingsService {
       }
     });
 
+    // When the global low stock threshold changes, propagate it to products that
+    // still match the previous global default. This keeps "system-wide default"
+    // behavior while preserving explicit per-product overrides.
+    if (
+      section === 'notification' &&
+      typeof data.lowStockThreshold === 'number' &&
+      typeof oldSettings.lowStockThreshold === 'number' &&
+      data.lowStockThreshold !== oldSettings.lowStockThreshold
+    ) {
+      await prisma.product.updateMany({
+        where: {
+          minimumStockThreshold: oldSettings.lowStockThreshold,
+        },
+        data: {
+          minimumStockThreshold: data.lowStockThreshold,
+        },
+      });
+    }
+
     // Log individual changes to Audit Log
     for (const key in data) {
       if (oldSettings[key as keyof typeof oldSettings] !== data[key]) {

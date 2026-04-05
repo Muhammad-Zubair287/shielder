@@ -41,7 +41,7 @@ export const settingsValidation = {
     lowStockThreshold: Joi.number().integer().min(0).required(),
     enableOrderStatusNotifications: Joi.boolean().required(),
     enablePaymentNotifications: Joi.boolean().required(),
-    roleNotificationMappings: Joi.object().optional(),
+    roleNotificationMappings: Joi.object().allow(null).optional(),
   }),
 
   updateSecurity: Joi.object({

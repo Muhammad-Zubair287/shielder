@@ -90,6 +90,11 @@ const settingsService = {
       sectionData.paymentMethodsEnabled = [];
     }
 
+    // Avoid sending null for optional object payloads.
+    if (section === 'notification' && sectionData.roleNotificationMappings == null) {
+      delete sectionData.roleNotificationMappings;
+    }
+
     return api.put(`settings/${section}`, sectionData);
   },
 
