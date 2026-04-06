@@ -678,23 +678,33 @@ export class ProductService {
     const embeddedImages = new Map<number, string>(); // 0-based Excel row → base64 data URL
     try {
       const zip = new AdmZip(buffer);
+      const drawingEntries = zip
+        .getEntries()
+        .filter((entry) => /^xl\/drawings\/drawing\d+\.xml$/.test(entry.entryName));
 
-      // Find the first drawing file and its rels
-      const drawingEntry = zip.getEntry('xl/drawings/drawing1.xml');
-      const drawingRelEntry = zip.getEntry('xl/drawings/_rels/drawing1.xml.rels');
+      for (const drawingEntry of drawingEntries) {
+        const relPath = drawingEntry.entryName.replace('xl/drawings/', 'xl/drawings/_rels/') + '.rels';
+        const drawingRelEntry = zip.getEntry(relPath);
+        if (!drawingRelEntry) continue;
 
-      if (drawingEntry && drawingRelEntry) {
         const drawingXml = drawingEntry.getData().toString('utf8');
         const relXml = drawingRelEntry.getData().toString('utf8');
 
-        // Build rId → media path map from the rels file
+        // Build rId → media path map from each drawing rels file
         const relMap = new Map<string, string>();
         const relRegex = /Id="([^"]+)"[^>]+Target="([^"]+)"/g;
         let relMatch;
         while ((relMatch = relRegex.exec(relXml)) !== null) {
           const [, rId, target] = relMatch;
-          // target is like "../media/image1.png" → normalise to "xl/media/image1.png"
-          relMap.set(rId, target.replace(/^\.\.\//, 'xl/'));
+          let normalizedTarget = target;
+          if (normalizedTarget.startsWith('../')) {
+            normalizedTarget = normalizedTarget.replace(/^\.\.\//, 'xl/');
+          } else if (normalizedTarget.startsWith('/')) {
+            normalizedTarget = normalizedTarget.replace(/^\//, '');
+          } else if (!normalizedTarget.startsWith('xl/')) {
+            normalizedTarget = `xl/drawings/${normalizedTarget}`;
+          }
+          relMap.set(rId, normalizedTarget);
         }
 
         // Parse each anchor block: get the FROM row and the blip rId
@@ -778,12 +788,17 @@ export class ProductService {
         // Normalise image path: bare filename → full relative path, always URL-safe
         let mainImage: string | undefined = embeddedDataUrl; // embedded image wins
         if (!mainImage && rawImage) {
-          if (rawImage.startsWith('http://') || rawImage.startsWith('https://') || rawImage.startsWith('/')) {
-            mainImage = rawImage;
+          const normalizedRaw = rawImage.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+          if (
+            normalizedRaw.startsWith('http://') ||
+            normalizedRaw.startsWith('https://') ||
+            normalizedRaw.startsWith('/') ||
+            normalizedRaw.startsWith('images/')
+          ) {
+            mainImage = normalizedRaw;
           } else {
-            // Strip any leading path prefix so we only keep the filename,
-            // then lowercase + replace spaces with hyphens for URL safety
-            const justFile = rawImage.split('/').pop()!.toLowerCase().replace(/ /g, '-');
+            // Bare filename: map to products images directory convention
+            const justFile = normalizedRaw.split('/').pop()!.toLowerCase().replace(/ /g, '-');
             mainImage = `images/products-images/${justFile}`;
           }
         }
