@@ -197,6 +197,10 @@ function ProductDetailModal({
   const badgeLabel = product.categoryName
     ? product.categoryName.replace(/filters?/i, '').trim().toUpperCase() || product.categoryName.toUpperCase()
     : null;
+  const modalTitle = t('productsDetailTitle');
+  const resolvedModalTitle = modalTitle && modalTitle !== 'productsDetailTitle'
+    ? modalTitle
+    : 'Product Detail';
 
   const router = useRouter();
   const { addItem, loading: cartLoading } = useCart();
@@ -252,19 +256,19 @@ function ProductDetailModal({
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-bold text-gray-900">{t('productsDetailTitle') || PRODUCT_UI_LABELS.detailTitle}</h2>
+            <h2 className="text-base font-bold text-gray-900">{resolvedModalTitle}</h2>
             <button onClick={onClose} aria-label="Close product details" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
               <X size={18} className="text-gray-500" />
             </button>
           </div>
 
-          {/* Scrollable body */}
-          <div className="overflow-y-auto max-h-[80vh]">
+          {/* Modal body */}
+          <div className="overflow-hidden">
             {/* Image */}
-            <div className="relative h-64 bg-gray-100 overflow-hidden">
+            <div className="relative h-64 bg-white overflow-hidden">
               {image && !imgError ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={image} alt={product.name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+                <img src={image} alt={product.name} className="w-full h-full object-contain object-center" onError={() => setImgError(true)} />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <ImageOff size={40} className="text-gray-300" />
@@ -274,7 +278,7 @@ function ProductDetailModal({
             </div>
 
             {/* Details */}
-            <div className="px-6 py-5 space-y-3">
+            <div className="px-6 py-4 space-y-3">
               {/* Badge + SKU row */}
               <div className="flex items-center justify-between">
                 {badgeLabel && (
@@ -292,7 +296,7 @@ function ProductDetailModal({
 
               {/* Description */}
               {product.description && (
-                <p className="text-gray-500 text-sm leading-relaxed">{product.description}</p>
+                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{product.description}</p>
               )}
 
               {/* Filter Type / Material / Dimensions */}
