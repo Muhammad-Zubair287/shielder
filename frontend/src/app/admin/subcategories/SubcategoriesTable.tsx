@@ -142,7 +142,7 @@ export default function SubcategoriesTable({
 
                     {/* Parent Category */}
                     <td className={`px-4 py-3.5 ${isRTL ? 'text-right' : 'text-left'}`}>
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#5B5FC7] bg-[#5B5FC7]/10 px-2.5 py-1 rounded-full truncate max-w-[120px]">
+                      <span className="inline-block max-w-[300px] text-xs font-semibold text-[#5B5FC7] bg-[#5B5FC7]/10 px-2.5 py-1 rounded-full whitespace-normal break-words leading-5">
                         {displayCategoryName(s)}
                       </span>
                     </td>

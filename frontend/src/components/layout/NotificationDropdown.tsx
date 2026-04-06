@@ -15,10 +15,28 @@ export const NotificationDropdown = () => {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const extractUnreadCount = (payload: any): number => {
+    const raw = payload?.data?.count ?? payload?.count ?? 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const extractStatsUnreadCount = (payload: any): number => {
+    const raw = payload?.data?.unread ?? payload?.unread ?? 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   const fetchUnreadCount = async () => {
     try {
+      if (user?.role === 'SUPER_ADMIN') {
+        const { data } = await notificationService.getStats();
+        setUnreadCount(extractStatsUnreadCount(data));
+        return;
+      }
+
       const { data } = await notificationService.getUnreadCount();
-      setUnreadCount(data.count);
+      setUnreadCount(extractUnreadCount(data));
     } catch (err) {
       console.error('Failed to fetch unread count');
     }
@@ -27,8 +45,11 @@ export const NotificationDropdown = () => {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const { data } = await notificationService.getNotifications({ limit: 5 });
-      setNotifications(data.notifications);
+      const { data } = await notificationService.getNotifications({
+        limit: 5,
+        ...(user?.role === 'SUPER_ADMIN' ? { global: true } : {}),
+      });
+      setNotifications(data?.notifications ?? data?.data?.notifications ?? []);
     } catch (err) {
       console.error('Failed to fetch notifications');
     } finally {
@@ -41,7 +62,7 @@ export const NotificationDropdown = () => {
     // Refresh unread count every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     if (isOpen) {

@@ -79,6 +79,20 @@ interface Supplier {
   email: string;
 }
 
+const sortByStockPriority = (items: Product[]): Product[] => {
+  return [...items].sort((a, b) => {
+    const aThreshold = Number.isFinite(a.minimumStockThreshold) ? a.minimumStockThreshold : 0;
+    const bThreshold = Number.isFinite(b.minimumStockThreshold) ? b.minimumStockThreshold : 0;
+
+    const aRank = a.stock <= 0 ? 0 : a.stock <= aThreshold ? 1 : 2;
+    const bRank = b.stock <= 0 ? 0 : b.stock <= bThreshold ? 1 : 2;
+
+    if (aRank !== bRank) return aRank - bRank;
+    if (a.stock !== b.stock) return a.stock - b.stock;
+    return (b.createdAt || '').localeCompare(a.createdAt || '');
+  });
+};
+
 const ProductManagement = () => {
   const { t, isRTL } = useLanguage();
   // Data State
@@ -203,7 +217,7 @@ const ProductManagement = () => {
         adminService.getUsers({ role: 'SUPPLIER', limit: 100 })
       ]);
       
-      setProducts(productsRes.data.products || []);
+      setProducts(sortByStockPriority(productsRes.data.products || []));
       setPagination(prev => ({
         ...prev,
         total: productsRes.data.pagination?.total || 0,

@@ -26,6 +26,20 @@ import DeleteConfirmationModal from './DeleteConfirmationModal';
 import BulkUploadModal from './BulkUploadModal';
 import type { Product, ProductSummary, DropdownOption } from './types';
 
+const sortByStockPriority = (items: Product[]): Product[] => {
+  return [...items].sort((a, b) => {
+    const aThreshold = Number.isFinite(a.minimumStockThreshold) ? a.minimumStockThreshold : 0;
+    const bThreshold = Number.isFinite(b.minimumStockThreshold) ? b.minimumStockThreshold : 0;
+
+    const aRank = a.stock <= 0 ? 0 : a.stock <= aThreshold ? 1 : 2;
+    const bRank = b.stock <= 0 ? 0 : b.stock <= bThreshold ? 1 : 2;
+
+    if (aRank !== bRank) return aRank - bRank;
+    if (a.stock !== b.stock) return a.stock - b.stock;
+    return (b.createdAt || '').localeCompare(a.createdAt || '');
+  });
+};
+
 export default function AdminProductsPage() {
   const { t, isRTL, locale } = useLanguage();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -115,7 +129,7 @@ export default function AdminProductsPage() {
         adminService.getProductSummary(),
       ]);
 
-      setProducts(prodRes.data.data || prodRes.data.products || []);
+      setProducts(sortByStockPriority(prodRes.data.data || prodRes.data.products || []));
       setPagination((prev) => ({
         ...prev,
         total: prodRes.data.pagination?.total || prodRes.data.total || 0,

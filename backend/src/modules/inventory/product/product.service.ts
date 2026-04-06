@@ -312,7 +312,9 @@ export class ProductService {
             select: { orderItems: true }
           }
         },
-        orderBy: { createdAt: 'desc' },
+        // Put critical inventory items first in management tables:
+        // OUT_OF_STOCK (stock=0) -> LOW_STOCK -> remaining items.
+        orderBy: [{ stock: 'asc' }, { createdAt: 'desc' }],
         skip,
         take: limit,
       }),

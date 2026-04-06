@@ -168,14 +168,14 @@ export default function ProductsTable({
 
                   {/* Category */}
                   <td className={`px-4 py-3.5 ${cellAlign}`}>
-                    <span className="inline-flex items-center text-xs font-semibold text-[#5B5FC7] bg-[#5B5FC7]/10 px-2.5 py-1 rounded-full truncate max-w-[120px]">
+                    <span className="inline-block max-w-[280px] text-xs font-semibold text-[#5B5FC7] bg-[#5B5FC7]/10 px-2.5 py-1 rounded-full whitespace-normal break-words leading-5">
                       {categoryName(p)}
                     </span>
                   </td>
 
                   {/* Subcategory */}
                   <td className={`px-4 py-3.5 hidden lg:table-cell ${cellAlign}`}>
-                    <span className="text-xs text-gray-500 truncate max-w-[120px] block">
+                    <span className="text-xs text-gray-500 whitespace-normal break-words leading-5 block max-w-[320px]">
                       {subcategoryName(p)}
                     </span>
                   </td>
