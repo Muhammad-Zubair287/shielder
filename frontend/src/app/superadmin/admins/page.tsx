@@ -25,6 +25,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import { validatePassword } from '@/utils/password';
 
 // --- Types ---
 interface Admin {
@@ -75,8 +77,6 @@ const RoleBadge = ({ role }: { role: string }) => (
   </span>
 );
 
-const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
-
 export default function AdminManagementPage() {
   const { user: currentUser } = useAuth();
   const { t, isRTL } = useLanguage();
@@ -118,6 +118,7 @@ export default function AdminManagementPage() {
   const [deleteMode, setDeleteMode] = useState<'ARCHIVE' | 'PERMANENT'>('ARCHIVE');
   const [showAddPassword, setShowAddPassword] = useState(false);
   const [showAddConfirmPassword, setShowAddConfirmPassword] = useState(false);
+  const [addFormErrors, setAddFormErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -128,6 +129,16 @@ export default function AdminManagementPage() {
     role: 'ADMIN',
     isActive: true
   });
+
+  const handleAddInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setAddFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   // Fetch Data
   const fetchData = useCallback(async () => {
@@ -178,22 +189,39 @@ export default function AdminManagementPage() {
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic frontend validation
-    if (!formData.email || !formData.password || !formData.fullName) {
-      return toast.error("Please fill in all required fields");
+    const fieldErrors: Record<string, string> = {};
+
+    if (!formData.fullName.trim()) {
+      fieldErrors.fullName = 'Full name is required';
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      return toast.error("Passwords don't match");
-    }
-    
-    if (formData.password.length < 8) {
-      return toast.error("Password must be at least 8 characters");
+    if (!formData.email.trim()) {
+      fieldErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      fieldErrors.email = 'Please enter a valid email address';
     }
 
-    if (!PASSWORD_POLICY.test(formData.password)) {
-      return toast.error('Password must include uppercase, lowercase, number, and special character');
+    if (!formData.password) {
+      fieldErrors.password = 'Password is required';
+    } else {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        fieldErrors.password = passwordValidation.errors[0];
+      }
     }
+
+    if (!formData.confirmPassword) {
+      fieldErrors.confirmPassword = 'Confirm password is required';
+    } else if (formData.password !== formData.confirmPassword) {
+      fieldErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      setAddFormErrors(fieldErrors);
+      return;
+    }
+
+    setAddFormErrors({});
 
     try {
       setFormLoading(true);
@@ -349,6 +377,7 @@ export default function AdminManagementPage() {
     });
     setShowAddPassword(false);
     setShowAddConfirmPassword(false);
+    setAddFormErrors({});
     setSelectedAdmin(null);
   };
 
@@ -598,7 +627,7 @@ export default function AdminManagementPage() {
                   <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">System Access Protocol</p>
                 </div>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
+              <button onClick={() => { resetForm(); setShowAddModal(false); }} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
                 <X size={20} />
               </button>
             </div>
@@ -610,11 +639,14 @@ export default function AdminManagementPage() {
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                    className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.fullName ? 'border-red-500' : 'border-gray-200'}`}
                     placeholder={t('enterName')}
                     value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    onChange={(e) => handleAddInputChange('fullName', e.target.value)}
                   />
+                  {addFormErrors.fullName && (
+                    <p className="mt-1 text-xs text-red-500">{addFormErrors.fullName}</p>
+                  )}
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">{t('phone')}</label>
@@ -636,11 +668,11 @@ export default function AdminManagementPage() {
                       type="text"
                       required
                       placeholder="admin"
-                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-r-0 border-gray-200 rounded-l-xl focus:ring-2 focus:ring-inset focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                      className={`w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-r-0 rounded-l-xl focus:ring-2 focus:ring-inset focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.email ? 'border-red-500' : 'border-gray-200'}`}
                       value={formData.email.replace('@shielder.com', '')}
                       onChange={(e) => {
                         const prefix = e.target.value.replace(/@.*/, '').replace(/\s/g, '');
-                        setFormData({...formData, email: prefix ? `${prefix}@shielder.com` : ''});
+                        handleAddInputChange('email', prefix ? `${prefix}@shielder.com` : '');
                       }}
                     />
                   </div>
@@ -648,6 +680,9 @@ export default function AdminManagementPage() {
                     @shielder.com
                   </span>
                 </div>
+                {addFormErrors.email && (
+                  <p className="mt-1 text-xs text-red-500">{addFormErrors.email}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -656,10 +691,10 @@ export default function AdminManagementPage() {
                     <input
                       type={showAddPassword ? 'text' : 'password'}
                       required
-                      className="w-full px-4 pr-11 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                      className={`w-full px-4 pr-11 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.password ? 'border-red-500' : 'border-gray-200'}`}
                       placeholder="••••••••"
                       value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      onChange={(e) => handleAddInputChange('password', e.target.value)}
                     />
                     <button
                       type="button"
@@ -670,9 +705,12 @@ export default function AdminManagementPage() {
                       {showAddPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
-                  <p className="mt-1 text-[10px] text-gray-400">
-                    Use at least 8 characters with uppercase, lowercase, number, and special character.
-                  </p>
+                  {addFormErrors.password && (
+                    <p className="mt-1 text-xs text-red-500">{addFormErrors.password}</p>
+                  )}
+                  {formData.password && (
+                    <PasswordStrengthMeter password={formData.password} showRequirements={true} className="mt-2" />
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm Password</label>
@@ -680,10 +718,10 @@ export default function AdminManagementPage() {
                     <input
                       type={showAddConfirmPassword ? 'text' : 'password'}
                       required
-                      className="w-full px-4 pr-11 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
+                      className={`w-full px-4 pr-11 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.confirmPassword ? 'border-red-500' : 'border-gray-200'}`}
                       placeholder="••••••••"
                       value={formData.confirmPassword}
-                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                      onChange={(e) => handleAddInputChange('confirmPassword', e.target.value)}
                     />
                     <button
                       type="button"
@@ -694,13 +732,16 @@ export default function AdminManagementPage() {
                       {showAddConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                  {addFormErrors.confirmPassword && (
+                    <p className="mt-1 text-xs text-red-500">{addFormErrors.confirmPassword}</p>
+                  )}
                 </div>
               </div>
               </div>
               <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex gap-3 flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => { resetForm(); setShowAddModal(false); }}
                   className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-bold text-xs uppercase tracking-widest"
                 >
                   {t('cancel')}
