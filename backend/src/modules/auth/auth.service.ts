@@ -141,9 +141,13 @@ export class AuthService {
   }> {
     try {
       // Validate email uniqueness
-      const existingUser = await prisma.user.findUnique({
-        where: { email: data.email.toLowerCase() },
-      });
+        // Only check for active, non-deleted users
+        const existingUser = await prisma.user.findFirst({
+          where: { 
+            email: data.email.toLowerCase(),
+            deletedAt: null
+          },
+        });
 
       if (existingUser) {
         throw new ConflictError('User with this email already exists');

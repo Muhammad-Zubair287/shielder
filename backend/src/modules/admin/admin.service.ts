@@ -155,9 +155,13 @@ export class AdminService {
     const role = adminRole === UserRole.ADMIN ? UserRole.USER : (data.role || UserRole.USER);
 
     // Check if email exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.email },
-    });
+      // Only check for active, non-deleted users
+      const existingUser = await prisma.user.findFirst({
+        where: { 
+          email: data.email,
+          deletedAt: null
+        },
+      });
 
     if (existingUser) {
       throw new ApiError('Email already exists', 400);

@@ -116,10 +116,10 @@ export default function NotificationsPage() {
     }
   }, [activeTab, fetchNotifications]);
 
-  // Reset pagination when filters change
+  // Reset pagination when search or tab changes
   useEffect(() => {
-    setPage(1);
-  }, [search, activeTab]);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [filters.search, activeTab]);
   // Real-time auto refresh (Requirement 7)
   useEffect(() => {
     const interval = setInterval(() => {

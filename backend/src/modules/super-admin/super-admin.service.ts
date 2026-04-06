@@ -108,7 +108,10 @@ export class SuperAdminService {
    */
   async createUser(data: any, createdBy: string) {
     // 1. Check if email exists
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+      // Only check for active, non-deleted users
+      const existing = await prisma.user.findFirst({ 
+        where: { email: data.email, deletedAt: null } 
+      });
     if (existing) {
       throw new ApiError('Registration failed. This email is already registered in our system.', 400);
     }
