@@ -270,13 +270,9 @@ export class SuperAdminService {
     const reason = options?.reason?.trim();
     const mode = options?.mode || 'ARCHIVE';
 
-    if (!reason) {
-      throw new ApiError('Deletion reason is required.', 400);
-    }
-
-    // 1. Super Admin Protection
+    // 1. Super Admin Protection - Nobody can delete a Super Admin account
     if (targetUser.role === UserRole.SUPER_ADMIN) {
-      throw new ApiError('Super Admin account is protected and cannot be deleted.', 403);
+      throw new ApiError('System protection: Super Admin accounts cannot be deleted by anyone.', 403);
     }
 
     // 2. Self Protection

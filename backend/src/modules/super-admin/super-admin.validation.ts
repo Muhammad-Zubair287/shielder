@@ -12,6 +12,7 @@ export const superAdminValidation = {
     password: sharedValidationSchemas.password,
     fullName: Joi.string().optional(),
     phoneNumber: Joi.string().optional(),
+    role: Joi.string().valid(...Object.values(UserRole)).required(),
   }),
 
   updateRole: Joi.object({
@@ -27,7 +28,7 @@ export const superAdminValidation = {
   }),
 
   deleteAdmin: Joi.object({
-    reason: Joi.string().trim().min(3).max(500).required(),
+    reason: Joi.string().trim().min(3).max(500).allow('').optional(),
     mode: Joi.string().valid('ARCHIVE', 'PERMANENT').default('ARCHIVE'),
   }),
 

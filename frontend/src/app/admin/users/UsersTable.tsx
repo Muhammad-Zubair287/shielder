@@ -247,8 +247,9 @@ export default function UsersTable({
                           {/* Delete */}
                           <button
                             onClick={() => setDeleteTarget(user)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                            title={t('deleteUser')}
+                            disabled={user.role === 'SUPER_ADMIN'}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={user.role === 'SUPER_ADMIN' ? 'Super Admin accounts are protected' : t('deleteUser')}
                           >
                             <Trash2 size={14} />
                           </button>

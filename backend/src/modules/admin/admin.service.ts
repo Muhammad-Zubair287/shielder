@@ -322,7 +322,17 @@ export class AdminService {
    */
   async deleteUser(userId: string, deletedBy: string, adminRole: UserRole) {
     // Verify user exists and is manageable
-    await this.getUserById(userId, adminRole);
+    const targetUser = await this.getUserById(userId, adminRole);
+
+    // Protect Super Admin accounts - nobody including admins can delete them
+    if (targetUser.role === UserRole.SUPER_ADMIN) {
+      throw new ApiError('System protection: Super Admin accounts cannot be deleted by anyone.', 403);
+    }
+
+    // Self-protection
+    if (userId === deletedBy) {
+      throw new ApiError('Self-protection rule: You cannot delete your own account.', 403);
+    }
 
     await prisma.user.update({
       where: { id: userId },

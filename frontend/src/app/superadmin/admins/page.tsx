@@ -336,10 +336,6 @@ export default function AdminManagementPage() {
   const handleDeleteAdmin = async () => {
     if (!selectedAdmin) return;
 
-    if (!deleteReason.trim()) {
-      return toast.error('Please provide a deletion reason');
-    }
-
     try {
       setFormLoading(true);
       await adminService.deleteAdmin(selectedAdmin.id, {
@@ -569,7 +565,8 @@ export default function AdminManagementPage() {
                           setShowDeleteModal(true);
                         }}
                         className="w-24 flex items-center justify-center gap-1.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#DC2626] bg-[#DC2626]/5 hover:bg-[#DC2626]/10 rounded-lg transition-all border border-transparent hover:border-[#DC2626]/20 disabled:opacity-20"
-                        disabled={admin.id === currentUser?.id}
+                        disabled={admin.id === currentUser?.id || admin.role === 'SUPER_ADMIN'}
+                        title={admin.role === 'SUPER_ADMIN' ? 'Super Admin accounts are protected' : admin.id === currentUser?.id ? 'Cannot delete your own account' : ''}
                       >
                         <Trash2 size={10} />
                         <span>{t('delete')}</span>

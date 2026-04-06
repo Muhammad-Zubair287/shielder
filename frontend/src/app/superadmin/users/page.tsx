@@ -337,8 +337,9 @@ export default function UserManagement() {
                         </button>
                         <button 
                           onClick={() => handleDelete(user.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Soft Delete"
+                          disabled={user.role === 'SUPER_ADMIN'}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                          title={user.role === 'SUPER_ADMIN' ? 'Super Admin accounts are protected' : 'Soft Delete'}
                         >
                           <Trash2 size={16} />
                         </button>
