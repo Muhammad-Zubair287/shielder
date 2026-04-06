@@ -69,10 +69,10 @@ export const createApp = (): Application => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'http://localhost:3000', 'https:'],
+        imgSrc: ["'self'", 'data:', 'http://localhost:3000', 'http://localhost:5001', 'https:'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
         scriptSrc: ["'self'"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'http://localhost:3000', 'http://localhost:5001'],
       },
     },
   }));
