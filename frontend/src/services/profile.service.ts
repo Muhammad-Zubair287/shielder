@@ -12,7 +12,7 @@ const profileService = {
   },
 
   updateProfile: (data: any) => {
-    return api.patch('profile', data);
+    return api.put('profile', data);
   },
 
   updatePreferences: (preferences: UserPreferences) => {

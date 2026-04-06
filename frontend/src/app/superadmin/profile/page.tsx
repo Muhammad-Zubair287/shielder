@@ -12,6 +12,7 @@ import {
   Lock, 
   Eye, 
   EyeOff,
+  PencilLine,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -33,6 +34,11 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [profileImageFailed, setProfileImageFailed] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    fullName: '',
+    phoneNumber: '',
+  });
 
   // Password change state
   const [showPassword, setShowPassword] = useState(false);
@@ -55,6 +61,37 @@ export default function ProfilePage() {
   useEffect(() => {
     setProfileImageFailed(false);
   }, [user?.profile?.profileImage]);
+
+  useEffect(() => {
+    setProfileForm({
+      fullName: user?.profile?.fullName || '',
+      phoneNumber: user?.profile?.phoneNumber || '',
+    });
+  }, [user?.profile?.fullName, user?.profile?.phoneNumber]);
+
+  const handleProfileSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await profileService.updateProfile({
+        fullName: profileForm.fullName.trim(),
+        phoneNumber: profileForm.phoneNumber.trim(),
+      });
+      await refreshUser();
+      setIsEditingProfile(false);
+      toast.success('Profile updated successfully');
+    } catch (err: any) {
+      toast.error(handleApiError(err));
+    }
+  };
+
+  const handleProfileCancel = () => {
+    setProfileForm({
+      fullName: user?.profile?.fullName || '',
+      phoneNumber: user?.profile?.phoneNumber || '',
+    });
+    setIsEditingProfile(false);
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,11 +220,62 @@ export default function ProfilePage() {
                   <p className="text-gray-500 font-medium">{user?.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile((value) => !value)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-shielder-primary hover:text-shielder-primary"
+                  >
+                    <PencilLine size={16} />
+                    {isEditingProfile ? 'Close Edit' : 'Edit Profile'}
+                  </button>
                   <span className="px-4 py-1.5 bg-shielder-primary/10 text-shielder-primary text-xs font-bold rounded-full uppercase tracking-widest">
                     {user?.role?.replace('_', ' ') || 'Full Access'}
                   </span>
                 </div>
               </div>
+
+              {isEditingProfile && (
+                <form onSubmit={handleProfileSave} className="mt-8 rounded-2xl border border-gray-100 bg-gray-50 p-5 shadow-sm">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Name</span>
+                      <input
+                        type="text"
+                        value={profileForm.fullName}
+                        onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-shielder-primary"
+                        placeholder="Enter your name"
+                      />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Phone Number</span>
+                      <input
+                        type="tel"
+                        value={profileForm.phoneNumber}
+                        onChange={(event) => setProfileForm((current) => ({ ...current, phoneNumber: event.target.value }))}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-shielder-primary"
+                        placeholder="Enter your phone number"
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 rounded-xl bg-shielder-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-shielder-dark"
+                    >
+                      <CheckCircle2 size={16} />
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleProfileCancel}
+                      className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
 
               <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Account Info */}

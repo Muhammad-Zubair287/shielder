@@ -627,6 +627,22 @@ export class ProductService {
     const data = XLSX.utils.sheet_to_json<Record<string, string | number | undefined>>(workbook.Sheets[sheetName]);
     const asString = (value: unknown): string =>
       value === undefined || value === null ? '' : String(value).trim();
+    const normalizeHeader = (value: string): string =>
+      value.trim().toLowerCase().replace(/\s*\*+$/g, '').replace(/\s+/g, ' ');
+    const getRowValue = (row: Record<string, string | number | undefined>, ...keys: string[]): unknown => {
+      const normalizedRow = new Map<string, unknown>(
+        Object.entries(row).map(([key, value]) => [normalizeHeader(key), value])
+      );
+
+      for (const key of keys) {
+        const value = normalizedRow.get(normalizeHeader(key));
+        if (value !== undefined) {
+          return value;
+        }
+      }
+
+      return undefined;
+    };
 
     if (data.length === 0) {
       throw new ApiError('The uploaded file is empty', 400);
@@ -708,28 +724,28 @@ export class ProductService {
       const rowNum = i + 2; // +1 for 0-index, +1 for header
       
       try {
-        const name = asString(row['Product Name']);
-        const sku = asString(row['SKU']) || undefined;
-        const price = Number(row['Price']);
-        const stock = Number(row['Stock']);
-        const minimumStockRaw = Number(row['Minimum Stock']);
+        const name = asString(getRowValue(row, 'Product Name'));
+        const sku = asString(getRowValue(row, 'SKU')) || undefined;
+        const price = Number(getRowValue(row, 'Price'));
+        const stock = Number(getRowValue(row, 'Stock'));
+        const minimumStockRaw = Number(getRowValue(row, 'Minimum Stock'));
         const minStock = Number.isFinite(minimumStockRaw) && minimumStockRaw > 0 ? minimumStockRaw : 5;
-        const catName = asString(row['Category Name']).toLowerCase();
-        const subName = asString(row['Subcategory Name']).toLowerCase();
-        const brandName = asString(row['Brand Name']).toLowerCase();
-        const description = asString(row['Description']);
-        const nameArInput = asString(row['Arabic Name']);
-        const descArInput = asString(row['Arabic Description']);
-        const filterNumber: string | undefined = asString(row['Filter Number']) || undefined;
-        const alternateNumbers: string | undefined = asString(row['Alternate Numbers']) || undefined;
-        const filterType: string | undefined = asString(row['Filter Type']) || undefined;
-        const material: string | undefined = asString(row['Material']) || undefined;
-        const dimensions: string | undefined = asString(row['Dimensions']) || undefined;
+        const catName = asString(getRowValue(row, 'Category Name')).toLowerCase();
+        const subName = asString(getRowValue(row, 'Subcategory Name')).toLowerCase();
+        const brandName = asString(getRowValue(row, 'Brand Name')).toLowerCase();
+        const description = asString(getRowValue(row, 'Description'));
+        const nameArInput = asString(getRowValue(row, 'Arabic Name'));
+        const descArInput = asString(getRowValue(row, 'Arabic Description'));
+        const filterNumber: string | undefined = asString(getRowValue(row, 'Filter Number')) || undefined;
+        const alternateNumbers: string | undefined = asString(getRowValue(row, 'Alternate Numbers')) || undefined;
+        const filterType: string | undefined = asString(getRowValue(row, 'Filter Type')) || undefined;
+        const material: string | undefined = asString(getRowValue(row, 'Material')) || undefined;
+        const dimensions: string | undefined = asString(getRowValue(row, 'Dimensions')) || undefined;
 
         // Auto-translate if Arabic fields are not provided
         const nameAr = nameArInput || await toArabic(name);
         const descriptionAr = descArInput || (description ? await toArabic(description) : '');
-        const rawImage: string | undefined = asString(row['Image']) || undefined;
+        const rawImage: string | undefined = asString(getRowValue(row, 'Image')) || undefined;
         // Prefer an image embedded directly in the Excel cell (floating image anchored to this row).
         // excelRow is 0-based; row 0 = header, so data row i (0-based) sits at excelRow i+1.
         const embeddedDataUrl = embeddedImages.get(i + 1);
@@ -755,7 +771,7 @@ export class ProductService {
         // Auto-create category if it doesn't exist
         let categoryId = catMap.get(catName);
         if (!categoryId) {
-          const displayName = asString(row['Category Name']) || catName;
+          const displayName = asString(getRowValue(row, 'Category Name')) || catName;
           const newCat = await prisma.category.create({
             data: {
               translations: {
@@ -773,7 +789,7 @@ export class ProductService {
         // Auto-create subcategory if it doesn't exist (linked to the category above)
         let subcategoryId = subMap.get(subName);
         if (!subcategoryId) {
-          const displayName = asString(row['Subcategory Name']) || subName;
+          const displayName = asString(getRowValue(row, 'Subcategory Name')) || subName;
           const newSub = await prisma.subcategory.create({
             data: {
               categoryId,
@@ -842,7 +858,7 @@ export class ProductService {
         results.failed++;
         results.errors.push({
           row: rowNum,
-          sku: asString(row['SKU']) || undefined,
+          sku: asString(getRowValue(row, 'SKU')) || undefined,
           error: err instanceof Error ? err.message : 'Unknown upload error'
         });
       }

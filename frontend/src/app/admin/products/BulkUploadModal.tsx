@@ -131,16 +131,16 @@ export default function BulkUploadModal({ onClose, onSuccess }: Props) {
 
   // ── Template column reference ──────────────────────────────────────────────
   const templateColumns = [
-    'Product Name *',
+    'Product Name',
     'Arabic Name',
     'Filter Number',
     'Alternate Numbers',
     'SKU',
-    'Price *',
-    'Stock *',
+    'Price',
+    'Stock',
     'Minimum Stock',
-    'Category Name *',
-    'Subcategory Name *',
+    'Category Name',
+    'Subcategory Name',
     'Brand Name',
     'Description',
     'Arabic Description',
