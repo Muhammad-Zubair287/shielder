@@ -798,13 +798,13 @@ export class ProductService {
         const nameAr = nameArInput || await toArabic(name);
         const descriptionAr = descArInput || (description ? await toArabic(description) : '');
         const rawImage: string | undefined = asString(getRowValue(row, 'Image')) || undefined;
-        // Prefer an image embedded directly in the Excel cell (floating image anchored to this row).
+        // Embedded Excel images are often small previews; prefer Image column path/URL when provided.
         // excelRow is 0-based; row 0 = header, so data row i (0-based) sits at excelRow i+1.
         const embeddedDataUrl = embeddedImages.get(i + 1);
 
-        // Normalise image path: bare filename → full relative path, always URL-safe
-        let mainImage: string | undefined = embeddedDataUrl; // embedded image wins
-        if (!mainImage && rawImage) {
+        // Normalise image path: bare filename -> full relative path
+        let mainImage: string | undefined;
+        if (rawImage) {
           const normalizedRaw = rawImage.replace(/\\/g, '/').replace(/^\.\//, '').trim();
           if (
             normalizedRaw.startsWith('http://') ||
@@ -814,10 +814,15 @@ export class ProductService {
           ) {
             mainImage = normalizedRaw;
           } else {
-            // Bare filename: map to products images directory convention
-            const justFile = normalizedRaw.split('/').pop()!.toLowerCase().replace(/ /g, '-');
+            // Preserve original filename casing/spaces; frontend encodes URL segments safely.
+            const justFile = normalizedRaw.split('/').pop()!;
             mainImage = `images/products-images/${justFile}`;
           }
+        }
+
+        // Fallback to embedded image only if no Image column value is provided.
+        if (!mainImage) {
+          mainImage = embeddedDataUrl;
         }
 
         // Validations
