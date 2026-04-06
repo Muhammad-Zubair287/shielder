@@ -36,9 +36,9 @@ export default function LandingFooter() {
           <div className="space-y-5">
             <Link href="/home" className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="relative w-9 h-9 flex-shrink-0">
-                <Image src="/images/landing/logo.jpeg" alt="FilterPro" fill className="object-contain rounded-lg" sizes="36px" />
+                <Image src="/images/shielder-logo.png" alt="Shielder" fill className="object-contain rounded-lg" sizes="36px" />
               </div>
-              <span className="font-extrabold text-white text-base uppercase tracking-widest">FilterPro</span>
+              <span className="font-extrabold text-white text-base uppercase tracking-widest">Shielder</span>
             </Link>
             <p className={`text-sm leading-relaxed ${isRTL ? 'text-right' : 'text-left'}`}>{t('landingFooterAbout')}</p>
           </div>
@@ -99,7 +99,7 @@ export default function LandingFooter() {
       <div className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748B] ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
-            <p>© {year} FilterPro. All rights reserved.</p>
+            <p>© {year} Shielder. All rights reserved.</p>
             <div className={`flex items-center gap-5 ${isRTL ? 'flex-row-reverse' : ''}`}>
               {legalLinks.map(l => (
                 <Link key={l.label} href={l.href} className="hover:text-[#F97316] transition-colors">{l.label}</Link>
