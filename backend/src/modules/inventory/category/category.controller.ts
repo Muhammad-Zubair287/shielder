@@ -126,6 +126,19 @@ export class CategoryController {
       next(error);
     }
   }
+
+  async bulkDelete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await categoryService.bulkDelete(req.body.ids || []);
+      res.json({
+        success: true,
+        message: 'Bulk delete completed',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const categoryController = new CategoryController();

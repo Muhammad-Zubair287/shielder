@@ -118,6 +118,8 @@ const ProductManagement = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   
   // Bulk State
   const [bulkFile, setBulkFile] = useState<File | null>(null);
@@ -393,6 +395,58 @@ const ProductManagement = () => {
     }
   };
 
+  const toggleProductSelection = (id: string) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllProducts = () => {
+    const visibleIds = products.map((product) => product.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedProductIds.includes(id));
+
+    if (allSelected) {
+      setSelectedProductIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      return;
+    }
+
+    setSelectedProductIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  };
+
+  const handleBulkDeleteProducts = async () => {
+    if (selectedProductIds.length === 0) return;
+
+    setShowBulkDeleteModal(true);
+  };
+
+  const executeBulkDeleteProducts = async () => {
+    if (selectedProductIds.length === 0) return;
+
+    try {
+      setFormLoading(true);
+      const response = await adminService.bulkDeleteProducts(selectedProductIds);
+      const result = response.data?.data;
+      const deletedCount = result?.deletedCount || 0;
+      const failedCount = result?.failed?.length || 0;
+
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} products`);
+      }
+      if (failedCount > 0) {
+        toast.error(`${failedCount} products could not be deleted`);
+      }
+
+      setShowBulkDeleteModal(false);
+      setSelectedProductIds([]);
+      fetchData();
+    } catch (err) {
+      const error = err as ApiErrorResponse;
+      toast.error(error.response?.data?.message || 'Failed to bulk delete products');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('');
@@ -529,6 +583,16 @@ const ProductManagement = () => {
           <p className="text-gray-500 text-sm italic font-medium">{t('productMgmtSubtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
+          {selectedProductIds.length > 0 && (
+            <button
+              onClick={handleBulkDeleteProducts}
+              disabled={formLoading}
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#DC2626] text-white rounded-[10px] hover:bg-[#B91C1C] transition-all font-semibold shadow-md disabled:opacity-50"
+            >
+              <Trash2 size={18} />
+              {`Bulk Delete (${selectedProductIds.length})`}
+            </button>
+          )}
           <button 
             onClick={() => fetchData()}
             className="p-2.5 text-gray-500 hover:text-[#0205A6] bg-white border border-gray-200 rounded-xl hover:shadow-sm transition-all active:scale-95"
@@ -631,6 +695,14 @@ const ProductManagement = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={products.length > 0 && products.every((prod) => selectedProductIds.includes(prod.id))}
+                    onChange={toggleSelectAllProducts}
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-[#0205A6] focus:ring-[#0205A6]"
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('productCol')}</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('categorySubCol')}</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('supplierLabel')}</th>
@@ -643,6 +715,14 @@ const ProductManagement = () => {
             <tbody className="divide-y divide-gray-50">
               {products.length > 0 ? products.map((prod) => (
                 <tr key={prod.id} className="hover:bg-gray-50/80 transition-colors group">
+                  <td className="px-6 py-4 text-center align-top">
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.includes(prod.id)}
+                      onChange={() => toggleProductSelection(prod.id)}
+                      className="mt-1 h-4 w-4 cursor-pointer rounded border-gray-300 text-[#0205A6] focus:ring-[#0205A6]"
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-3">
                       <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center shadow-sm relative">
@@ -745,7 +825,7 @@ const ProductManagement = () => {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center">
+                  <td colSpan={8} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 text-gray-400 italic">
                       <Package size={48} className="opacity-20" />
                       <p className="text-sm">No products found matching your active filters.</p>
@@ -924,6 +1004,46 @@ const ProductManagement = () => {
       )}
 
       {/* --- MODALS --- */}
+
+      {/* 0. Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl border border-slate-100">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center gap-3">
+              <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Bulk Delete Products</h3>
+                <p className="text-xs text-slate-500 font-medium">This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className="px-8 py-6">
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  You are about to delete <b className="text-red-600">{selectedProductIds.length}</b> selected products.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBulkDeleteModal(false)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeBulkDeleteProducts}
+                  disabled={formLoading}
+                  className="flex-1 py-3 bg-[#DC2626] text-white rounded-2xl font-bold text-sm hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {formLoading && <Loader2 className="animate-spin" size={16} />}
+                  Delete Selected
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 1. Add/Edit Product Modal */}
       {showAddEditModal && (

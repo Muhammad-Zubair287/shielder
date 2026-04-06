@@ -79,4 +79,7 @@ export const productValidation = {
   assignSpecifications: Joi.object({
     specifications: Joi.array().items(productSpecificationSchema).min(1).required(),
   }),
+  bulkDelete: Joi.object({
+    ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
+  }),
 };

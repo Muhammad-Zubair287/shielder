@@ -414,6 +414,31 @@ export class ProductService {
     return await prisma.product.delete({ where: { id } });
   }
 
+  async bulkDelete(ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    const deletedIds: string[] = [];
+    const failed: Array<{ id: string; error: string }> = [];
+
+    for (const id of uniqueIds) {
+      try {
+        await this.delete(id);
+        deletedIds.push(id);
+      } catch (error: unknown) {
+        failed.push({
+          id,
+          error: error instanceof Error ? error.message : 'Failed to delete product',
+        });
+      }
+    }
+
+    return {
+      requestedCount: uniqueIds.length,
+      deletedCount: deletedIds.length,
+      deletedIds,
+      failed,
+    };
+  }
+
   async approveProduct(id: string) {
     await this.getById(id);
     return await prisma.product.update({

@@ -364,6 +364,10 @@ class AdminService {
     return apiClient.delete(`inventory/categories/${id}`);
   }
 
+  async bulkDeleteCategories(ids: string[]) {
+    return apiClient.post('inventory/categories/bulk-delete', { ids });
+  }
+
 
   /**
    * Subcategory Management
@@ -392,6 +396,10 @@ class AdminService {
     return apiClient.delete(`inventory/subcategories/${id}`);
   }
 
+  async bulkDeleteSubcategories(ids: string[]) {
+    return apiClient.post('inventory/subcategories/bulk-delete', { ids });
+  }
+
   /**
    * Product Management
    */
@@ -417,6 +425,10 @@ class AdminService {
 
   async deleteProduct(id: string) {
     return apiClient.delete(`inventory/products/${id}`);
+  }
+
+  async bulkDeleteProducts(ids: string[]) {
+    return apiClient.post('inventory/products/bulk-delete', { ids });
   }
 
   async uploadProductImage(id: string, file: File) {

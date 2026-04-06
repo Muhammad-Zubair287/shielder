@@ -86,6 +86,8 @@ export default function CategoryManagementPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   
   // Form State
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -234,6 +236,57 @@ export default function CategoryManagementPage() {
     }
   };
 
+  const toggleCategorySelection = (id: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllCategories = () => {
+    const visibleIds = categories.map((cat) => cat.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedCategoryIds.includes(id));
+
+    if (allSelected) {
+      setSelectedCategoryIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      return;
+    }
+
+    setSelectedCategoryIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  };
+
+  const handleBulkDeleteCategories = async () => {
+    if (selectedCategoryIds.length === 0) return;
+
+    setShowBulkDeleteModal(true);
+  };
+
+  const executeBulkDeleteCategories = async () => {
+    if (selectedCategoryIds.length === 0) return;
+
+    try {
+      setFormLoading(true);
+      const response = await adminService.bulkDeleteCategories(selectedCategoryIds);
+      const result = response.data?.data;
+      const deletedCount = result?.deletedCount || 0;
+      const failedCount = result?.failed?.length || 0;
+
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} categories`);
+      }
+      if (failedCount > 0) {
+        toast.error(`${failedCount} categories could not be deleted`);
+      }
+
+      setShowBulkDeleteModal(false);
+      setSelectedCategoryIds([]);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('categoryDeleteFailed'));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nameEn: '',
@@ -285,6 +338,16 @@ export default function CategoryManagementPage() {
           <Plus size={18} />
           {t('addCategory')}
         </button>
+        {selectedCategoryIds.length > 0 && (
+          <button
+            onClick={handleBulkDeleteCategories}
+            disabled={formLoading}
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#DC2626] text-white rounded-[10px] hover:bg-[#B91C1C] transition-all font-semibold shadow-md disabled:opacity-50"
+          >
+            <Trash2 size={18} />
+            {`Bulk Delete (${selectedCategoryIds.length})`}
+          </button>
+        )}
       </div>
 
       {/* 2. Summary Cards */}
@@ -347,6 +410,14 @@ export default function CategoryManagementPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={categories.length > 0 && categories.every((cat) => selectedCategoryIds.includes(cat.id))}
+                    onChange={toggleSelectAllCategories}
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-[#0205A6] focus:ring-[#0205A6]"
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{t('imageCol')}</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('categoryName')}</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('categoryDescription')}</th>
@@ -359,6 +430,14 @@ export default function CategoryManagementPage() {
             <tbody className="divide-y divide-gray-50">
               {categories.length > 0 ? categories.map((cat) => (
                 <tr key={cat.id} className="hover:bg-gray-50/80 transition-colors group">
+                  <td className="px-6 py-4 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategoryIds.includes(cat.id)}
+                      onChange={() => toggleCategorySelection(cat.id)}
+                      className="h-4 w-4 cursor-pointer rounded border-gray-300 text-[#0205A6] focus:ring-[#0205A6]"
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center">
                       <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center">
@@ -412,7 +491,7 @@ export default function CategoryManagementPage() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-gray-400 italic text-sm">
+                  <td colSpan={8} className="px-6 py-20 text-center text-gray-400 italic text-sm">
                     {t('noCategories')}
                   </td>
                 </tr>
@@ -437,6 +516,39 @@ export default function CategoryManagementPage() {
       </div>
 
       {/* --- Modals --- */}
+
+      {/* 5. BULK DELETE CONFIRMATION MODAL */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A1E36]/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-[24px] shadow-2xl p-8 text-center animate-in zoom-in-95 duration-200 border-b-8 border-[#DC2626]">
+            <div className="mx-auto w-16 h-16 rounded-full bg-[#DC2626]/10 text-[#DC2626] flex items-center justify-center mb-6">
+              <Trash2 size={32} />
+            </div>
+            <h2 className="text-2xl font-black text-[#0A1E36] mb-3 uppercase tracking-tight">Bulk Delete Categories</h2>
+            <div className="bg-red-50 p-4 rounded-xl border border-red-100 mb-8">
+              <p className="text-gray-600 text-xs leading-relaxed">
+                You are about to remove <b className="text-[#DC2626]">{selectedCategoryIds.length}</b> selected categories. This action is irreversible.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="flex-1 px-4 py-3 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 font-black text-[10px] uppercase tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeBulkDeleteCategories}
+                disabled={formLoading}
+                className="flex-1 px-4 py-3 bg-[#DC2626] text-white rounded-xl hover:bg-red-700 font-black text-[10px] uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                {formLoading && <Loader2 className="animate-spin" size={16} />}
+                Delete Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 5. ADD/EDIT MODAL */}
       {(showAddModal || showEditModal) && (

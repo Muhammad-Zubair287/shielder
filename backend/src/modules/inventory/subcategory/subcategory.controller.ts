@@ -128,6 +128,19 @@ export class SubcategoryController {
       next(error);
     }
   }
+
+  async bulkDelete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await subcategoryService.bulkDelete(req.body.ids || []);
+      res.json({
+        success: true,
+        message: 'Bulk delete completed',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const subcategoryController = new SubcategoryController();

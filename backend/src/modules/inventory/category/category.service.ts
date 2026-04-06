@@ -322,6 +322,43 @@ export class CategoryService {
       where: { id },
     });
   }
+
+  async bulkDelete(ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    const deletedIds: string[] = [];
+    const failed: Array<{ id: string; error: string }> = [];
+
+    for (const id of uniqueIds) {
+      const category = await prisma.category.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: { subcategories: true, products: true },
+          },
+        },
+      });
+
+      if (!category) {
+        failed.push({ id, error: 'Category not found' });
+        continue;
+      }
+
+      if (category._count.subcategories > 0 || category._count.products > 0) {
+        failed.push({ id, error: 'Cannot delete category with associated subcategories or products' });
+        continue;
+      }
+
+      await prisma.category.delete({ where: { id } });
+      deletedIds.push(id);
+    }
+
+    return {
+      requestedCount: uniqueIds.length,
+      deletedCount: deletedIds.length,
+      deletedIds,
+      failed,
+    };
+  }
 }
 
 export const categoryService = new CategoryService();

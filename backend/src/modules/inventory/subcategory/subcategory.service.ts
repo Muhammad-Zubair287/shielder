@@ -294,6 +294,41 @@ export class SubcategoryService {
       where: { id },
     });
   }
+
+  async bulkDelete(ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    const deletedIds: string[] = [];
+    const failed: Array<{ id: string; error: string }> = [];
+
+    for (const id of uniqueIds) {
+      const subcategory = await prisma.subcategory.findUnique({
+        where: { id },
+        include: {
+          _count: { select: { products: true } },
+        },
+      });
+
+      if (!subcategory) {
+        failed.push({ id, error: 'Subcategory not found' });
+        continue;
+      }
+
+      if (subcategory._count.products > 0) {
+        failed.push({ id, error: 'Cannot delete subcategory that contains products' });
+        continue;
+      }
+
+      await prisma.subcategory.delete({ where: { id } });
+      deletedIds.push(id);
+    }
+
+    return {
+      requestedCount: uniqueIds.length,
+      deletedCount: deletedIds.length,
+      deletedIds,
+      failed,
+    };
+  }
 }
 
 export const subcategoryService = new SubcategoryService();

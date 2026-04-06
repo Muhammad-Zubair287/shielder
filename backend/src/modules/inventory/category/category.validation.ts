@@ -21,5 +21,8 @@ export const categoryValidation = {
     description: Joi.string().allow('').optional().trim().max(1000),
     isActive: Joi.alternatives().try(Joi.boolean(), Joi.string().valid('true', 'false')).optional(),
   }),
+  bulkDelete: Joi.object({
+    ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
+  }),
 };
 

@@ -26,6 +26,7 @@ router.get('/:id/attachments', productController.listAttachments);
 router.use(authenticate, requireAdmin);
 
 router.post('/bulk-upload', multerMemory.single('file'), productController.bulkUpload);
+router.post('/bulk-delete', validate(productValidation.bulkDelete), productController.bulkDelete);
 router.patch('/:id/approve', productController.approve);
 router.patch('/:id/reject', productController.reject);
 

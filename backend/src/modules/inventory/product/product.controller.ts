@@ -261,6 +261,19 @@ export class ProductController {
     }
   }
 
+  async bulkDelete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await productService.bulkDelete(req.body.ids || []);
+      res.json({
+        success: true,
+        message: 'Bulk delete completed',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * @swagger
    * /api/inventory/products/{id}/images:

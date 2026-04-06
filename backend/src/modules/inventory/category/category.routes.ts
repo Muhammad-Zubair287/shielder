@@ -37,5 +37,13 @@ router.delete(
   categoryController.delete
 );
 
+router.post(
+  '/bulk-delete',
+  authenticate,
+  requireAdmin,
+  validate(categoryValidation.bulkDelete),
+  categoryController.bulkDelete
+);
+
 export default router;
 
