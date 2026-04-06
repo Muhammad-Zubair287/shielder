@@ -697,10 +697,14 @@ export class ProductService {
         while ((relMatch = relRegex.exec(relXml)) !== null) {
           const [, rId, target] = relMatch;
           let normalizedTarget = target;
+          // Normalize all path formats to xl/media/... format
           if (normalizedTarget.startsWith('../')) {
             normalizedTarget = normalizedTarget.replace(/^\.\.\//, 'xl/');
+          } else if (normalizedTarget.startsWith('/xl/')) {
+            // Already has /xl/ prefix (absolute ZIP path)
+            normalizedTarget = normalizedTarget.substring(1); // Remove leading /
           } else if (normalizedTarget.startsWith('/')) {
-            normalizedTarget = normalizedTarget.replace(/^\//, '');
+            normalizedTarget = normalizedTarget.substring(1); // Remove leading /
           } else if (!normalizedTarget.startsWith('xl/')) {
             normalizedTarget = `xl/drawings/${normalizedTarget}`;
           }
@@ -708,15 +712,19 @@ export class ProductService {
         }
 
         // Parse each anchor block: get the FROM row and the blip rId
-        const anchorRegex = /<xdr:(?:twoCellAnchor|oneCellAnchor)[\s\S]*?<\/xdr:(?:twoCellAnchor|oneCellAnchor)>/g;
+        // Handle both namespaced (xdr:) and non-namespaced XML formats (different Excel versions/generators)
+        const anchorRegex = /<\/?(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)[\s\S]*?<\/(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)>/g;
         let anchorMatch;
         while ((anchorMatch = anchorRegex.exec(drawingXml)) !== null) {
           const block = anchorMatch[0];
-          const rowMatch = block.match(/<xdr:from>[\s\S]*?<xdr:row>(\d+)<\/xdr:row>/);
-          const rIdMatch = block.match(/r:embed="([^"]+)"/);
+          // Match both <xdr:row> and <row> formats - look for row number in from block
+          const rowMatch = block.match(/(?:<xdr:from>|<from>)[\s\S]*?(?:<xdr:row>|<row>)(\d+)(?:<\/xdr:row>|<\/row>)/);
+          // Match r:embed with optional xdr: namespace
+          const rIdMatch = block.match(/(?:xdr:)?r:embed="([^"]+)"|r:embed="([^"]+)"/);
           if (rowMatch && rIdMatch) {
             const excelRow = parseInt(rowMatch[1]); // 0-based (0 = header row)
-            const mediaPath = relMap.get(rIdMatch[1]);
+            const rId = rIdMatch[1] || rIdMatch[2]; // Get whichever group matched
+            const mediaPath = relMap.get(rId);
             if (mediaPath) {
               const imgEntry = zip.getEntry(mediaPath);
               if (imgEntry) {
@@ -732,8 +740,9 @@ export class ProductService {
           }
         }
       }
-    } catch {
+    } catch (err) {
       // If ZIP extraction fails, continue — the text Image column will still be used
+      console.error('Image extraction failed:', err);
     }
 
     // Pre-fetch categories, subcategories, brands to maps
