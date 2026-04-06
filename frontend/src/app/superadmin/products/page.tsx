@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Package, 
   Plus, 
@@ -162,6 +162,8 @@ const ProductManagement = () => {
     specifications: [],
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Load global low-stock threshold from system settings for product form defaults
   useEffect(() => {
@@ -318,8 +320,30 @@ const ProductManagement = () => {
       specifications: [],
     });
     setImagePreview(null);
+    setImageFile(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
     setSelectedProduct(null);
     setIsEditing(false);
+  };
+
+  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/jfif'].includes(file.type)) {
+      toast.error('Invalid image type. Use JPG, PNG, or WEBP.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
@@ -350,7 +374,6 @@ const ProductManagement = () => {
       subcategoryId: formData.subcategoryId,
       supplierId: formData.supplierId || null,
       isActive: formData.isActive,
-      mainImage: imagePreview, 
       translations: [
         { locale: 'en', name: formData.name, description: formData.description }
       ],
@@ -361,13 +384,20 @@ const ProductManagement = () => {
 
     try {
       setFormLoading(true);
+      let productId = selectedProduct?.id;
+
       if (isEditing && selectedProduct) {
         await adminService.updateProduct(selectedProduct.id, payload);
-        toast.success('Product updated successfully');
       } else {
-        await adminService.createProduct(payload);
-        toast.success('Product created successfully');
+        const created = await adminService.createProduct(payload);
+        productId = created?.data?.data?.id;
       }
+
+      if (imageFile && productId) {
+        await adminService.uploadProductImage(productId, imageFile);
+      }
+
+      toast.success(isEditing ? 'Product updated successfully' : 'Product created successfully');
       setShowAddEditModal(false);
       resetForm();
       fetchData();
@@ -527,6 +557,8 @@ const ProductManagement = () => {
       })) || [],
     });
     setImagePreview(p.mainImage);
+    setImageFile(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
     setIsEditing(true);
     setShowAddEditModal(true);
   };
@@ -1082,11 +1114,18 @@ const ProductManagement = () => {
                     </div>
                     <button 
                       type="button"
-                      onClick={() => setImagePreview('https://images.unsplash.com/photo-1578506065344-f216f414457e?q=80&w=800&auto=format&fit=crop')} 
+                      onClick={() => imageInputRef.current?.click()}
                       className="absolute -bottom-2 -right-2 p-3.5 bg-[#FF6B35] text-white rounded-2xl shadow-lg hover:bg-[#FF5722] hover:scale-110 active:scale-95 transition-all duration-200 border-4 border-white"
                     >
                       <Upload size={18} />
                     </button>
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/jfif"
+                      className="hidden"
+                      onChange={handleImagePick}
+                    />
                   </div>
                   <p className="mt-4 text-[10px] text-slate-400 font-medium uppercase tracking-[0.1em]">Supported formats: JPG, PNG, WEBP (Max 5MB)</p>
                 </div>
