@@ -32,8 +32,21 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   }
   
   // User-uploaded files (uploads/...) are served by the backend.
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  const baseUrl = apiUrl.replace(/\/api(\/.*)?$/, '');
+  const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+  // Resolve backend origin safely. Prefer explicit uploads base, then absolute API URL.
+  let baseUrl = '';
+  if (uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
+    baseUrl = uploadsBase.replace(/\/$/, '');
+  } else if (/^https?:\/\//i.test(apiUrl)) {
+    baseUrl = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
+  } else if (typeof window !== 'undefined') {
+    // If API URL is relative/missing, avoid empty-string joins that create broken URLs.
+    baseUrl = window.location.origin;
+  } else {
+    baseUrl = 'http://localhost:5001';
+  }
   
   // Ensure imagePath starts with /
   const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
