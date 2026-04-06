@@ -120,7 +120,7 @@ export default function LowStockPanel({ items, loading }: Props) {
         {/* Footer link — flips in RTL */}
         <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
           <Link
-            href="/admin/inventory?filter=lowstock"
+            href="/admin/products?filter=lowstock"
             className="inline-flex items-center gap-2 text-sm font-bold text-[#DC2626] hover:underline"
           >
             {isRTL && (

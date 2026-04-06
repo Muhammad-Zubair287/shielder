@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
+  X,
   PackageSearch,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';

@@ -81,17 +81,8 @@ class AdminService {
     const ordersArr =
       ordersRes.status === 'fulfilled' ? asArray<any>(unwrap<any>(ordersRes.value)) : [];
 
-    // Fallback for environments where only super-admin monthly analytics is available.
-    // This call may fail for admin users; failures are intentionally ignored.
-    let monthlyAnalyticsArr: any[] = [];
-    if (revenueArr.length === 0 && ordersArr.length === 0) {
-      try {
-        const analyticsRes = await this.getMonthlyAnalytics();
-        monthlyAnalyticsArr = asArray<any>(unwrap<any>(analyticsRes));
-      } catch {
-        monthlyAnalyticsArr = [];
-      }
-    }
+    // For admin dashboard, do not call super-admin-only analytics endpoints.
+    const monthlyAnalyticsArr: any[] = [];
 
     const merged: Record<string, MonthlySalesPoint> = {};
     buildLast12MonthKeys().forEach((month) => {

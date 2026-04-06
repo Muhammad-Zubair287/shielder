@@ -94,6 +94,7 @@ export class SuperAdminService {
           select: {
             fullName: true,
             phoneNumber: true,
+            profileImage: true,
           },
         },
       },

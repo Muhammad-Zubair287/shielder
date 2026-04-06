@@ -22,6 +22,7 @@ import adminService from '@/services/admin.service';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import { getImageUrl } from '@/utils/helpers';
 
 interface UserStats {
   totalUsers: number;
@@ -278,8 +279,16 @@ export default function UserManagement() {
                   <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-shielder-dark text-white flex items-center justify-center font-black text-lg shadow-inner">
-                          {user.profile?.fullName?.[0] || user.email[0].toUpperCase()}
+                        <div className="w-10 h-10 rounded-xl bg-shielder-dark text-white flex items-center justify-center font-black text-lg shadow-inner overflow-hidden">
+                          {user.profile?.profileImage ? (
+                            <img
+                              src={getImageUrl(user.profile.profileImage) || ''}
+                              alt={user.profile?.fullName || user.email}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            user.profile?.fullName?.[0] || user.email[0].toUpperCase()
+                          )}
                         </div>
                         <div>
                           <p className="text-sm font-black text-gray-900 leading-tight">
