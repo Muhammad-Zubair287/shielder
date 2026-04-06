@@ -107,12 +107,16 @@ export class SuperAdminService {
    * Create a new user (Admin, Staff, or Customer)
    */
   async createUser(data: any, createdBy: string) {
-    // 1. Check if email exists
-      // Only check for active, non-deleted users
-      const existing = await prisma.user.findFirst({ 
-        where: { email: data.email, deletedAt: null } 
-      });
-    if (existing) {
+    const email = String(data.email || '').trim().toLowerCase();
+
+    // 1. Check if email exists (including soft-deleted users)
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      include: { profile: true },
+    });
+
+    // Active account with same email: block creation
+    if (existing && !existing.deletedAt) {
       throw new ApiError('Registration failed. This email is already registered in our system.', 400);
     }
 
@@ -122,40 +126,81 @@ export class SuperAdminService {
     }
 
     // 2b. Admin accounts must use @shielder.com domain
-    if (data.role === UserRole.ADMIN && !data.email.endsWith('@shielder.com')) {
+    if (data.role === UserRole.ADMIN && !email.endsWith('@shielder.com')) {
       throw new ApiError('Admin accounts must use an @shielder.com email address.', 400);
     }
 
     // 3. Hash password
     const passwordHash = await bcrypt.hash(data.password, 12);
 
-    // 4. Create user
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash,
-        role: data.role || UserRole.USER,
-        status: data.status === 'INACTIVE' ? UserStatus.SUSPENDED : UserStatus.ACTIVE,
-        isActive: data.status !== 'INACTIVE',
-        createdBy,
-        profile: {
-          create: {
-            fullName: data.fullName,
-            phoneNumber: data.phoneNumber,
-            companyName: data.companyName || 'Shielder',
+    let user;
+
+    // 4a. Restore archived user with same email instead of creating a duplicate row
+    if (existing && existing.deletedAt) {
+      user = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          email,
+          passwordHash,
+          role: data.role || UserRole.USER,
+          status: data.status === 'INACTIVE' ? UserStatus.SUSPENDED : UserStatus.ACTIVE,
+          isActive: data.status !== 'INACTIVE',
+          deletedAt: null,
+          updatedBy: createdBy,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          resetToken: null,
+          resetTokenExpiry: null,
+          profile: {
+            upsert: {
+              create: {
+                fullName: data.fullName,
+                phoneNumber: data.phoneNumber,
+                companyName: data.companyName || 'Shielder',
+              },
+              update: {
+                fullName: data.fullName,
+                phoneNumber: data.phoneNumber,
+                companyName: data.companyName || 'Shielder',
+              },
+            },
           },
         },
-      },
-      include: { profile: true },
-    });
+        include: { profile: true },
+      });
+    } else {
+      // 4b. Create brand new user
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: data.role || UserRole.USER,
+          status: data.status === 'INACTIVE' ? UserStatus.SUSPENDED : UserStatus.ACTIVE,
+          isActive: data.status !== 'INACTIVE',
+          createdBy,
+          profile: {
+            create: {
+              fullName: data.fullName,
+              phoneNumber: data.phoneNumber,
+              companyName: data.companyName || 'Shielder',
+            },
+          },
+        },
+        include: { profile: true },
+      });
+    }
 
     // 5. Audit Log
     await AuditService.log({
       userId: createdBy,
-      action: 'USER_CREATED',
+      action: existing && existing.deletedAt ? 'USER_RESTORED' : 'USER_CREATED',
       entityType: 'USER',
       entityId: user.id,
-      changes: { email: user.email, role: user.role },
+      changes: {
+        email: user.email,
+        role: user.role,
+        mode: existing && existing.deletedAt ? 'RESTORE' : 'CREATE',
+      },
     });
 
     // NEW: Notify Super Admins about new administrative/supplier accounts
