@@ -86,13 +86,13 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
       aria-label={`Open product details for ${product.name}`}
     >
       {/* Image */}
-      <div className="relative h-52 overflow-hidden bg-gray-50">
+      <div className="relative h-52 overflow-hidden bg-white">
         {image && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt={product.name}
-            className="w-full h-full object-contain p-2"
+            className="w-full h-full object-contain object-center"
             onError={() => setImgError(true)}
           />
         ) : (
