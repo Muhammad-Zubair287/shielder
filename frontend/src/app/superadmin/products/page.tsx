@@ -390,14 +390,12 @@ const ProductManagement = () => {
       return toast.error('Duplicate specification keys are not allowed');
     }
 
-    const payload = {
-      sku: formData.sku || null,
+    const payload: Record<string, any> = {
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
       minimumStockThreshold: parseInt(formData.minimumStockThreshold),
       categoryId: formData.categoryId,
       subcategoryId: formData.subcategoryId,
-      supplierId: formData.supplierId || null,
       isActive: formData.isActive,
       translations: [
         { locale: 'en', name: formData.name, description: formData.description }
@@ -406,6 +404,10 @@ const ProductManagement = () => {
         .filter(s => s.specKey.trim() && s.specValue.trim())
         .map(s => ({ specKey: s.specKey.trim(), specValue: s.specValue.trim() }))
     };
+
+    // Joi optional string/uuid fields should be omitted when empty, not sent as null.
+    if (formData.sku?.trim()) payload.sku = formData.sku.trim();
+    if (formData.supplierId) payload.supplierId = formData.supplierId;
 
     try {
       setFormLoading(true);
@@ -428,7 +430,8 @@ const ProductManagement = () => {
       fetchData();
     } catch (err) {
       const error = err as ApiErrorResponse;
-      toast.error(error.response?.data?.message || 'Failed to save product');
+      const firstValidationError = error.response?.data?.errors?.[0]?.message;
+      toast.error(firstValidationError || error.response?.data?.message || 'Failed to save product');
     } finally {
       setFormLoading(false);
     }
