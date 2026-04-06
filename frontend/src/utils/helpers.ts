@@ -41,20 +41,30 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-  // Resolve backend origin safely. Prefer explicit uploads base, then absolute API URL.
+  // Resolve backend origin safely.
+  // Important: when running the frontend locally, always prefer local backend
+  // even if NEXT_PUBLIC_UPLOADS_BASE_URL points to a production host.
   let backendOrigin = '';
-  if (uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
-    backendOrigin = uploadsBase.replace(/\/$/, '');
-  } else if (/^https?:\/\//i.test(apiUrl)) {
-    backendOrigin = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
-  } else if (typeof window !== 'undefined') {
-    // Never default uploads to the frontend origin; use backend default in local dev.
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
     const isLocalHost =
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1';
-    backendOrigin = isLocalHost
-      ? `http://${window.location.hostname}:5001`
-      : window.location.origin;
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '0.0.0.0' ||
+      host === '::1';
+
+    if (isLocalHost) {
+      backendOrigin = `http://${host}:5001`;
+    }
+  }
+
+  // Non-local environments: prefer explicit uploads base, then absolute API URL.
+  if (!backendOrigin && uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
+    backendOrigin = uploadsBase.replace(/\/$/, '');
+  } else if (!backendOrigin && /^https?:\/\//i.test(apiUrl)) {
+    backendOrigin = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
+  } else if (!backendOrigin && typeof window !== 'undefined') {
+    backendOrigin = window.location.origin;
   } else {
     backendOrigin = 'http://localhost:5001';
   }
