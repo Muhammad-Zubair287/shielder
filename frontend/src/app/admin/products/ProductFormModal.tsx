@@ -168,7 +168,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/jfif'].includes(file.type)) {
       toast.error(t('imageHint'));
       return;
     }
@@ -378,7 +378,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
             <input
               type="file"
               ref={fileInputRef}
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/jfif"
               className="hidden"
               onChange={handleImageChange}
             />
