@@ -254,8 +254,9 @@ const ProductManagement = () => {
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 }));
   }, [search, categoryFilter, subcategoryFilter, supplierFilter, statusFilter]);
-  // Fetch subcategories when category filter changes
+  // Fetch subcategories when category filter changes (only when modal is not open)
   useEffect(() => {
+    if (showAddEditModal) return; // Don't update when form modal is open
     const fetchSubs = async () => {
       if (categoryFilter) {
         try {
@@ -274,7 +275,31 @@ const ProductManagement = () => {
       }
     };
     fetchSubs();
-  }, [categoryFilter]);
+  }, [categoryFilter, showAddEditModal]);
+
+  // Load subcategories for form when modal opens/category changes
+  useEffect(() => {
+    const fetchFormSubcategories = async () => {
+      if (formData.categoryId) {
+        try {
+          const res = await adminService.getSubcategories({ categoryId: formData.categoryId, limit: 100 });
+          const subData = res.data.data || [];
+          setSubcategories(subData.map((s: { id: string, name?: string, translations?: { name: string }[], categoryId: string }) => ({
+            id: s.id,
+            name: s.name || (s.translations && s.translations[0]?.name) || 'Unnamed',
+            categoryId: s.categoryId
+          })));
+        } catch (error) {
+          console.error('Failed to fetch subcategories for form', error);
+        }
+      } else {
+        setSubcategories([]);
+      }
+    };
+    if (showAddEditModal && formData.categoryId) {
+      fetchFormSubcategories();
+    }
+  }, [formData.categoryId, showAddEditModal]);
 
   // Load Templates when form category/subcategory changes
   useEffect(() => {
