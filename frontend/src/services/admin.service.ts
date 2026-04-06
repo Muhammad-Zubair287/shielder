@@ -425,7 +425,9 @@ class AdminService {
   async uploadProductImage(id: string, file: File) {
     const formData = new FormData();
     formData.append('productImage', file);
-    return apiClient.post(`inventory/products/${id}/images`, formData);
+    return apiClient.post(`inventory/products/${id}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   }
 
   async approveProduct(id: string) {

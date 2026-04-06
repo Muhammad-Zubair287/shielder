@@ -47,6 +47,16 @@ apiClient.interceptors.request.use(
     // Add locale to headers (cached — avoids localStorage read on every request)
     config.headers['Accept-Language'] = getCachedLocale();
 
+    // Let Axios/browser set multipart boundaries automatically for FormData payloads.
+    // Keeping a forced JSON content-type here causes multer to miss uploaded files.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (typeof (config.headers as any).set === 'function') {
+        (config.headers as any).set('Content-Type', undefined);
+      } else {
+        delete (config.headers as Record<string, unknown>)['Content-Type'];
+      }
+    }
+
     return config;
   },
   (error) => {
