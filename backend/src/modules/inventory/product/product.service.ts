@@ -692,10 +692,18 @@ export class ProductService {
 
         // Build rId → media path map from each drawing rels file
         const relMap = new Map<string, string>();
-        const relRegex = /Id="([^"]+)"[^>]+Target="([^"]+)"/g;
-        let relMatch;
-        while ((relMatch = relRegex.exec(relXml)) !== null) {
-          const [, rId, target] = relMatch;
+        // Some generators output Relationship attributes as Id="..." Target="...",
+        // others as Target="..." Id="...". Parse per-tag to support both orders.
+        const relTagRegex = /<Relationship\b[^>]*>/g;
+        let relTagMatch;
+        while ((relTagMatch = relTagRegex.exec(relXml)) !== null) {
+          const relTag = relTagMatch[0];
+          const rIdMatch = relTag.match(/\bId="([^"]+)"/);
+          const targetMatch = relTag.match(/\bTarget="([^"]+)"/);
+          if (!rIdMatch || !targetMatch) continue;
+
+          const rId = rIdMatch[1];
+          const target = targetMatch[1];
           let normalizedTarget = target;
           // Normalize all path formats to xl/media/... format
           if (normalizedTarget.startsWith('../')) {
