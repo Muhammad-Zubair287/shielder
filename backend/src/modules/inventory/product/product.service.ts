@@ -369,38 +369,47 @@ export class ProductService {
   async update(id: string, data: Partial<ProductUpsertPayload>) {
     await this.getById(id);
 
+    // Build data object dynamically - only include fields that are actually provided
+    const updateData: any = {};
+    
+    if (data.sku !== undefined) updateData.sku = data.sku;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.subcategoryId !== undefined) updateData.subcategoryId = data.subcategoryId;
+    if (data.brandId !== undefined) updateData.brandId = data.brandId;
+    if (data.supplierId !== undefined) updateData.supplierId = data.supplierId;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.stock !== undefined) updateData.stock = data.stock;
+    if (data.minimumStockThreshold !== undefined) updateData.minimumStockThreshold = data.minimumStockThreshold;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.mainImage !== undefined) updateData.mainImage = data.mainImage;
+    if (data.filterNumber !== undefined) updateData.filterNumber = data.filterNumber;
+    if (data.alternateNumbers !== undefined) updateData.alternateNumbers = data.alternateNumbers;
+    if (data.filterType !== undefined) updateData.filterType = data.filterType;
+    if (data.material !== undefined) updateData.material = data.material;
+    if (data.dimensions !== undefined) updateData.dimensions = data.dimensions;
+    
+    if (data.translations) {
+      updateData.translations = {
+        deleteMany: { productId: id },
+        create: data.translations,
+      };
+    }
+    
+    if (data.specifications) {
+      updateData.specifications = {
+        deleteMany: { product_id: id },
+        create: data.specifications.map((s) => ({
+          spec_key: s.specKey.trim(),
+          spec_value: s.specValue.trim(),
+          updated_at: new Date()
+        })),
+      };
+    }
+
     return await prisma.product.update({
       where: { id },
-      data: {
-        sku: data.sku,
-        categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId,
-        brandId: data.brandId,
-        supplierId: data.supplierId,
-        price: data.price,
-        stock: data.stock,
-        minimumStockThreshold: data.minimumStockThreshold,
-        isActive: data.isActive,
-        status: data.status,
-        mainImage: data.mainImage,
-        filterNumber: data.filterNumber,
-        alternateNumbers: data.alternateNumbers,
-        filterType: data.filterType,
-        material: data.material,
-        dimensions: data.dimensions,
-        translations: data.translations ? {
-          deleteMany: { productId: id },
-          create: data.translations,
-        } : undefined,
-        specifications: data.specifications ? {
-          deleteMany: { product_id: id },
-          create: data.specifications.map((s) => ({
-            spec_key: s.specKey.trim(),
-            spec_value: s.specValue.trim(),
-            updated_at: new Date()
-          })),
-        } : undefined,
-      },
+      data: updateData,
       include: {
         translations: true,
         brand: true,
