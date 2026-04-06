@@ -7,10 +7,14 @@
  */
 export const getImageUrl = (imagePath: string | null | undefined): string | null => {
   if (!imagePath) return null;
-  
+
   // If it's already a full URL (http, https, blob, data), return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://') ||
-      imagePath.startsWith('blob:') || imagePath.startsWith('data:')) {
+  if (
+    imagePath.startsWith('http://') ||
+    imagePath.startsWith('https://') ||
+    imagePath.startsWith('blob:') ||
+    imagePath.startsWith('data:')
+  ) {
     return imagePath;
   }
 
@@ -20,7 +24,9 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     // Normalize legacy folder names that had spaces
     .replace('images/products images/', 'images/products-images/')
     .replace('images/UserEnd images/', 'images/userend-images/')
-    .replace('images/userend images/', 'images/userend-images/');
+    .replace('images/userend images/', 'images/userend-images/')
+    // Normalize accidental nested upload path produced by old scripts
+    .replace(/^uploads\/products\/products\//, 'uploads/products/');
 
   if (normalized.startsWith('images/')) {
     // Preserve the exact filename/path from DB and only URL-encode each path segment.
@@ -30,28 +36,40 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
       .join('/');
     return `/${encoded}`;
   }
-  
+
   // User-uploaded files (uploads/...) are served by the backend.
   const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
   // Resolve backend origin safely. Prefer explicit uploads base, then absolute API URL.
-  let baseUrl = '';
+  let backendOrigin = '';
   if (uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
-    baseUrl = uploadsBase.replace(/\/$/, '');
+    backendOrigin = uploadsBase.replace(/\/$/, '');
   } else if (/^https?:\/\//i.test(apiUrl)) {
-    baseUrl = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
+    backendOrigin = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
   } else if (typeof window !== 'undefined') {
-    // If API URL is relative/missing, avoid empty-string joins that create broken URLs.
-    baseUrl = window.location.origin;
+    // Never default uploads to the frontend origin; use backend default in local dev.
+    const isLocalHost =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+    backendOrigin = isLocalHost
+      ? `http://${window.location.hostname}:5001`
+      : window.location.origin;
   } else {
-    baseUrl = 'http://localhost:5001';
+    backendOrigin = 'http://localhost:5001';
   }
-  
-  // Ensure imagePath starts with /
-  const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-  
-  return `${baseUrl}${path}`;
+
+  // Ensure image path starts with /
+  const uploadPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
+
+  // URL-encode each path segment while preserving slashes.
+  const encodedPath = uploadPath
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')
+    .replace(/%3A/g, ':');
+
+  return `${backendOrigin}${encodedPath}`;
 };
 
 /**
