@@ -26,20 +26,22 @@ const profileImageUpload = multer({
  */
 router.use(authenticate);
 
+const OWN_PROFILE_ROLES = [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN] as const;
+
 // GET /api/profile - Get own profile
-router.get('/', authorize(UserRole.USER), ProfileController.getMyProfile);
+router.get('/', authorize(...OWN_PROFILE_ROLES), ProfileController.getMyProfile);
 
 // PUT /api/profile - Update own profile
-router.put('/', authorize(UserRole.USER), validate(profileValidation.updateProfile), ProfileController.updateMyProfile);
+router.put('/', authorize(...OWN_PROFILE_ROLES), validate(profileValidation.updateProfile), ProfileController.updateMyProfile);
 
 // PATCH /api/profile/language - Update language preference
-router.patch('/language', authorize(UserRole.USER), validate(profileValidation.updateLanguage), ProfileController.updateLanguage);
+router.patch('/language', authorize(...OWN_PROFILE_ROLES), validate(profileValidation.updateLanguage), ProfileController.updateLanguage);
 
 // PATCH /api/profile/preferences - Update theme/other preferences
-router.patch('/preferences', authorize(UserRole.USER), ProfileController.updatePreferences);
+router.patch('/preferences', authorize(...OWN_PROFILE_ROLES), ProfileController.updatePreferences);
 
 // POST /api/profile/upload-image - Upload profile image (stored as base64 in DB)
-router.post('/upload-image', authorize(UserRole.USER), profileImageUpload.single('profileImage'), ProfileController.uploadProfileImage);
+router.post('/upload-image', authorize(...OWN_PROFILE_ROLES), profileImageUpload.single('profileImage'), ProfileController.uploadProfileImage);
 
 // GET /api/profile/:userId - Admin view any profile (Read-only)
 router.get('/:userId', authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), ProfileController.getProfileById);
