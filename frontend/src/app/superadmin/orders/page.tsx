@@ -78,7 +78,7 @@ export default function OrdersPage() {
   // Reset pagination when filters change
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 }));
-  }, [search, statusFilter, paymentStatusFilter]);
+  }, [filters.search, filters.status, filters.paymentStatus]);
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));

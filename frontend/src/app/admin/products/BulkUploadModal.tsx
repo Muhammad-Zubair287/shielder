@@ -20,6 +20,7 @@ interface BulkUploadResult {
   total: number;
   success: number;
   failed: number;
+  warnings?: string[];
   errors: { row: number; error: string; sku?: string }[];
 }
 
@@ -230,6 +231,10 @@ export default function BulkUploadModal({ onClose, onSuccess }: Props) {
             <p className="text-xs text-blue-500 mt-1">
               <span className="font-semibold">Image</span> column: enter a filename (e.g. <code className="bg-blue-50 px-1 rounded">spare parts.jpeg</code>) from the products images folder, a relative path like <code className="bg-blue-50 px-1 rounded">images/products images/spare parts.jpeg</code>, or a full URL.
             </p>
+            <p className="text-xs text-amber-600 mt-1 flex items-start gap-1.5">
+              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+              <span>Embedded Excel images are imported exactly as saved in the workbook. If the sheet contains preview-sized images, they will stay low-resolution after upload.</span>
+            </p>
           </div>
 
           {/* ── Step 2 — Drop zone ── */}
@@ -308,6 +313,22 @@ export default function BulkUploadModal({ onClose, onSuccess }: Props) {
                   <p className="text-xs text-red-400">{t('bulkFailed')}</p>
                 </div>
               </div>
+
+              {result.warnings && result.warnings.length > 0 && (
+                <div className="border-t border-amber-100 bg-amber-50/70 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle size={14} className="text-amber-500" />
+                    <p className="text-xs font-semibold text-amber-800">Warnings</p>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {result.warnings.map((warning, i) => (
+                      <li key={i} className="text-xs text-amber-700 bg-white/80 border border-amber-100 px-3 py-1.5 rounded-lg">
+                        {warning}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Error list */}
               {result.errors.length > 0 && (

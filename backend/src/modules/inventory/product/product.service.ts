@@ -777,8 +777,10 @@ export class ProductService {
       total: data.length,
       success: 0,
       failed: 0,
+      warnings: [] as string[],
       errors: [] as { row: number; error: string; sku?: string }[]
     };
+    const embeddedImageRows: number[] = [];
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -832,6 +834,9 @@ export class ProductService {
         // Fallback to embedded image only if no Image column value is provided.
         if (!mainImage) {
           mainImage = embeddedDataUrl;
+          if (embeddedDataUrl) {
+            embeddedImageRows.push(rowNum);
+          }
         }
 
         // Validations
@@ -933,6 +938,12 @@ export class ProductService {
           error: err instanceof Error ? err.message : 'Unknown upload error'
         });
       }
+    }
+
+    if (embeddedImageRows.length > 0) {
+      results.warnings.push(
+        `${embeddedImageRows.length} row(s) used embedded Excel images. Those images are stored exactly as provided in the workbook and may be low-resolution. For best quality, provide a high-resolution file path or URL in the Image column.`
+      );
     }
 
     return results;
