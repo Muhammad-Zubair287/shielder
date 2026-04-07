@@ -80,7 +80,10 @@ class AuthService {
    */
   async forgotPassword(email: string): Promise<void> {
     try {
-      await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+      await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email }, {
+        // Cold starts on Railway can exceed the default API timeout.
+        timeout: 120000,
+      });
     } catch (error) {
       throw new Error(handleApiError(error));
     }
@@ -92,9 +95,8 @@ class AuthService {
   async resendVerificationEmail(email: string): Promise<void> {
     try {
       await apiClient.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email }, {
-        // Add timeout of 10 seconds for resend endpoint
-        // This prevents the request from hanging if email service is misconfigured
-        timeout: 10000,
+        // Match other auth flows to avoid false timeout toasts on cold starts.
+        timeout: 120000,
       });
     } catch (error) {
       throw new Error(handleApiError(error));
