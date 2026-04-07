@@ -227,10 +227,10 @@ function LoginPageContent() {
         <div className="absolute inset-1 md:inset-2 rounded-[2rem] bg-[#0A1E36] rotate-[-2.7deg] shadow-[0_24px_60px_rgba(10,30,54,0.35)]" />
 
       {/* Main Container */}
-      <div className="relative z-10 bg-white rounded-[2rem] overflow-hidden flex flex-col md:flex-row w-full shadow-2xl min-h-[600px]">
+      <div className="relative z-10 flex flex-col md:flex-row w-full min-h-[600px]">
         
         {/* Left Side - Background Image */}
-        <div className="w-full md:w-1/2 relative">
+        <div className="w-full md:flex-[0_0_56%] relative overflow-hidden rounded-[2rem] md:rounded-[2rem_0_0_2rem] shadow-2xl">
           {/* Background Image */}
           <div className="absolute inset-0">
             <Image 
@@ -244,7 +244,7 @@ function LoginPageContent() {
           </div>
 
           {/* Content Overlay */}
-          <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8">
+          <div className="relative z-10 h-full min-h-[600px] flex flex-col justify-end p-6 md:p-8">
             {/* Logo sits directly on the image like the Figma reference */}
             <div className="absolute top-5 left-5">
               <Image 
@@ -279,7 +279,7 @@ function LoginPageContent() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative bg-white">
+        <div className="w-full md:flex-[0_0_46%] md:-ml-14 relative bg-white rounded-[2rem] shadow-2xl md:rounded-[2rem] p-8 md:p-12 flex flex-col md:min-h-[600px]">
           {/* Back Button */}
           <button
             onClick={() => window.history.length > 1 ? router.back() : router.push(ROUTES.HOME)}
