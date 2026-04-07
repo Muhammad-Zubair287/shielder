@@ -248,9 +248,9 @@ function ProductDetailModal({
       {/* Backdrop — safe to click without stopPropagation; modal is outside any card div */}
       <div className="fixed inset-0 bg-black/50 z-[80] backdrop-blur-sm" onClick={onClose} />
       {/* Modal */}
-      <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-[90] overflow-y-auto p-4 sm:flex sm:items-center sm:justify-center">
         <div
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col my-auto"
           dir={isRTL ? 'rtl' : 'ltr'}
           onClick={e => e.stopPropagation()}
         >
@@ -263,9 +263,9 @@ function ProductDetailModal({
           </div>
 
           {/* Modal body */}
-          <div className="overflow-hidden">
+          <div className="overflow-y-auto">
             {/* Image */}
-            <div className="relative h-64 bg-white overflow-hidden">
+            <div className="relative h-44 sm:h-56 bg-white overflow-hidden">
               {image && !imgError ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt={product.name} className="w-full h-full object-contain object-center" onError={() => setImgError(true)} />
@@ -773,15 +773,15 @@ function ProductsContent() {
           </div>
 
           {/* Search + Tab bar */}
-          <div className={`flex flex-col lg:flex-row lg:items-center gap-3 mb-6 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
-            <div className="relative w-full lg:max-w-md xl:max-w-lg">
+          <div className={`flex flex-col lg:flex-row lg:items-center gap-2.5 mb-6 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+            <div className="relative w-full lg:max-w-[430px] xl:max-w-[460px]">
               <Search size={18} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'right-4' : 'left-4'}`} />
               <input type="search" value={searchInput}
                 aria-label={t('productsSearchPlaceholder')}
                 onChange={e => handleSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 placeholder={t('productsSearchPlaceholder')}
-                className={`w-full bg-white border border-gray-200 rounded-2xl py-3 text-sm text-gray-900 placeholder-gray-400
+                className={`w-full h-[50px] bg-white border border-[#D4D7DE] rounded-full py-2.5 text-sm text-gray-900 placeholder-gray-400
                   focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6] transition-colors
                   ${isRTL ? 'pr-12 pl-10 text-right' : 'pl-12 pr-10'}`} />
               {searchInput && (
@@ -793,12 +793,12 @@ function ProductsContent() {
               )}
             </div>
 
-            <div className={`flex-1 flex items-center bg-gray-100 border border-gray-200 rounded-2xl p-1.5 gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex-1 h-[50px] flex items-center bg-white border border-[#E2E8F0] rounded-[14px] px-1.5 gap-1.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
               {([['buy', 'productsTabBuy'], ['quotation', 'productsTabQuotation']] as const).map(([tab, key]) => (
                 <button key={tab} onClick={() => handleTabChange(tab)}
                   aria-pressed={activeTab === tab}
-                  className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
-                    ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
+                  className={`flex-1 h-[38px] text-sm font-semibold rounded-full transition-all duration-200
+                    ${activeTab === tab ? 'bg-[#F4F7FB] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-[#F8FAFC]'}`}>
                   {t(key)}
                 </button>
               ))}
@@ -806,8 +806,8 @@ function ProductsContent() {
                 aria-haspopup="dialog"
                 aria-expanded={filterOpen}
                 aria-label={t('productsFilterAll')}
-                className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors whitespace-nowrap ml-auto
-                  ${activeFilterCount > 0 ? 'bg-[#0205A6] text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                className={`flex items-center gap-1.5 h-[38px] rounded-full px-4 text-sm font-semibold border transition-colors whitespace-nowrap ml-auto
+                  ${activeFilterCount > 0 ? 'bg-[#0205A6] text-white border-[#0205A6]' : 'bg-[#F8FAFC] text-gray-700 border-[#E2E8F0] hover:bg-gray-100'}`}>
                 {t('productsFilterAll')}
                 <Filter size={14} className={activeFilterCount > 0 ? 'text-white' : 'text-gray-500'} />
                 {activeFilterCount > 0 && (

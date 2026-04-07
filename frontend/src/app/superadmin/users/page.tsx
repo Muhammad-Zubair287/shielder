@@ -163,7 +163,7 @@ export default function UserManagement() {
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-shielder-dark text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg shadow-black/10 group"
+          className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-[#FF6B35] text-white rounded-xl font-bold text-sm hover:bg-[#FF5722] transition-all shadow-lg shadow-[#FF6B35]/20 group"
         >
           <UserPlus size={18} className="group-hover:scale-110 transition-transform" />
           <span>{t('addNewUser')}</span>

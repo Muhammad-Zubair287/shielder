@@ -222,8 +222,12 @@ function LoginPageContent() {
 
   return (
     <div className={`min-h-screen flex items-center justify-center bg-gray-50 p-4 ${isRTL ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="relative w-full max-w-[1200px]">
+        {/* Rotated panel behind main login card to match Figma composition */}
+        <div className="absolute inset-1 md:inset-2 rounded-[2rem] bg-[#0A1E36] rotate-[-2.7deg] shadow-[0_24px_60px_rgba(10,30,54,0.35)]" />
+
       {/* Main Container */}
-      <div className="bg-white rounded-[2rem] overflow-hidden flex flex-col md:flex-row w-full max-w-[1200px] shadow-2xl min-h-[600px]">
+      <div className="relative z-10 bg-white rounded-[2rem] overflow-hidden flex flex-col md:flex-row w-full shadow-2xl min-h-[600px]">
         
         {/* Left Side - Background Image */}
         <div className="w-full md:w-1/2 relative">
@@ -236,19 +240,19 @@ function LoginPageContent() {
               className="object-cover"
               sizes="50vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/35"></div>
           </div>
 
           {/* Content Overlay */}
           <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8">
             {/* Logo — pinned to top-left corner */}
-            <div className="absolute top-5 left-5">
+            <div className="absolute top-5 left-5 bg-[#0A1E36]/45 backdrop-blur-[2px] border border-white/20 rounded-xl px-2.5 py-1.5">
               <Image 
                 src="/images/shielder image.png" 
                 alt="Shielder Logo" 
-                width={160}
-                height={70}
-                className="drop-shadow-2xl object-contain"
+                width={170}
+                height={74}
+                className="drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] object-contain"
                 style={{ width: 'auto', height: 'auto' }}
               />
             </div>
@@ -409,6 +413,7 @@ function LoginPageContent() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

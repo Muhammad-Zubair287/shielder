@@ -110,8 +110,8 @@ export default function HeroSection() {
             </div>
 
             {/* Bottom-right caption overlay with animation */}
-            <div className={`absolute bottom-4 sm:bottom-6 ${isRTL ? 'left-4 sm:left-6' : 'right-4 sm:right-6'} group-hover:translate-y-0 translate-y-2 transition-all duration-500`}>
-              <div className={`bg-gradient-to-r from-[#0A1E36] to-[#111827] backdrop-blur-xl border border-white/10 rounded-2xl px-5 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4 shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`absolute bottom-4 sm:bottom-6 ${isRTL ? 'left-4 sm:left-6' : 'right-2 sm:right-3'} group-hover:translate-y-0 translate-y-2 transition-all duration-500`}>
+              <div className={`bg-[#0A1E3699] backdrop-blur-xl border border-white/10 rounded-2xl px-5 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4 shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
                 {/* Text */}
                 <div className={isRTL ? 'text-right' : 'text-left'}>
                   <p className="text-white font-bold text-xs sm:text-sm leading-tight">Our 1k Client Satisfied</p>
