@@ -13,6 +13,8 @@ import type { LoginRequest, RegisterRequest } from '@/types';
 import { ROUTES, STORAGE_KEYS, SUCCESS_MESSAGES } from '@/utils/constants';
 import toast from 'react-hot-toast';
 
+const LOGIN_TOAST_DURATION_MS = 4000;
+
 export const useAuth = () => {
   const router = useRouter();
   const { user, isAuthenticated, setUser, setLoading, setError, logout: storeLogout } = useAuthStore();
@@ -90,7 +92,7 @@ export const useAuth = () => {
         // Don't store user yet; they're pending 2FA verification.
         // Ensure no stale user remains in the store while waiting for OTP.
         setUser(null);
-        toast.success('Login successful. Please verify with 2FA.');
+        toast.success('Login successful. Please verify with 2FA.', { duration: LOGIN_TOAST_DURATION_MS });
         
         // Store temporary session tokens for 2FA verification
         if (role === 'SUPER_ADMIN') {
@@ -102,14 +104,14 @@ export const useAuth = () => {
           sessionStorage.setItem('admin_otp_session_token', response.otpSessionToken);
           goToTwoFactorPage('/admin/admin-2fa');
         } else {
-          toast.error('Unable to continue to 2FA. Please try logging in again.');
+          toast.error('Unable to continue to 2FA. Please try logging in again.', { duration: LOGIN_TOAST_DURATION_MS });
         }
         return response;
       }
 
       // Normal login flow (no 2FA needed)
       setUser(response.user);
-      toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
+      toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS, { duration: LOGIN_TOAST_DURATION_MS });
 
       // Redirect based on role
       if (role === 'SUPER_ADMIN') {
@@ -133,7 +135,7 @@ export const useAuth = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(errorMessage, { duration: LOGIN_TOAST_DURATION_MS });
       throw error;
     } finally {
       setIsSubmitting(false);

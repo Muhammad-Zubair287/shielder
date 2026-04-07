@@ -19,6 +19,8 @@ import { validateLoginForm } from '@/services/validation.service';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import authService from '@/services/auth.service';
 
+const LOGIN_TOAST_DURATION_MS = 4000;
+
 function LoginPageContent() {
   // Clear auth state if session expired
   useEffect(() => {
@@ -99,6 +101,7 @@ function LoginPageContent() {
     if (expired) {
       toast.error('Session Expired: Please log in again to continue.', {
         id: 'session-expired',
+        duration: LOGIN_TOAST_DURATION_MS,
       });
     }
   }, [expired]);
@@ -185,22 +188,22 @@ function LoginPageContent() {
   const handleResendVerification = async () => {
     const email = formData.email?.trim();
     if (!email) {
-      toast.error('Please enter your email first.');
+      toast.error('Please enter your email first.', { duration: LOGIN_TOAST_DURATION_MS });
       return;
     }
 
     if (!VALIDATION_RULES.EMAIL_REGEX.test(email)) {
-      toast.error('Please enter a valid email address.');
+      toast.error('Please enter a valid email address.', { duration: LOGIN_TOAST_DURATION_MS });
       return;
     }
 
     try {
       setIsResendingVerification(true);
       await authService.resendVerificationEmail(email);
-      toast.success('If your account exists and is unverified, a new verification link has been sent.');
+      toast.success('If your account exists and is unverified, a new verification link has been sent.', { duration: LOGIN_TOAST_DURATION_MS });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to resend verification email';
-      toast.error(message);
+      toast.error(message, { duration: LOGIN_TOAST_DURATION_MS });
     } finally {
       setIsResendingVerification(false);
     }
