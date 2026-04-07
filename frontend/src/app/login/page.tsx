@@ -245,16 +245,18 @@ function LoginPageContent() {
 
           {/* Content Overlay */}
           <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8">
-            {/* Logo — pinned to top-left corner */}
-            <div className="absolute top-5 left-5 bg-[#0A1E36]/45 backdrop-blur-[2px] border border-white/20 rounded-xl px-2.5 py-1.5">
-              <Image 
-                src="/images/shielder image.png" 
-                alt="Shielder Logo" 
-                width={170}
-                height={74}
-                className="drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] object-contain"
-                style={{ width: 'auto', height: 'auto' }}
-              />
+            {/* Large brand panel like Figma; opaque enough so hero image does not bleed through logo area */}
+            <div className="absolute top-5 left-5 w-[240px] sm:w-[280px] h-[210px] sm:h-[270px] bg-[#0A1E36]/88 border border-white/25 rounded-2xl backdrop-blur-md shadow-[0_16px_32px_rgba(0,0,0,0.25)]">
+              <div className="p-6 sm:p-8">
+                <Image 
+                  src="/images/shielder image.png" 
+                  alt="Shielder Logo" 
+                  width={190}
+                  height={84}
+                  className="drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)] object-contain"
+                  style={{ width: 'auto', height: 'auto' }}
+                />
+              </div>
             </div>
 
             {/* Welcome Card at Bottom */}
