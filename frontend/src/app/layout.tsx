@@ -12,6 +12,7 @@ import SmartBackButton from '@/components/layout/SmartBackButton';
 import { DirSync } from '@/components/DirSync';
 import SessionTimeoutWatcher from '@/components/providers/SessionTimeoutWatcher';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 const cairo = Cairo({ subsets: ['arabic', 'latin'], variable: '--font-cairo', display: 'swap' });
@@ -50,40 +51,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeClientWrapper />
         <SmartBackButton />
         <LanguageProvider>
-          <AuthProvider>
-            <SessionTimeoutWatcher />
-            <CurrencyProvider>
-            <CartProvider>
-              <QuotationProvider>
-              {children}
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 1000,
-                  style: {
-                    background: '#363636',
-                    color: '#fff',
-                  },
-                  success: {
+          <QueryProvider>
+            <AuthProvider>
+              <SessionTimeoutWatcher />
+              <CurrencyProvider>
+              <CartProvider>
+                <QuotationProvider>
+                {children}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
                     duration: 1000,
-                    iconTheme: {
-                      primary: '#10b981',
-                      secondary: '#fff',
+                    style: {
+                      background: '#363636',
+                      color: '#fff',
                     },
-                  },
-                  error: {
-                    duration: 1000,
-                    iconTheme: {
-                      primary: '#ef4444',
-                      secondary: '#fff',
+                    success: {
+                      duration: 1000,
+                      iconTheme: {
+                        primary: '#10b981',
+                        secondary: '#fff',
+                      },
                     },
-                  },
-                }}
-              />
-              </QuotationProvider>
-            </CartProvider>
-            </CurrencyProvider>
-          </AuthProvider>
+                    error: {
+                      duration: 1000,
+                      iconTheme: {
+                        primary: '#ef4444',
+                        secondary: '#fff',
+                      },
+                    },
+                  }}
+                />
+                </QuotationProvider>
+              </CartProvider>
+              </CurrencyProvider>
+            </AuthProvider>
+          </QueryProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -15,6 +15,7 @@
     "test:e2e:auth": "cypress run --spec \"cypress/e2e/auth.cy.ts,cypress/e2e/auth.advanced.cy.ts,cypress/e2e/auth.recovery.cy.ts\""
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.96.2",
     "@types/nprogress": "^0.2.3",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",

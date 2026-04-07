@@ -88,13 +88,15 @@ export class AuthService {
   }
 
   private static shouldBypassEmailFlows(): boolean {
+    const bypassOverride = (process.env.AUTH_BYPASS_EMAIL || '').trim().toLowerCase();
+
     // Explicit override for temporary non-email testing on deployed environments.
-    if (process.env.AUTH_BYPASS_EMAIL === 'true') {
+    if (bypassOverride === 'true' || bypassOverride === '1' || bypassOverride === 'yes') {
       return true;
     }
 
     // Explicit hard-disable for environments that must enforce normal flow.
-    if (process.env.AUTH_BYPASS_EMAIL === 'false') {
+    if (bypassOverride === 'false' || bypassOverride === '0' || bypassOverride === 'no') {
       return false;
     }
 
@@ -105,7 +107,8 @@ export class AuthService {
     }
 
     // Enabled by default in development when email isn't configured.
-    const bypassEnabled = process.env.AUTH_DEV_BYPASS_EMAIL !== 'false';
+    const devBypass = (process.env.AUTH_DEV_BYPASS_EMAIL || '').trim().toLowerCase();
+    const bypassEnabled = devBypass !== 'false' && devBypass !== '0' && devBypass !== 'no';
     return env.isDevelopment && bypassEnabled;
   }
 

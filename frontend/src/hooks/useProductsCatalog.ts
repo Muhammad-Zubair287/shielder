@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api.service';
 import { PRODUCTS_ITEMS_PER_PAGE } from '@/app/products/products.constants';
 
@@ -47,8 +48,6 @@ interface UseProductsCatalogResult {
   categories: ProductsCatalogCategory[];
 }
 
-const categoryCache: Record<string, ProductsCatalogCategory[]> = {};
-
 function buildCatalogQuery(filters: ProductsCatalogFilters, page: number, locale: string) {
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
@@ -64,66 +63,75 @@ function buildCatalogQuery(filters: ProductsCatalogFilters, page: number, locale
 }
 
 export function useProductsCatalog({ filters, page, locale }: UseProductsCatalogParams): UseProductsCatalogResult {
-  const [products, setProducts] = useState<ProductsCatalogProduct[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<ProductsCatalogCategory[]>([]);
+  const productsQueryKey = useMemo(
+    () => [
+      'products-catalog',
+      locale,
+      page,
+      filters.search,
+      filters.categoryId,
+      filters.minPrice,
+      filters.maxPrice,
+      filters.inStock,
+      filters.sort,
+    ],
+    [
+      locale,
+      page,
+      filters.search,
+      filters.categoryId,
+      filters.minPrice,
+      filters.maxPrice,
+      filters.inStock,
+      filters.sort,
+    ]
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      setLoading(true);
+  const productsQuery = useQuery({
+    queryKey: productsQueryKey,
+    queryFn: async () => {
       try {
         const query = buildCatalogQuery(filters, page, locale);
         const res = await apiClient.get(`inventory/products?${query.toString()}`);
-        if (cancelled) return;
-
         const data = res.data;
         const items: ProductsCatalogProduct[] = data?.products ?? (Array.isArray(data?.data) ? data.data : []);
-        setProducts(items);
-        setTotal(data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length);
+
+        return {
+          products: items,
+          total: data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length,
+        };
       } catch (error) {
-        if (cancelled) return;
         console.error('[Products] API error:', error);
-        setProducts([]);
-        setTotal(0);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        return { products: [], total: 0 };
       }
-    })();
+    },
+    placeholderData: (previousData) => previousData,
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [filters, page, locale]);
-
-  useEffect(() => {
-    if (categoryCache[locale]) {
-      setCategories(categoryCache[locale]);
-      return;
-    }
-
-    (async () => {
+  const categoriesQuery = useQuery({
+    queryKey: ['products-categories', locale],
+    queryFn: async () => {
       try {
         const res = await apiClient.get(`inventory/categories?limit=100&locale=${locale}`);
         const data = res.data;
-        const mappedCategories: ProductsCatalogCategory[] = (data?.categories ?? data?.data ?? []).map(
+        return (data?.categories ?? data?.data ?? []).map(
           (category: { id: string; name?: string; translations?: Array<{ name?: string }>; nameEn?: string }) => ({
             id: category.id,
             name: category.name || category.translations?.[0]?.name || category.nameEn || 'Category',
           })
-        );
-
-        categoryCache[locale] = mappedCategories;
-        setCategories(mappedCategories);
+        ) as ProductsCatalogCategory[];
       } catch {
-        setCategories([]);
+        return [] as ProductsCatalogCategory[];
       }
-    })();
-  }, [locale]);
+    },
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  });
 
-  return { products, total, loading, categories };
+  return {
+    products: productsQuery.data?.products ?? [],
+    total: productsQuery.data?.total ?? 0,
+    loading: productsQuery.isLoading,
+    categories: categoriesQuery.data ?? [],
+  };
 }
