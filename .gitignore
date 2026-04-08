@@ -52,7 +52,7 @@ tmp/
 temp/
 .temp/
 *.tmp
-uploads/
+# uploads/
 
 # Database & Prisma
 *.sqlite
