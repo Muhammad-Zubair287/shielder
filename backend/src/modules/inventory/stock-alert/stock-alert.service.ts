@@ -71,6 +71,7 @@ class StockAlertService {
           category: true,
           brand: true,
           translations: {
+            where: { locale: 'en' },
             take: 1,
           },
         },

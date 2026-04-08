@@ -13,6 +13,8 @@ export interface LowStockProduct {
   stock: number;
   minimumStockThreshold: number;
   brand?: { name: string };
+  name?: string;
+  nameEn?: string;
 }
 
 interface Props {
@@ -29,7 +31,7 @@ const Skeleton = () => (
 // ─── Low Stock Panel ──────────────────────────────────────────────────────────
 
 export default function LowStockPanel({ items, loading }: Props) {
-  const { t, locale, isRTL } = useLanguage();
+  const { t, isRTL } = useLanguage();
 
   if (loading) return <Skeleton />;
 
@@ -75,7 +77,9 @@ export default function LowStockPanel({ items, loading }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {items.slice(0, 6).map((product) => {
             const name =
-              product.translations?.find((tr) => tr.locale === locale)?.name ||
+              product.nameEn ||
+              product.translations?.find((tr) => tr.locale === 'en')?.name ||
+              product.name ||
               product.translations?.[0]?.name ||
               '—';
 
