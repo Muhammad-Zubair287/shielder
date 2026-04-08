@@ -73,9 +73,9 @@ next-env.d.ts
 _archive/
 
 # Design reference images (local only)
-/images/
-hero
-write_landing.py
+# /images/
+# hero
+# write_landing.py
 
 POSTMAN_GUIDE.md
 Shielder-API-Collection.postman_collection.json
