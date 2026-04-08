@@ -12,7 +12,5 @@
     "pdfkit": "^0.17.2",
     "xlsx": "^0.18.5"
   },
-  "devDependencies": {
-    "@types/pdfkit": "^0.17.5"
-  }
+  "devDependencies": {}
 }

@@ -20,6 +20,12 @@ type UserGrowthRow = {
   userCount: number;
 };
 
+type CategoryOrderStatsRow = {
+  categoryId: string;
+  orderCount: number;
+  revenue: number;
+};
+
 class AnalyticsService {
   /**
    * Aggregate monthly revenue for the last 12 months
@@ -59,10 +65,12 @@ class AnalyticsService {
 
   /**
    * Aggregate products by category
-   * Counts active products per category
+   * Returns active product count plus true order/revenue contribution per category.
+   * Order count is based on distinct orders containing items from that category,
+   * excluding cancelled orders.
    */
   static async getProductsByCategory() {
-    // We use standard Prisma groupBy for category counts
+    // Baseline inventory distribution: active products per category.
     const counts = await prisma.product.groupBy({
       by: ['categoryId'],
       where: {
@@ -73,8 +81,36 @@ class AnalyticsService {
       },
     });
 
+    // Sales distribution: real order counts and revenue per category from order items.
+    const orderStats = await prisma.$queryRaw<CategoryOrderStatsRow[]>`
+      SELECT
+        p."categoryId" AS "categoryId",
+        COUNT(DISTINCT oi.order_id)::INT AS "orderCount",
+        COALESCE(SUM(oi.total_price), 0)::FLOAT AS "revenue"
+      FROM order_items oi
+      INNER JOIN orders o ON o.id = oi.order_id
+      INNER JOIN products p ON p.id = oi.product_id
+      WHERE o.status != 'CANCELLED'
+      GROUP BY p."categoryId"
+    `;
+
+    const statsByCategoryId = new Map(
+      orderStats.map((row) => [
+        row.categoryId,
+        {
+          orderCount: Number(row.orderCount || 0),
+          revenue: Number(row.revenue || 0),
+        },
+      ])
+    );
+
     // Optionally fetch category names for a better response
-    const categoryIds = counts.map((c) => c.categoryId);
+    const categoryIds = Array.from(
+      new Set([
+        ...counts.map((c) => c.categoryId),
+        ...orderStats.map((s) => s.categoryId),
+      ])
+    );
     const categories = await prisma.category.findMany({
       where: {
         id: { in: categoryIds },
@@ -86,12 +122,21 @@ class AnalyticsService {
       },
     });
 
-    return counts.map((c) => {
-      const category = categories.find((cat) => cat.id === c.categoryId);
+    const activeCountByCategoryId = new Map(
+      counts.map((c) => [c.categoryId, c._count.id])
+    );
+
+    return categoryIds.map((categoryId) => {
+      const category = categories.find((cat) => cat.id === categoryId);
+      const stats = statsByCategoryId.get(categoryId);
       return {
-        categoryId: c.categoryId,
+        categoryId,
         categoryName: category?.translations[0]?.name || 'Unknown',
-        productCount: c._count.id,
+        productCount: activeCountByCategoryId.get(categoryId) ?? 0,
+        orderCount: stats?.orderCount ?? 0,
+        // Alias used by dashboard mapping fallback.
+        orders: stats?.orderCount ?? 0,
+        revenue: stats?.revenue ?? 0,
       };
     });
   }
