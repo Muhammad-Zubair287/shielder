@@ -351,14 +351,26 @@ function OverviewTab({ data }: { data: Record<string, any> | null }) {
     return <NoDataState title="Overview" />;
   }
   const { summary } = data;
+
+  const RiyalMark = ({ size = 16, className = '' }: { size?: number; className?: string }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/riyal-logo.png"
+      alt="SAR"
+      aria-label="Saudi Riyal"
+      className={`inline-block align-middle ${className}`}
+      style={{ width: size, height: size }}
+    />
+  );
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<SARSymbol size={18} className="brightness-0 invert" />} color="bg-shielder-dark" />
+        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<RiyalMark size={18} className="brightness-0 invert" />} color="bg-shielder-dark" />
         <SummaryCard title="Total Orders" value={summary.orderCount || 0} subtitle="New orders in period" icon={<ShoppingCart size={18} />} color="bg-shielder-secondary" />
-        <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={18} />} color="bg-emerald-500" />
-        <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={18} />} color="bg-red-500" />
-        <SummaryCard title="Net Profit" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.netProfit || 0).toLocaleString()}</span>} subtitle="Revenue - (Refunds + Expenses)" icon={<FileText size={18} />} color="bg-purple-500" />
+        <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={18} />} color="bg-emerald-500" />
+        <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={18} />} color="bg-red-500" />
+        <SummaryCard title="Net Profit" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.netProfit || 0).toLocaleString()}</span>} subtitle="Revenue - (Refunds + Expenses)" icon={<FileText size={18} />} color="bg-purple-500" />
         <SummaryCard title="Low Stock Products" value={summary.lowStockProducts || 0} subtitle="Items requiring restock" icon={<Package size={18} />} color="bg-orange-500" />
       </div>
 
