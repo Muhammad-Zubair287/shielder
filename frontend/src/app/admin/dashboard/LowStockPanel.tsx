@@ -90,7 +90,12 @@ export default function LowStockPanel({ items, loading }: Props) {
               >
                 <div>
                   <div className="flex justify-between items-start mb-2 gap-2">
-                    <h4 className="font-bold line-clamp-1 text-gray-800 flex-1">{name}</h4>
+                    <h4
+                      className="font-bold line-clamp-1 text-gray-800 flex-1"
+                      title={name}
+                    >
+                      {name}
+                    </h4>
                     {product.stock <= 2 ? (
                       <span className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 bg-[#DC2626]/10 text-[#B91C1C] border border-[#DC2626]/20 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />

@@ -35,6 +35,7 @@ const LineChart = dynamic(() => import('recharts').then(m => ({ default: m.LineC
 const Line = dynamic(() => import('recharts').then(m => ({ default: m.Line })), { ssr: false });
 const PieChart = dynamic(() => import('recharts').then(m => ({ default: m.PieChart })), { ssr: false });
 const Pie = dynamic(() => import('recharts').then(m => ({ default: m.Pie })), { ssr: false });
+const Cell = dynamic(() => import('recharts').then(m => ({ default: m.Cell })), { ssr: false });
 
 interface DashboardSummary {
   totalProducts: number;
@@ -682,10 +683,7 @@ export default function SuperAdminDashboard() {
                     }) as any}
                   />
                   <Pie
-                    data={visualBreakdownData.map((entry, index) => ({
-                      ...entry,
-                      fill: donutColors[index % donutColors.length],
-                    }))}
+                    data={visualBreakdownData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -698,7 +696,14 @@ export default function SuperAdminDashboard() {
                     isAnimationActive
                     animationDuration={900}
                     animationEasing="ease-out"
-                  />
+                  >
+                    {visualBreakdownData.map((entry, index) => (
+                      <Cell
+                        key={`${entry.name}-${index}`}
+                        fill={donutColors[index % donutColors.length]}
+                      />
+                    ))}
+                  </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">

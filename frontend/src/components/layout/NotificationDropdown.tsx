@@ -6,9 +6,11 @@ import { formatDistanceToNow } from 'date-fns';
 import notificationService, { Notification } from '@/services/notification.service';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export const NotificationDropdown = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -81,8 +83,7 @@ export const NotificationDropdown = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const markAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
@@ -90,6 +91,43 @@ export const NotificationDropdown = () => {
     } catch (err) {
       console.error('Failed to mark as read');
     }
+  };
+
+  const getNotificationHref = (notification: Notification) => {
+    const base = user?.role === 'ADMIN' ? '/admin' : '/superadmin';
+    const notificationType = (notification.type || '').toUpperCase();
+    const moduleName = (notification.module || '').toUpperCase();
+    const title = (notification.title || '').toLowerCase();
+    const message = (notification.message || '').toLowerCase();
+
+    if (notificationType === 'LOW_STOCK') return `${base}/products?filter=lowstock`;
+    if (notificationType === 'NEW_USER_CREATED') return `${base}/users`;
+
+    if (notificationType.startsWith('ORDER')) {
+      return notification.relatedId ? `${base}/orders/${notification.relatedId}` : `${base}/orders`;
+    }
+
+    if (notificationType.startsWith('QUOTATION')) {
+      return notification.relatedId ? `${base}/quotations/${notification.relatedId}` : `${base}/quotations`;
+    }
+
+    if (
+      moduleName.includes('PRODUCT') ||
+      title.includes('pending approval') ||
+      message.includes('pending approval')
+    ) {
+      return user?.role === 'ADMIN' ? '/admin/approvals' : '/superadmin/products?status=PENDING';
+    }
+
+    return notificationsLink;
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+    setIsOpen(false);
+    router.push(getNotificationHref(notification));
   };
 
   const handleMarkAllRead = async () => {
@@ -164,9 +202,15 @@ export const NotificationDropdown = () => {
                   <div 
                     key={notification.id}
                     className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer relative group ${!notification.isRead ? 'bg-blue-50/30' : ''}`}
-                    onClick={() => {
-                      if (!notification.isRead) handleMarkAsRead(notification.id, {} as any);
+                    onClick={() => handleNotificationClick(notification)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        void handleNotificationClick(notification);
+                      }
                     }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="flex items-start justify-between space-x-3">
                       <div className={`mt-1 p-1.5 rounded-lg flex-shrink-0 ${
