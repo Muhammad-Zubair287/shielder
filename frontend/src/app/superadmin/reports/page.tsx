@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, ReactNode } from 'react';
-import SARSymbol from '@/components/SARSymbol';
+import FixedSARMark from '@/components/FixedSARMark';
 import { 
   BarChart3, 
   TrendingUp, 
   ShoppingCart, 
   Package, 
-  DollarSign, 
+  Banknote,
   Download,
   Filter,
   ArrowUpRight,
@@ -241,7 +241,8 @@ export default function ReportsDashboard() {
           { id: 'SALES', label: 'Sales', icon: TrendingUp },
           { id: 'ORDERS', label: 'Orders', icon: ShoppingCart },
           { id: 'INVENTORY', label: 'Inventory', icon: Package },
-          { id: 'PAYMENTS', label: 'Payments', icon: DollarSign },
+          { id: 'PAYMENTS', label: 'Payments', icon: Banknote },
+                    { id: 'PAYMENTS', label: 'Payments', icon: Banknote },
           { id: 'PROFIT', label: 'P&L', icon: FileText }
         ].map(tab => (
           <button
@@ -353,24 +354,16 @@ function OverviewTab({ data }: { data: Record<string, any> | null }) {
   const { summary } = data;
 
   const RiyalMark = ({ size = 16, className = '' }: { size?: number; className?: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/images/riyal-logo.png"
-      alt="SAR"
-      aria-label="Saudi Riyal"
-      className={`inline-block align-middle ${className}`}
-      style={{ width: size, height: size }}
-    />
+    <FixedSARMark size={size} className={className} />
   );
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<BarChart3 size={18} />} color="bg-shielder-dark" />
+        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><FixedSARMark />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<BarChart3 size={18} />} color="bg-shielder-dark" />
         <SummaryCard title="Total Orders" value={summary.orderCount || 0} subtitle="New orders in period" icon={<ShoppingCart size={18} />} color="bg-shielder-secondary" />
-        <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={18} />} color="bg-emerald-500" />
-        <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={18} />} color="bg-red-500" />
-        <SummaryCard title="Net Profit" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.netProfit || 0).toLocaleString()}</span>} subtitle="Revenue - (Refunds + Expenses)" icon={<FileText size={18} />} color="bg-purple-500" />
+        <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><FixedSARMark />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={18} />} color="bg-emerald-500" />
+        <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><FixedSARMark />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={18} />} color="bg-red-500" />
+        <SummaryCard title="Net Profit" value={<span className="inline-flex items-center gap-1"><FixedSARMark />{(summary.netProfit || 0).toLocaleString()}</span>} subtitle="Revenue - (Refunds + Expenses)" icon={<FileText size={18} />} color="bg-purple-500" />
         <SummaryCard title="Low Stock Products" value={summary.lowStockProducts || 0} subtitle="Items requiring restock" icon={<Package size={18} />} color="bg-orange-500" />
       </div>
 
@@ -426,9 +419,9 @@ function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard 
           title="Filtered Revenue" 
-          value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRevenue || 0).toLocaleString()}</span>} 
+          value={<span className="inline-flex items-center gap-1"><FixedSARMark />{(summary.totalRevenue || 0).toLocaleString()}</span>} 
           subtitle="Total for selected filters" 
-          icon={<SARSymbol size={18} className="brightness-0 invert" />} 
+          icon={<Banknote size={18} />} 
           color="bg-shielder-dark" 
         />
         <SummaryCard 
@@ -447,7 +440,7 @@ function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
         />
         <SummaryCard 
           title="Avg value/day" 
-          value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.averageOrderValue || 0).toLocaleString()}</span>} 
+          value={<span className="inline-flex items-center gap-1"><FixedSARMark />{(summary.averageOrderValue || 0).toLocaleString()}</span>} 
           subtitle="Based on selected range" 
           icon={<TrendingUp size={18} />} 
           color="bg-emerald-500" 
@@ -576,7 +569,8 @@ function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
                   <td className="px-8 py-4 font-bold text-sm text-shielder-dark">{product.name}</td>
                   <td className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">{product.categoryName}</td>
                   <td className="px-8 py-4 text-center text-sm font-medium text-gray-600">{product.quantitySold}</td>
-                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{(product.totalRevenue || 0).toLocaleString()}</span></td>
+                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(product.totalRevenue || 0).toLocaleString()}</span></td>
+                                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(product.totalRevenue || 0).toLocaleString()}</span></td>
                 </tr>
               ))}
               {salesByProduct.length === 0 && (
@@ -681,7 +675,8 @@ function OrdersTab({ data, page, pageSize, onPageChange, isRTL }: any) {
                   <td className="px-8 py-4 font-bold text-sm text-shielder-dark">#{order.orderNumber}</td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-600">{order.customerName}</td>
                   <td className="px-8 py-4 text-center text-sm font-medium text-gray-500">{order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : 'N/A'}</td>
-                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{(order.totalAmount || 0).toLocaleString()}</span></td>
+                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(order.totalAmount || 0).toLocaleString()}</span></td>
+                                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(order.totalAmount || 0).toLocaleString()}</span></td>
                 </tr>
               ))}
               {recentLargeOrders.length === 0 && (
@@ -816,7 +811,8 @@ function ProfitLossTab({ data }: any) {
         <p className="text-xs font-black uppercase tracking-[0.3em] opacity-50 mb-4">Enterprise P&L Statement</p>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
            <div>
-              <h2 className="text-6xl font-black tracking-tighter"><span className="inline-flex items-center gap-2"><SARSymbol size={48} />{netProfit.toLocaleString()}</span></h2>
+              <h2 className="text-6xl font-black tracking-tighter"><span className="inline-flex items-center gap-2"><FixedSARMark size={48} />{netProfit.toLocaleString()}</span></h2>
+                            <h2 className="text-6xl font-black tracking-tighter"><span className="inline-flex items-center gap-2"><FixedSARMark size={48} />{netProfit.toLocaleString()}</span></h2>
               <p className="text-shielder-secondary font-black text-sm uppercase tracking-widest mt-2 flex items-center">
                 Net Industrial Profit
                 <ArrowUpRight size={16} className="ml-1" />
@@ -841,29 +837,34 @@ function ProfitLossTab({ data }: any) {
       <div className="bg-white p-10 rounded-3xl border border-gray-100 shadow-sm space-y-8">
         <div className="flex justify-between items-center pb-8 border-b border-gray-50">
            <div className="space-y-1">
-              <p className="text-2xl font-black text-shielder-dark leading-none"><span className="inline-flex items-center gap-1"><SARSymbol />{totalSales.toLocaleString()}</span></p>
+              <p className="text-2xl font-black text-shielder-dark leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{totalSales.toLocaleString()}</span></p>
+                            <p className="text-2xl font-black text-shielder-dark leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{totalSales.toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Gross Sales (Paid)</p>
            </div>
            <ChevronRight className="text-gray-200" />
            <div className="space-y-1 text-right">
-              <p className="text-2xl font-black text-red-500 leading-none">-<span className="inline-flex items-center gap-1"><SARSymbol />{totalRefunds.toLocaleString()}</span></p>
+              <p className="text-2xl font-black text-red-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalRefunds.toLocaleString()}</span></p>
+                            <p className="text-2xl font-black text-red-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalRefunds.toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Refunds</p>
            </div>
         </div>
         <div className="flex justify-between items-center pb-8 border-b border-gray-50">
            <div className="space-y-1">
-              <p className="text-2xl font-black text-emerald-500 leading-none"><span className="inline-flex items-center gap-1"><SARSymbol />{(totalSales - totalRefunds).toLocaleString()}</span></p>
+              <p className="text-2xl font-black text-emerald-500 leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{(totalSales - totalRefunds).toLocaleString()}</span></p>
+                            <p className="text-2xl font-black text-emerald-500 leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{(totalSales - totalRefunds).toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Gross Profit</p>
            </div>
            <ChevronRight className="text-gray-200" />
            <div className="space-y-1 text-right">
-              <p className="text-2xl font-black text-orange-500 leading-none">-<span className="inline-flex items-center gap-1"><SARSymbol />{totalExpenses.toLocaleString()}</span></p>
+              <p className="text-2xl font-black text-orange-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalExpenses.toLocaleString()}</span></p>
+                            <p className="text-2xl font-black text-orange-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalExpenses.toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Operating Expenses</p>
            </div>
         </div>
         <div className="pt-4 flex justify-between items-center bg-gray-50 rounded-2xl p-6">
            <p className="text-xs font-black uppercase tracking-widest text-shielder-dark">Net Operating Income</p>
-           <p className="text-2xl font-black text-shielder-dark"><span className="inline-flex items-center gap-1"><SARSymbol />{netProfit.toLocaleString()}</span></p>
+           <p className="text-2xl font-black text-shielder-dark"><span className="inline-flex items-center gap-1"><FixedSARMark />{netProfit.toLocaleString()}</span></p>
+                   <p className="text-2xl font-black text-shielder-dark"><span className="inline-flex items-center gap-1"><FixedSARMark />{netProfit.toLocaleString()}</span></p>
         </div>
       </div>
     </div>
@@ -925,8 +926,9 @@ function PaymentStatCard({ label, value, count, color }: PaymentStatCardProps) {
   return (
     <div className={`${colors[color]} p-6 rounded-3xl space-y-2`}>
        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
-       <h4 className="text-xl font-black tracking-tight"><span className="inline-flex items-center gap-1"><SARSymbol />{value.toLocaleString()}</span></h4>
+      <h4 className="text-xl font-black tracking-tight"><span className="inline-flex items-center gap-1"><FixedSARMark />{value.toLocaleString()}</span></h4>
        <p className="text-[10px] font-bold opacity-60 uppercase">{count} TRANSACTIONS</p>
+       <h4 className="text-xl font-black tracking-tight"><span className="inline-flex items-center gap-1"><FixedSARMark />{value.toLocaleString()}</span></h4>
     </div>
   );
 }

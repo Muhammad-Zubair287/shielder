@@ -5,9 +5,10 @@ import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis,
     CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { TrendingUp, FileText, CheckCircle2, XCircle, ArrowRightLeft, DollarSign, RefreshCcw } from 'lucide-react';
+import { TrendingUp, FileText, CheckCircle2, XCircle, ArrowRightLeft, Banknote, RefreshCcw } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { useLanguage } from '@/contexts/LanguageContext';
+import FixedSARMark from '@/components/FixedSARMark';
 
 export default function QuotationReportsPage() {
     const { t, isRTL } = useLanguage();
@@ -25,12 +26,20 @@ export default function QuotationReportsPage() {
 
     useEffect(() => { fetch(); }, []);
 
+    const formatSAR = (value: number) => Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+
     const cards = analytics ? [
         { label: 'Total Quotations', value: analytics.total, icon: <FileText size={20} />, color: 'bg-shielder-dark', sub: 'All time' },
         { label: 'Approved', value: analytics.approved, icon: <CheckCircle2 size={20} />, color: 'bg-green-500', sub: `${analytics.draft || 0} draft` },
         { label: 'Rejected', value: analytics.rejected, icon: <XCircle size={20} />, color: 'bg-red-500', sub: `${analytics.expired || 0} expired` },
         { label: 'Converted to Orders', value: analytics.converted, icon: <ArrowRightLeft size={20} />, color: 'bg-teal-500', sub: `${analytics.conversionRate}% rate` },
-        { label: 'Revenue from Converted', value: `$${Number(analytics.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, icon: <DollarSign size={20} />, color: 'bg-shielder-primary', sub: 'Total converted value' },
+        {
+            label: 'Revenue from Converted',
+            value: <span className="inline-flex items-center gap-1"><FixedSARMark />{formatSAR(analytics.revenue || 0)}</span>,
+            icon: <Banknote size={20} />,
+            color: 'bg-shielder-primary',
+            sub: 'Total converted value',
+        },
     ] : [];
 
     return (
@@ -106,8 +115,19 @@ export default function QuotationReportsPage() {
                             <LineChart data={analytics.monthly} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 700 }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v.toLocaleString()}`} />
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 12 }} formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Revenue']} />
+                                <YAxis
+                                    tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 700 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(v) => `${Number(v || 0).toLocaleString()} SAR`}
+                                />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 12 }}
+                                    formatter={(v: any) => [
+                                        <span key="sar-value" className="inline-flex items-center gap-1"><FixedSARMark />{formatSAR(Number(v || 0))}</span>,
+                                        'Revenue',
+                                    ]}
+                                />
                                 <Line type="monotone" dataKey="revenue" stroke="#F97216" strokeWidth={3} dot={{ fill: '#F97216', r: 5 }} activeDot={{ r: 7 }} name="Revenue" />
                             </LineChart>
                         </ResponsiveContainer>

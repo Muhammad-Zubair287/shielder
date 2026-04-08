@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  DollarSign,
+  Banknote,
   ShoppingCart,
   Clock,
   CheckCircle2,
@@ -50,7 +50,7 @@ export default function SummaryCards({ summary, loading }: Props) {
       labelKey: 'reportTotalRevenue',
       value: summary.totalRevenue,
       format: 'currency',
-      Icon: DollarSign,
+      Icon: Banknote,
       color: 'text-emerald-700',
       bg: 'bg-emerald-50',
     },
