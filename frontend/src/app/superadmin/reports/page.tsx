@@ -354,12 +354,12 @@ function OverviewTab({ data }: { data: Record<string, any> | null }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<DollarSign size={24} />} color="bg-shielder-dark" />
-        <SummaryCard title="Total Orders" value={summary.orderCount || 0} subtitle="New orders in period" icon={<ShoppingCart size={24} />} color="bg-shielder-secondary" />
-        <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={24} />} color="bg-emerald-500" />
-        <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={24} />} color="bg-red-500" />
-        <SummaryCard title="Net Profit" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.netProfit || 0).toLocaleString()}</span>} subtitle="Revenue - (Refunds + Expenses)" icon={<FileText size={24} />} color="bg-purple-500" />
-        <SummaryCard title="Low Stock Products" value={summary.lowStockProducts || 0} subtitle="Items requiring restock" icon={<Package size={24} />} color="bg-orange-500" />
+        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<SARSymbol size={18} className="brightness-0 invert" />} color="bg-shielder-dark" />
+        <SummaryCard title="Total Orders" value={summary.orderCount || 0} subtitle="New orders in period" icon={<ShoppingCart size={18} />} color="bg-shielder-secondary" />
+        <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={18} />} color="bg-emerald-500" />
+        <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={18} />} color="bg-red-500" />
+        <SummaryCard title="Net Profit" value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.netProfit || 0).toLocaleString()}</span>} subtitle="Revenue - (Refunds + Expenses)" icon={<FileText size={18} />} color="bg-purple-500" />
+        <SummaryCard title="Low Stock Products" value={summary.lowStockProducts || 0} subtitle="Items requiring restock" icon={<Package size={18} />} color="bg-orange-500" />
       </div>
 
       {data.salesTrend && data.salesTrend.length > 0 ? (
@@ -416,28 +416,28 @@ function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
           title="Filtered Revenue" 
           value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.totalRevenue || 0).toLocaleString()}</span>} 
           subtitle="Total for selected filters" 
-          icon={<DollarSign size={20} />} 
+          icon={<SARSymbol size={18} className="brightness-0 invert" />} 
           color="bg-shielder-dark" 
         />
         <SummaryCard 
           title="Units Sold" 
           value={(summary.totalUnitsSold || 0).toLocaleString()} 
           subtitle="Volume in period" 
-          icon={<Package size={20} />} 
+          icon={<Package size={18} />} 
           color="bg-amber-500" 
         />
         <SummaryCard 
           title="Distinct Products" 
           value={summary.productCount || 0} 
           subtitle="Unique SKUs moved" 
-          icon={<ShoppingCart size={20} />} 
+          icon={<ShoppingCart size={18} />} 
           color="bg-blue-500" 
         />
         <SummaryCard 
           title="Avg value/day" 
           value={<span className="inline-flex items-center gap-1"><SARSymbol />{(summary.averageOrderValue || 0).toLocaleString()}</span>} 
           subtitle="Based on selected range" 
-          icon={<TrendingUp size={20} />} 
+          icon={<TrendingUp size={18} />} 
           color="bg-emerald-500" 
         />
       </div>
@@ -870,7 +870,7 @@ interface SummaryCardProps {
 function SummaryCard({ title, value, subtitle, icon, color }: SummaryCardProps) {
   return (
     <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:border-shielder-primary/20 transition-all group">
-      <div className={`w-14 h-14 ${color} rounded-2xl flex items-center justify-center text-white shadow-lg mb-6 group-hover:scale-110 transition-transform`}>
+      <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center text-white shadow-md mb-5 group-hover:scale-105 transition-transform`}>
         {icon}
       </div>
       <h3 className="text-3xl font-black text-shielder-dark tracking-tighter">{value}</h3>

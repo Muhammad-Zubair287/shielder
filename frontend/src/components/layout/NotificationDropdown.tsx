@@ -49,7 +49,7 @@ export const NotificationDropdown = () => {
     try {
       const { data } = await notificationService.getNotifications({
         limit: 5,
-        ...(user?.role === 'SUPER_ADMIN' ? { global: true } : {}),
+        ...(user?.role === 'SUPER_ADMIN' ? { global: true, read: false } : {}),
       });
       setNotifications(data?.notifications ?? data?.data?.notifications ?? []);
     } catch (err) {
@@ -133,7 +133,11 @@ export const NotificationDropdown = () => {
   const handleMarkAllRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      if (user?.role === 'SUPER_ADMIN') {
+        setNotifications([]);
+      } else {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      }
       setUnreadCount(0);
     } catch (err) {
       console.error('Failed to mark all as read');
