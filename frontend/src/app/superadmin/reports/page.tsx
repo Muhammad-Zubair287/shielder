@@ -366,7 +366,7 @@ function OverviewTab({ data }: { data: Record<string, any> | null }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<RiyalMark size={18} className="brightness-0 invert" />} color="bg-shielder-dark" />
+        <SummaryCard title="Total Sales" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalSales || 0).toLocaleString()}</span>} subtitle="Net processed payments" icon={<BarChart3 size={18} />} color="bg-shielder-dark" />
         <SummaryCard title="Total Orders" value={summary.orderCount || 0} subtitle="New orders in period" icon={<ShoppingCart size={18} />} color="bg-shielder-secondary" />
         <SummaryCard title="Total Revenue" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalRevenue || 0).toLocaleString()}</span>} subtitle="Gross business intake" icon={<TrendingUp size={18} />} color="bg-emerald-500" />
         <SummaryCard title="Total Refunds" value={<span className="inline-flex items-center gap-1"><RiyalMark />{(summary.totalRefunds || 0).toLocaleString()}</span>} subtitle="Money returned to clients" icon={<RefreshCcw size={18} />} color="bg-red-500" />
