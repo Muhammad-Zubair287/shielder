@@ -40,8 +40,14 @@ function resolveFallback(pathname: string): string | null {
 export default function SmartBackButton() {
   const pathname = usePathname();
   const router = useRouter();
+  const normalizedPath = pathname || '/';
 
-  const fallback = useMemo(() => resolveFallback(pathname || '/'), [pathname]);
+  // Admin and superadmin layouts already provide their own in-page navigation.
+  if (normalizedPath.startsWith('/admin') || normalizedPath.startsWith('/superadmin')) {
+    return null;
+  }
+
+  const fallback = useMemo(() => resolveFallback(normalizedPath), [normalizedPath]);
 
   if (!fallback) {
     return null;

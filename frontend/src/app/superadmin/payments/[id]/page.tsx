@@ -139,7 +139,7 @@ export default function PaymentDetailsPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Paid</span>
-                    <span className="text-xl font-black text-shielder-dark">${Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-black text-shielder-dark inline-flex items-center gap-0.5"><SARSymbol />{Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                   <InfoRow icon={<CreditCard size={14} />} label="Payment Method" value={payment.method.replace('_', ' ')} />
                   <InfoRow icon={<Hash size={14} />} label="Payment ID" value={payment.id} />
@@ -194,7 +194,7 @@ export default function PaymentDetailsPage() {
                 </div>
                 <div className="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 flex flex-col items-end justify-center">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Order Total</p>
-                  <p className="text-xl font-black text-shielder-dark">${Number(payment.order.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xl font-black text-shielder-dark inline-flex items-center gap-0.5"><SARSymbol />{Number(payment.order.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                 </div>
               </div>
             </div>

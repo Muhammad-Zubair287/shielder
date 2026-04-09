@@ -6,6 +6,7 @@ import { AlertCircle, Eye, RotateCcw, Loader2, X } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import SARSymbol from '@/components/SARSymbol';
 
 export default function ExpiredQuotationsPage() {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -72,7 +73,7 @@ export default function ExpiredQuotationsPage() {
                                         <p className="text-xs font-bold text-gray-700">{q.customerName}</p>
                                         <p className="text-xs text-gray-400">{q.customerEmail}</p>
                                     </td>
-                                    <td className="px-5 py-4 text-xs font-black">${Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-5 py-4 text-xs font-black"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
                                     <td className="px-5 py-4 text-xs text-red-500 font-bold">{q.expiryDate ? format(new Date(q.expiryDate), 'MMM dd, yyyy') : '—'}</td>
                                     <td className="px-5 py-4 text-xs text-gray-400">{q.createdBy?.profile?.fullName || q.createdBy?.email || '—'}</td>
                                     <td className="px-5 py-4">
@@ -90,7 +91,7 @@ export default function ExpiredQuotationsPage() {
                 </div>
                 <UnifiedPagination
                     page={page}
-                    totalPages={pagination.totalPages || pagination.pages || 1}
+                    totalPages={pagination.pages || 1}
                     totalItems={pagination.total}
                     pageSize={10}
                     onPageChange={setPage}

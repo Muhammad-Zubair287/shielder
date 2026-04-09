@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Search, Package, Save, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import quotationService from '@/services/quotation.service';
+import SARSymbol from '@/components/SARSymbol';
 
 interface CartItem {
     productId: string;
@@ -176,7 +177,7 @@ export default function CreateQuotationPage() {
                                                 <p className="text-xs text-gray-400">Stock: {p.stock}</p>
                                             </div>
                                         </div>
-                                        <span className="text-sm font-black text-shielder-primary">${Number(p.price).toFixed(2)}</span>
+                                        <span className="text-sm font-black text-shielder-primary inline-flex items-center gap-0.5"><SARSymbol />{Number(p.price).toFixed(2)}</span>
                                     </button>
                                 ))
                             }
@@ -202,14 +203,14 @@ export default function CreateQuotationPage() {
                                 {items.map((item, idx) => (
                                     <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/50">
                                         <td className="py-3 px-3 font-medium text-gray-700">{item.productName}</td>
-                                        <td className="py-3 px-3 text-center text-gray-500">${item.unitPrice.toFixed(2)}</td>
+                                        <td className="py-3 px-3 text-center text-gray-500"><span className="inline-flex items-center gap-0.5"><SARSymbol />{item.unitPrice.toFixed(2)}</span></td>
                                         <td className="py-3 px-3 text-center">
                                             <input type="number" min={1} value={item.quantity} onChange={e => updateItem(idx, 'quantity', Math.max(1, Number(e.target.value)))} className="w-16 text-center border border-gray-200 rounded-lg py-1 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-shielder-primary/20" />
                                         </td>
                                         <td className="py-3 px-3 text-center">
                                             <input type="number" min={0} value={item.discount} onChange={e => updateItem(idx, 'discount', Math.max(0, Number(e.target.value)))} className="w-20 text-center border border-gray-200 rounded-lg py-1 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-shielder-primary/20" />
                                         </td>
-                                        <td className="py-3 px-3 text-right font-black text-shielder-dark">${item.totalPrice.toFixed(2)}</td>
+                                        <td className="py-3 px-3 text-right font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{item.totalPrice.toFixed(2)}</span></td>
                                         <td className="py-3 px-3">
                                             <button onClick={() => removeItem(idx)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
                                         </td>
@@ -230,10 +231,10 @@ export default function CreateQuotationPage() {
                     <div className="mt-6 border-t border-gray-100 pt-4 flex justify-end">
                         <div className="w-72 space-y-2">
                             <div className="flex justify-between text-sm text-gray-500">
-                                <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
+                                <span>Subtotal</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm text-gray-500">
-                                <span>Overall Discount ($)</span>
+                                <span>Overall Discount (SAR)</span>
                                 <input type="number" min={0} value={overallDiscount} onChange={e => setOverallDiscount(Math.max(0, Number(e.target.value)))} className="w-24 text-right border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:outline-none" />
                             </div>
                             <div className="flex items-center justify-between text-sm text-gray-500">
@@ -241,11 +242,11 @@ export default function CreateQuotationPage() {
                                 <input type="number" min={0} max={100} value={taxRate} onChange={e => setTaxRate(Math.max(0, Math.min(100, Number(e.target.value))))} className="w-24 text-right border border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:outline-none" />
                             </div>
                             <div className="flex justify-between text-sm text-gray-500">
-                                <span>Tax Amount</span><span>${taxAmount.toFixed(2)}</span>
+                                <span>Tax Amount</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{taxAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-base font-black text-shielder-dark border-t border-gray-200 pt-2 mt-2">
                                 <span>GRAND TOTAL</span>
-                                <span className="text-shielder-primary text-lg">${grandTotal.toFixed(2)}</span>
+                                <span className="text-shielder-primary text-lg inline-flex items-center gap-0.5"><SARSymbol />{grandTotal.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

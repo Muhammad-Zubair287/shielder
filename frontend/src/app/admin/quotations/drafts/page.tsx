@@ -6,6 +6,7 @@ import { FileText, Eye, Edit3, Send, Plus } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import SARSymbol from '@/components/SARSymbol';
 
 export default function DraftQuotationsPage() {
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -69,7 +70,7 @@ export default function DraftQuotationsPage() {
                                         <p className="text-xs font-bold text-gray-700">{q.customerName}</p>
                                         <p className="text-xs text-gray-400">{q.customerEmail}</p>
                                     </td>
-                                    <td className="px-5 py-4 text-xs font-black text-shielder-dark">${Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-5 py-4 text-xs font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
                                     <td className="px-5 py-4 text-xs text-gray-500">{q._count?.items || 0} items</td>
                                     <td className="px-5 py-4 text-xs text-orange-500 font-bold">{q.expiryDate ? format(new Date(q.expiryDate), 'MMM dd, yyyy') : '—'}</td>
                                     <td className="px-5 py-4 text-xs text-gray-400">{format(new Date(q.createdAt), 'MMM dd, yyyy')}</td>
@@ -87,7 +88,7 @@ export default function DraftQuotationsPage() {
                 </div>
                 <UnifiedPagination
                     page={page}
-                    totalPages={pagination.totalPages || pagination.pages || 1}
+                    totalPages={pagination.pages || 1}
                     totalItems={pagination.total}
                     pageSize={10}
                     onPageChange={setPage}

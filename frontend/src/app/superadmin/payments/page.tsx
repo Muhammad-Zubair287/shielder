@@ -182,7 +182,7 @@ export default function PaymentsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard 
           title={t('totalSales')} 
-          value={`SAR ${stats.totalRevenue.toLocaleString()}`} 
+          value={<span className="inline-flex items-center gap-0.5"><SARSymbol />{stats.totalRevenue.toLocaleString()}</span>} 
           icon={<DollarSign size={24} />} 
           color="bg-shielder-dark" 
           description="Total money made so far"
@@ -190,7 +190,7 @@ export default function PaymentsPage() {
         />
         <SummaryCard 
           title={t('todaysSales')} 
-          value={`SAR ${stats.todayRevenue.toLocaleString()}`} 
+          value={<span className="inline-flex items-center gap-0.5"><SARSymbol />{stats.todayRevenue.toLocaleString()}</span>} 
           icon={<Plus size={24} />} 
           color="bg-shielder-secondary" 
           description="Money made today"
@@ -399,7 +399,7 @@ export default function PaymentsPage() {
                     <option value="">{t('chooseAnOrder')}</option>
                     {orders.map(order => (
                       <option key={order.id} value={order.id}>
-                        {order.orderNumber} - {order.customerName} (<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(order.total).toFixed(2)}</span>)
+                        {order.orderNumber} - {order.customerName} (SAR {Number(order.total).toFixed(2)})
                       </option>
                     ))}
                   </select>

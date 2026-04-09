@@ -10,6 +10,7 @@ import {
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import SARSymbol from '@/components/SARSymbol';
 
 const STATUS_COLORS: Record<string, string> = {
     DRAFT: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -110,7 +111,7 @@ export default function AdminQuotationsPage() {
                     </div>
                     <div className="text-right">
                         <p className="text-white/70 text-xs font-bold uppercase tracking-widest">Revenue from Converted</p>
-                        <p className="text-[#FF6B35] text-2xl font-black">${Number(summary.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        <p className="text-[#FF6B35] text-2xl font-black inline-flex items-center gap-0.5"><SARSymbol />{Number(summary.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </div>
                 </div>
             )}
@@ -161,7 +162,7 @@ export default function AdminQuotationsPage() {
                                         </div>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.customerEmail}</td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-xs font-black text-[#0C1B33]">${Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-xs font-black text-[#0C1B33]"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${STATUS_COLORS[q.status] || ''}`}>{q.status}</span>
                                     </td>
@@ -194,7 +195,7 @@ export default function AdminQuotationsPage() {
                 {/* Pagination */}
                 <UnifiedPagination
                     page={pagination.page}
-                    totalPages={pagination.totalPages || pagination.pages || 1}
+                    totalPages={pagination.pages || 1}
                     totalItems={pagination.total}
                     pageSize={pagination.limit}
                     onPageChange={(page) => setPagination((p) => ({ ...p, page }))}

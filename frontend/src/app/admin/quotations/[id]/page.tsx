@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
+import SARSymbol from '@/components/SARSymbol';
 
 const STATUS_COLORS: Record<string, string> = {
     DRAFT: 'bg-gray-100 text-gray-700',
@@ -185,9 +186,9 @@ export default function ViewQuotationPage() {
                                         <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
                                         <td className="px-4 py-3 font-medium text-gray-700">{item.productName}</td>
                                         <td className="px-4 py-3 text-center text-gray-600">{item.quantity}</td>
-                                        <td className="px-4 py-3 text-right text-gray-600">${Number(item.unitPrice).toFixed(2)}</td>
-                                        <td className="px-4 py-3 text-right text-green-600">-${Number(item.discount || 0).toFixed(2)}</td>
-                                        <td className="px-4 py-3 text-right font-black text-shielder-dark">${Number(item.totalPrice).toFixed(2)}</td>
+                                        <td className="px-4 py-3 text-right text-gray-600"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.unitPrice).toFixed(2)}</span></td>
+                                        <td className="px-4 py-3 text-right text-green-600">-<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.discount || 0).toFixed(2)}</span></td>
+                                        <td className="px-4 py-3 text-right font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.totalPrice).toFixed(2)}</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -197,12 +198,12 @@ export default function ViewQuotationPage() {
                     {/* Totals */}
                     <div className="flex justify-end mb-8">
                         <div className="w-72 space-y-2 text-sm">
-                            <div className="flex justify-between text-gray-500"><span>Subtotal</span><span>${Number(quotation.subtotal).toFixed(2)}</span></div>
-                            <div className="flex justify-between text-green-600"><span>Discount</span><span>-${Number(quotation.discount).toFixed(2)}</span></div>
-                            <div className="flex justify-between text-gray-500"><span>Tax</span><span>${Number(quotation.tax).toFixed(2)}</span></div>
+                            <div className="flex justify-between text-gray-500"><span>Subtotal</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.subtotal).toFixed(2)}</span></div>
+                            <div className="flex justify-between text-green-600"><span>Discount</span><span>-<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.discount).toFixed(2)}</span></span></div>
+                            <div className="flex justify-between text-gray-500"><span>Tax</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.tax).toFixed(2)}</span></div>
                             <div className="flex justify-between font-black text-shielder-dark text-base border-t border-gray-200 pt-2">
                                 <span>GRAND TOTAL</span>
-                                <span className="text-shielder-primary text-xl">${Number(quotation.total).toFixed(2)}</span>
+                                <span className="text-shielder-primary text-xl inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.total).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

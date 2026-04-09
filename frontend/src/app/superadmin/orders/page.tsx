@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import SARSymbol from '@/components/SARSymbol';
 
 export default function OrdersPage() {
   const { t, isRTL } = useLanguage();
@@ -252,7 +253,7 @@ export default function OrdersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-shielder-dark">
-                      ${Number(order.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(order.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${
