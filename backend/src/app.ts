@@ -41,6 +41,24 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
 
+const staticImageRoots = [
+  path.resolve(process.cwd(), 'images'),
+  path.resolve(process.cwd(), '..', 'images'),
+  path.resolve(__dirname, 'images'),
+  path.resolve(__dirname, '..', 'images'),
+  path.resolve(__dirname, '..', '..', 'images'),
+  path.resolve(__dirname, '..', '..', '..', 'images'),
+  path.resolve(process.cwd(), '..', 'frontend', 'public', 'images'),
+];
+
+const staticUploadRoots = [
+  path.resolve(process.cwd(), 'uploads'),
+  path.resolve(process.cwd(), '..', 'uploads'),
+  path.resolve(__dirname, 'uploads'),
+  path.resolve(__dirname, '..', 'uploads'),
+  path.resolve(__dirname, '..', '..', 'uploads'),
+];
+
 /**
  * Global BigInt serialization fix
  */
@@ -93,14 +111,18 @@ export const createApp = (): Application => {
   }
 
   // Static files (served with long-lived cache in production)
-  app.use('/uploads', express.static('uploads', {
-    maxAge: env.isProduction ? '7d' : 0,
-  }));
+  for (const root of staticUploadRoots) {
+    app.use('/uploads', express.static(root, {
+      maxAge: env.isProduction ? '7d' : 0,
+    }));
+  }
 
   // Serve root-level images folder (used by seed data / demo images)
-  app.use('/images', express.static(path.join(__dirname, '..', '..', 'images'), {
-    maxAge: env.isProduction ? '7d' : 0,
-  }));
+  for (const root of staticImageRoots) {
+    app.use('/images', express.static(root, {
+      maxAge: env.isProduction ? '7d' : 0,
+    }));
+  }
 
   // Health check endpoint
   app.get('/health', (_req, res) => {
