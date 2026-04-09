@@ -2,6 +2,53 @@ import { Request, Response, NextFunction } from 'express';
 import { productService } from './product.service';
 import { ProductStatus } from '@prisma/client';
 
+const getRequestOrigin = (req: Request): string => {
+  const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
+  const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get('host');
+
+  return host ? `${protocol}://${host}` : '';
+};
+
+const resolvePublicImageUrl = (req: Request, imagePath?: string | null): string | null => {
+  if (!imagePath) return null;
+
+  if (/^(https?:\/\/|data:|blob:)/i.test(imagePath)) {
+    return imagePath;
+  }
+
+  const normalized = imagePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+  const pathPart = normalized.startsWith('/') ? normalized : `/${normalized}`;
+
+  if (
+    normalized.startsWith('images/') ||
+    normalized.startsWith('uploads/') ||
+    pathPart.startsWith('/images/') ||
+    pathPart.startsWith('/uploads/')
+  ) {
+    const origin = getRequestOrigin(req);
+    return origin ? `${origin}${pathPart}` : pathPart;
+  }
+
+  return imagePath;
+};
+
+const normalizeProductResponse = (req: Request, product: any) => {
+  if (!product) return product;
+
+  return {
+    ...product,
+    mainImage: resolvePublicImageUrl(req, product.mainImage),
+    attachments: Array.isArray(product.attachments)
+      ? product.attachments.map((attachment: any) => ({
+          ...attachment,
+          fileUrl: resolvePublicImageUrl(req, attachment.fileUrl),
+        }))
+      : product.attachments,
+  };
+};
+
 export class ProductController {
   async getFilters(req: Request, res: Response, next: NextFunction) {
     try {
@@ -24,7 +71,7 @@ export class ProductController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const product = await productService.create(req.body);
-      res.status(201).json({ success: true, data: product });
+      res.status(201).json({ success: true, data: normalizeProductResponse(req, product) });
     } catch (error) {
       next(error);
     }
@@ -70,7 +117,11 @@ export class ProductController {
       };
       
       const result = await productService.getProductsForManagement(filters);
-      res.json({ success: true, ...result });
+      res.json({
+        success: true,
+        ...result,
+        products: result.products.map((product) => normalizeProductResponse(req, product)),
+      });
     } catch (error) {
       next(error);
     }
@@ -124,7 +175,11 @@ export class ProductController {
         locale: locale as string,
       });
 
-      res.json({ success: true, ...result });
+      res.json({
+        success: true,
+        ...result,
+        products: result.products.map((product) => normalizeProductResponse(req, product)),
+      });
     } catch (error) {
       next(error);
     }
@@ -141,7 +196,7 @@ export class ProductController {
     try {
       const locale = (req.query.locale as string) || (req.headers['accept-language'] as string) || 'en';
       const product = await productService.getById(String(req.params.id), locale);
-      res.json({ success: true, data: product });
+      res.json({ success: true, data: normalizeProductResponse(req, product) });
     } catch (error) {
       next(error);
     }
@@ -164,7 +219,11 @@ export class ProductController {
         locale: (req.query.locale as string) || (req.headers['accept-language'] as string) || 'en',
       };
       const result = await productService.getProductsForManagement(filters);
-      res.json({ success: true, ...result });
+      res.json({
+        success: true,
+        ...result,
+        products: result.products.map((product) => normalizeProductResponse(req, product)),
+      });
     } catch (error) {
       next(error);
     }
@@ -221,7 +280,7 @@ export class ProductController {
   async reject(req: Request, res: Response, next: NextFunction) {
     try {
       const product = await productService.rejectProduct(String(req.params.id));
-      res.json({ success: true, data: product });
+      res.json({ success: true, data: normalizeProductResponse(req, product) });
     } catch (error) {
       next(error);
     }
@@ -238,7 +297,7 @@ export class ProductController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const product = await productService.update(String(req.params.id), req.body);
-      res.json({ success: true, data: product });
+      res.json({ success: true, data: normalizeProductResponse(req, product) });
     } catch (error) {
       next(error);
     }
@@ -290,7 +349,13 @@ export class ProductController {
       }
       const imageUrl = `/uploads/products/${req.file.filename}`;
       const product = await productService.update(String(req.params.id), { mainImage: imageUrl });
-      res.json({ success: true, data: { mainImage: imageUrl, product } });
+      res.json({
+        success: true,
+        data: {
+          mainImage: resolvePublicImageUrl(req, imageUrl),
+          product: normalizeProductResponse(req, product),
+        },
+      });
     } catch (error) {
       next(error);
     }

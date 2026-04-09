@@ -260,7 +260,15 @@ export default function SuperAdminDashboard() {
       ? revenueBreakdownData
       : categories
           .filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
-          .map((item) => ({ name: item.name, value: item.revenueValue }))
+          .map((item) => ({
+            name: item.name,
+            value:
+              breakdownMode === 'revenue'
+                ? item.revenueValue
+                : breakdownMode === 'orders'
+                  ? item.ordersValue
+                  : item.comparisonValue,
+          }))
           .filter((item) => item.value > 0);
 
   const safeBreakdownData =
