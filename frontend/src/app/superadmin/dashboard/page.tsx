@@ -277,19 +277,17 @@ export default function SuperAdminDashboard() {
       : summaryModeFallback;
 
   const donutColors = breakdownMode === 'orders' ? ORDERS_PIE_COLORS : PIE_COLORS;
+  const hasMeaningfulBreakdown = safeBreakdownData.length > 1;
 
   const breakdownTotal = safeBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   const visualBreakdownData =
-    breakdownTotal > 0
+    hasMeaningfulBreakdown
       ? safeBreakdownData
-      : (safeBreakdownData.length > 1
-          ? safeBreakdownData.map((item) => ({ ...item, value: 1 }))
-          : [
-              { name: t('dashboardModeComparison'), value: 1 },
-              { name: t('dashboardModeRevenue'), value: 1 },
-              { name: t('dashboardModeOrders'), value: 1 },
-            ]);
+      : donutColors.map((_, index) => ({
+          name: `${breakdownMode}-${index}`,
+          value: 1,
+        }));
 
   const resetDashboardFilters = () => {
     setDatePreset('6M');
@@ -682,14 +680,16 @@ export default function SuperAdminDashboard() {
             <div className="relative h-[330px] sm:h-[360px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 18px rgba(0,0,0,0.12)' }}
-                    formatter={((value: any) => {
-                      const suffix = breakdownMode === 'orders' ? t('ordersLabel') : t('sarCurrency');
-                      const label = breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel');
-                      return [`${(Number(value) || 0).toLocaleString()} ${suffix}`, label];
-                    }) as any}
-                  />
+                  {hasMeaningfulBreakdown && (
+                    <Tooltip
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 18px rgba(0,0,0,0.12)' }}
+                      formatter={((value: any) => {
+                        const suffix = breakdownMode === 'orders' ? t('ordersLabel') : t('sarCurrency');
+                        const label = breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel');
+                        return [`${(Number(value) || 0).toLocaleString()} ${suffix}`, label];
+                      }) as any}
+                    />
+                  )}
                   <Pie
                     data={visualBreakdownData}
                     dataKey="value"
@@ -723,20 +723,22 @@ export default function SuperAdminDashboard() {
                 </p>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
-              {safeBreakdownData.map((item, index) => {
-                const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
-                return (
-                  <div key={item.name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 bg-gray-50/60">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: donutColors[index % donutColors.length] }} />
-                      <span className="text-xs font-semibold text-gray-700 truncate">{item.name}</span>
+            {hasMeaningfulBreakdown && (
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                {safeBreakdownData.map((item, index) => {
+                  const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
+                  return (
+                    <div key={item.name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 bg-gray-50/60">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: donutColors[index % donutColors.length] }} />
+                        <span className="text-xs font-semibold text-gray-700 truncate">{item.name}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{share}%</span>
                     </div>
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">{share}%</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       </div>
