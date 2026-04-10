@@ -159,8 +159,8 @@ class AdminService {
     return apiClient.get(API_ENDPOINTS.SUPER_ADMIN.ANALYTICS_MONTHLY);
   }
 
-  async getActivity() {
-    return apiClient.get(API_ENDPOINTS.SUPER_ADMIN.ACTIVITY);
+  async getActivity(params?: { window?: 'all' | 'today' | '7d'; limit?: number }) {
+    return apiClient.get(API_ENDPOINTS.SUPER_ADMIN.ACTIVITY, { params });
   }
 
   /**

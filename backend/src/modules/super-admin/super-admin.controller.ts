@@ -289,9 +289,20 @@ export class SuperAdminController {
    *       200:
    *         description: Recent activity entries
    */
-  async getRecentActivity(_req: Request, res: Response, next: NextFunction) {
+  async getRecentActivity(req: Request, res: Response, next: NextFunction) {
     try {
-      const activity = await superAdminService.getRecentActivity();
+      const rawWindow = String(req.query.window || '7d').toLowerCase();
+      const window = rawWindow === 'today' || rawWindow === 'all' || rawWindow === '7d'
+        ? rawWindow
+        : '7d';
+
+      const parsedLimit = Number(req.query.limit);
+      const limit = Number.isFinite(parsedLimit) ? parsedLimit : 100;
+
+      const activity = await superAdminService.getRecentActivity({
+        window,
+        limit,
+      });
       res.json({ success: true, data: activity });
     } catch (error) {
       next(error);

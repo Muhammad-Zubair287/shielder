@@ -138,7 +138,7 @@ export default function SuperAdminDashboard() {
         adminService.getLowStockProducts(),
         adminService.getMonthlySalesSeries(),
         adminService.getByCategory(),
-        adminService.getActivity()
+        adminService.getActivity({ window: activityTimeWindow, limit: 200 })
       ]);
 
       setSummary(summaryRes.data.data);
@@ -180,7 +180,7 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activityTimeWindow]);
 
   const formatShortDate = (raw: string) => {
     const date = new Date(raw);
@@ -315,29 +315,7 @@ export default function SuperAdminDashboard() {
     return 'login';
   };
 
-  const inSelectedActivityWindow = (timestamp: string) => {
-    if (activityTimeWindow === 'all') return true;
-
-    const eventDate = new Date(timestamp);
-    if (Number.isNaN(eventDate.getTime())) return true;
-
-    const now = new Date();
-    if (activityTimeWindow === 'today') {
-      return (
-        eventDate.getFullYear() === now.getFullYear() &&
-        eventDate.getMonth() === now.getMonth() &&
-        eventDate.getDate() === now.getDate()
-      );
-    }
-
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(now.getDate() - 7);
-    return eventDate >= sevenDaysAgo;
-  };
-
-  const windowedActivities = activities.filter((activity) => inSelectedActivityWindow(activity.timestamp));
-
-  const filteredActivities = windowedActivities.filter((activity) => {
+  const filteredActivities = activities.filter((activity) => {
     const matchesText = `${activity.action} ${activity.user}`
       .toLowerCase()
       .includes(activitySearch.toLowerCase());
@@ -357,10 +335,10 @@ export default function SuperAdminDashboard() {
   };
 
   const activityStats = {
-    total: windowedActivities.length,
-    pending: windowedActivities.filter((activity) => activity.type === 'pending').length,
-    success: windowedActivities.filter((activity) => activity.type === 'success').length,
-    failed: windowedActivities.filter((activity) => activity.type === 'issue').length,
+    total: activities.length,
+    pending: activities.filter((activity) => activity.type === 'pending').length,
+    success: activities.filter((activity) => activity.type === 'success').length,
+    failed: activities.filter((activity) => activity.type === 'issue').length,
   };
 
   const exportActivityCsv = () => {

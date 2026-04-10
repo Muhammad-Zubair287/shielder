@@ -475,9 +475,24 @@ export class SuperAdminService {
     return stats;
   }
 
-  async getRecentActivity() {
+  async getRecentActivity(options?: { window?: 'all' | 'today' | '7d'; limit?: number }) {
+    const window = options?.window ?? '7d';
+    const limit = Math.min(Math.max(options?.limit ?? 100, 1), 500);
+
+    let createdAtFilter: { gte?: Date } | undefined;
+    const now = new Date();
+    if (window === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      createdAtFilter = { gte: startOfDay };
+    } else if (window === '7d') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(now.getDate() - 7);
+      createdAtFilter = { gte: sevenDaysAgo };
+    }
+
     const activities = await prisma.auditLog.findMany({
-      take: 10,
+      take: limit,
+      where: createdAtFilter ? { createdAt: createdAtFilter } : undefined,
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { email: true, profile: { select: { fullName: true } } } },
