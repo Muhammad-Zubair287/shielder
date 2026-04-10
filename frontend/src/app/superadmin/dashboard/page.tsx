@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Package, 
   TrendingUp, 
@@ -127,18 +127,31 @@ export default function SuperAdminDashboard() {
   const [activityViewFilter, setActivityViewFilter] = useState<ActivityViewFilter>('all');
   const [activityTimeWindow, setActivityTimeWindow] = useState<ActivityTimeWindow>('7d');
   const [loading, setLoading] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedDashboard = useRef(false);
+
+  const fetchActivity = async (window: ActivityTimeWindow = activityTimeWindow) => {
+    try {
+      setActivityLoading(true);
+      const activityRes = await adminService.getActivity({ window, limit: 200 });
+      setActivities(activityRes.data.data);
+    } catch {
+      // Keep existing activity list if a window-specific refresh fails.
+    } finally {
+      setActivityLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [summaryRes, lowStockRes, analyticsRes, categoryRes, activityRes] = await Promise.all([
+      const [summaryRes, lowStockRes, analyticsRes, categoryRes] = await Promise.all([
         adminService.getDashboardSummary(),
         adminService.getLowStockProducts(),
         adminService.getMonthlySalesSeries(),
-        adminService.getByCategory(),
-        adminService.getActivity({ window: activityTimeWindow, limit: 200 })
+        adminService.getByCategory()
       ]);
 
       setSummary(summaryRes.data.data);
@@ -170,16 +183,22 @@ export default function SuperAdminDashboard() {
           .sort((a: CategoryBreakdown, b: CategoryBreakdown) => b.revenueValue - a.revenueValue)
           .slice(0, 8)
       );
-      setActivities(activityRes.data.data);
+      await fetchActivity(activityTimeWindow);
     } catch (err: any) {
       setError(t('fetchError'));
     } finally {
+      hasLoadedDashboard.current = true;
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedDashboard.current) return;
+    fetchActivity(activityTimeWindow);
   }, [activityTimeWindow]);
 
   const formatShortDate = (raw: string) => {
@@ -782,6 +801,7 @@ export default function SuperAdminDashboard() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActivityTimeWindow('all')}
+              disabled={activityLoading}
               className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
                 activityTimeWindow === 'all'
                   ? 'bg-sky-50 text-sky-700 border-sky-200'
@@ -792,6 +812,7 @@ export default function SuperAdminDashboard() {
             </button>
             <button
               onClick={() => setActivityTimeWindow('today')}
+              disabled={activityLoading}
               className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
                 activityTimeWindow === 'today'
                   ? 'bg-[#0F172A] text-white border-[#0F172A]'
@@ -802,6 +823,7 @@ export default function SuperAdminDashboard() {
             </button>
             <button
               onClick={() => setActivityTimeWindow('7d')}
+              disabled={activityLoading}
               className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
                 activityTimeWindow === '7d'
                   ? 'bg-[#0F172A] text-white border-[#0F172A]'
@@ -819,6 +841,12 @@ export default function SuperAdminDashboard() {
             </button>
           </div>
         </div>
+        {activityLoading && (
+          <div className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-gray-500">
+            <RefreshCcw size={12} className="animate-spin" />
+            {t('refreshBtn')}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
           <div className="rounded-xl border border-gray-200 p-4 bg-white flex items-center gap-3">
