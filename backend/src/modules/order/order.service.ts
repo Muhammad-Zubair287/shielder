@@ -39,12 +39,84 @@ type PaginationInput = {
   limit: number;
 };
 
+type PublicImageAttachment = {
+  fileUrl: string;
+  url: string;
+};
+
 type AuthenticatedUser = {
   userId: string;
   role: UserRole;
 };
 
 export class OrderService {
+  private static getRequestOrigin(imagePath?: string | null): string {
+    return '';
+  }
+
+  private static resolvePublicImageUrl(imagePath?: string | null): string | null {
+    if (!imagePath) return null;
+
+    if (/^(https?:\/\/|data:|blob:)/i.test(imagePath)) {
+      return imagePath;
+    }
+
+    const normalized = imagePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+    const pathPart = normalized.startsWith('/') ? normalized : `/${normalized}`;
+
+    if (
+      normalized.startsWith('images/') ||
+      normalized.startsWith('uploads/') ||
+      pathPart.startsWith('/images/') ||
+      pathPart.startsWith('/uploads/')
+    ) {
+      return pathPart;
+    }
+
+    return imagePath;
+  }
+
+  private static normalizeAttachments(product: any) {
+    const attachments = Array.isArray(product?.attachments) ? product.attachments : [];
+
+    return attachments.map((attachment: any) => {
+      const fileUrl = OrderService.resolvePublicImageUrl(attachment?.fileUrl ?? attachment?.url ?? null) || '';
+      return {
+        ...attachment,
+        fileUrl,
+        url: fileUrl,
+      } satisfies PublicImageAttachment;
+    });
+  }
+
+  private static normalizeOrderItem(item: any) {
+    const product = item?.product;
+    if (!product) return item;
+
+    return {
+      ...item,
+      product: {
+        ...product,
+        mainImage: OrderService.resolvePublicImageUrl(product.mainImage),
+        thumbnail: OrderService.resolvePublicImageUrl(
+          product.attachments?.[0]?.fileUrl || product.attachments?.[0]?.url || product.mainImage || null
+        ),
+        attachments: OrderService.normalizeAttachments(product),
+      },
+    };
+  }
+
+  private static normalizeOrder(order: any) {
+    if (!order) return order;
+
+    return {
+      ...order,
+      orderItems: Array.isArray(order.orderItems)
+        ? order.orderItems.map((item: any) => OrderService.normalizeOrderItem(item))
+        : order.orderItems,
+    };
+  }
+
   /**
    * Load order-related system settings from DB (with safe defaults)
    */
@@ -202,7 +274,7 @@ export class OrderService {
     ]);
 
     return {
-      orders,
+      orders: orders.map((order) => OrderService.normalizeOrder(order)),
       pagination: {
         total,
         page: Math.floor(skip / limit) + 1,
@@ -230,7 +302,7 @@ export class OrderService {
       throw new NotFoundError('Order not found'); // Return 404 to avoid leaking existence
     }
 
-    return order;
+    return OrderService.normalizeOrder(order);
   }
 
   /**
@@ -431,7 +503,7 @@ export class OrderService {
     ]);
 
     return {
-      orders,
+      orders: orders.map((order) => OrderService.normalizeOrder(order)),
       pagination: {
         total,
         page,

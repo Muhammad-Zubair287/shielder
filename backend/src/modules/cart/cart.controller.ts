@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { CartService } from './cart.service';
 import { AuthRequest } from '../../types/global';
 
@@ -18,11 +18,43 @@ const messages: any = {
 };
 
 export class CartController {
+  private static getRequestOrigin(req: Request): string {
+    const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
+    const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
+    const protocol = forwardedProto || req.protocol;
+    const host = forwardedHost || req.get('host');
+
+    return host ? `${protocol}://${host}` : '';
+  }
+
+  private static resolvePublicImageUrl(req: Request, imagePath?: string | null): string | null {
+    if (!imagePath) return null;
+
+    if (/^(https?:\/\/|data:|blob:)/i.test(imagePath)) {
+      return imagePath;
+    }
+
+    const normalized = imagePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+    const pathPart = normalized.startsWith('/') ? normalized : `/${normalized}`;
+
+    if (
+      normalized.startsWith('images/') ||
+      normalized.startsWith('uploads/') ||
+      pathPart.startsWith('/images/') ||
+      pathPart.startsWith('/uploads/')
+    ) {
+      const origin = this.getRequestOrigin(req);
+      return origin ? `${origin}${pathPart}` : pathPart;
+    }
+
+    return imagePath;
+  }
+
   private static getMessage(lang: string = 'en', key: string) {
     return messages[lang]?.[key] || messages['en'][key];
   }
 
-  private static normalizeCart(cart: any, lang: string) {
+  private static normalizeCart(req: Request, cart: any, lang: string) {
     let totalAmount = 0;
 
     const items = (cart?.items || []).map((item: any) => {
@@ -43,7 +75,10 @@ export class CartController {
           id: item.product.id,
           name: translation?.name || 'Unknown',
           description: translation?.description,
-          thumbnail: item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null,
+          thumbnail: this.resolvePublicImageUrl(
+            req,
+            item.product.attachments?.[0]?.fileUrl || (item.product as any).mainImage || null
+          ),
           isActive: item.product.isActive,
         },
       };
@@ -76,7 +111,7 @@ export class CartController {
 
       res.status(200).json({
         success: true,
-        data: CartController.normalizeCart(cart, lang),
+        data: CartController.normalizeCart(req, cart, lang),
       });
     } catch (error) {
       next(error);
@@ -115,7 +150,7 @@ export class CartController {
       res.status(201).json({
         success: true,
         message: CartController.getMessage(lang, 'added'),
-        data: CartController.normalizeCart(cart, lang),
+        data: CartController.normalizeCart(req, cart, lang),
       });
     } catch (error) {
       next(error);
@@ -154,7 +189,7 @@ export class CartController {
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'updated'),
-        data: CartController.normalizeCart(cart, lang),
+        data: CartController.normalizeCart(req, cart, lang),
       });
     } catch (error) {
       next(error);
@@ -188,7 +223,7 @@ export class CartController {
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'removed'),
-        data: CartController.normalizeCart(cart, lang),
+        data: CartController.normalizeCart(req, cart, lang),
       });
     } catch (error) {
       next(error);
@@ -216,7 +251,7 @@ export class CartController {
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'cleared'),
-        data: CartController.normalizeCart(cart, lang),
+        data: CartController.normalizeCart(req, cart, lang),
       });
     } catch (error) {
       next(error);

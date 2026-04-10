@@ -51,7 +51,7 @@ interface OrderItem {
   totalPrice: number;
   product: {
     translations?: Array<{ name: string; locale: string }>;
-    attachments?: Array<{ url: string }>;
+    attachments?: Array<{ url?: string; fileUrl?: string }>;
   };
 }
 
@@ -228,7 +228,9 @@ function OrderConfirmationPageInner() {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('orderConfirmation.items')}</p>
               <div className="space-y-3">
                 {order.orderItems.map(item => {
-                  const img = getImageUrl(item.product.attachments?.[0]?.url ?? null) ?? PLACEHOLDER;
+                  const img = getImageUrl(
+                    item.product.attachments?.[0]?.fileUrl ?? item.product.attachments?.[0]?.url ?? null
+                  ) ?? PLACEHOLDER;
                   return (
                     <div key={item.id} className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">

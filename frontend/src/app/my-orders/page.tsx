@@ -35,6 +35,7 @@ import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import { orderService } from '@/services/order.service';
+import { getImageUrl } from '@/utils/helpers';
 import cartService from '@/services/cart.service';
 import toast from 'react-hot-toast';
 
@@ -143,10 +144,13 @@ export default function MyOrdersPage() {
         const unitPrice = Number(item.unitPrice || item.product?.price || 0);
         const productName = item.product?.translations?.[0]?.name || 'Product';
         const productThumbnail =
-          item.product?.attachments?.[0]?.fileUrl ||
-          item.product?.mainImage ||
-          item.product?.thumbnail ||
-          null;
+          getImageUrl(
+            item.product?.attachments?.[0]?.fileUrl ||
+            item.product?.attachments?.[0]?.url ||
+            item.product?.mainImage ||
+            item.product?.thumbnail ||
+            null,
+          ) || null;
 
         await cartService.addItem(
           productId,

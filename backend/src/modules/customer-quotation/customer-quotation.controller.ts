@@ -43,6 +43,37 @@ function validateVAT(vat: string): boolean {
 // ── Controller ────────────────────────────────────────────────────────────────
 
 export class CustomerQuotationController {
+  private static getRequestOrigin(req: AuthRequest): string {
+    const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
+    const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
+    const protocol = forwardedProto || req.protocol;
+    const host = forwardedHost || req.get('host');
+
+    return host ? `${protocol}://${host}` : '';
+  }
+
+  private static resolvePublicImageUrl(req: AuthRequest, imagePath?: string | null): string | null {
+    if (!imagePath) return null;
+
+    if (/^(https?:\/\/|data:|blob:)/i.test(imagePath)) {
+      return imagePath;
+    }
+
+    const normalized = imagePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+    const pathPart = normalized.startsWith('/') ? normalized : `/${normalized}`;
+
+    if (
+      normalized.startsWith('images/') ||
+      normalized.startsWith('uploads/') ||
+      pathPart.startsWith('/images/') ||
+      pathPart.startsWith('/uploads/')
+    ) {
+      const origin = this.getRequestOrigin(req);
+      return origin ? `${origin}${pathPart}` : pathPart;
+    }
+
+    return imagePath;
+  }
 
   /**
    * @swagger
@@ -211,7 +242,10 @@ export class CustomerQuotationController {
       // Enrich items with thumbnail
       const enrichedItems = quotation.items.map((item) => ({
         ...item,
-        thumbnail: item.product.attachments?.[0]?.fileUrl || null,
+        thumbnail: CustomerQuotationController.resolvePublicImageUrl(
+          req,
+          item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || null
+        ),
       }));
 
       res.status(201).json({
@@ -265,7 +299,10 @@ export class CustomerQuotationController {
         return {
           ...item,
           productName: translation?.name || item.productName,
-          thumbnail:   item.product.attachments?.[0]?.fileUrl || null,
+          thumbnail: CustomerQuotationController.resolvePublicImageUrl(
+            req,
+            item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || null
+          ),
         };
       });
 

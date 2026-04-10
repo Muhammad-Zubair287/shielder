@@ -3,6 +3,75 @@ import { orderService } from './order.service';
 import { getPaginationParams } from '../../common/utils/pagination';
 import { AuthRequest } from '@/types/global';
 
+const getRequestOrigin = (req: Request): string => {
+  const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
+  const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get('host');
+
+  return host ? `${protocol}://${host}` : '';
+};
+
+const resolvePublicImageUrl = (req: Request, imagePath?: string | null): string | null => {
+  if (!imagePath) return null;
+
+  if (/^(https?:\/\/|data:|blob:)/i.test(imagePath)) {
+    return imagePath;
+  }
+
+  const normalized = imagePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+  const pathPart = normalized.startsWith('/') ? normalized : `/${normalized}`;
+
+  if (
+    normalized.startsWith('images/') ||
+    normalized.startsWith('uploads/') ||
+    pathPart.startsWith('/images/') ||
+    pathPart.startsWith('/uploads/')
+  ) {
+    const origin = getRequestOrigin(req);
+    return origin ? `${origin}${pathPart}` : pathPart;
+  }
+
+  return imagePath;
+};
+
+const normalizeOrder = (req: Request, order: any) => {
+  if (!order) return order;
+
+  const orderItems = Array.isArray(order.orderItems)
+    ? order.orderItems.map((item: any) => {
+        const product = item.product ? {
+          ...item.product,
+          mainImage: resolvePublicImageUrl(req, item.product.mainImage),
+          thumbnail: resolvePublicImageUrl(
+            req,
+            item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || item.product.mainImage || null
+          ),
+          attachments: Array.isArray(item.product.attachments)
+            ? item.product.attachments.map((attachment: any) => {
+                const fileUrl = resolvePublicImageUrl(req, attachment.fileUrl || attachment.url || null);
+                return {
+                  ...attachment,
+                  fileUrl,
+                  url: fileUrl,
+                };
+              })
+            : item.product.attachments,
+        } : item.product;
+
+        return {
+          ...item,
+          product,
+        };
+      })
+    : order.orderItems;
+
+  return {
+    ...order,
+    orderItems,
+  };
+};
+
 export class OrderController {
   /**
    * @swagger
@@ -43,7 +112,7 @@ export class OrderController {
       res.status(201).json({
         success: true,
         message: 'Order created successfully',
-        data: order,
+        data: normalizeOrder(req, order),
       });
     } catch (error) {
       next(error);
@@ -82,7 +151,8 @@ export class OrderController {
       res.json({
         success: true,
         message: 'Orders retrieved successfully',
-        ...result,
+        orders: result.orders.map((order) => normalizeOrder(req, order)),
+        pagination: result.pagination,
       });
     } catch (error) {
       next(error);
@@ -114,7 +184,7 @@ export class OrderController {
       res.json({
         success: true,
         message: 'Order retrieved successfully',
-        data: order,
+        data: normalizeOrder(req, order),
       });
     } catch (error) {
       next(error);
@@ -154,7 +224,7 @@ export class OrderController {
       res.json({
         success: true,
         message: 'Order status updated successfully',
-        data: order,
+        data: normalizeOrder(req, order),
       });
     } catch (error) {
       next(error);
@@ -198,7 +268,8 @@ export class OrderController {
       res.json({
         success: true,
         message: 'Orders retrieved successfully',
-        ...result,
+        orders: result.orders.map((order) => normalizeOrder(req, order)),
+        pagination: result.pagination,
       });
     } catch (error) {
       next(error);
