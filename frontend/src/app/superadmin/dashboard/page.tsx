@@ -246,29 +246,30 @@ export default function SuperAdminDashboard() {
     }))
     .filter((item) => item.value > 0);
 
+  const modeTotalFromAnalytics =
+    breakdownMode === 'orders'
+      ? Number(filteredAnalyticsTotals.orders || 0)
+      : Number(filteredAnalyticsTotals.revenue || 0);
+
+  const revenueBreakdownTotal = revenueBreakdownData.reduce(
+    (sum, item) => sum + (Number(item.value) || 0),
+    0
+  );
+
+  const shouldUseCategoryBreakdown =
+    modeTotalFromAnalytics > 0 &&
+    revenueBreakdownData.length > 0 &&
+    Math.abs(revenueBreakdownTotal - modeTotalFromAnalytics) < 0.0001;
+
   const summaryModeFallback =
     breakdownMode === 'orders'
-      ? [{
-          name: selectedCategory !== 'ALL' ? selectedCategory : t('totalProducts'),
-          value: Number(filteredAnalyticsTotals.orders || 0),
-        }]
-      : [{ name: t('totalRevenue'), value: Number(filteredAnalyticsTotals.revenue || 0) }];
+      ? [{ name: t('totalOrders'), value: modeTotalFromAnalytics }]
+      : [{ name: t('totalRevenue'), value: modeTotalFromAnalytics }];
 
   const chartBreakdownData =
-    revenueBreakdownData.length > 0
+    shouldUseCategoryBreakdown
       ? revenueBreakdownData
-      : categories
-          .filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
-          .map((item) => ({
-            name: item.name,
-            value:
-              breakdownMode === 'revenue'
-                ? item.revenueValue
-                : breakdownMode === 'orders'
-                  ? item.ordersValue
-                  : item.comparisonValue,
-          }))
-          .filter((item) => item.value > 0);
+      : [];
 
   const safeBreakdownData =
     chartBreakdownData.length > 0
@@ -687,9 +688,9 @@ export default function SuperAdminDashboard() {
                   {breakdownTotal > 0 && (
                     <Tooltip
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 18px rgba(0,0,0,0.12)' }}
-                      formatter={((value: any, _name: any, meta: any) => {
+                      formatter={((value: any) => {
                         const suffix = breakdownMode === 'orders' ? t('ordersLabel') : t('sarCurrency');
-                        const label = meta?.payload?.name || (breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel'));
+                        const label = breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel');
                         return [`${(Number(value) || 0).toLocaleString()} ${suffix}`, label];
                       }) as any}
                     />
