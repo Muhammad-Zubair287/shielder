@@ -4,9 +4,8 @@
  * /generate-quotation
  *
  * Customer self-service quotation form.
- * Reads selected product(s) from sessionStorage (set by products page).
- * Does not fall back to cart items; quotation requests should come from the
- * explicit Get Quotation flow.
+ * Reads selected product(s) from sessionStorage (set by products page),
+ * and falls back to quotation basket items from localStorage.
  * Requires authentication — redirects to /login if not signed in.
  */
 
@@ -26,6 +25,7 @@ import SARSymbol from '@/components/SARSymbol';
 
 const PLACEHOLDER = '/images/landing/factory-1.png';
 const SESSION_KEY = 'quotation_products';
+const BASKET_KEY = 'quotation_basket';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -131,6 +131,35 @@ export default function GenerateQuotationPage() {
       }
     } catch { /* ignore */ }
 
+    // Fallback: quotation basket from localStorage (used by Quotation Drawer flow)
+    try {
+      const basketRaw = localStorage.getItem(BASKET_KEY);
+      if (!basketRaw) return;
+
+      const basketParsed = JSON.parse(basketRaw);
+      if (!Array.isArray(basketParsed) || basketParsed.length === 0) return;
+
+      const mapped: QuotationProduct[] = basketParsed
+        .map((item: any) => ({
+          productId: String(item?.productId || ''),
+          name: String(item?.name || ''),
+          sku: item?.sku ? String(item.sku) : undefined,
+          price: Number(item?.price || 0),
+          quantity: Number(item?.quantity || 0),
+          thumbnail: item?.thumbnail ?? null,
+        }))
+        .filter((item: QuotationProduct) =>
+          !!item.productId &&
+          !!item.name &&
+          Number(item.price) >= 0 &&
+          Number(item.quantity) > 0
+        );
+
+      if (mapped.length > 0) {
+        setProducts(mapped);
+      }
+    } catch { /* ignore */ }
+
   }, [isAuthenticated, router]);
 
   // ── Field change ────────────────────────────────────────────────────────────
@@ -164,6 +193,7 @@ export default function GenerateQuotationPage() {
 
       // Clear selected products from session
       sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(BASKET_KEY);
 
       toast.success(t('quot.successMsg'));
       router.push(`/my-quotation/${result.id}`);
