@@ -44,6 +44,7 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/src/database/prisma ./src/database/prisma
+COPY --from=builder /app/images ./images
 
 # Remove hardcoded healthcheck to avoid port conflicts with Railway's assignment
 # Railway handles health monitoring natively
