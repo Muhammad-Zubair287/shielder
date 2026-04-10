@@ -494,11 +494,30 @@ export class SuperAdminService {
   }
 
   private getActivityType(action: string): 'success' | 'pending' | 'issue' {
-    const actionLower = action.toLowerCase();
-    if (actionLower.includes('create') || actionLower.includes('approve') || actionLower.includes('payment') || actionLower.includes('order completed')) return 'success';
-    if (actionLower.includes('update') || actionLower.includes('login')) return 'pending';
-    if (actionLower.includes('delete') || actionLower.includes('reject') || actionLower.includes('error') || actionLower.includes('fail')) return 'issue';
-    return 'pending';
+    const normalized = action.trim().toLowerCase();
+
+    // Explicit failure/error signals should always be treated as issues.
+    if (
+      normalized.includes('delete') ||
+      normalized.includes('reject') ||
+      normalized.includes('error') ||
+      normalized.includes('fail')
+    ) {
+      return 'issue';
+    }
+
+    // Mark as pending only when the action text itself indicates waiting state.
+    if (
+      normalized.includes('pending') ||
+      normalized.includes('await') ||
+      normalized.includes('submitted') ||
+      normalized.includes('requested')
+    ) {
+      return 'pending';
+    }
+
+    // All other completed actions (including USER_LOGIN) are successful.
+    return 'success';
   }
 }
 

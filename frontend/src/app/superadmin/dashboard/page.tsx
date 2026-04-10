@@ -14,7 +14,6 @@ import {
   Clock,
   Search,
   Download,
-  Filter,
   Users,
   Boxes,
   DollarSign
@@ -79,6 +78,8 @@ interface CategoryBreakdown {
 
 type DatePreset = '3M' | '6M' | '12M' | 'ALL' | 'CUSTOM';
 type RevenueBreakdownMode = 'comparison' | 'revenue' | 'orders';
+type ActivityViewFilter = 'all' | 'login' | 'permissions' | 'exports' | 'failed';
+type ActivityTimeWindow = 'today' | '7d' | 'all';
 
 const KPI_CARD_STYLES = [
   {
@@ -123,7 +124,8 @@ export default function SuperAdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [breakdownMode, setBreakdownMode] = useState<RevenueBreakdownMode>('comparison');
   const [activitySearch, setActivitySearch] = useState('');
-  const [activityTypeFilter, setActivityTypeFilter] = useState<'all' | Activity['type']>('all');
+  const [activityViewFilter, setActivityViewFilter] = useState<ActivityViewFilter>('all');
+  const [activityTimeWindow, setActivityTimeWindow] = useState<ActivityTimeWindow>('7d');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -300,20 +302,65 @@ export default function SuperAdminDashboard() {
     setCustomTo('');
     setSelectedCategory('ALL');
     setBreakdownMode('comparison');
+    setActivityViewFilter('all');
+    setActivityTimeWindow('7d');
+    setActivitySearch('');
   };
 
-  const filteredActivities = activities.filter((activity) => {
+  const getActivityCategory = (action: string): Exclude<ActivityViewFilter, 'all' | 'failed'> => {
+    const normalized = action.toLowerCase();
+    if (normalized.includes('login') || normalized.includes('auth')) return 'login';
+    if (normalized.includes('permission') || normalized.includes('role')) return 'permissions';
+    if (normalized.includes('export') || normalized.includes('report')) return 'exports';
+    return 'login';
+  };
+
+  const inSelectedActivityWindow = (timestamp: string) => {
+    if (activityTimeWindow === 'all') return true;
+
+    const eventDate = new Date(timestamp);
+    if (Number.isNaN(eventDate.getTime())) return true;
+
+    const now = new Date();
+    if (activityTimeWindow === 'today') {
+      return (
+        eventDate.getFullYear() === now.getFullYear() &&
+        eventDate.getMonth() === now.getMonth() &&
+        eventDate.getDate() === now.getDate()
+      );
+    }
+
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    return eventDate >= sevenDaysAgo;
+  };
+
+  const windowedActivities = activities.filter((activity) => inSelectedActivityWindow(activity.timestamp));
+
+  const filteredActivities = windowedActivities.filter((activity) => {
     const matchesText = `${activity.action} ${activity.user}`
       .toLowerCase()
       .includes(activitySearch.toLowerCase());
-    const matchesType = activityTypeFilter === 'all' ? true : activity.type === activityTypeFilter;
-    return matchesText && matchesType;
+    const matchesView =
+      activityViewFilter === 'all'
+        ? true
+        : activityViewFilter === 'failed'
+          ? activity.type === 'issue'
+          : getActivityCategory(activity.action) === activityViewFilter;
+    return matchesText && matchesView;
   });
 
   const getActivityTypeLabel = (type: Activity['type']) => {
     if (type === 'success') return t('monitoringLogTypeSuccess');
     if (type === 'pending') return t('monitoringLogTypePending');
     return t('monitoringLogTypeIssue');
+  };
+
+  const activityStats = {
+    total: windowedActivities.length,
+    pending: windowedActivities.filter((activity) => activity.type === 'pending').length,
+    success: windowedActivities.filter((activity) => activity.type === 'success').length,
+    failed: windowedActivities.filter((activity) => activity.type === 'issue').length,
   };
 
   const exportActivityCsv = () => {
@@ -741,74 +788,183 @@ export default function SuperAdminDashboard() {
         </section>
       </div>
 
-      {/* 6. RECENT ACTIVITY SECTION */}
-      <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-10">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-2">
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-700">
-              <ActivityIcon size={20} />
+      {/* 6. MONITORING LOG SECTION */}
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-10">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700">
+              <ActivityIcon size={19} />
             </div>
-            <h3 className="font-bold text-gray-800 text-lg">{t('monitoringLog')}</h3>
+            <div>
+              <h3 className="font-bold text-gray-900 text-2xl leading-tight">{t('monitoringLog')}</h3>
+              <p className="text-sm text-gray-500">{t('monitoringLogLiveAuditTrail')}</p>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <div className="relative w-full sm:w-72">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setActivityTimeWindow('all')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                activityTimeWindow === 'all'
+                  ? 'bg-sky-50 text-sky-700 border-sky-200'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sky-500" />{t('monitoringLogLive')}</span>
+            </button>
+            <button
+              onClick={() => setActivityTimeWindow('today')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                activityTimeWindow === 'today'
+                  ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {t('monitoringLogToday')}
+            </button>
+            <button
+              onClick={() => setActivityTimeWindow('7d')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                activityTimeWindow === '7d'
+                  ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {t('monitoringLog7Days')}
+            </button>
+            <button
+              onClick={exportActivityCsv}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#1E293B]"
+            >
+              <Download size={16} />
+              {t('monitoringLogExport')}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+          <div className="rounded-xl border border-gray-200 p-4 bg-white flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <ActivityIcon size={18} />
+            </div>
+            <div>
+              <p className="text-3xl font-black text-gray-900 leading-none">{activityStats.total}</p>
+              <p className="text-sm text-gray-600 mt-1">{t('monitoringLogTotalEvents')}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 p-4 bg-white flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Clock size={18} />
+            </div>
+            <div>
+              <p className="text-3xl font-black text-gray-900 leading-none">{activityStats.pending}</p>
+              <p className="text-sm text-gray-600 mt-1">{t('monitoringLogTypePending')}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 p-4 bg-white flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 size={18} />
+            </div>
+            <div>
+              <p className="text-3xl font-black text-gray-900 leading-none">{activityStats.success}</p>
+              <p className="text-sm text-gray-600 mt-1">{t('monitoringLogTypeSuccess')}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 p-4 bg-white flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+              <BadgeAlert size={18} />
+            </div>
+            <div>
+              <p className="text-3xl font-black text-gray-900 leading-none">{activityStats.failed}</p>
+              <p className="text-sm text-gray-600 mt-1">{t('monitoringLogFailed')}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <h4 className="text-base font-bold text-gray-900">{t('monitoringLogRecentActivity')}</h4>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { key: 'all', label: t('monitoringLogFilterAll') },
+                  { key: 'login', label: t('monitoringLogFilterLogin') },
+                  { key: 'permissions', label: t('monitoringLogFilterPermissions') },
+                  { key: 'exports', label: t('monitoringLogFilterExports') },
+                  { key: 'failed', label: t('monitoringLogFailed') },
+                ] as Array<{ key: ActivityViewFilter; label: string }>).map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setActivityViewFilter(item.key)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                      activityViewFilter === item.key
+                        ? 'bg-blue-50 text-blue-700 border-blue-300'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="relative mt-3 w-full lg:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 value={activitySearch}
                 onChange={(e) => setActivitySearch(e.target.value)}
-                  placeholder={t('monitoringLogSearchPlaceholder')}
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm"
+                placeholder={t('monitoringLogSearchPlaceholder')}
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white"
               />
             </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <select
-                value={activityTypeFilter}
-                onChange={(e) => setActivityTypeFilter(e.target.value as 'all' | Activity['type'])}
-                className="pl-9 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm bg-white min-w-[150px]"
-              >
-                <option value="all">{t('monitoringLogAllTypes')}</option>
-                <option value="success">{t('monitoringLogTypeSuccess')}</option>
-                <option value="pending">{t('monitoringLogTypePending')}</option>
-                <option value="issue">{t('monitoringLogTypeIssue')}</option>
-              </select>
-            </div>
-            <button
-              onClick={exportActivityCsv}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F172A] text-white text-sm font-semibold hover:bg-[#1E293B]"
-            >
-              <Download size={16} />
-              {t('exportCsv')}
-            </button>
           </div>
-        </div>
-        
-        <div className="space-y-4">
-          {filteredActivities.length > 0 ? filteredActivities.map((activity) => (
-            <div key={activity.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl transition-colors hover:bg-gray-100">
-              <div className="flex items-center gap-4">
-                <div className={`w-3 h-3 rounded-full ${
-                  activity.type === 'success' ? 'bg-[#16A34A]' : 
-                  activity.type === 'pending' ? 'bg-[#FACC15]' : 
-                  'bg-[#DC2626]'
-                }`} />
-                <div>
-                  <p className="font-bold text-gray-800">{activity.action}</p>
-                  <p className="text-sm text-gray-500">{activity.user} • <span className="uppercase text-[11px] tracking-wide">{getActivityTypeLabel(activity.type)}</span></p>
+
+          <div className="hidden md:grid md:grid-cols-[1.6fr_0.9fr_1fr_0.9fr] px-4 py-2 text-[11px] uppercase tracking-widest text-gray-500 border-b border-gray-200 bg-gray-50">
+            <span>{t('monitoringLogColumnAction')}</span>
+            <span>{t('monitoringLogColumnStatus')}</span>
+            <span>{t('monitoringLogColumnUser')}</span>
+            <span>{t('monitoringLogColumnTime')}</span>
+          </div>
+
+          {filteredActivities.length > 0 ? (
+            filteredActivities.map((activity) => {
+              const statusPill = activity.type === 'success'
+                ? 'bg-emerald-100 text-emerald-700'
+                : activity.type === 'pending'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-rose-100 text-rose-700';
+              const statusDot = activity.type === 'success'
+                ? 'bg-emerald-600'
+                : activity.type === 'pending'
+                  ? 'bg-amber-500'
+                  : 'bg-rose-500';
+
+              return (
+                <div key={activity.id} className="grid grid-cols-1 md:grid-cols-[1.6fr_0.9fr_1fr_0.9fr] gap-3 md:gap-2 items-start md:items-center px-4 py-3 border-b border-gray-100 last:border-b-0">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${statusDot}`} />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{activity.action}</p>
+                      <p className="text-sm text-gray-500 truncate">{activity.action.toLowerCase().includes('login') ? t('monitoringLogAuthEvent') : t('monitoringLogSystemEvent')}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className={`inline-flex px-3 py-1 rounded-xl text-sm font-semibold ${statusPill}`}>
+                      {activity.type === 'issue' ? t('monitoringLogFailed') : getActivityTypeLabel(activity.type)}
+                    </span>
+                  </div>
+                  <p className="font-medium text-gray-800">{activity.user}</p>
+                  <p className="text-gray-500 text-sm">
+                    {new Date(activity.timestamp).toLocaleString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      month: 'short',
+                      day: '2-digit',
+                    })}
+                  </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
-                <Clock size={14} />
-                {new Date(activity.timestamp).toLocaleString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  month: 'short',
-                  day: '2-digit',
-                })}
-              </div>
-            </div>
-          )) : (
+              );
+            })
+          ) : (
             <div className="text-center py-10 text-gray-400">
               <RefreshCcw className="mx-auto mb-2 opacity-20" size={32} />
               <p>{t('monitoringLogNoFilteredResults')}</p>
