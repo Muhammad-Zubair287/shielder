@@ -244,7 +244,7 @@ export class CustomerQuotationController {
         ...item,
         thumbnail: CustomerQuotationController.resolvePublicImageUrl(
           req,
-          item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || null
+          item.product.attachments?.[0]?.fileUrl || null
         ),
       }));
 
@@ -301,7 +301,7 @@ export class CustomerQuotationController {
           productName: translation?.name || item.productName,
           thumbnail: CustomerQuotationController.resolvePublicImageUrl(
             req,
-            item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || null
+            item.product.attachments?.[0]?.fileUrl || null
           ),
         };
       });

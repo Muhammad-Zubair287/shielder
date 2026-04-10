@@ -50,10 +50,6 @@ type AuthenticatedUser = {
 };
 
 export class OrderService {
-  private static getRequestOrigin(imagePath?: string | null): string {
-    return '';
-  }
-
   private static resolvePublicImageUrl(imagePath?: string | null): string | null {
     if (!imagePath) return null;
 
