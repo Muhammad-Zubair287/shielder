@@ -35,7 +35,6 @@ const LineChart = dynamic(() => import('recharts').then(m => ({ default: m.LineC
 const Line = dynamic(() => import('recharts').then(m => ({ default: m.Line })), { ssr: false });
 const PieChart = dynamic(() => import('recharts').then(m => ({ default: m.PieChart })), { ssr: false });
 const Pie = dynamic(() => import('recharts').then(m => ({ default: m.Pie })), { ssr: false });
-const Cell = dynamic(() => import('recharts').then(m => ({ default: m.Cell })), { ssr: false });
 
 interface DashboardSummary {
   totalProducts: number;
@@ -226,34 +225,31 @@ export default function SuperAdminDashboard() {
     return itemDate >= rangeStart;
   });
 
-  const revenueBreakdownData = categories.length
-    ? categories
-        .filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
-        .map((item) => ({
-          name: item.name,
-          value:
-            breakdownMode === 'revenue'
-              ? item.revenueValue
-              : breakdownMode === 'orders'
-                ? item.ordersValue
-                : item.comparisonValue,
-        }))
-        .filter((item) => item.value > 0)
-    : [
-        {
-          name: breakdownMode === 'orders' ? t('totalOrders') : t('totalRevenue'),
-          value: breakdownMode === 'orders' ? summary?.totalOrders ?? 0 : summary?.totalRevenue ?? 0,
-        },
-        {
-          name: t('inventoryValue'),
-          value: summary?.inventoryValue ?? 0,
-        },
-      ];
+  const filteredAnalyticsTotals = filteredAnalytics.reduce(
+    (acc, item) => ({
+      revenue: acc.revenue + (Number(item.revenue) || 0),
+      orders: acc.orders + (Number(item.orders) || 0),
+    }),
+    { revenue: 0, orders: 0 }
+  );
+
+  const revenueBreakdownData = categories
+    .filter((item) => selectedCategory === 'ALL' || item.name === selectedCategory)
+    .map((item) => ({
+      name: item.name,
+      value:
+        breakdownMode === 'revenue'
+          ? item.revenueValue
+          : breakdownMode === 'orders'
+            ? item.ordersValue
+            : item.comparisonValue,
+    }))
+    .filter((item) => item.value > 0);
 
   const summaryModeFallback =
     breakdownMode === 'orders'
-      ? [{ name: t('totalOrders'), value: Number(summary?.totalOrders || 0) }]
-      : [{ name: t('totalRevenue'), value: Number(summary?.totalRevenue || 0) }];
+      ? [{ name: t('totalOrders'), value: Number(filteredAnalyticsTotals.orders || 0) }]
+      : [{ name: t('totalRevenue'), value: Number(filteredAnalyticsTotals.revenue || 0) }];
 
   const chartBreakdownData =
     revenueBreakdownData.length > 0
@@ -288,6 +284,11 @@ export default function SuperAdminDashboard() {
           name: `${breakdownMode}-${index}`,
           value: 1,
         }));
+
+  const pieData = visualBreakdownData.map((item, index) => ({
+    ...item,
+    fill: donutColors[index % donutColors.length],
+  }));
 
   const resetDashboardFilters = () => {
     setDatePreset('6M');
@@ -691,7 +692,7 @@ export default function SuperAdminDashboard() {
                     />
                   )}
                   <Pie
-                    data={visualBreakdownData}
+                    data={pieData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -704,14 +705,7 @@ export default function SuperAdminDashboard() {
                     isAnimationActive
                     animationDuration={900}
                     animationEasing="ease-out"
-                  >
-                    {visualBreakdownData.map((entry, index) => (
-                      <Cell
-                        key={`${entry.name}-${index}`}
-                        fill={donutColors[index % donutColors.length]}
-                      />
-                    ))}
-                  </Pie>
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
