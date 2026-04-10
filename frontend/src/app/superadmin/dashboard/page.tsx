@@ -248,7 +248,10 @@ export default function SuperAdminDashboard() {
 
   const summaryModeFallback =
     breakdownMode === 'orders'
-      ? [{ name: t('totalOrders'), value: Number(filteredAnalyticsTotals.orders || 0) }]
+      ? [{
+          name: selectedCategory !== 'ALL' ? selectedCategory : t('totalProducts'),
+          value: Number(filteredAnalyticsTotals.orders || 0),
+        }]
       : [{ name: t('totalRevenue'), value: Number(filteredAnalyticsTotals.revenue || 0) }];
 
   const chartBreakdownData =
@@ -273,12 +276,12 @@ export default function SuperAdminDashboard() {
       : summaryModeFallback;
 
   const donutColors = breakdownMode === 'orders' ? ORDERS_PIE_COLORS : PIE_COLORS;
-  const hasMeaningfulBreakdown = safeBreakdownData.length > 1;
+  const hasMultipleBreakdownSlices = safeBreakdownData.length > 1;
 
   const breakdownTotal = safeBreakdownData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   const visualBreakdownData =
-    hasMeaningfulBreakdown
+    breakdownTotal > 0
       ? safeBreakdownData
       : donutColors.map((_, index) => ({
           name: `${breakdownMode}-${index}`,
@@ -681,12 +684,12 @@ export default function SuperAdminDashboard() {
             <div className="relative h-[330px] sm:h-[360px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  {hasMeaningfulBreakdown && (
+                  {breakdownTotal > 0 && (
                     <Tooltip
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 18px rgba(0,0,0,0.12)' }}
-                      formatter={((value: any) => {
+                      formatter={((value: any, _name: any, meta: any) => {
                         const suffix = breakdownMode === 'orders' ? t('ordersLabel') : t('sarCurrency');
-                        const label = breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel');
+                        const label = meta?.payload?.name || (breakdownMode === 'orders' ? t('ordersLabel') : t('revenueLabel'));
                         return [`${(Number(value) || 0).toLocaleString()} ${suffix}`, label];
                       }) as any}
                     />
@@ -717,7 +720,7 @@ export default function SuperAdminDashboard() {
                 </p>
               </div>
             </div>
-            {hasMeaningfulBreakdown && (
+            {hasMultipleBreakdownSlices && (
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
                 {safeBreakdownData.map((item, index) => {
                   const share = breakdownTotal > 0 ? Math.round((item.value / breakdownTotal) * 100) : 0;
