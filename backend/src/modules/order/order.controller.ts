@@ -6,7 +6,8 @@ import { AuthRequest } from '@/types/global';
 const getRequestOrigin = (req: Request): string => {
   const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
   const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
-  const protocol = forwardedProto || req.protocol;
+  const isProduction = process.env.NODE_ENV === 'production';
+  const protocol = isProduction ? 'https' : (forwardedProto || req.protocol);
   const host = forwardedHost || req.get('host');
 
   return host ? `${protocol}://${host}` : '';
@@ -45,7 +46,7 @@ const normalizeOrder = (req: Request, order: any) => {
           mainImage: resolvePublicImageUrl(req, item.product.mainImage),
           thumbnail: resolvePublicImageUrl(
             req,
-            item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || item.product.mainImage || null
+            item.product.mainImage || item.product.attachments?.[0]?.fileUrl || item.product.attachments?.[0]?.url || null
           ),
           attachments: Array.isArray(item.product.attachments)
             ? item.product.attachments.map((attachment: any) => {

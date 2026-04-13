@@ -485,7 +485,7 @@ export class OrderService {
               product: {
                 include: {
                   translations: { where: { locale: 'en' }, select: { name: true } },
-                  attachments:  { where: { type: 'IMAGE' }, take: 1, select: { fileUrl: true } },
+                  attachments:  { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1, select: { fileUrl: true } },
                 },
               },
             },

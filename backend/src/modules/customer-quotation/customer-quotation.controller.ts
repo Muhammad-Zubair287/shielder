@@ -46,7 +46,8 @@ export class CustomerQuotationController {
   private static getRequestOrigin(req: AuthRequest): string {
     const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
     const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
-    const protocol = forwardedProto || req.protocol;
+    const isProduction = process.env.NODE_ENV === 'production';
+    const protocol = isProduction ? 'https' : (forwardedProto || req.protocol);
     const host = forwardedHost || req.get('host');
 
     return host ? `${protocol}://${host}` : '';
@@ -231,7 +232,8 @@ export class CustomerQuotationController {
               product: {
                 include: {
                   translations: true,
-                  attachments: { where: { type: 'IMAGE' }, take: 1 },
+                  attachments: { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1 },
+                  attachments: { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1 },
                 },
               },
             },
@@ -244,7 +246,7 @@ export class CustomerQuotationController {
         ...item,
         thumbnail: CustomerQuotationController.resolvePublicImageUrl(
           req,
-          item.product.attachments?.[0]?.fileUrl || null
+          item.product.mainImage || item.product.attachments?.[0]?.fileUrl || null
         ),
       }));
 
@@ -301,7 +303,7 @@ export class CustomerQuotationController {
           productName: translation?.name || item.productName,
           thumbnail: CustomerQuotationController.resolvePublicImageUrl(
             req,
-            item.product.attachments?.[0]?.fileUrl || null
+            item.product.mainImage || item.product.attachments?.[0]?.fileUrl || null
           ),
         };
       });

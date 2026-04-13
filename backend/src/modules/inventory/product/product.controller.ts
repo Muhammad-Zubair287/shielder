@@ -5,7 +5,8 @@ import { ProductStatus } from '@prisma/client';
 const getRequestOrigin = (req: Request): string => {
   const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
   const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
-  const protocol = forwardedProto || req.protocol;
+  const isProduction = process.env.NODE_ENV === 'production';
+  const protocol = isProduction ? 'https' : (forwardedProto || req.protocol);
   const host = forwardedHost || req.get('host');
 
   return host ? `${protocol}://${host}` : '';

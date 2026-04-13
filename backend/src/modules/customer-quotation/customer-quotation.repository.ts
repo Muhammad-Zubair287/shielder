@@ -10,7 +10,7 @@ export class CustomerQuotationRepository {
             product: {
               include: {
                 translations: true,
-                attachments: { where: { type: 'IMAGE' }, take: 1 },
+                attachments: { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1 },
               },
             },
           },

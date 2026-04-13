@@ -21,6 +21,7 @@ export class CartService {
                 translations: true,
                 attachments: {
                   where: { type: 'IMAGE' },
+                  orderBy: { createdAt: 'desc' },
                   take: 1,
                 },
               },
@@ -44,6 +45,7 @@ export class CartService {
                   translations: true,
                   attachments: {
                     where: { type: 'IMAGE' },
+                    orderBy: { createdAt: 'desc' },
                     take: 1,
                   },
                 },
