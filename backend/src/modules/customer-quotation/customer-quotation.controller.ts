@@ -233,7 +233,6 @@ export class CustomerQuotationController {
                 include: {
                   translations: true,
                   attachments: { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1 },
-                  attachments: { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1 },
                 },
               },
             },
