@@ -3,6 +3,16 @@ import { asyncHandler } from '@/common/utils/helpers';
 import contactService from './contact.service';
 
 class ContactController {
+  private splitFullName(fullName: string): { firstName: string; lastName: string } {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { firstName: '', lastName: '' };
+    if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(' '),
+    };
+  }
+
   /**
    * @swagger
    * /api/contact:
@@ -15,15 +25,16 @@ class ContactController {
    *         multipart/form-data:
    *           schema:
    *             type: object
-   *             required: [firstName, lastName, email, subject, message, captchaToken]
+  *             required: [email, subject, message]
    *             properties:
-   *               firstName: { type: string }
-   *               lastName: { type: string }
+  *               firstName: { type: string, description: Required if fullName is not provided }
+  *               lastName: { type: string, description: Required if fullName is not provided }
+  *               fullName: { type: string, description: Android/mobile compatibility field; backend auto-splits to first/last name }
    *               email: { type: string, format: email }
    *               phone: { type: string }
    *               subject: { type: string }
    *               message: { type: string }
-   *               captchaToken: { type: string }
+  *               captchaToken: { type: string, description: Required for web/desktop clients; optional for phone clients }
    *               attachment:
    *                 type: string
    *                 format: binary
@@ -39,10 +50,18 @@ class ContactController {
       ? forwardedFor[0]
       : (forwardedFor?.split(',')[0]?.trim() || req.ip);
 
+    const providedFirstName = typeof req.body.firstName === 'string' ? req.body.firstName.trim() : '';
+    const providedLastName = typeof req.body.lastName === 'string' ? req.body.lastName.trim() : '';
+    const providedFullName = typeof req.body.fullName === 'string' ? req.body.fullName.trim() : '';
+    const parsedFromFullName = providedFullName ? this.splitFullName(providedFullName) : { firstName: '', lastName: '' };
+
+    const firstName = providedFirstName || parsedFromFullName.firstName;
+    const lastName = providedLastName || parsedFromFullName.lastName;
+
     const result = await contactService.submitContactForm(
       {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
+        firstName,
+        lastName,
         email: req.body.email,
         phone: req.body.phone,
         subject: req.body.subject,

@@ -21,7 +21,7 @@ interface ContactSubmissionInput {
   phone?: string;
   subject: string;
   message: string;
-  captchaToken: string;
+  captchaToken?: string;
 }
 
 interface ContactAttachmentMetadata {
@@ -43,6 +43,11 @@ type AdminRecipient = {
 type JsonRecord = Record<string, unknown>;
 
 class ContactService {
+  private isPhoneClient(userAgent?: string): boolean {
+    if (!userAgent) return false;
+    return /android|iphone|ipad|ipod|mobile/i.test(userAgent);
+  }
+
   private async verifyCaptchaToken(token: string, remoteIp?: string): Promise<CaptchaVerificationResult> {
     const secret = env.contactCaptchaSecret;
 
@@ -121,10 +126,18 @@ class ContactService {
     userAgent?: string,
     file?: Express.Multer.File
   ): Promise<{ id: string }> {
-    const captchaResult = await this.verifyCaptchaToken(input.captchaToken, remoteIp);
+    const phoneClient = this.isPhoneClient(userAgent);
+    const captchaToken = input.captchaToken?.trim();
 
-    if (!captchaResult.valid) {
-      throw new BadRequestError(captchaResult.reason || 'CAPTCHA verification failed.');
+    if (!phoneClient) {
+      if (!captchaToken) {
+        throw new BadRequestError('Please confirm you are not a robot.');
+      }
+
+      const captchaResult = await this.verifyCaptchaToken(captchaToken, remoteIp);
+      if (!captchaResult.valid) {
+        throw new BadRequestError(captchaResult.reason || 'CAPTCHA verification failed.');
+      }
     }
 
     const attachment = this.buildAttachmentMetadata(file);
