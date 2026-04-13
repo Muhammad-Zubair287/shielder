@@ -1,4 +1,5 @@
 {
+  "$schema": "file:///Users/mzubair/Documents/Professional/DevFlx/shielder/.vscode/schemas/package.schema.json",
   "name": "shielder-backend",
   "version": "1.0.0",
   "description": "Shielder Digital Platform - Enterprise Backend API",
