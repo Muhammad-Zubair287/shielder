@@ -457,7 +457,7 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
       <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel — bottom drawer on mobile, right side panel on md+ */}
-      <div className={`fixed z-50 bg-white shadow-2xl flex flex-col
+      <div className={`fixed z-50 bg-white shadow-2xl flex flex-col overflow-hidden
         bottom-0 left-0 right-0 rounded-t-2xl max-h-[90vh]
         md:bottom-auto md:top-0 md:right-0 md:left-auto md:h-full md:w-96 md:rounded-none md:rounded-l-2xl
         ${isRTL ? 'md:right-auto md:left-0 md:rounded-r-2xl md:rounded-l-none' : ''}`}
@@ -475,7 +475,7 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-7">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-5 space-y-7">
 
           {/* Sort */}
           <div>
@@ -552,17 +552,20 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
           </div>
 
           {/* In Stock Toggle */}
-          <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <div>
+          <div className={`rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-4 flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`min-w-0 flex-1 ${isRTL ? 'text-right' : ''}`}>
               <p className="text-sm font-bold text-gray-800">{t('productsInStockOnly')}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{t('productsInStockDesc')}</p>
+              <p className="text-xs leading-5 text-gray-400 mt-0.5">{t('productsInStockDesc')}</p>
             </div>
-            <button onClick={() => field('inStock', !draft.inStock)}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={draft.inStock}
               aria-label={t('productsInStockOnly')}
-              aria-pressed={draft.inStock}
-              className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${draft.inStock ? 'bg-[#0205A6]' : 'bg-gray-200'}`}>
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200
-                ${draft.inStock ? (isRTL ? 'translate-x-1' : 'translate-x-7') : (isRTL ? 'translate-x-7' : 'translate-x-1')}`} />
+              onClick={() => field('inStock', !draft.inStock)}
+              className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border border-transparent transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-[#0205A6]/20 ${draft.inStock ? 'bg-[#0205A6]' : 'bg-gray-300'}`}
+            >
+              <span className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ${draft.inStock ? 'translate-x-7' : 'translate-x-1'}`} />
             </button>
           </div>
         </div>
