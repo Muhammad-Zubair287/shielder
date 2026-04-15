@@ -188,7 +188,7 @@ export default function CategoriesTable({
       {/* Pagination */}
       <UnifiedPagination
         page={pagination.page}
-        totalPages={pagination.totalPages || pagination.pages || 1}
+        totalPages={pagination.pages || 1}
         totalItems={pagination.total}
         onPageChange={onPageChange}
         isRTL={isRTL}
