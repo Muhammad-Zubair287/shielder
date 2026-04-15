@@ -18,7 +18,9 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
-  Loader2
+  Loader2,
+  MoreVertical,
+  Ban
 } from 'lucide-react';
 import adminService from '@/services/admin.service';
 import { useAuth } from '@/hooks/useAuth';
@@ -110,6 +112,7 @@ export default function AdminManagementPage() {
   
   // Selected Admin for actions
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
   const [temporarySuspension, setTemporarySuspension] = useState(false);
@@ -186,6 +189,22 @@ export default function AdminManagementPage() {
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 }));
   }, [search, roleFilter, statusFilter]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-menu-container]')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuId]);
+
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -528,49 +547,62 @@ export default function AdminManagementPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col items-end gap-1.5">
-                      <button 
-                        onClick={() => openEditModal(admin)}
-                        className="w-24 flex items-center justify-center gap-1.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#FF6B35] bg-[#FF6B35]/5 hover:bg-[#FF6B35]/10 rounded-lg transition-all border border-transparent hover:border-[#FF6B35]/20 disabled:opacity-20"
-                        disabled={admin.id === currentUser?.id}
+                    <div className="relative flex justify-end" data-menu-container>
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === admin.id ? null : admin.id)}
+                        disabled={admin.id === currentUser?.id && admin.role === 'SUPER_ADMIN'}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Edit2 size={10} />
-                        <span>{t('edit')}</span>
+                        <MoreVertical size={18} className="text-gray-400" />
                       </button>
 
-                      <button 
-                        onClick={() => {
-                          setSelectedAdmin(admin);
-                          setSuspensionReason('');
-                          setTemporarySuspension(false);
-                          setSuspensionUntil('');
-                          setShowStatusModal(true);
-                        }}
-                        className={`w-24 flex items-center justify-center gap-1.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent disabled:opacity-20 ${
-                          admin.isActive 
-                            ? 'text-[#DC2626] bg-[#DC2626]/5 hover:bg-[#DC2626]/10 hover:border-[#DC2626]/20' 
-                            : 'text-[#16A34A] bg-[#16A34A]/5 hover:bg-[#16A34A]/10 hover:border-[#16A34A]/20'
-                        }`}
-                        disabled={admin.id === currentUser?.id}
-                      >
-                        {admin.isActive ? <EyeOff size={10} /> : <Eye size={10} />}
-                        <span>{admin.isActive ? t('suspendAdmin') : t('activateAdmin')}</span>
-                      </button>
+                      {openMenuId === admin.id && (
+                        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-200 z-50 min-w-[200px] py-1">
+                          <button
+                            onClick={() => {
+                              openEditModal(admin);
+                              setOpenMenuId(null);
+                            }}
+                            disabled={admin.id === currentUser?.id}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Edit2 size={16} className="text-gray-500" />
+                            <span>{t('edit')}</span>
+                          </button>
 
-                      <button 
-                        onClick={() => {
-                          setSelectedAdmin(admin);
-                          setDeleteReason('');
-                          setDeleteMode('ARCHIVE');
-                          setShowDeleteModal(true);
-                        }}
-                        className="w-24 flex items-center justify-center gap-1.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#DC2626] bg-[#DC2626]/5 hover:bg-[#DC2626]/10 rounded-lg transition-all border border-transparent hover:border-[#DC2626]/20 disabled:opacity-20"
-                        disabled={admin.id === currentUser?.id || admin.role === 'SUPER_ADMIN'}
-                        title={admin.role === 'SUPER_ADMIN' ? 'Super Admin accounts are protected' : admin.id === currentUser?.id ? 'Cannot delete your own account' : ''}
-                      >
-                        <Trash2 size={10} />
-                        <span>{t('delete')}</span>
-                      </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAdmin(admin);
+                              setSuspensionReason('');
+                              setTemporarySuspension(false);
+                              setSuspensionUntil('');
+                              setShowStatusModal(true);
+                              setOpenMenuId(null);
+                            }}
+                            disabled={admin.id === currentUser?.id}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-[#DC2626] text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Ban size={16} />
+                            <span>{admin.isActive ? t('suspendAdmin') : t('activateAdmin')}</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedAdmin(admin);
+                              setDeleteReason('');
+                              setDeleteMode('ARCHIVE');
+                              setShowDeleteModal(true);
+                              setOpenMenuId(null);
+                            }}
+                            disabled={admin.id === currentUser?.id || admin.role === 'SUPER_ADMIN'}
+                            title={admin.role === 'SUPER_ADMIN' ? 'Super Admin accounts are protected' : admin.id === currentUser?.id ? 'Cannot delete your own account' : ''}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-[#DC2626] text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 size={16} />
+                            <span>{t('delete')}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -600,7 +632,7 @@ export default function AdminManagementPage() {
         {/* Pagination */}
         <UnifiedPagination
           page={pagination.page}
-          totalPages={pagination.totalPages || pagination.pages || 1}
+          totalPages={pagination.pages || 1}
           totalItems={pagination.total}
           pageSize={pagination.limit}
           onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
