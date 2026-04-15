@@ -16,7 +16,9 @@ import {
   Download,
   Users,
   Boxes,
-  DollarSign
+  DollarSign,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import adminService from '@/services/admin.service';
 import dynamic from 'next/dynamic';
@@ -997,16 +999,18 @@ export default function SuperAdminDashboard() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                  className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                  title={t('previousBtn') || 'Previous'}
                 >
-                  {t('previousBtn') || 'Previous'}
+                  <ChevronLeft size={18} />
                 </button>
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                  className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                  title={t('nextBtn') || 'Next'}
                 >
-                  {t('nextBtn') || 'Next'}
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>
