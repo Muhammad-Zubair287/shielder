@@ -126,10 +126,12 @@ export default function SuperAdminDashboard() {
   const [activitySearch, setActivitySearch] = useState('');
   const [activityViewFilter, setActivityViewFilter] = useState<ActivityViewFilter>('all');
   const [activityTimeWindow, setActivityTimeWindow] = useState<ActivityTimeWindow>('7d');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [activityLoading, setActivityLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedDashboard = useRef(false);
+  const itemsPerPage = 10;
 
   const fetchActivity = async (window: ActivityTimeWindow = activityTimeWindow) => {
     try {
@@ -200,6 +202,10 @@ export default function SuperAdminDashboard() {
     if (!hasLoadedDashboard.current) return;
     fetchActivity(activityTimeWindow);
   }, [activityTimeWindow]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activitySearch, activityViewFilter, activityTimeWindow]);
 
   const formatShortDate = (raw: string) => {
     const date = new Date(raw);
@@ -346,6 +352,11 @@ export default function SuperAdminDashboard() {
           : getActivityCategory(activity.action) === activityViewFilter;
     return matchesText && matchesView;
   });
+
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
 
   const getActivityTypeLabel = (type: Activity['type']) => {
     if (type === 'success') return t('monitoringLogTypeSuccess');
@@ -932,7 +943,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {filteredActivities.length > 0 ? (
-            filteredActivities.map((activity) => {
+            paginatedActivities.map((activity) => {
               const statusPill = activity.type === 'success'
                 ? 'bg-emerald-100 text-emerald-700'
                 : activity.type === 'pending'
@@ -974,6 +985,30 @@ export default function SuperAdminDashboard() {
             <div className="text-center py-10 text-gray-400">
               <RefreshCcw className="mx-auto mb-2 opacity-20" size={32} />
               <p>{t('monitoringLogNoFilteredResults')}</p>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="px-4 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {t('page') || 'Page'} <span className="font-semibold">{currentPage}</span> {t('of') || 'of'} <span className="font-semibold">{totalPages}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                >
+                  {t('previousBtn') || 'Previous'}
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                >
+                  {t('nextBtn') || 'Next'}
+                </button>
+              </div>
             </div>
           )}
         </div>
