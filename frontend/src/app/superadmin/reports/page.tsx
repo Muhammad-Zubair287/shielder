@@ -242,7 +242,6 @@ export default function ReportsDashboard() {
           { id: 'ORDERS', label: 'Orders', icon: ShoppingCart },
           { id: 'INVENTORY', label: 'Inventory', icon: Package },
           { id: 'PAYMENTS', label: 'Payments', icon: Banknote },
-                    { id: 'PAYMENTS', label: 'Payments', icon: Banknote },
           { id: 'PROFIT', label: 'P&L', icon: FileText }
         ].map(tab => (
           <button
