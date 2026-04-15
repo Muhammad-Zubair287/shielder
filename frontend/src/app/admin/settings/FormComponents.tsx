@@ -156,8 +156,8 @@ export function ToggleSwitch({
         onClick={() => onChange(!checked)}
         className={[
           'relative inline-flex flex-shrink-0 h-6 w-11 rounded-full border-2 border-transparent transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]/40',
-          checked ? 'bg-[#5B5FC7]' : 'bg-gray-200',
+          'focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/40',
+          checked ? 'bg-[#FF6B35]' : 'bg-gray-200',
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         ].join(' ')}
       >
