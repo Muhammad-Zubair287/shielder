@@ -221,7 +221,7 @@ export default function SettingsPage() {
                 className={`relative flex flex-col items-center text-center p-4 rounded-2xl border-2 transform-gpu transition-all duration-300 ${
                   isActive
                     ? 'z-20 -translate-y-2 scale-[1.04] border-white/25 shadow-[0_18px_35px_rgba(0,0,0,0.28)]'
-                    : 'z-0 border-transparent opacity-50 saturate-50 grayscale-[0.2] hover:opacity-75 hover:saturate-75 hover:grayscale-0 hover:-translate-y-0.5'
+                    : 'z-0 border-transparent opacity-75 saturate-90 grayscale-0 hover:opacity-90 hover:saturate-100 hover:-translate-y-0.5'
                 }`}
               >
                 <span className={`transition-colors ${isActive ? 'text-white' : 'text-white/80'}`}>
