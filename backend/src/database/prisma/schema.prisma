@@ -52,6 +52,8 @@ model User {
   @@index([isActive])
   @@index([createdAt])
   @@index([deletedAt])
+  @@index([role, isActive, deletedAt])
+  @@index([email, deletedAt])
   @@map("users")
 }
 
@@ -90,6 +92,9 @@ model UserProfile {
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([fullName])
+  @@index([phoneNumber])
+  @@index([companyName])
   @@map("user_profiles")
 }
 

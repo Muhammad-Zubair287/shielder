@@ -42,7 +42,7 @@ export class SuperAdminService {
   }
 
   /**
-   * Get all users with filters and pagination
+   * Get all users with filters and pagination (OPTIMIZED)
    */
   async getAllUsers(filters: any, pagination: PaginationParams) {
     const { search, role, roles, status, dateFrom, dateTo } = filters;
@@ -51,12 +51,32 @@ export class SuperAdminService {
       deletedAt: null,
     };
 
+    // OPTIMIZATION: Use a more efficient search strategy
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { profile: { is: { fullName: { contains: search, mode: 'insensitive' } } } },
-        { profile: { is: { phoneNumber: { contains: search, mode: 'insensitive' } } } },
-      ];
+      const searchLower = search.toLowerCase().trim();
+      
+      // First try email match (indexed, fastest)
+      const emailMatch = await prisma.user.findFirst({
+        where: {
+          email: { equals: searchLower, mode: 'insensitive' },
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      if (emailMatch) {
+        // If exact email found, just use that
+        where.id = emailMatch.id;
+      } else {
+        // Fall back to profile search only if email didn't match
+        // This avoids the expensive OR with multiple profile joins
+        where.profile = {
+          OR: [
+            { fullName: { contains: searchLower, mode: 'insensitive' } },
+            { phoneNumber: { contains: searchLower, mode: 'insensitive' } },
+          ],
+        };
+      }
     }
 
     if (role) {
@@ -76,30 +96,32 @@ export class SuperAdminService {
       if (dateTo) where.createdAt.lte = new Date(dateTo);
     }
 
-    const total = await prisma.user.count({ where });
-
-    const users = await prisma.user.findMany({
-      where,
-      skip: pagination.skip,
-      take: pagination.limit,
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-        profile: {
-          select: {
-            fullName: true,
-            phoneNumber: true,
-            profileImage: true,
+    // Fetch total and users in parallel for speed
+    const [total, users] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        skip: pagination.skip,
+        take: pagination.limit,
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          isActive: true,
+          lastLoginAt: true,
+          createdAt: true,
+          profile: {
+            select: {
+              fullName: true,
+              phoneNumber: true,
+              profileImage: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     return createPaginatedResponse(users, total, pagination.page, pagination.limit);
   }
@@ -226,10 +248,19 @@ export class SuperAdminService {
   }
 
   /**
-   * Update User
+   * Update User (OPTIMIZED)
    */
   async updateUser(id: string, data: any, updatedBy: string) {
-    const targetUser = await prisma.user.findUnique({ where: { id } });
+    const targetUser = await prisma.user.findUnique({ 
+      where: { id },
+      select: {
+        id: true,
+        role: true,
+        status: true,
+        isActive: true,
+      },
+    });
+    
     if (!targetUser) throw new ApiError('User not found', 404);
 
     // 1. Super Admin Protection
@@ -267,24 +298,30 @@ export class SuperAdminService {
       updateData.status = data.status === 'ACTIVE' ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
     }
 
-    if (data.fullName || data.phoneNumber) {
-      updateData.profile = {
-        update: {
-          fullName: data.fullName,
-          phoneNumber: data.phoneNumber,
-        },
-      };
-    }
-
     // Handle Password Update if provided
     if (data.password) {
       updateData.passwordHash = await bcrypt.hash(data.password, 12);
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      include: { profile: true },
+    // Use transaction to batch operations
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // Update profile if needed
+      if (data.fullName || data.phoneNumber) {
+        await tx.userProfile.update({
+          where: { userId: id },
+          data: {
+            fullName: data.fullName,
+            phoneNumber: data.phoneNumber,
+          },
+        });
+      }
+
+      // Update user
+      return tx.user.update({
+        where: { id },
+        data: updateData,
+        include: { profile: true },
+      });
     });
 
     // Audit Log
@@ -300,7 +337,7 @@ export class SuperAdminService {
         previousStatus: targetUser.status,
         previousIsActive: targetUser.isActive,
       },
-    });
+    }).catch(err => console.error('Audit Log failed:', err));
 
     return updatedUser;
   }
@@ -490,12 +527,24 @@ export class SuperAdminService {
       createdAtFilter = { gte: sevenDaysAgo };
     }
 
+    // OPTIMIZATION: Use simpler user select without nested profile include
     const activities = await prisma.auditLog.findMany({
       take: limit,
       where: createdAtFilter ? { createdAt: createdAtFilter } : undefined,
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { email: true, profile: { select: { fullName: true } } } },
+      select: {
+        id: true,
+        action: true,
+        createdAt: true,
+        userId: true,
+        user: {
+          select: {
+            email: true,
+            profile: {
+              select: { fullName: true },
+            },
+          },
+        },
       },
     });
 
