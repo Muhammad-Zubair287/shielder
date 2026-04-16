@@ -193,7 +193,7 @@ export default function SettingsPage() {
     { id: 'notification', label: t('settingTabNotification'), icon: <Bell size={28} />,        bg: '#0A1E36'  },
     { id: 'security',     label: t('settingTabSecurity'),     icon: <ShieldCheck size={28} />, bg: '#0205A6'  },
     { id: 'backup',       label: t('settingTabBackup'),       icon: <Database size={28} />,    bg: '#F97216'  },
-    { id: 'logs',         label: t('settingTabLogs'),         icon: <History size={28} />,     bg: '#ffffff'  },
+    { id: 'logs',         label: t('settingTabLogs'),         icon: <History size={28} />,     bg: '#475569'  },
   ];
 
   if (loading || !formData) {
@@ -213,22 +213,21 @@ export default function SettingsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {sidebarItems.map((item) => {
             const isActive = activeTab === item.id;
-            const isLight = item.bg === '#ffffff';
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id as TabType)}
-                style={{ backgroundColor: isActive ? item.bg : isLight ? '#f9fafb' : item.bg + 'cc' }}
-                className={`relative flex flex-col items-center text-center p-4 rounded-2xl transition-all border-2 ${
+                style={{ backgroundColor: item.bg }}
+                className={`relative flex flex-col items-center text-center p-4 rounded-2xl border-2 transform-gpu transition-all duration-300 ${
                   isActive
-                    ? isLight ? 'border-gray-300 shadow-sm' : 'border-transparent shadow-lg'
-                    : isLight ? 'border-gray-200 hover:border-gray-300' : 'border-transparent opacity-80 hover:opacity-100'
+                    ? 'z-20 -translate-y-2 scale-[1.04] border-white/25 shadow-[0_18px_35px_rgba(0,0,0,0.28)]'
+                    : 'z-0 border-transparent opacity-50 saturate-50 grayscale-[0.2] hover:opacity-75 hover:saturate-75 hover:grayscale-0 hover:-translate-y-0.5'
                 }`}
               >
-                <span className={isLight ? (isActive ? 'text-gray-700' : 'text-gray-400') : 'text-white'}>
+                <span className={`transition-colors ${isActive ? 'text-white' : 'text-white/80'}`}>
                   {item.icon}
                 </span>
-                <span className={`mt-2 text-sm font-bold ${isLight ? (isActive ? 'text-gray-800' : 'text-gray-500') : 'text-white'}`}>
+                <span className={`mt-2 text-sm font-bold transition-colors ${isActive ? 'text-white' : 'text-white/80'}`}>
                   {item.label}
                 </span>
                 {/* <span className={`mt-1 text-[10px] leading-tight line-clamp-2 ${isLight ? 'text-gray-400' : 'text-white/70'}`}>
