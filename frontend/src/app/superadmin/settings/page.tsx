@@ -805,11 +805,25 @@ function renderNotificationTab(data: SystemSettings, onChange: OnChangeType, t: 
 }
 
 function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key: string) => string) {
+  const getRangeStyle = (value: number, min: number, max: number): React.CSSProperties => {
+   const percent = ((value - min) / (max - min)) * 100;
+   return {
+    background: `linear-gradient(90deg, #FF6B35 0%, #FF6B35 ${percent}%, #d9dde5 ${percent}%, #d9dde5 100%)`,
+   };
+  };
+
+  const sliderClassName =
+   'w-full h-2 rounded-full appearance-none cursor-pointer ' +
+   '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full ' +
+    '[&::-webkit-slider-thumb]:bg-[#FF6B35] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md ' +
+    '[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#FF6B35] ' +
+   '[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-md';
+
   return (
     <div className="space-y-10">
        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-             <label className="text-[10px] font-black text-shielder-primary uppercase tracking-widest mb-4 block">{t('settingPasswordComplexity')}</label>
+       <div className="bg-gray-50/60 p-6 rounded-3xl border border-gray-200 shadow-sm">
+         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">{t('settingPasswordComplexity')}</label>
              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-500">{t('settingMinLength')}</span>
                 <span className="text-sm font-black text-shielder-dark">{data.passwordMinLength} {t('settingChars')}</span>
@@ -818,12 +832,14 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
                type="range" min="8" max="32" 
                value={data.passwordMinLength}
                onChange={(e) => onChange('passwordMinLength', parseInt(e.target.value))}
-               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-shielder-primary"
+          style={getRangeStyle(Number(data.passwordMinLength), 8, 32)}
+          className={sliderClassName}
              />
+         <p className="text-[11px] text-gray-500 mt-2 text-right">Strong: 12+</p>
           </div>
 
-          <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-             <label className="text-[10px] font-black text-shielder-primary uppercase tracking-widest mb-4 block">{t('settingLoginHardening')}</label>
+       <div className="bg-gray-50/60 p-6 rounded-3xl border border-gray-200 shadow-sm">
+         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">{t('settingLoginHardening')}</label>
              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-500">{t('settingMaxFailedRetries')}</span>
                 <span className="text-sm font-black text-shielder-dark">{data.maxLoginAttempts} {t('settingAttempts')}</span>
@@ -832,12 +848,14 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
                type="range" min="3" max="20" 
                value={data.maxLoginAttempts}
                onChange={(e) => onChange('maxLoginAttempts', parseInt(e.target.value))}
-               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-shielder-primary"
+          style={getRangeStyle(Number(data.maxLoginAttempts), 3, 20)}
+          className={sliderClassName}
              />
+         <p className="text-[11px] text-gray-500 mt-2 text-right">Recommended: 3-5</p>
           </div>
 
-          <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-             <label className="text-[10px] font-black text-shielder-primary uppercase tracking-widest mb-4 block">{t('settingSessionMgmt')}</label>
+       <div className="bg-gray-50/60 p-6 rounded-3xl border border-gray-200 shadow-sm">
+         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">{t('settingSessionMgmt')}</label>
              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-500">{t('settingTimeoutMins')}</span>
                 <span className="text-sm font-black text-shielder-dark">{data.sessionTimeoutMinutes} {t('settingMinUnit')}</span>
@@ -846,12 +864,14 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
                type="range" min="5" max="480" 
                value={data.sessionTimeoutMinutes}
                onChange={(e) => onChange('sessionTimeoutMinutes', parseInt(e.target.value))}
-               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-shielder-primary"
+          style={getRangeStyle(Number(data.sessionTimeoutMinutes), 5, 480)}
+          className={sliderClassName}
              />
+         <p className="text-[11px] text-gray-500 mt-2 text-right">Consider user convenience vs. security</p>
           </div>
 
-          <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-             <label className="text-[10px] font-black text-shielder-primary uppercase tracking-widest mb-4 block">{t('settingAccountLock')}</label>
+       <div className="bg-gray-50/60 p-6 rounded-3xl border border-gray-200 shadow-sm">
+         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">{t('settingAccountLock')}</label>
              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-500">{t('settingLockTimeMins')}</span>
                 <span className="text-sm font-black text-shielder-dark">{data.accountLockDurationMinutes} {t('settingMinUnit')}</span>
@@ -860,8 +880,10 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
                type="range" min="1" max="60" 
                value={data.accountLockDurationMinutes}
                onChange={(e) => onChange('accountLockDurationMinutes', parseInt(e.target.value))}
-               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-shielder-primary"
+          style={getRangeStyle(Number(data.accountLockDurationMinutes), 1, 60)}
+          className={sliderClassName}
              />
+         <p className="text-[11px] text-gray-500 mt-2 text-right">Balanced: 15-30 mins</p>
           </div>
        </div>
 
