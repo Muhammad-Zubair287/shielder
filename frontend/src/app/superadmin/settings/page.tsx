@@ -119,10 +119,16 @@ export default function SettingsPage() {
     }
   };
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (windowFilter: string = 'all', adminFilter?: string, actionFilter?: string) => {
     setLogsLoading(true);
     try {
-      const response = await settingsService.getLogs({ page: 1, limit: 100 });
+      const response = await settingsService.getLogs({ 
+        page: 1, 
+        limit: 100,
+        window: windowFilter,
+        ...(adminFilter && adminFilter !== 'all' && { adminId: adminFilter }),
+        ...(actionFilter && actionFilter !== 'all' && { module: actionFilter })
+      });
       // Handle different response structures
       const logsData = response.data?.logs || response.data?.data?.logs || [];
       setLogs(Array.isArray(logsData) ? logsData : []);
@@ -1003,6 +1009,8 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
   const [search, setSearch] = React.useState('');
   const [filterAdmin, setFilterAdmin] = React.useState('all');
   const [filterAction, setFilterAction] = React.useState('all');
+  const [timeWindow, setTimeWindow] = React.useState<'all' | 'today' | '7d' | '30d'>('30d');
+  const [isLoadingLogs, setIsLoadingLogs] = React.useState(false);
 
   const actionColors: Record<string, string> = {
     SECURITY:     'bg-orange-100 text-orange-700',
@@ -1099,17 +1107,42 @@ function LogsTab({ logs, loading, t }: { logs: SystemLog[]; loading: boolean; t:
             className="flex-1 text-sm outline-none bg-transparent text-gray-700 placeholder-gray-400"
           />
         </div>
-        <select value={filterAdmin} onChange={e => setFilterAdmin(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none bg-white">
+        <select value={filterAdmin} onChange={e => setFilterAdmin(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none bg-white hover:border-gray-300">
           <option value="all">All Admins</option>
           {admins.filter(Boolean).map(a => <option key={a} value={a}>{a}</option>)}
         </select>
-        <select value={filterAction} onChange={e => setFilterAction(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none bg-white">
+        <select value={filterAction} onChange={e => setFilterAction(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none bg-white hover:border-gray-300">
           <option value="all">All Actions</option>
           {actions.filter(Boolean).map(a => <option key={a} value={a}>{a}</option>)}
         </select>
-        <div className="border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-gray-500 shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          Last 30 Days
+        <div className="flex items-center gap-2 border border-gray-200 rounded-lg overflow-hidden bg-white hover:border-gray-300">
+          <button
+            onClick={() => setTimeWindow('all')}
+            className={`px-3 py-2 text-sm font-medium transition-colors ${timeWindow === 'all' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            All
+          </button>
+          <div className="border-r border-gray-200"></div>
+          <button
+            onClick={() => setTimeWindow('today')}
+            className={`px-3 py-2 text-sm font-medium transition-colors ${timeWindow === 'today' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            Today
+          </button>
+          <div className="border-r border-gray-200"></div>
+          <button
+            onClick={() => setTimeWindow('7d')}
+            className={`px-3 py-2 text-sm font-medium transition-colors ${timeWindow === '7d' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            7d
+          </button>
+          <div className="border-r border-gray-200"></div>
+          <button
+            onClick={() => setTimeWindow('30d')}
+            className={`px-3 py-2 text-sm font-medium transition-colors ${timeWindow === '30d' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            30d
+          </button>
         </div>
         <span className="text-xs text-gray-400 shrink-0 ml-auto">{filtered.length} of {(logs || []).length} logs</span>
       </div>

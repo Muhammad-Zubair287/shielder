@@ -114,12 +114,14 @@ class SettingsController {
    *         description: Settings audit log entries
    */
   getLogs = asyncHandler(async (req: Request, res: Response) => {
+    const window = req.query.window as string || 'all';
     const filters = {
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
       module: req.query.module as string,
       adminId: req.query.adminId as string,
       date: req.query.date as string,
+      window: window as 'all' | 'today' | '7d' | '30d',
     };
 
     const data = await SettingsService.getSettingsLogs(filters);

@@ -169,8 +169,9 @@ class SettingsService {
     module?: string;
     adminId?: string;
     date?: string;
+    window?: 'all' | 'today' | '7d' | '30d';
   }) {
-    const { page = 1, limit = 20, module, adminId, date } = filters;
+    const { page = 1, limit = 20, module, adminId, date, window = 'all' } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.AuditLogWhereInput = {
@@ -179,11 +180,21 @@ class SettingsService {
 
     if (module) where.action = { contains: module.toUpperCase() };
     if (adminId) where.userId = adminId;
-    if (date) {
+    
+    // Handle time window filtering
+    const now = new Date();
+    if (window === 'today' || date) {
+      const targetDate = date ? new Date(date) : now;
       where.createdAt = {
-        gte: new Date(date),
-        lt: new Date(new Date(date).getTime() + 86400000)
+        gte: new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()),
+        lt: new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 1)
       };
+    } else if (window === '7d') {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      where.createdAt = { gte: sevenDaysAgo };
+    } else if (window === '30d') {
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      where.createdAt = { gte: thirtyDaysAgo };
     }
 
     const [logs, total] = await Promise.all([
