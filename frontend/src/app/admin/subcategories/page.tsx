@@ -10,6 +10,8 @@ import {
   Filter,
   CheckCircle2,
   X,
+  Sparkles,
+  ArrowUpRight,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -147,23 +149,33 @@ export default function AdminSubcategoriesPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <main
-      className="space-y-6 pb-6"
+      className="relative space-y-6 pb-8"
       dir={isRTL ? 'rtl' : 'ltr'}
       aria-label={t('subcategoriesTitle')}
     >
+      <div className="absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-br from-[#5B5FC7]/10 via-white to-[#FF6B35]/10 blur-3xl" aria-hidden="true" />
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-800">{t('subcategoriesTitle')}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{t('subcategoriesSubtitle')}</p>
+      <div className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/80 px-5 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-6 sm:py-7">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#5B5FC7]/5 via-transparent to-[#FF6B35]/5" aria-hidden="true" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className={isRTL ? 'text-right' : ''}>
+            <div className={`inline-flex items-center gap-2 rounded-full border border-[#5B5FC7]/15 bg-[#5B5FC7]/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#5B5FC7] ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <Sparkles size={12} />
+              {t('subcategoriesTitle')}
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">{t('subcategoriesTitle')}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 sm:text-[15px]">{t('subcategoriesSubtitle')}</p>
+          </div>
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#FF6B35] to-[#FF5722] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#FF6B35]/20 transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98]"
+          >
+            <Plus size={18} />
+            {t('addSubcategory')}
+            <ArrowUpRight size={14} />
+          </button>
         </div>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#FF6B35] hover:bg-[#FF5722] text-white rounded-xl transition-all font-semibold shadow-md active:scale-95 text-sm"
-        >
-          <Plus size={18} />
-          {t('addSubcategory')}
-        </button>
       </div>
 
       {/* Summary Cards */}
@@ -171,21 +183,24 @@ export default function AdminSubcategoriesPage() {
         {summaryCards.map((card, i) => (
           <div
             key={i}
-            className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow"
+            className="group relative overflow-hidden rounded-2xl border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
           >
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.label}</p>
-              <h3 className="text-3xl font-black text-gray-800 mt-1">{card.value}</h3>
-            </div>
-            <div className="p-3 rounded-2xl" style={{ backgroundColor: `${card.color}18` }}>
-              <card.icon size={24} style={{ color: card.color }} aria-hidden="true" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-gray-50 opacity-80" aria-hidden="true" />
+            <div className="relative flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{card.label}</p>
+                <h3 className="mt-1 text-3xl font-black tracking-tight text-gray-900">{card.value}</h3>
+              </div>
+              <div className="rounded-2xl border border-white/70 p-3 shadow-sm transition-transform group-hover:scale-105" style={{ backgroundColor: `${card.color}14` }}>
+                <card.icon size={24} style={{ color: card.color }} aria-hidden="true" />
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-3 items-center">
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm md:flex-row md:items-center">
         {/* Search */}
         <div className="relative flex-1 w-full">
           <Search
@@ -197,7 +212,7 @@ export default function AdminSubcategoriesPage() {
             placeholder={t('searchSubcategories')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className={`w-full py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm transition-all ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+            className={`w-full rounded-xl border border-gray-200 bg-gray-50 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
           />
         </div>
 
@@ -211,7 +226,7 @@ export default function AdminSubcategoriesPage() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className={`w-full py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm appearance-none cursor-pointer ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
+              className={`w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 py-3 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
             >
               <option value="">{t('allCategories')}</option>
               {categories.map((c) => (
@@ -226,10 +241,21 @@ export default function AdminSubcategoriesPage() {
           <button
             onClick={() => fetchData()}
             disabled={refreshing}
-            className="p-2.5 text-gray-400 hover:text-[#FF6B35] hover:bg-[#FF6B35]/5 rounded-lg transition-colors border border-gray-200 disabled:opacity-40"
+            className="rounded-xl border border-gray-200 p-3 text-gray-400 transition-colors hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] disabled:opacity-40"
             title={t('refresh')}
           >
             <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            onClick={() => {
+              setSearch('');
+              setCategoryFilter('');
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            <X size={16} />
+            {t('clearFilters') || 'Clear Filters'}
           </button>
         </div>
       </div>

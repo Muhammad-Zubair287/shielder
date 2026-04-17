@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Edit2, Trash2, PackageSearch, Package } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Edit2, Trash2, PackageSearch, Package, MoreVertical } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import StockStatusBadge from './StockStatusBadge';
 import { getImageUrl } from '@/utils/helpers';
@@ -37,6 +37,19 @@ export default function ProductsTable({
   onDelete,
 }: Props) {
   const { t, isRTL, locale } = useLanguage();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // ── Locale-aware display helpers ───────────────────────────────────────────
   const productName = (p: Product) =>
@@ -70,18 +83,24 @@ export default function ProductsTable({
       maximumFractionDigits: 2,
     }).format(price);
 
+  const stockTone = (stock: number, threshold: number) => {
+    if (stock <= 0) return 'bg-red-50 text-red-700 border-red-100';
+    if (stock <= threshold) return 'bg-amber-50 text-amber-700 border-amber-100';
+    return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+  };
+
   const cellAlign = isRTL ? 'text-right' : 'text-left';
   const actionsAlign = isRTL ? 'text-left' : 'text-right';
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div ref={tableRef} className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.06)] backdrop-blur-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm" dir={isRTL ? 'rtl' : 'ltr'}>
           {/* ── Header ── */}
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-gray-100 bg-gray-50/95 backdrop-blur">
               {/* Image */}
-              <th className={`px-4 py-3 font-black text-[10px] text-gray-400 uppercase tracking-widest ${cellAlign} w-14`}>
+              <th className={`px-4 py-3.5 font-black text-[10px] text-gray-400 uppercase tracking-widest ${cellAlign} w-14`}>
                 {t('imageCol')}
               </th>
               {[
@@ -94,7 +113,7 @@ export default function ProductsTable({
               ].map((key) => (
                 <th
                   key={key}
-                  className={`px-4 py-3 font-black text-[10px] text-gray-400 uppercase tracking-widest whitespace-nowrap ${cellAlign} ${
+                  className={`px-4 py-3.5 font-black text-[10px] text-gray-400 uppercase tracking-widest whitespace-nowrap ${cellAlign} ${
                     key === 'stockStatus' ? 'hidden md:table-cell' : ''
                   } ${key === 'subcategoryCol' ? 'hidden lg:table-cell' : ''}`}
                 >
@@ -102,7 +121,7 @@ export default function ProductsTable({
                 </th>
               ))}
               <th
-                className={`px-4 py-3 font-black text-[10px] text-gray-400 uppercase tracking-widest ${actionsAlign}`}
+                className={`px-4 py-3.5 font-black text-[10px] text-gray-400 uppercase tracking-widest ${actionsAlign}`}
               >
                 {t('actions')}
               </th>
@@ -129,34 +148,39 @@ export default function ProductsTable({
                 </td>
               </tr>
             ) : (
-              products.map((p) => (
+              products.map((p, index) => (
                 <tr
                   key={p.id}
-                  className="hover:bg-gray-50 transition-colors"
+                  className={`transition-colors hover:bg-[#5B5FC7]/[0.04] ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
                 >
                   {/* Image */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5 align-top">
                     {p.mainImage ? (
                       <img
                         src={getImageUrl(p.mainImage) || ''}
                         alt={productName(p)}
-                        className="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm"
+                        className="h-11 w-11 rounded-xl border border-gray-100 object-cover shadow-sm"
                         onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/factory-1.png'; }}
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#5B5FC7]/10">
                         <Package size={16} className="text-[#5B5FC7]" aria-hidden />
                       </div>
                     )}
                   </td>
 
                   {/* Product Name */}
-                  <td className={`px-4 py-3.5 ${cellAlign}`}>
-                    <p className="font-semibold text-gray-800 truncate max-w-[160px]">
+                  <td className={`px-4 py-3.5 align-top ${cellAlign}`}>
+                    <p className="max-w-[220px] truncate text-sm font-bold text-gray-900" title={productName(p)}>
                       {productName(p)}
                     </p>
+                    {p.sku && (
+                      <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                        SKU: {p.sku}
+                      </p>
+                    )}
                     <span
-                      className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 ${
+                      className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         p.isActive
                           ? 'bg-green-100 text-green-700'
                           : 'bg-gray-100 text-gray-500'
@@ -167,57 +191,85 @@ export default function ProductsTable({
                   </td>
 
                   {/* Category */}
-                  <td className={`px-4 py-3.5 ${cellAlign}`}>
-                    <span className="inline-block max-w-[280px] text-xs font-semibold text-[#5B5FC7] bg-[#5B5FC7]/10 px-2.5 py-1 rounded-full whitespace-normal break-words leading-5">
+                  <td className={`px-4 py-3.5 align-top ${cellAlign}`}>
+                    <span className="inline-block max-w-[260px] whitespace-normal break-words rounded-full bg-[#5B5FC7]/10 px-2.5 py-1 text-xs font-semibold leading-5 text-[#5B5FC7]">
                       {categoryName(p)}
                     </span>
                   </td>
 
                   {/* Subcategory */}
-                  <td className={`px-4 py-3.5 hidden lg:table-cell ${cellAlign}`}>
-                    <span className="text-xs text-gray-500 whitespace-normal break-words leading-5 block max-w-[320px]">
+                  <td className={`hidden px-4 py-3.5 align-top lg:table-cell ${cellAlign}`}>
+                    <span className="block max-w-[300px] whitespace-normal break-words text-xs leading-5 text-gray-500">
                       {subcategoryName(p)}
                     </span>
                   </td>
 
                   {/* Price */}
-                  <td className={`px-4 py-3.5 ${cellAlign} whitespace-nowrap`}>
-                    <span className="font-bold text-gray-800 text-sm">
+                  <td className={`px-4 py-3.5 align-top ${cellAlign} whitespace-nowrap`}>
+                    <span className="text-sm font-extrabold text-gray-900">
                       {formatPrice(p.price)}
                     </span>
-                    <span className="text-[10px] text-gray-400 ms-1">{t('sarCurrency')}</span>
+                    <span className="ms-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">{t('sarCurrency')}</span>
                   </td>
 
                   {/* Stock */}
-                  <td className={`px-4 py-3.5 ${cellAlign}`}>
-                    <span className="font-bold text-gray-700">{p.stock}</span>
-                    <span className="text-[10px] text-gray-400 ms-1">{t('stockUnits')}</span>
+                  <td className={`px-4 py-3.5 align-top ${cellAlign}`}>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${stockTone(p.stock, p.minimumStockThreshold)}`}>
+                      {p.stock}
+                    </span>
+                    <p className="mt-1 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                      {t('stockUnits')}
+                    </p>
                   </td>
 
                   {/* Status badge */}
-                  <td className={`px-4 py-3.5 hidden md:table-cell ${cellAlign}`}>
+                  <td className={`hidden px-4 py-3.5 align-top md:table-cell ${cellAlign}`}>
                     <StockStatusBadge stock={p.stock} threshold={p.minimumStockThreshold} />
                   </td>
 
                   {/* Actions */}
-                  <td className={`px-4 py-3.5 ${actionsAlign}`}>
-                    <div className={`flex items-center gap-1 ${isRTL ? 'justify-start' : 'justify-end'}`}>
+                  <td className={`px-4 py-3.5 align-top ${actionsAlign}`}>
+                    <div className={`relative flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
                       <button
-                        onClick={() => onEdit(p)}
-                        className="p-1.5 text-gray-400 hover:text-[#FF6B35] hover:bg-[#FF6B35]/10 rounded-lg transition-colors"
-                        title={t('editProduct')}
-                        aria-label={t('editProduct')}
+                        onClick={() => setOpenMenuId((current) => (current === p.id ? null : p.id))}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-all hover:border-[#5B5FC7]/20 hover:bg-[#5B5FC7]/5 hover:text-[#5B5FC7]"
+                        title={t('actions')}
+                        aria-label={t('actions')}
+                        aria-expanded={openMenuId === p.id}
+                        aria-haspopup="menu"
                       >
-                        <Edit2 size={15} />
+                        <MoreVertical size={17} />
                       </button>
-                      <button
-                        onClick={() => onDelete(p)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title={t('deleteProduct')}
-                        aria-label={t('deleteProduct')}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+
+                      {openMenuId === p.id && (
+                        <div
+                          className={`absolute top-full z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1 shadow-xl ${isRTL ? 'left-0' : 'right-0'}`}
+                          role="menu"
+                        >
+                          <button
+                            onClick={() => {
+                              onEdit(p);
+                              setOpenMenuId(null);
+                            }}
+                            className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                            role="menuitem"
+                          >
+                            <Edit2 size={16} />
+                            {t('editProduct')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              onDelete(p);
+                              setOpenMenuId(null);
+                            }}
+                            className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-[#DC2626] transition-colors hover:bg-red-50 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                            role="menuitem"
+                          >
+                            <Trash2 size={16} />
+                            {t('deleteProduct')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>

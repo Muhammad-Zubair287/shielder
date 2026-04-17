@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Edit2, Trash2, Shapes } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Edit2, Trash2, Shapes, MoreVertical } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl } from '@/utils/helpers';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
@@ -33,6 +33,19 @@ export default function SubcategoriesTable({
   onDelete,
 }: Props) {
   const { t, isRTL, locale } = useLanguage();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const displayName = (s: Subcategory) =>
     locale === 'ar' && s.nameAr ? s.nameAr : s.nameEn || s.name;
@@ -60,11 +73,11 @@ export default function SubcategoriesTable({
   const SKELETONS = Array.from({ length: 6 });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div ref={tableRef} className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.06)] backdrop-blur-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm" dir={isRTL ? 'rtl' : 'ltr'}>
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-gray-100 bg-gray-50/95 backdrop-blur">
               <th className={`px-4 py-3 font-black text-[10px] text-gray-400 uppercase tracking-widest ${isRTL ? 'text-right' : 'text-left'} w-12`}>
                 {t('imageCol')}
               </th>
@@ -108,29 +121,29 @@ export default function SubcategoriesTable({
                     </td>
                   </tr>
                 )
-              : subcategories.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+              : subcategories.map((s, index) => (
+                  <tr key={s.id} className={`transition-colors hover:bg-[#5B5FC7]/[0.04] ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
                     {/* Icon / Image */}
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-top">
                       {s.image ? (
                         <img
                           src={getImageUrl(s.image) || ''}
                           alt={displayName(s)}
-                          className="w-9 h-9 rounded-lg object-cover border border-gray-100"
+                          className="h-10 w-10 rounded-xl border border-gray-100 object-cover"
                           onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/factory-1.png'; }}
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-lg bg-[#5B5FC7]/10 flex items-center justify-center">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5B5FC7]/10">
                           <Shapes size={16} className="text-[#5B5FC7]" />
                         </div>
                       )}
                     </td>
 
                     {/* Name */}
-                    <td className={`px-4 py-3.5 ${isRTL ? 'text-right' : 'text-left'}`}>
-                      <p className="font-semibold text-gray-800 truncate max-w-[140px]">{displayName(s)}</p>
+                    <td className={`px-4 py-3.5 align-top ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <p className="max-w-[220px] truncate text-sm font-bold text-gray-900" title={displayName(s)}>{displayName(s)}</p>
                       <span
-                        className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 ${
+                        className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           s.isActive
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-500'
@@ -141,48 +154,72 @@ export default function SubcategoriesTable({
                     </td>
 
                     {/* Parent Category */}
-                    <td className={`px-4 py-3.5 ${isRTL ? 'text-right' : 'text-left'}`}>
-                      <span className="inline-block max-w-[300px] text-xs font-semibold text-[#5B5FC7] bg-[#5B5FC7]/10 px-2.5 py-1 rounded-full whitespace-normal break-words leading-5">
+                    <td className={`px-4 py-3.5 align-top ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <span className="inline-block max-w-[280px] whitespace-normal break-words rounded-full bg-[#5B5FC7]/10 px-2.5 py-1 text-xs font-semibold leading-5 text-[#5B5FC7]">
                         {displayCategoryName(s)}
                       </span>
                     </td>
 
                     {/* Description */}
-                    <td className={`px-4 py-3.5 hidden md:table-cell text-gray-500 ${isRTL ? 'text-right' : 'text-left'}`}>
-                      <p className="truncate max-w-[180px]">{displayDesc(s)}</p>
+                    <td className={`hidden px-4 py-3.5 align-top text-gray-500 md:table-cell ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <p className="max-w-[220px] truncate text-xs leading-5">{displayDesc(s)}</p>
                     </td>
 
                     {/* Product count */}
-                    <td className={`px-4 py-3.5 hidden sm:table-cell ${isRTL ? 'text-right' : 'text-left'}`}>
-                      <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">
+                    <td className={`hidden px-4 py-3.5 align-top sm:table-cell ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
                         {s._count?.products ?? 0}
                       </span>
                     </td>
 
                     {/* Created date */}
-                    <td className={`px-4 py-3.5 hidden lg:table-cell text-gray-500 whitespace-nowrap ${isRTL ? 'text-right' : 'text-left'}`}>
+                    <td className={`hidden px-4 py-3.5 align-top whitespace-nowrap text-gray-500 lg:table-cell ${isRTL ? 'text-right' : 'text-left'}`}>
                       {formatDate(s.createdAt)}
                     </td>
 
                     {/* Actions */}
-                    <td className={`px-4 py-3.5 ${isRTL ? 'text-left' : 'text-right'}`}>
-                      <div className={`flex items-center gap-1 ${isRTL ? 'justify-start' : 'justify-end'}`}>
+                    <td className={`px-4 py-3.5 align-top ${isRTL ? 'text-left' : 'text-right'}`}>
+                      <div className={`relative flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
                         <button
-                          onClick={() => onEdit(s)}
-                          className="p-1.5 text-gray-400 hover:text-[#FF6B35] hover:bg-[#FF6B35]/10 rounded-lg transition-colors"
-                          title={t('editSubcategory')}
-                          aria-label={t('editSubcategory')}
+                          onClick={() => setOpenMenuId((current) => (current === s.id ? null : s.id))}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-all hover:border-[#5B5FC7]/20 hover:bg-[#5B5FC7]/5 hover:text-[#5B5FC7]"
+                          title={t('actions')}
+                          aria-label={t('actions')}
+                          aria-expanded={openMenuId === s.id}
+                          aria-haspopup="menu"
                         >
-                          <Edit2 size={15} />
+                          <MoreVertical size={17} />
                         </button>
-                        <button
-                          onClick={() => onDelete(s)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title={t('deleteSubcategory')}
-                          aria-label={t('deleteSubcategory')}
-                        >
-                          <Trash2 size={15} />
-                        </button>
+
+                        {openMenuId === s.id && (
+                          <div
+                            className={`absolute top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1 shadow-xl ${isRTL ? 'left-0' : 'right-0'}`}
+                            role="menu"
+                          >
+                            <button
+                              onClick={() => {
+                                onEdit(s);
+                                setOpenMenuId(null);
+                              }}
+                              className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                              role="menuitem"
+                            >
+                              <Edit2 size={16} />
+                              {t('editSubcategory')}
+                            </button>
+                            <button
+                              onClick={() => {
+                                onDelete(s);
+                                setOpenMenuId(null);
+                              }}
+                              className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-[#DC2626] transition-colors hover:bg-red-50 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                              role="menuitem"
+                            >
+                              <Trash2 size={16} />
+                              {t('deleteSubcategory')}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -1,11 +1,12 @@
 {
-  "compilerOptions": {
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@backend/*": ["backend/src/*"],
-      "@frontend/*": ["frontend/src/*"]
-    }
-  },
-  "exclude": ["**/node_modules", "**/dist"]
+	"compilerOptions": {
+		"skipLibCheck": true,
+		"ignoreDeprecations": "6.0",
+		"baseUrl": ".",
+		"paths": {
+			"@backend/*": ["backend/src/*"],
+			"@frontend/*": ["frontend/src/*"]
+		}
+	},
+	"exclude": ["**/node_modules", "**/dist"]
 }

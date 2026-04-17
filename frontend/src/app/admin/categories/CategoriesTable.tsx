@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Edit2, Trash2, Image as ImageIcon, MoreVertical } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl } from '@/utils/helpers';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
@@ -51,6 +51,19 @@ export default function CategoriesTable({
   onDelete,
 }: Props) {
   const { t, locale, isRTL } = useLanguage();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const formatDate = (iso: string) =>
     new Intl.DateTimeFormat(locale === 'ar' ? 'ar-SA' : 'en-SA', {
@@ -68,14 +81,15 @@ export default function CategoriesTable({
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      ref={tableRef}
+      className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.06)] backdrop-blur-sm"
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-gray-100 bg-gray-50/95 backdrop-blur">
               {[
                 { key: 'imageCol', align: 'text-center' },
                 { key: 'categoryName', align: '' },
@@ -105,12 +119,12 @@ export default function CategoriesTable({
                 </td>
               </tr>
             ) : (
-              categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-gray-50 transition-colors group">
+              categories.map((cat, index) => (
+                <tr key={cat.id} className={`transition-colors group hover:bg-[#5B5FC7]/[0.04] ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
                   {/* Image */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 align-top">
                     <div className="flex justify-center">
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center">
+                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
                         {cat.image ? (
                           <img
                             src={getImageUrl(cat.image) || ''}
@@ -126,56 +140,80 @@ export default function CategoriesTable({
                   </td>
 
                   {/* Name */}
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-gray-800">{displayName(cat)}</span>
+                  <td className="px-6 py-4 align-top">
+                    <span className="block max-w-[220px] truncate text-sm font-bold text-gray-900" title={displayName(cat)}>{displayName(cat)}</span>
                   </td>
 
                   {/* Description */}
-                  <td className="px-6 py-4 max-w-[200px]">
-                    <p className="text-xs text-gray-500 truncate">{displayDesc(cat)}</p>
+                  <td className="max-w-[220px] px-6 py-4 align-top">
+                    <p className="truncate text-xs leading-5 text-gray-500">{displayDesc(cat)}</p>
                   </td>
 
                   {/* Counts */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 align-top">
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase">
+                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">
                         {t('subCount')}: {cat._count.subcategories}
                       </span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase">
+                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">
                         {t('proCount')}: {cat._count.products}
                       </span>
                     </div>
                   </td>
 
                   {/* Status */}
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 align-top">
                     <StatusBadge isActive={cat.isActive} />
                   </td>
 
                   {/* Created */}
-                  <td className="px-6 py-4 text-[11px] text-gray-500 font-medium">
+                  <td className="px-6 py-4 align-top text-[11px] font-medium text-gray-500">
                     {formatDate(cat.createdAt)}
                   </td>
 
                   {/* Actions */}
-                  <td className="px-6 py-4">
-                    <div className={`flex items-center gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
+                  <td className="px-6 py-4 align-top">
+                    <div className={`relative flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
                       <button
-                        onClick={() => onEdit(cat)}
-                        className="p-2 text-gray-400 hover:text-[#FF6B35] hover:bg-[#FF6B35]/5 rounded-lg transition-all"
-                        title={t('edit')}
-                        aria-label={t('edit')}
+                        onClick={() => setOpenMenuId((current) => (current === cat.id ? null : cat.id))}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-all hover:border-[#5B5FC7]/20 hover:bg-[#5B5FC7]/5 hover:text-[#5B5FC7]"
+                        title={t('actions')}
+                        aria-label={t('actions')}
+                        aria-expanded={openMenuId === cat.id}
+                        aria-haspopup="menu"
                       >
-                        <Edit2 size={16} />
+                        <MoreVertical size={17} />
                       </button>
-                      <button
-                        onClick={() => onDelete(cat)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        title={t('delete')}
-                        aria-label={t('delete')}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+
+                      {openMenuId === cat.id && (
+                        <div
+                          className={`absolute top-full z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1 shadow-xl ${isRTL ? 'left-0' : 'right-0'}`}
+                          role="menu"
+                        >
+                          <button
+                            onClick={() => {
+                              onEdit(cat);
+                              setOpenMenuId(null);
+                            }}
+                            className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                            role="menuitem"
+                          >
+                            <Edit2 size={16} />
+                            {t('edit')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              onDelete(cat);
+                              setOpenMenuId(null);
+                            }}
+                            className={`flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-[#DC2626] transition-colors hover:bg-red-50 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                            role="menuitem"
+                          >
+                            <Trash2 size={16} />
+                            {t('delete')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
