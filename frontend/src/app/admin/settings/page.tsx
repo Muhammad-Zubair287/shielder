@@ -99,14 +99,19 @@ export default function AdminSettingsPage() {
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => setActiveTab(item.id)}
-                style={{ backgroundColor: isActive ? item.bg : item.bg + 'cc' }}
-                className={`relative flex flex-col items-center text-center p-4 rounded-2xl transition-all border-2 ${
-                  isActive ? 'border-transparent shadow-lg' : 'border-transparent opacity-80 hover:opacity-100'
+                style={{ backgroundColor: item.bg }}
+                className={`relative flex flex-col items-center text-center p-4 rounded-2xl border-2 transform-gpu transition-all duration-300 ${
+                  isActive
+                    ? 'z-20 -translate-y-2 scale-[1.04] border-white/25 shadow-[0_18px_35px_rgba(0,0,0,0.28)]'
+                    : 'z-0 border-transparent opacity-75 saturate-90 grayscale-0 hover:opacity-90 hover:saturate-100 hover:-translate-y-0.5'
                 }`}
               >
-                <span className="text-white">{item.icon}</span>
-                <span className="mt-2 text-sm font-bold text-white">{t(item.labelKey)}</span>
+                <span className={`transition-colors ${isActive ? 'text-white' : 'text-white/80'}`}>{item.icon}</span>
+                <span className={`mt-2 text-sm font-bold transition-colors ${isActive ? 'text-white' : 'text-white/80'}`}>
+                  {t(item.labelKey)}
+                </span>
               </button>
             );
           })}
