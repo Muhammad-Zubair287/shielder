@@ -409,7 +409,7 @@ model SystemSettings {
   companyEmail                   String?   @map("company_email")
   companyPhone                   String?   @map("company_phone")
   companyAddress                 String?   @map("company_address")
-  currency                       String    @default("USD")
+  currency                       String    @default("SAR")
   timezone                       String    @default("UTC")
   dateFormat                     String    @default("YYYY-MM-DD") @map("date_format")
   language                       String    @default("en")

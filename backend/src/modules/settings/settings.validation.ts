@@ -7,7 +7,7 @@ import Joi from 'joi';
 export const settingsValidation = {
   updateGeneral: Joi.object({
     systemName: Joi.string().optional(),          // optional — CompanySettingsForm doesn't own this field
-    companyName: Joi.string().required(),
+    companyName: Joi.string().optional(),
     companyLogo: Joi.string().allow(null, ''),
     companyEmail: Joi.string().email().allow(null, '').optional(),
     companyPhone: Joi.string().allow(null, '').optional(),

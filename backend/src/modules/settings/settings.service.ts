@@ -19,7 +19,13 @@ class SettingsService {
     if (!settings) {
       // Initialize if not exists
       settings = await prisma.systemSettings.create({
-        data: { id: 'CURRENT' }
+        data: { id: 'CURRENT', currency: 'SAR' }
+      });
+    } else if (settings.currency === 'USD' && settings.updatedBy == null) {
+      // One-time legacy normalization for untouched defaults.
+      settings = await prisma.systemSettings.update({
+        where: { id: 'CURRENT' },
+        data: { currency: 'SAR' },
       });
     }
 

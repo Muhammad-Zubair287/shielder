@@ -945,6 +945,8 @@
   "settingsCurrency": "Default Currency",
   "currency": "Currency",
   "settingsDefaultLanguage": "Default Language",
+  "settingsLangEn": "English",
+  "settingsLangAr": "Arabic",
   "settingsTimezone": "Timezone",
   "timezone": "Timezone",
   "settingsDateFormat": "Date Format",

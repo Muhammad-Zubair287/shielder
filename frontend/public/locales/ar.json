@@ -870,6 +870,8 @@
   "settingsCurrency": "العملة الافتراضية",
   "currency": "العملة",
   "settingsDefaultLanguage": "اللغة الافتراضية",
+  "settingsLangEn": "الإنجليزية",
+  "settingsLangAr": "العربية",
   "settingsTimezone": "المنطقة الزمنية",
   "timezone": "المنطقة الزمنية",
   "settingsDateFormat": "تنسيق التاريخ",
