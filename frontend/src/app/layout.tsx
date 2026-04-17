@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Cairo } from 'next/font/google';
-import '../styles/globals.css';
+import '@/styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
