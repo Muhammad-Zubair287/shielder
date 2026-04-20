@@ -142,7 +142,7 @@ export const Sidebar = () => {
   };
 
   const SidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-gray-700 dark:text-slate-200">
       {/* Logo Section */}
       <div className={cn(
         "py-2 transition-all duration-300",
@@ -162,7 +162,7 @@ export const Sidebar = () => {
             </div>
             <button
               onClick={toggleSidebar}
-              className="hidden lg:flex p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-all duration-300"
+              className="hidden lg:flex p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 transition-all duration-300"
             >
               {isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
             </button>
@@ -180,12 +180,12 @@ export const Sidebar = () => {
               />
               <button
                 onClick={toggleSidebar}
-                className="hidden lg:flex p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-all duration-300"
+                className="hidden lg:flex p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100 transition-all duration-300"
               >
                 {isRTL ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </button>
             </div>
-            <div className="h-[1px] w-full bg-gray-200 mt-2" />
+            <div className="h-[1px] w-full bg-gray-200 dark:bg-slate-800 mt-2" />
           </>
         )}
       </div>
@@ -210,13 +210,13 @@ export const Sidebar = () => {
                     collapsed ? 'justify-center px-2' : 'px-3',
                     isGroupActive
                       ? 'bg-[#FF6B35] text-white shadow-md'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-slate-100'
                   )}
                   title={collapsed ? label : ''}
                 >
                   <item.icon
                     size={19}
-                    className={cn('shrink-0', isGroupActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900')}
+                    className={cn('shrink-0', isGroupActive ? 'text-white' : 'text-gray-500 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-slate-100')}
                   />
                   <span className={cn(
                     'ms-3 text-sm font-semibold transition-all duration-300 whitespace-nowrap flex-1 text-start',
@@ -233,7 +233,7 @@ export const Sidebar = () => {
                 </button>
                 {/* Sub-items */}
                 {isExpanded && !collapsed && (
-                  <div className={cn('ms-3 mt-0.5 space-y-0.5 ps-4', isRTL ? 'border-r border-gray-200' : 'border-l border-gray-200')}>
+                  <div className={cn('ms-3 mt-0.5 space-y-0.5 ps-4', isRTL ? 'border-r border-gray-200 dark:border-slate-800' : 'border-l border-gray-200 dark:border-slate-800')}>
                     {item.children.map(child => {
                       const childLabel = t(child.nameKey);
                       const isChildActive = pathname === child.href || pathname.startsWith(child.href + '/');
@@ -247,7 +247,7 @@ export const Sidebar = () => {
                             'flex items-center py-2 px-3 rounded-lg text-xs transition-all duration-200 group',
                             isChildActive
                               ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-semibold'
-                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                              : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-slate-100'
                           )}
                         >
                           <child.icon size={13} className="me-2.5 shrink-0" />
@@ -275,7 +275,7 @@ export const Sidebar = () => {
                 collapsed ? 'justify-center px-2' : 'px-3',
                 isActive
                   ? 'bg-[#FF6B35] text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-slate-100'
               )}
               title={collapsed ? label : ''}
             >
@@ -283,7 +283,7 @@ export const Sidebar = () => {
                 size={19}
                 className={cn(
                   'shrink-0 transition-colors',
-                  isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'
+                  isActive ? 'text-white' : 'text-gray-500 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-slate-100'
                 )}
               />
               <span className={cn(
@@ -310,13 +310,13 @@ export const Sidebar = () => {
 
       {/* Footer / Logout */}
       <div className={cn(
-        "p-4 bg-gray-50 border-t border-gray-200 transition-all duration-300",
+        "p-4 bg-gray-50 dark:bg-slate-900/80 border-t border-gray-200 dark:border-slate-800 transition-all duration-300",
         collapsed ? "p-2" : "p-4"
       )}>
         <button
           onClick={handleLogout}
           className={cn(
-            "w-full flex items-center rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-300 group",
+            "w-full flex items-center rounded-lg text-gray-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950/35 hover:text-red-600 transition-all duration-300 group",
             collapsed ? "justify-center px-0 py-3" : "px-4 py-3"
           )}
           title={collapsed ? t('logout') : ""}
@@ -332,14 +332,13 @@ export const Sidebar = () => {
       </div>
     </div>
   );
-
   return (
     <>
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex fixed top-0 h-screen bg-white text-gray-700 z-50 flex-col shadow-[2px_0_8px_rgba(0,0,0,0.08)] transition-all duration-300 border-r border-gray-100",
-          isRTL ? "right-0 border-l border-r-0 shadow-[-2px_0_8px_rgba(0,0,0,0.08)]" : "left-0",
+          "hidden lg:flex fixed top-0 h-screen bg-white dark:bg-slate-950 text-gray-700 dark:text-slate-200 z-50 flex-col shadow-[2px_0_8px_rgba(0,0,0,0.08)] dark:shadow-[2px_0_8px_rgba(0,0,0,0.3)] transition-all duration-300 border-r border-gray-100 dark:border-slate-800",
+          isRTL ? "right-0 border-l border-r-0 shadow-[-2px_0_8px_rgba(0,0,0,0.08)] dark:shadow-[-2px_0_8px_rgba(0,0,0,0.3)]" : "left-0",
           collapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
@@ -363,7 +362,7 @@ export const Sidebar = () => {
         {/* Drawer */}
         <aside
           className={cn(
-            "absolute top-0 h-full w-[260px] bg-white shadow-2xl transition-transform duration-300 border-r border-gray-100",
+            "absolute top-0 h-full w-[260px] bg-white dark:bg-slate-950 shadow-2xl transition-transform duration-300 border-r border-gray-100 dark:border-slate-800",
             isRTL
               ? cn("right-0 border-l border-r-0", isMobileOpen ? "translate-x-0" : "translate-x-full")
               : cn("left-0", isMobileOpen ? "translate-x-0" : "-translate-x-full")
@@ -371,7 +370,7 @@ export const Sidebar = () => {
         >
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="absolute top-8 right-4 text-gray-600 hover:text-gray-900 hover:rotate-90 transition-transform p-2"
+            className="absolute top-8 right-4 text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100 hover:rotate-90 transition-transform p-2"
           >
             <X size={24} />
           </button>

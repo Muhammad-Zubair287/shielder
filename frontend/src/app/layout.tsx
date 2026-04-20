@@ -17,6 +17,22 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 const cairo = Cairo({ subsets: ['arabic', 'latin'], variable: '--font-cairo', display: 'swap' });
 
+const themeInitScript = `
+  (function () {
+    try {
+      var theme = localStorage.getItem('theme');
+      var root = document.documentElement;
+      if (theme === 'dark') {
+        root.classList.add('dark');
+        root.style.colorScheme = 'dark';
+      } else {
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+      }
+    } catch (error) {}
+  })();
+`;
+
 export const metadata: Metadata = {
   title: 'Shielder - Industrial Filters Digital Platform',
   description: 'Enterprise digital backbone for industrial filters',
@@ -37,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {/* Warm up Google Fonts CDN connection before any CSS/JS requests */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

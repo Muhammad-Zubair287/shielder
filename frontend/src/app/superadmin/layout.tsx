@@ -29,7 +29,7 @@ function SuperAdminLayoutContent({ children }: { children: React.ReactNode }) {
   
   return (
     <div
-      className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden"
+      className="superadmin-shell flex h-screen overflow-hidden text-slate-900 dark:text-slate-100"
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       {/* Fixed Sidebar */}
@@ -44,7 +44,7 @@ function SuperAdminLayoutContent({ children }: { children: React.ReactNode }) {
       )}>
         <Navbar />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide bg-[#F8F9FA]">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide bg-transparent">
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>

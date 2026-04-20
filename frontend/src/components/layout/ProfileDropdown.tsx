@@ -107,19 +107,19 @@ export const ProfileDropdown = () => {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 md:gap-3 cursor-pointer group hover:bg-secondary/10 p-1 px-2 rounded-xl transition-all rtl:flex-row-reverse"
+        className="flex items-center gap-2 md:gap-3 cursor-pointer group hover:bg-secondary/10 dark:hover:bg-white/5 p-1 px-2 rounded-xl transition-all rtl:flex-row-reverse"
       >
         <div className="flex flex-col hidden sm:flex ltr:items-end rtl:items-start">
-          <span className="text-sm font-bold text-tertiary line-clamp-1 max-w-[120px]">
+          <span className="text-sm font-bold text-gray-900 dark:text-slate-100 line-clamp-1 max-w-[120px]">
             {user?.profile?.fullName || 'Super Admin'}
           </span>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-primary font-bold tracking-wider bg-primary/10 px-1.5 py-0.5 rounded whitespace-nowrap">
+            <span className="text-[10px] text-primary dark:text-[#ff8a5b] font-bold tracking-wider bg-primary/10 dark:bg-white/5 px-1.5 py-0.5 rounded whitespace-nowrap">
               {user?.role === 'SUPER_ADMIN' ? '(Super Admin)' : (user?.role ? `(${user.role.charAt(0) + user.role.slice(1).toLowerCase().replace('_', ' ')})` : '')}
             </span>
           </div>
         </div>
-        <div className="relative w-10 h-10 rounded-xl bg-dark flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all">
+        <div className="relative w-10 h-10 rounded-xl bg-slate-900 dark:bg-slate-800 flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all">
           {isUploadingPhoto ? (
             <Loader2 size={18} className="animate-spin" />
           ) : user?.profile?.profileImage && !profileImageFailed ? (
@@ -135,7 +135,7 @@ export const ProfileDropdown = () => {
         </div>
         <ChevronDown 
           size={16} 
-          className={`text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-secondary dark:text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -149,12 +149,12 @@ export const ProfileDropdown = () => {
       />
 
       {isOpen && (
-        <div className="absolute mt-3 w-72 md:w-64 bg-white rounded-2xl shadow-2xl border border-secondary/10 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 fixed md:absolute left-4 right-4 md:left-auto ltr:md:right-0 rtl:md:left-0 rtl:md:right-auto">
+        <div className="absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 fixed md:absolute left-4 right-4 md:left-auto ltr:md:right-0 rtl:md:left-0 rtl:md:right-auto">
           {/* Header with avatar + change photo */}
-          <div className="p-4 bg-secondary/5 border-b border-secondary/10">
+          <div className="p-4 bg-secondary/5 dark:bg-slate-900/70 border-b border-secondary/10 dark:border-slate-800">
             <div className="flex items-center gap-3 mb-2">
               <div className="relative flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-dark flex items-center justify-center text-white overflow-hidden">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 dark:bg-slate-800 flex items-center justify-center text-white overflow-hidden">
                   {user?.profile?.profileImage && !profileImageFailed ? (
                     <img
                       src={getImageUrl(user.profile.profileImage) || ''}
@@ -170,18 +170,18 @@ export const ProfileDropdown = () => {
                   onClick={() => photoInputRef.current?.click()}
                   disabled={isUploadingPhoto}
                   title="Change profile photo"
-                  className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow hover:bg-primary/80 transition-colors disabled:opacity-60"
+                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary dark:bg-[#ff8a5b] text-white rounded-full flex items-center justify-center shadow hover:bg-primary/80 transition-colors disabled:opacity-60"
                 >
                   {isUploadingPhoto ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}
                 </button>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-tertiary truncate">{user?.profile?.fullName || user?.email}</p>
-                <p className="text-[10px] text-gray-500 truncate">{user?.email}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-slate-100 truncate">{user?.profile?.fullName || user?.email}</p>
+                <p className="text-[10px] text-gray-500 dark:text-slate-400 truncate">{user?.email}</p>
               </div>
             </div>
             {user?.role === 'SUPER_ADMIN' && (
-              <p className="text-[10px] text-primary font-bold">(Super Admin)</p>
+              <p className="text-[10px] text-primary dark:text-[#ff8a5b] font-bold">(Super Admin)</p>
             )}
           </div>
 
@@ -190,9 +190,9 @@ export const ProfileDropdown = () => {
             <Link 
               href={getProfileLink()} 
               onClick={() => setIsOpen(false)}
-              className="flex items-center space-x-3 p-3 rounded-xl text-secondary hover:bg-secondary/10 hover:text-primary transition-colors group"
+              className="flex items-center space-x-3 p-3 rounded-xl text-secondary dark:text-slate-300 hover:bg-secondary/10 dark:hover:bg-white/5 hover:text-primary dark:hover:text-[#ff8a5b] transition-colors group"
             >
-              <div className="p-2 bg-secondary/5 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+              <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
                 <User size={18} />
               </div>
               <span className="font-semibold">Profile</span>
@@ -201,9 +201,9 @@ export const ProfileDropdown = () => {
             <Link 
               href={getChangePasswordLink()} 
               onClick={() => setIsOpen(false)}
-              className="flex items-center space-x-3 p-3 rounded-xl text-secondary hover:bg-secondary/10 hover:text-primary transition-colors group"
+              className="flex items-center space-x-3 p-3 rounded-xl text-secondary dark:text-slate-300 hover:bg-secondary/10 dark:hover:bg-white/5 hover:text-primary dark:hover:text-[#ff8a5b] transition-colors group"
             >
-              <div className="p-2 bg-secondary/5 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+              <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
                 <Lock size={18} />
               </div>
               <span className="font-semibold">Change Password</span>
@@ -213,9 +213,9 @@ export const ProfileDropdown = () => {
               <Link 
                 href={getSettingsLink()!} 
                 onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-xl text-secondary hover:bg-secondary/10 hover:text-primary transition-colors group"
+                className="flex items-center space-x-3 p-3 rounded-xl text-secondary dark:text-slate-300 hover:bg-secondary/10 dark:hover:bg-white/5 hover:text-primary dark:hover:text-[#ff8a5b] transition-colors group"
               >
-                <div className="p-2 bg-secondary/5 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
                   <Settings size={18} />
                 </div>
                 <span className="font-semibold">Settings</span>
@@ -224,13 +224,13 @@ export const ProfileDropdown = () => {
           </div>
 
           {/* Footer / Logout */}
-          <div className="p-2 border-t border-gray-100">
+          <div className="p-2 border-t border-gray-100 dark:border-slate-800">
             <button 
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className={`flex items-center space-x-3 w-full p-3 rounded-xl text-critical-500 hover:bg-critical-50 transition-colors group ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center space-x-3 w-full p-3 rounded-xl text-critical-500 dark:text-red-300 hover:bg-critical-50 dark:hover:bg-red-950/35 transition-colors group ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <div className="p-2 bg-critical-100 rounded-lg group-hover:bg-critical-500 group-hover:text-white transition-colors text-critical-600">
+              <div className="p-2 bg-critical-100 dark:bg-red-950/50 rounded-lg group-hover:bg-critical-500 group-hover:text-white transition-colors text-critical-600 dark:text-red-300">
                 <LogOut size={18} />
               </div>
               <span className="font-bold">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>

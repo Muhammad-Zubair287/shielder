@@ -75,7 +75,7 @@ export const GlobalSearch = () => {
       )}>
         <Search className={clsx(
           "absolute left-4 lg:left-4 top-1/2 -translate-y-1/2 transition-colors duration-200",
-          isOpen ? "text-shielder-primary" : "text-gray-400"
+          isOpen ? "text-shielder-primary dark:text-[#ff8a5b]" : "text-gray-400 dark:text-slate-500"
         )} size={20} />
         
         <input 
@@ -88,8 +88,8 @@ export const GlobalSearch = () => {
           onFocus={() => setIsOpen(true)}
           placeholder="Search..."
           className={clsx(
-            "w-full pl-10 lg:pl-12 pr-10 lg:pr-12 py-2 lg:py-3 bg-gray-100/50 border-0 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-shielder-primary/20 focus:bg-white transition-all text-sm font-medium",
-            isOpen ? "shadow-lg bg-white" : "hover:bg-gray-100",
+            "w-full pl-10 lg:pl-12 pr-10 lg:pr-12 py-2 lg:py-3 bg-gray-100/50 dark:bg-slate-900/70 border border-transparent dark:border-slate-800 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-shielder-primary/20 dark:focus:ring-[#ff8a5b]/20 focus:bg-white dark:focus:bg-slate-950 transition-all text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500",
+            isOpen ? "shadow-lg bg-white dark:bg-slate-950" : "hover:bg-gray-100 dark:hover:bg-slate-800/70",
             !isOpen ? "lg:w-full w-10 overflow-hidden cursor-pointer" : "w-full"
           )}
         />
@@ -101,9 +101,9 @@ export const GlobalSearch = () => {
               setResults([]);
               setIsOpen(false);
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors lg:hidden"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors lg:hidden"
           >
-            <X size={16} className="text-gray-400" />
+            <X size={16} className="text-gray-400 dark:text-slate-500" />
           </button>
         )}
 
@@ -113,23 +113,23 @@ export const GlobalSearch = () => {
               setQuery('');
               setResults([]);
             }}
-            className="absolute right-4 lg:right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors hidden lg:block"
+            className="absolute right-4 lg:right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors hidden lg:block"
           >
-            <X size={16} className="text-gray-400" />
+            <X size={16} className="text-gray-400 dark:text-slate-500" />
           </button>
         )}
       </div>
 
       {isOpen && (query || isLoading) && (
-        <div className="absolute top-full left-0 right-0 lg:left-0 lg:right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 w-[calc(100vw-2rem)] lg:w-full -ml-[calc((100vw-100%-2rem)/2)] lg:ml-0" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="absolute top-full left-0 right-0 lg:left-0 lg:right-0 mt-3 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 w-[calc(100vw-2rem)] lg:w-full -ml-[calc((100vw-100%-2rem)/2)] lg:ml-0" dir={isRTL ? 'rtl' : 'ltr'}>
           {isLoading ? (
-            <div className="p-8 flex items-center justify-center space-x-3 text-gray-500">
-              <Loader2 className="animate-spin text-shielder-primary" size={20} />
+            <div className="p-8 flex items-center justify-center space-x-3 text-gray-500 dark:text-slate-400">
+              <Loader2 className="animate-spin text-shielder-primary dark:text-[#ff8a5b]" size={20} />
               <span className="font-medium">Searching across modules...</span>
             </div>
           ) : results.length > 0 ? (
             <div className="p-2 max-h-[400px] overflow-y-auto scrollbar-hide">
-              <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <div className="px-3 py-2 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">
                 Search Results
               </div>
               {results.map((result) => (
@@ -140,37 +140,37 @@ export const GlobalSearch = () => {
                     setIsOpen(false);
                     setQuery('');
                   }}
-                  className={`w-full flex items-center justify-between p-3 hover:bg-shielder-primary/5 rounded-xl transition-all group/item ${isRTL ? 'flex-row-reverse' : ''}`}
+                  className={`w-full flex items-center justify-between p-3 hover:bg-shielder-primary/5 dark:hover:bg-white/5 rounded-xl transition-all group/item ${isRTL ? 'flex-row-reverse' : ''}`}
                 >
                   <div className={`flex items-center gap-3 ${isRTL ? 'text-right' : 'text-left'}`}>
-                    <div className="p-2 bg-gray-100 rounded-lg group-hover/item:bg-white transition-colors">
+                    <div className="p-2 bg-gray-100 dark:bg-slate-900 rounded-lg group-hover/item:bg-white dark:group-hover/item:bg-slate-800 transition-colors">
                       {getIcon(result.type)}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-800 group-hover/item:text-shielder-primary transition-colors">
+                      <p className="text-sm font-bold text-gray-800 dark:text-slate-100 group-hover/item:text-shielder-primary dark:group-hover/item:text-[#ff8a5b] transition-colors">
                         {result.title}
                       </p>
-                      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-tight">
+                      <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-tight">
                         {result.type} {result.sku || result.email ? `• ${result.sku || result.email}` : ''}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={16} className={`text-gray-300 group-hover/item:text-shielder-primary transition-all ${isRTL ? 'rotate-180 translate-x-0 group-hover/item:-translate-x-1' : 'translate-x-0 group-hover/item:translate-x-1'}`} />
+                  <ChevronRight size={16} className={`text-gray-300 dark:text-slate-600 group-hover/item:text-shielder-primary dark:group-hover/item:text-[#ff8a5b] transition-all ${isRTL ? 'rotate-180 translate-x-0 group-hover/item:-translate-x-1' : 'translate-x-0 group-hover/item:translate-x-1'}`} />
                 </button>
               ))}
             </div>
           ) : query ? (
             <div className="p-8 text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Search className="text-gray-400" size={24} />
+              <div className="w-12 h-12 bg-gray-100 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Search className="text-gray-400 dark:text-slate-500" size={24} />
               </div>
-              <p className="text-gray-800 font-bold italic">No results found for "{query}"</p>
-              <p className="text-sm text-gray-500 mt-1">Try searching by SKU, Order ID, or User Email</p>
+              <p className="text-gray-800 dark:text-slate-100 font-bold italic">No results found for "{query}"</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Try searching by SKU, Order ID, or User Email</p>
             </div>
           ) : null}
           
-          <div className="p-3 bg-gray-50 border-t border-gray-100 flex items-center justify-center">
-            <p className="text-[10px] text-gray-400 font-medium">Tip: Press ESC to close search</p>
+          <div className="p-3 bg-gray-50 dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex items-center justify-center">
+            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Tip: Press ESC to close search</p>
           </div>
         </div>
       )}
