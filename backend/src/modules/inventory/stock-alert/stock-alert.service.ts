@@ -11,6 +11,25 @@ import NotificationService from '@/modules/notification/notification.service';
 import { NotificationType, UserRole } from '@prisma/client';
 
 class StockAlertService {
+  private static normalizeTranslations(value: unknown): Array<{ name: string; locale: string }> {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+      return value as Array<{ name: string; locale: string }>;
+    }
+
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? (parsed as Array<{ name: string; locale: string }>) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
   /**
    * Check and notify if stock is low
    */
@@ -52,7 +71,7 @@ class StockAlertService {
         stock: Number(product.stock || 0),
         minimumStockThreshold: Number(product.minimumStockThreshold || 0),
         nameEn: product.nameEn || undefined,
-        translations: product.translations ? JSON.parse(product.translations) : [],
+        translations: this.normalizeTranslations(product.translations),
         brand: product.brand ? { name: product.brand } : undefined,
         category: product.category || undefined,
       }));
