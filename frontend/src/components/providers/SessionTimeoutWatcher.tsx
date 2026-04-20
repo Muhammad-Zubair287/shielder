@@ -14,10 +14,33 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import settingsService from '@/services/settings.service';
+import { STORAGE_KEYS } from '@/utils/constants';
 import toast from 'react-hot-toast';
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000; // 60 min fallback
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+const getNow = () => Date.now();
+
+function clearSessionExpiryState() {
+  sessionStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+  sessionStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
+}
+
+function markSessionActivity() {
+  sessionStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY_AT, String(getNow()));
+}
+
+function getLastActivityAt(): number | null {
+  const raw = sessionStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) ? value : null;
+}
+
+function getStoredTimeoutMs(): number {
+  const raw = sessionStorage.getItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : DEFAULT_TIMEOUT_MS;
+}
 
 export default function SessionTimeoutWatcher() {
   const router = useRouter();
@@ -25,17 +48,32 @@ export default function SessionTimeoutWatcher() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeoutMsRef = useRef<number>(DEFAULT_TIMEOUT_MS);
 
+  const expireSession = async () => {
+    clearSessionExpiryState();
+    toast.error('Session expired. Please log in again.', { duration: 3000 });
+    await logout();
+    router.replace('/login?expired=true');
+  };
+
+  const scheduleTimeout = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    const lastActivityAt = getLastActivityAt();
+    const timeoutMs = timeoutMsRef.current;
+
+    if (lastActivityAt && getNow() - lastActivityAt >= timeoutMs) {
+      void expireSession();
+      return;
+    }
+
+    markSessionActivity();
+    timerRef.current = setTimeout(() => {
+      void expireSession();
+    }, timeoutMs);
+  };
+
   useEffect(() => {
     if (!isAuthenticated) return;
-
-    function resetTimer() {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(async () => {
-        toast.error('Session expired. Please log in again.', { duration: 3000 });
-        await logout();
-        router.replace('/login');
-      }, timeoutMsRef.current);
-    }
 
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -47,22 +85,31 @@ export default function SessionTimeoutWatcher() {
             ?? res?.data?.sessionTimeoutMinutes
             ?? 60;
           timeoutMsRef.current = Math.max(5, mins) * 60 * 1000;
-          resetTimer();
+          sessionStorage.setItem(STORAGE_KEYS.SESSION_TIMEOUT_MS, String(timeoutMsRef.current));
+          scheduleTimeout();
         })
-        .catch(() => resetTimer());
+        .catch(() => {
+          sessionStorage.setItem(STORAGE_KEYS.SESSION_TIMEOUT_MS, String(timeoutMsRef.current));
+          scheduleTimeout();
+        });
     } else {
       // Customers use the default timeout — do not call /api/settings (requires admin)
-      resetTimer();
+      sessionStorage.setItem(STORAGE_KEYS.SESSION_TIMEOUT_MS, String(timeoutMsRef.current));
+      scheduleTimeout();
     }
 
     // Attach activity listeners to reset the countdown
-    ACTIVITY_EVENTS.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+    ACTIVITY_EVENTS.forEach((ev) => window.addEventListener(ev, scheduleTimeout, { passive: true }));
+    window.addEventListener('focus', scheduleTimeout);
+    document.addEventListener('visibilitychange', scheduleTimeout);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      ACTIVITY_EVENTS.forEach((ev) => window.removeEventListener(ev, resetTimer));
+      ACTIVITY_EVENTS.forEach((ev) => window.removeEventListener(ev, scheduleTimeout));
+      window.removeEventListener('focus', scheduleTimeout);
+      document.removeEventListener('visibilitychange', scheduleTimeout);
     };
-  }, [isAuthenticated]); // re-run when auth state changes
+  }, [isAuthenticated, user?.role]); // re-run when auth state changes
 
   return null; // purely behavioural component
 }

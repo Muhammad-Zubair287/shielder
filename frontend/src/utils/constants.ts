@@ -136,6 +136,8 @@ export const STORAGE_KEYS = {
   USER: 'shielder_user',
   LOCALE: 'shielder_locale',
   CART: 'shielder_cart',
+  LAST_ACTIVITY_AT: 'shielder_last_activity_at',
+  SESSION_TIMEOUT_MS: 'shielder_session_timeout_ms',
 } as const;
 
 /**

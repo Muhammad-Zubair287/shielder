@@ -23,6 +23,68 @@ export const invalidateLocaleCache = () => { _cachedLocale = null; };
 
 let refreshAccessTokenPromise: TokenRefreshPromise = null;
 
+const PUBLIC_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
+
+const isPublicPath = (path: string): boolean =>
+  PUBLIC_PATH_PREFIXES.some(prefix => path === prefix || path.startsWith(`${prefix}/`));
+
+const getStoredTimeoutMs = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const raw = sessionStorage.getItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : 0;
+};
+
+const getLastActivityAt = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const raw = sessionStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : 0;
+};
+
+const clearAuthSession = () => {
+  sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  sessionStorage.removeItem(STORAGE_KEYS.USER);
+  sessionStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+  sessionStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.USER);
+};
+
+const forceLogoutIfSessionExpired = () => {
+  if (typeof window === 'undefined') return false;
+
+  const accessToken = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  if (!accessToken) return false;
+
+  const timeoutMs = getStoredTimeoutMs();
+  const lastActivityAt = getLastActivityAt();
+  if (!timeoutMs || !lastActivityAt) return false;
+
+  if (Date.now() - lastActivityAt < timeoutMs) return false;
+
+  clearAuthSession();
+
+  try {
+    import('@/store/auth.store').then(({ useAuthStore }) => {
+      useAuthStore.getState().setUser(null);
+      useAuthStore.getState().setError(null);
+      useAuthStore.getState().setLoading(false);
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+
+  const currentPath = window.location.pathname;
+  if (!isPublicPath(currentPath)) {
+    window.location.replace('/login?expired=true');
+  }
+
+  return true;
+};
+
 /**
  * Create Axios instance
  */
@@ -40,6 +102,13 @@ const apiClient: AxiosInstance = axios.create({
  */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const requestPath = typeof config.url === 'string' ? config.url : '';
+    const isAuthRequest = requestPath.includes('auth/login') || requestPath.includes('auth/signup') || requestPath.includes('auth/refresh');
+
+    if (!isAuthRequest && forceLogoutIfSessionExpired()) {
+      return Promise.reject(new axios.Cancel('Session expired due to inactivity'));
+    }
+
     // Get token from sessionStorage
     const token = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 
