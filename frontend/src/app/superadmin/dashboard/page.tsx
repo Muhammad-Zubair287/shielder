@@ -49,6 +49,7 @@ interface DashboardSummary {
 
 interface LowStockProduct {
   id: string;
+  nameEn?: string;
   translations: { name: string; locale: string }[];
   stock: number;
   minimumStockThreshold: number;
@@ -159,7 +160,11 @@ export default function SuperAdminDashboard() {
       ]);
 
       setSummary(summaryRes.data.data);
-      setLowStock(lowStockRes.data.products || []);
+      const lowStockProducts =
+        lowStockRes?.data?.data?.products ||
+        lowStockRes?.data?.products ||
+        [];
+      setLowStock(Array.isArray(lowStockProducts) ? lowStockProducts : []);
       setAnalytics(Array.isArray(analyticsRes) ? analyticsRes : []);
       const categoryPayload = Array.isArray(categoryRes?.data?.data)
         ? categoryRes.data.data
@@ -506,7 +511,7 @@ export default function SuperAdminDashboard() {
                 <div key={product.id} className="bg-white p-4 rounded-xl border border-red-100 flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold line-clamp-1 text-gray-800">{product.translations?.[0]?.name}</h4>
+                      <h4 className="font-bold line-clamp-1 text-gray-800">{product.translations?.[0]?.name || product.nameEn || t('noDataAvailable')}</h4>
                       {product.stock <= 2 ? (
                         <span className="px-2 py-1 bg-red-100 text-red-500 text-[10px] font-black rounded uppercase">{t('criticalBadge')}</span>
                       ) : (
