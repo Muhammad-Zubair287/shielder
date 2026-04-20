@@ -20,6 +20,8 @@ const getCachedLocale = (): string => {
 // Invalidate when locale changes (called from LanguageContext)
 export const invalidateLocaleCache = () => { _cachedLocale = null; };
 
+let refreshAccessTokenPromise: Promise<string> | null = null;
+
 /**
  * Create Axios instance
  */
@@ -89,29 +91,39 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Get refresh token
-        const refreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        if (!refreshAccessTokenPromise) {
+          refreshAccessTokenPromise = (async () => {
+            // Get refresh token
+            const refreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 
-        if (!refreshToken) {
-          console.warn('[API] No refresh token found during 401 recovery');
-          throw new Error('No refresh token');
+            if (!refreshToken) {
+              console.warn('[API] No refresh token found during 401 recovery');
+              throw new Error('No refresh token');
+            }
+
+            // Refresh the token - ensure Slash between BASE_URL and endpoint
+            const refreshUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.BASE_URL.endsWith('/') ? '' : '/'}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`;
+
+            const response = await axios.post(
+              refreshUrl,
+              { refreshToken: refreshToken.replace(/"/g, '') }
+            );
+
+            const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+
+            // Store new tokens
+            sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+            if (newRefreshToken) {
+              sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+            }
+
+            return accessToken;
+          })().finally(() => {
+            refreshAccessTokenPromise = null;
+          });
         }
 
-        // Refresh the token - ensure Slash between BASE_URL and endpoint
-        const refreshUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.BASE_URL.endsWith('/') ? '' : '/'}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`;
-
-        const response = await axios.post(
-          refreshUrl,
-          { refreshToken: refreshToken.replace(/"/g, '') }
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-
-        // Store new tokens
-        sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-        if (newRefreshToken) {
-          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
-        }
+        const accessToken = await refreshAccessTokenPromise;
 
         // Retry original request with new token
         if (originalRequest.headers) {

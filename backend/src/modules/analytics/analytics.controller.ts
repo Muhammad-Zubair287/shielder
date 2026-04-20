@@ -7,6 +7,10 @@ import { Request, Response } from 'express';
 import { AnalyticsService } from './analytics.service';
 import { asyncHandler } from '@/common/utils/helpers';
 
+const setDashboardCacheHeaders = (res: Response) => {
+  res.setHeader('Cache-Control', 'private, max-age=120, stale-while-revalidate=300');
+};
+
 class AnalyticsController {
   /**
    * @swagger
@@ -20,6 +24,7 @@ class AnalyticsController {
    *         description: Monthly revenue data
    */
   getRevenueMonthly = asyncHandler(async (_req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const data = await AnalyticsService.getRevenueMonthly();
     res.status(200).json({
       success: true,
@@ -39,6 +44,7 @@ class AnalyticsController {
    *         description: Monthly order count data
    */
   getOrdersMonthly = asyncHandler(async (_req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const data = await AnalyticsService.getOrdersMonthly();
     res.status(200).json({
       success: true,
@@ -58,6 +64,7 @@ class AnalyticsController {
    *         description: Products grouped by category
    */
   getProductsByCategory = asyncHandler(async (_req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const data = await AnalyticsService.getProductsByCategory();
     res.status(200).json({
       success: true,
@@ -77,6 +84,7 @@ class AnalyticsController {
    *         description: User growth data
    */
   getUserGrowth = asyncHandler(async (_req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const data = await AnalyticsService.getUserGrowth();
     res.status(200).json({
       success: true,
@@ -96,6 +104,7 @@ class AnalyticsController {
    *         description: Overview metrics
    */
   getOverview = asyncHandler(async (_req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const data = await AnalyticsService.getOverview();
     res.status(200).json({
       success: true,

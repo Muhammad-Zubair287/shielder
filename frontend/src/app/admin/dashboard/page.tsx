@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import adminService from '@/services/admin.service';
-import { orderService } from '@/services/order.service';
 
 import KPICards, { type KPIData } from './KPICards';
 import LowStockPanel, { type LowStockProduct } from './LowStockPanel';
@@ -61,35 +60,6 @@ const buildLast12MonthKeys = (): string[] => {
   return keys;
 };
 
-const toIsoDate = (value: Date): string => value.toISOString().slice(0, 10);
-
-const buildMonthlySeriesFromOrders = (orders: any[]): MonthlyDataPoint[] => {
-  const merged: Record<string, MonthlyDataPoint> = {};
-  buildLast12MonthKeys().forEach((month) => {
-    merged[month] = { month, revenue: 0, orders: 0 };
-  });
-
-  orders.forEach((order: any) => {
-    const key = getMonthKey(order?.createdAt ?? order?.created_at ?? order?.date);
-    if (!key || !merged[key]) return;
-
-    const status = String(order?.status ?? '').toUpperCase();
-    if (status !== 'CANCELLED') {
-      merged[key].orders = Number(merged[key].orders ?? 0) + 1;
-    }
-
-    const paymentStatus = String(order?.paymentStatus ?? order?.payment_status ?? '').toUpperCase();
-    if (paymentStatus === 'PAID') {
-      const amount = Number(order?.total ?? order?.totalAmount ?? order?.amount ?? 0);
-      if (Number.isFinite(amount)) {
-        merged[key].revenue = Number(merged[key].revenue ?? 0) + amount;
-      }
-    }
-  });
-
-  return Object.values(merged).sort((a, b) => a.month.localeCompare(b.month));
-};
-
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
@@ -125,17 +95,14 @@ export default function AdminDashboardPage() {
 
     try {
       const last12Keys = buildLast12MonthKeys();
-      const dateFrom = `${last12Keys[0]?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`;
-      const dateTo = toIsoDate(new Date());
 
-      const [overviewRes, lowStockRes, salesSeriesRes, quotationsRes, categoryRes, ordersRes] =
+      const [overviewRes, lowStockRes, salesSeriesRes, quotationsRes, categoryRes] =
         await Promise.allSettled([
           adminService.getOverview(),
           adminService.getLowStockProducts(),
           adminService.getMonthlySalesSeries(),
           adminService.getQuotationsTotalCount(),
           adminService.getByCategory(),
-            orderService.getOrders({ limit: 100, dateFrom, dateTo }),
         ]);
 
       // ── KPI cards ──
@@ -191,42 +158,6 @@ export default function AdminDashboardPage() {
           orders: Number.isFinite(orders) ? orders : 0,
         };
       });
-
-      const analyticsTotals = Object.values(merged).reduce(
-        (acc, item) => ({
-          revenue: acc.revenue + Number(item.revenue ?? 0),
-          orders: acc.orders + Number(item.orders ?? 0),
-        }),
-        { revenue: 0, orders: 0 }
-      );
-
-      if (ordersRes.status === 'fulfilled') {
-        const ordersData: any[] =
-          (ordersRes.value as any)?.data?.orders ??
-          (ordersRes.value as any)?.orders ??
-          [];
-
-        const orderBackedSeries = buildMonthlySeriesFromOrders(
-          Array.isArray(ordersData) ? ordersData : []
-        );
-        const orderBackedTotals = orderBackedSeries.reduce(
-          (acc, item) => ({
-            revenue: acc.revenue + Number(item.revenue ?? 0),
-            orders: acc.orders + Number(item.orders ?? 0),
-          }),
-          { revenue: 0, orders: 0 }
-        );
-
-        const useOrderBackedSeries =
-          orderBackedTotals.orders > analyticsTotals.orders ||
-          orderBackedTotals.revenue > analyticsTotals.revenue;
-
-        if (useOrderBackedSeries) {
-          orderBackedSeries.forEach((item) => {
-            merged[item.month] = item;
-          });
-        }
-      }
 
       setChartData(Object.values(merged).sort((a, b) => a.month.localeCompare(b.month)));
 

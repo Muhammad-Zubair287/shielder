@@ -41,44 +41,40 @@ class StockAlertService {
     try {
       const skip = (page - 1) * limit;
 
-      // We use raw query here because Prisma currently doesn't support column-to-column comparison natively in 'where' clause
-      const products = await prisma.$queryRaw<Array<{ id: string }>>`
-        SELECT p.*, c.id as "categoryId", b.id as "brandId"
+      const products = await prisma.$queryRaw<Array<{
+        id: string;
+        stock: number | string;
+        minimumStockThreshold: number | string;
+        nameEn: string | null;
+        brandName: string | null;
+        total: number | string;
+      }>>`
+        SELECT
+          p.id,
+          p.stock,
+          p.minimum_stock_threshold AS "minimumStockThreshold",
+          COALESCE(pt.name, '') AS "nameEn",
+          b.name AS "brandName",
+          COUNT(*) OVER()::INT AS total
         FROM products p
-        LEFT JOIN categories c ON p."categoryId" = c.id
-        LEFT JOIN brands b ON p."brandId" = b.id
+        LEFT JOIN product_translations pt ON pt."productId" = p.id AND pt.locale = 'en'
+        LEFT JOIN brands b ON b.id = p."brandId"
         WHERE p.is_active = true AND p.stock <= p.minimum_stock_threshold
-        ORDER BY p.stock ASC
+        ORDER BY p.stock ASC, p.created_at ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
 
-      const totalCountResult = await prisma.$queryRaw<Array<{ count: number | string }>>`
-        SELECT COUNT(*) as count
-        FROM products
-        WHERE is_active = true AND stock <= minimum_stock_threshold
-      `;
-
-      const total = Number(totalCountResult[0]?.count || 0);
+      const total = Number(products[0]?.total || 0);
       const totalPages = Math.ceil(total / limit);
 
-      // Fetch related data for the products (translations, etc.) using Prisma for ease of use
-      const productIds = products.map(p => p.id);
-      const fullyLoadedProducts = await prisma.product.findMany({
-        where: {
-          id: { in: productIds }
-        },
-        include: {
-          category: true,
-          brand: true,
-          translations: {
-            where: { locale: 'en' },
-            take: 1,
-          },
-        },
-        orderBy: {
-          stock: 'asc',
-        }
-      });
+      const fullyLoadedProducts = products.map((product) => ({
+        id: product.id,
+        stock: Number(product.stock || 0),
+        minimumStockThreshold: Number(product.minimumStockThreshold || 0),
+        nameEn: product.nameEn || undefined,
+        translations: product.nameEn ? [{ name: product.nameEn, locale: 'en' }] : [],
+        brand: product.brandName ? { name: product.brandName } : undefined,
+      }));
 
       return {
         products: fullyLoadedProducts,

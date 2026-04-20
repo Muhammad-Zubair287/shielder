@@ -70,75 +70,57 @@ class AnalyticsService {
    * excluding cancelled orders.
    */
   static async getProductsByCategory() {
-    // Baseline inventory distribution: active products per category.
-    const counts = await prisma.product.groupBy({
-      by: ['categoryId'],
-      where: {
-        isActive: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
-
-    // Sales distribution: real order counts and revenue per category from order items.
-    const orderStats = await prisma.$queryRaw<CategoryOrderStatsRow[]>`
+    const result = await prisma.$queryRaw<Array<{
+      categoryId: string;
+      categoryName: string;
+      productCount: number | string;
+      orderCount: number | string;
+      orders: number | string;
+      revenue: number | string;
+    }>>`
+      WITH active_products AS (
+        SELECT
+          p."categoryId" AS "categoryId",
+          COUNT(*)::INT AS "productCount"
+        FROM products p
+        WHERE p.is_active = true
+        GROUP BY p."categoryId"
+      ),
+      category_sales AS (
+        SELECT
+          p."categoryId" AS "categoryId",
+          COUNT(DISTINCT oi.order_id)::INT AS "orderCount",
+          COALESCE(SUM(oi.total_price), 0)::FLOAT AS revenue
+        FROM order_items oi
+        INNER JOIN orders o ON o.id = oi.order_id
+        INNER JOIN products p ON p.id = oi.product_id
+        WHERE o.status != 'CANCELLED'
+        GROUP BY p."categoryId"
+      )
       SELECT
-        p."categoryId" AS "categoryId",
-        COUNT(DISTINCT oi.order_id)::INT AS "orderCount",
-        COALESCE(SUM(oi.total_price), 0)::FLOAT AS "revenue"
-      FROM order_items oi
-      INNER JOIN orders o ON o.id = oi.order_id
-      INNER JOIN products p ON p.id = oi.product_id
-      WHERE o.status != 'CANCELLED'
-      GROUP BY p."categoryId"
+        c.id AS "categoryId",
+        COALESCE(ct.name, 'Unknown') AS "categoryName",
+        COALESCE(ap."productCount", 0)::INT AS "productCount",
+        COALESCE(cs."orderCount", 0)::INT AS "orderCount",
+        COALESCE(cs."orderCount", 0)::INT AS orders,
+        COALESCE(cs.revenue, 0)::FLOAT AS revenue
+      FROM categories c
+      LEFT JOIN category_translations ct
+        ON ct."categoryId" = c.id AND ct.locale = 'en'
+      LEFT JOIN active_products ap ON ap."categoryId" = c.id
+      LEFT JOIN category_sales cs ON cs."categoryId" = c.id
+      WHERE ap."categoryId" IS NOT NULL OR cs."categoryId" IS NOT NULL
+      ORDER BY COALESCE(cs."orderCount", 0) DESC, c.id ASC
     `;
 
-    const statsByCategoryId = new Map(
-      orderStats.map((row) => [
-        row.categoryId,
-        {
-          orderCount: Number(row.orderCount || 0),
-          revenue: Number(row.revenue || 0),
-        },
-      ])
-    );
-
-    // Optionally fetch category names for a better response
-    const categoryIds = Array.from(
-      new Set([
-        ...counts.map((c) => c.categoryId),
-        ...orderStats.map((s) => s.categoryId),
-      ])
-    );
-    const categories = await prisma.category.findMany({
-      where: {
-        id: { in: categoryIds },
-      },
-      include: {
-        translations: {
-          take: 1,
-        },
-      },
-    });
-
-    const activeCountByCategoryId = new Map(
-      counts.map((c) => [c.categoryId, c._count.id])
-    );
-
-    return categoryIds.map((categoryId) => {
-      const category = categories.find((cat) => cat.id === categoryId);
-      const stats = statsByCategoryId.get(categoryId);
-      return {
-        categoryId,
-        categoryName: category?.translations[0]?.name || 'Unknown',
-        productCount: activeCountByCategoryId.get(categoryId) ?? 0,
-        orderCount: stats?.orderCount ?? 0,
-        // Alias used by dashboard mapping fallback.
-        orders: stats?.orderCount ?? 0,
-        revenue: stats?.revenue ?? 0,
-      };
-    });
+    return result.map((row) => ({
+      categoryId: row.categoryId,
+      categoryName: row.categoryName,
+      productCount: Number(row.productCount || 0),
+      orderCount: Number(row.orderCount || 0),
+      orders: Number(row.orders || 0),
+      revenue: Number(row.revenue || 0),
+    }));
   }
 
   /**

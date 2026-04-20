@@ -68,22 +68,10 @@ export const useAuth = () => {
         localStorage.removeItem(STORAGE_KEYS.USER);
       }
 
-      // Prefetch all possible destination routes BEFORE the API call so
-      // Next.js starts downloading their JS chunks while the network request
-      // is in-flight. This cuts the perceived redirect delay significantly.
-      router.prefetch(ROUTES.SUPER_ADMIN_DASHBOARD);
-      router.prefetch('/admin/dashboard');
-      router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
-
       const response = await authService.login(data);
       const role = String(response.user?.role ?? '').toUpperCase();
 
       const goToTwoFactorPage = (targetPath: string) => {
-        if (typeof window !== 'undefined') {
-          window.location.replace(targetPath);
-          return;
-        }
-
         router.replace(targetPath);
       };
 

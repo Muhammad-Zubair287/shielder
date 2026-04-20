@@ -7,11 +7,16 @@ import { Request, Response } from 'express';
 import { StockAlertService } from './stock-alert.service';
 import { asyncHandler } from '@/common/utils/helpers';
 
+const setDashboardCacheHeaders = (res: Response) => {
+  res.setHeader('Cache-Control', 'private, max-age=120, stale-while-revalidate=300');
+};
+
 class StockAlertController {
   /**
    * GET /api/products/low-stock
    */
   getLowStockProducts = asyncHandler(async (req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
@@ -28,6 +33,7 @@ class StockAlertController {
    * GET /api/products/low-stock/count
    */
   getLowStockCount = asyncHandler(async (_req: Request, res: Response) => {
+    setDashboardCacheHeaders(res);
     const result = await StockAlertService.getLowStockCount();
 
     res.status(200).json({
