@@ -151,13 +151,17 @@ export default function CategoriesTable({
 
                   {/* Counts */}
                   <td className="px-6 py-4 align-top">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                        {t('subCount')}: {cat._count.subcategories}
-                      </span>
-                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                        {t('proCount')}: {cat._count.products}
-                      </span>
+                    <div className="flex justify-center">
+                      <div className={`inline-flex items-stretch gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <div className="min-w-[74px] rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{t('subCount')}</p>
+                          <p className="mt-0.5 text-base font-black leading-none text-slate-700">{cat._count.subcategories}</p>
+                        </div>
+                        <div className="min-w-[74px] rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{t('proCount')}</p>
+                          <p className="mt-0.5 text-base font-black leading-none text-slate-700">{cat._count.products}</p>
+                        </div>
+                      </div>
                     </div>
                   </td>
 
