@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -75,21 +75,32 @@ export const AdminSidebar = () => {
   const { logout } = useAuth();
   const { t, isRTL } = useLanguage();
   const [unreadCount, setUnreadCount] = useState(0);
+  const prefetchedRoutes = useRef(new Set<string>());
   const [expandedMenus, setExpandedMenus] = useState<string[]>(
     pathname.includes('/admin/quotations') ? ['quotations'] : []
   );
 
-  // Prefetch every sidebar route on mount so clicking any nav item is instant
+  const prefetchRoute = (href: string) => {
+    if (prefetchedRoutes.current.has(href)) return;
+    prefetchedRoutes.current.add(href);
+    router.prefetch(href);
+  };
+
+  const prefetchRoutes = (routes: string[]) => {
+    routes.forEach(prefetchRoute);
+  };
+
+  // Warm the visible top-level routes after the initial paint.
   useEffect(() => {
-    const routes: string[] = [];
-    adminMenuItems.forEach(item => {
-      if (item.href) routes.push(item.href);
-      item.children?.forEach(c => routes.push(c.href));
-    });
-    routes.forEach(r => router.prefetch(r));
-  }, [router]);
+    const routes: string[] = [...new Set(adminMenuItems.flatMap(item => item.href ? [item.href] : []))];
+    const timer = window.setTimeout(() => prefetchRoutes(routes), 250);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const toggleExpanded = (nameKey: string) => {
+    if (nameKey === 'quotations') {
+      prefetchRoutes(adminMenuItems.find(item => item.nameKey === 'quotations')?.children?.map(child => child.href) ?? []);
+    }
     setExpandedMenus(prev =>
       prev.includes(nameKey) ? prev.filter(n => n !== nameKey) : [...prev, nameKey]
     );
@@ -106,9 +117,12 @@ export const AdminSidebar = () => {
         // silent fail
       }
     };
-    fetchNotifications();
+    const timer = window.setTimeout(fetchNotifications, 600);
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -178,6 +192,8 @@ export const AdminSidebar = () => {
               <div key={item.nameKey}>
                 <button
                   onClick={() => !collapsed && toggleExpanded(item.nameKey)}
+                  onMouseEnter={() => item.children?.forEach(child => prefetchRoute(child.href))}
+                  onFocus={() => item.children?.forEach(child => prefetchRoute(child.href))}
                   className={cn(
                     'w-full flex items-center py-3 rounded-xl transition-all duration-200 group',
                     collapsed ? 'justify-center px-2' : 'px-3',
@@ -209,6 +225,8 @@ export const AdminSidebar = () => {
                           key={child.href}
                           href={child.href}
                           onClick={() => setIsMobileOpen(false)}
+                          onMouseEnter={() => prefetchRoute(child.href)}
+                          onFocus={() => prefetchRoute(child.href)}
                           className={cn(
                             'flex items-center py-2 px-3 rounded-lg text-xs transition-all duration-200',
                             isActive
@@ -234,7 +252,8 @@ export const AdminSidebar = () => {
               key={item.href}
               href={item.href!}
               onClick={() => setIsMobileOpen(false)}
-              prefetch={true}
+              onMouseEnter={() => item.href && prefetchRoute(item.href)}
+              onFocus={() => item.href && prefetchRoute(item.href)}
               className={cn(
                 'flex items-center py-3 rounded-xl transition-all duration-200 group relative',
                 collapsed ? 'justify-center px-2' : 'px-3',

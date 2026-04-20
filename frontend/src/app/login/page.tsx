@@ -50,48 +50,19 @@ function LoginPageContent() {
   const { t, isRTL, locale, setLocale } = useLanguage();
   const redirectHandled = useRef(false);
 
-  // Kick off compilation of ALL panel pages the moment the login page mounts.
-  // This gives Next.js the maximum possible time to compile every route in
-  // the background while the user is still typing their credentials —
-  // so navigation is instant after login regardless of which item they click.
+  const prefetchedRoutes = useRef(new Set<string>());
+
+  const prefetchRoute = (href: string) => {
+    if (prefetchedRoutes.current.has(href)) return;
+    prefetchedRoutes.current.add(href);
+    router.prefetch(href);
+  };
+
+  // Warm only the most likely destinations after the form has mounted.
   useEffect(() => {
-    const routes = [
-      // Superadmin
-      '/superadmin/dashboard',
-      '/superadmin/admins',
-      '/superadmin/categories',
-      '/superadmin/subcategories',
-      '/superadmin/products',
-      '/superadmin/orders',
-      '/superadmin/users',
-      '/superadmin/payments',
-      '/superadmin/quotations',
-      '/superadmin/quotations/create',
-      '/superadmin/quotations/drafts',
-      '/superadmin/quotations/expired',
-      '/superadmin/quotations/reports',
-      '/superadmin/reports',
-      '/superadmin/notifications',
-      '/superadmin/settings',
-      // Admin
-      '/admin/dashboard',
-      '/admin/categories',
-      '/admin/subcategories',
-      '/admin/products',
-      '/admin/orders',
-      '/admin/users',
-      '/admin/quotations',
-      '/admin/quotations/create',
-      '/admin/quotations/drafts',
-      '/admin/quotations/expired',
-      '/admin/quotations/reports',
-      '/admin/reports',
-      '/admin/notifications',
-      '/admin/settings',
-      // Customer
-      '/customer/dashboard',
-    ];
-    routes.forEach(r => router.prefetch(r));
+    const routes = ['/superadmin/dashboard', '/admin/dashboard', '/customer/dashboard'];
+    const timer = window.setTimeout(() => routes.forEach(prefetchRoute), 500);
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   const expired = searchParams.get('expired');
@@ -136,6 +107,12 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showResendVerification, setShowResendVerification] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+
+  useEffect(() => {
+    if (showResendVerification) {
+      prefetchRoute('/forgot-password');
+    }
+  }, [showResendVerification]);
 
   const isUnverifiedEmailError = (message: string) => {
     const normalized = message.toLowerCase();
@@ -323,6 +300,7 @@ function LoginPageContent() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        onFocus={() => prefetchRoute('/forgot-password')}
                         placeholder="example@gmail.com"
                         autoComplete="email"
                         className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
@@ -350,6 +328,7 @@ function LoginPageContent() {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
+                        onFocus={() => prefetchRoute('/forgot-password')}
                         placeholder="••••••••"
                         autoComplete="current-password"
                         className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-12' : 'pl-12 pr-12'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${

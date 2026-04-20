@@ -306,13 +306,10 @@ export class AuthService {
           lastLoginAt: true,
           profile: {
             select: {
-              id: true,
-              userId: true,
               fullName: true,
-              phoneNumber: true,
-              address: true,
-              companyName: true,
               preferredLanguage: true,
+              phoneNumber: true,
+              companyName: true,
               profileImage: true,
             },
           },
@@ -382,8 +379,15 @@ export class AuthService {
         throw new UnauthorizedError('Invalid credentials');
       }
 
-      // Reset failed attempts and update last login
-      await prisma.user.update({
+      const tokenPayload = {
+        userId: user.id,
+        email: user.email,
+        role: user.role as UserRole,
+        preferredLanguage: user.profile?.preferredLanguage || 'en',
+      };
+
+      // Reset failed attempts and update last login in parallel with token generation.
+      const userUpdatePromise = prisma.user.update({
         where: { id: user.id },
         data: {
           failedLoginAttempts: 0,
@@ -392,6 +396,10 @@ export class AuthService {
           lastLoginIp: deviceInfo?.ipAddress,
         },
       });
+
+      const tokenPromise = TokenService.generateTokenPair(tokenPayload, deviceInfo);
+
+      const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise]);
 
       // Fire-and-forget audit log — do not await; keeps login response fast
       AuditService.log({
@@ -435,17 +443,6 @@ export class AuthService {
       if ((user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && this.shouldBypassEmailFlows()) {
         logger.warn(`DEV MODE: bypassed mandatory 2FA because email delivery is unavailable - ${user.email}`);
       }
-
-      // Generate tokens with device info (regular users skip 2FA)
-      const tokens = await TokenService.generateTokenPair(
-        {
-          userId: user.id,
-          email: user.email,
-          role: user.role as UserRole,
-          preferredLanguage: user.profile?.preferredLanguage || 'en',
-        },
-        deviceInfo
-      );
 
       logger.info(`User logged in: ${user.email}`);
 

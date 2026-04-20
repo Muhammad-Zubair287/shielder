@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -71,14 +71,6 @@ const superAdminMenuItems: MenuItem[] = [
   { nameKey: 'settings',       icon: Settings,  href: '/superadmin/settings' },
 ];
 
-// Admin menu kept for prefetch reference only (admin panel uses AdminSidebar.tsx)
-const adminMenuItemsForPrefetch = [
-  '/admin/dashboard', '/admin/categories', '/admin/subcategories', '/admin/products',
-  '/admin/orders', '/admin/users', '/admin/quotations', '/admin/quotations/create',
-  '/admin/quotations/drafts', '/admin/quotations/expired', '/admin/quotations/reports',
-  '/admin/reports', '/admin/notifications', '/admin/settings',
-];
-
 export const Sidebar = () => {
   const { sidebarCollapsed: collapsed, toggleSidebar, isMobileOpen, setIsMobileOpen } = useDashboard();
   const { t, isRTL } = useLanguage();
@@ -86,6 +78,7 @@ export const Sidebar = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const prefetchedRoutes = useRef(new Set<string>());
   const [expandedMenus, setExpandedMenus] = useState<string[]>(
     // Auto-expand if a quotation path is active
     pathname.includes('/superadmin/quotations') ? ['quotations'] : []
@@ -93,17 +86,27 @@ export const Sidebar = () => {
 
   const menuItems = superAdminMenuItems;
 
-  // Prefetch every sidebar route on mount so clicking any nav item is instant
+  const prefetchRoute = (href: string) => {
+    if (prefetchedRoutes.current.has(href)) return;
+    prefetchedRoutes.current.add(href);
+    router.prefetch(href);
+  };
+
+  const prefetchRoutes = (routes: string[]) => {
+    routes.forEach(prefetchRoute);
+  };
+
+  // Warm the visible top-level routes after the initial paint.
   useEffect(() => {
-    const routes: string[] = [...adminMenuItemsForPrefetch];
-    superAdminMenuItems.forEach(item => {
-      if (item.href) routes.push(item.href);
-      item.children?.forEach(c => routes.push(c.href));
-    });
-    routes.forEach(r => router.prefetch(r));
-  }, [router]);
+    const routes: string[] = [...new Set(superAdminMenuItems.flatMap(item => item.href ? [item.href] : []))];
+    const timer = window.setTimeout(() => prefetchRoutes(routes), 250);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const toggleExpanded = (nameKey: string) => {
+    if (nameKey === 'quotations') {
+      prefetchRoutes(superAdminMenuItems.find(item => item.nameKey === 'quotations')?.children?.map(child => child.href) ?? []);
+    }
     setExpandedMenus(prev =>
       prev.includes(nameKey) ? prev.filter(n => n !== nameKey) : [...prev, nameKey]
     );
@@ -123,13 +126,15 @@ export const Sidebar = () => {
         }
       };
       
-      // Fetch immediately
-      fetchNotifications();
+      const timer = window.setTimeout(fetchNotifications, 600);
       
       // Then refresh every 30 seconds (reduced frequency)
       const interval = setInterval(fetchNotifications, 30000);
       
-      return () => clearInterval(interval);
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
     }
   }, [user]);
 
@@ -205,6 +210,8 @@ export const Sidebar = () => {
               <div key={item.nameKey}>
                 <button
                   onClick={() => !collapsed && toggleExpanded(item.nameKey)}
+                  onMouseEnter={() => item.children?.forEach(child => prefetchRoute(child.href))}
+                  onFocus={() => item.children?.forEach(child => prefetchRoute(child.href))}
                   className={cn(
                     'w-full flex items-center py-3 rounded-xl transition-all duration-200 group relative',
                     collapsed ? 'justify-center px-2' : 'px-3',
@@ -242,7 +249,8 @@ export const Sidebar = () => {
                           key={child.href}
                           href={child.href}
                           onClick={() => setIsMobileOpen(false)}
-                          prefetch={true}
+                          onMouseEnter={() => prefetchRoute(child.href)}
+                          onFocus={() => prefetchRoute(child.href)}
                           className={cn(
                             'flex items-center py-2 px-3 rounded-lg text-xs transition-all duration-200 group',
                             isChildActive
@@ -269,7 +277,8 @@ export const Sidebar = () => {
               key={item.href}
               href={item.href!}
               onClick={() => setIsMobileOpen(false)}
-              prefetch={true}
+              onMouseEnter={() => item.href && prefetchRoute(item.href)}
+              onFocus={() => item.href && prefetchRoute(item.href)}
               className={cn(
                 'flex items-center py-3 rounded-xl transition-all duration-200 group relative',
                 collapsed ? 'justify-center px-2' : 'px-3',
