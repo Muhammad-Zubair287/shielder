@@ -286,3 +286,31 @@ html.dark .superadmin-shell textarea::placeholder {
 html.dark .superadmin-shell .react-hot-toast-wrapper {
   --tw-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
 }
+
+/* ─── Login Page ─────────────────────────────────────────────────────────── */
+
+.login-page-shell {
+  color-scheme: light;
+}
+
+.login-page-shell input,
+.login-page-shell textarea,
+.login-page-shell select {
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+.login-page-shell input::placeholder,
+.login-page-shell textarea::placeholder {
+  color: #94a3b8;
+}
+
+.login-page-shell input:-webkit-autofill,
+.login-page-shell input:-webkit-autofill:hover,
+.login-page-shell input:-webkit-autofill:focus,
+.login-page-shell textarea:-webkit-autofill,
+.login-page-shell select:-webkit-autofill {
+  -webkit-text-fill-color: #0f172a;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-out 0s;
+}

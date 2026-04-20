@@ -221,7 +221,7 @@ function LoginPageContent() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center bg-gray-50 p-4 ${isRTL ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={`login-page-shell min-h-screen flex items-center justify-center bg-gray-50 p-4 ${isRTL ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="relative w-full max-w-[1200px]">
         {/* Rotated panel behind main login card to match Figma composition */}
         <div className="absolute inset-1 md:inset-2 rounded-[2rem] bg-[#0A1E36] rotate-[-2.7deg] shadow-[0_24px_60px_rgba(10,30,54,0.35)]" />
@@ -325,7 +325,7 @@ function LoginPageContent() {
                         onChange={handleChange}
                         placeholder="example@gmail.com"
                         autoComplete="email"
-                        className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} bg-white border rounded-xl outline-none transition-all ${
+                        className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
                           errors.email ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
                         }`}
                       />
@@ -352,7 +352,7 @@ function LoginPageContent() {
                         onChange={handleChange}
                         placeholder="••••••••"
                         autoComplete="current-password"
-                        className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-12' : 'pl-12 pr-12'} bg-white border rounded-xl outline-none transition-all ${
+                        className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-12' : 'pl-12 pr-12'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
                           errors.password ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
                         }`}
                       />
