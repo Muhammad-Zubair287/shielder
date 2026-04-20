@@ -234,6 +234,38 @@ html.dark .superadmin-shell :is(.border-gray-100, .border-gray-200, .border-slat
   border-color: var(--superadmin-border) !important;
 }
 
+html.dark .superadmin-shell table thead tr {
+  background-color: rgba(15, 23, 42, 0.96) !important;
+}
+
+html.dark .superadmin-shell table tbody tr {
+  background-color: rgba(10, 17, 31, 0.82) !important;
+}
+
+html.dark .superadmin-shell table tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.96) !important;
+}
+
+html.dark .superadmin-shell table :is([class*="text-[#0A1E36]"], [class*="text-[#0205A6]"], .text-shielder-dark, .text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400) {
+  color: var(--superadmin-text) !important;
+}
+
+html.dark .superadmin-shell table :is(.text-gray-500, .text-gray-400, .text-slate-600, .text-slate-500) {
+  color: var(--superadmin-muted) !important;
+}
+
+html.dark .superadmin-shell table :is(.bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .bg-white) {
+  background-color: rgba(15, 23, 42, 0.82) !important;
+}
+
+html.dark .superadmin-shell table :is(.bg-gray-50\/50, .bg-gray-50\/30, .bg-gray-50\/20, .bg-gray-100\/50, .bg-white\/50, .bg-white\/30, .bg-white\/20) {
+  background-color: rgba(15, 23, 42, 0.7) !important;
+}
+
+html.dark .superadmin-shell table :is(td, th) {
+  border-color: rgba(148, 163, 184, 0.14) !important;
+}
+
 html.dark .superadmin-shell :is(.shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) {
   --tw-shadow-color: rgba(0, 0, 0, 0.35);
 }
