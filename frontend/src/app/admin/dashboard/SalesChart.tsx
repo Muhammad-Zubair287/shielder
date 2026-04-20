@@ -62,7 +62,7 @@ export default function SalesChart({ data, loading }: Props) {
 
   return (
     <section
-      className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col"
+      className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-w-0"
       style={{ minHeight: 380 }}
       aria-label={t('salesGraph')}
     >
@@ -75,7 +75,7 @@ export default function SalesChart({ data, loading }: Props) {
       </div>
 
       {/* Chart body */}
-      <div className="flex-1" style={{ minHeight: 280 }}>
+      <div className="flex-1 h-[280px] w-full min-w-0">
         {loading ? (
           <ChartSkeleton />
         ) : chartData.length === 0 ? (
@@ -83,7 +83,7 @@ export default function SalesChart({ data, loading }: Props) {
             {t('noDataAvailable') || 'No data available'}
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={280}>
             <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
               <XAxis

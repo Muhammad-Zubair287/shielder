@@ -148,7 +148,7 @@ export const AdminSidebar = () => {
                 alt="Shielder"
                 width={150}
                 height={50}
-                className="object-contain h-auto"
+                className="object-contain h-auto w-auto"
                 priority
               />
               <button

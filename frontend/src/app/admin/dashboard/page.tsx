@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import adminService from '@/services/admin.service';
+import { orderService } from '@/services/order.service';
 
 import KPICards, { type KPIData } from './KPICards';
 import LowStockPanel, { type LowStockProduct } from './LowStockPanel';
@@ -39,6 +40,13 @@ const getMonthKey = (value: unknown): string => {
   return `${year}-${month}-01`;
 };
 
+const getMonthKeyFromRow = (row: any): string => {
+  if (!row || typeof row !== 'object') return '';
+  return getMonthKey(
+    row.month ?? row.date ?? row.period ?? row.createdAt ?? row.created_at ?? row.label
+  );
+};
+
 const buildLast12MonthKeys = (): string[] => {
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -51,6 +59,35 @@ const buildLast12MonthKeys = (): string[] => {
   }
 
   return keys;
+};
+
+const toIsoDate = (value: Date): string => value.toISOString().slice(0, 10);
+
+const buildMonthlySeriesFromOrders = (orders: any[]): MonthlyDataPoint[] => {
+  const merged: Record<string, MonthlyDataPoint> = {};
+  buildLast12MonthKeys().forEach((month) => {
+    merged[month] = { month, revenue: 0, orders: 0 };
+  });
+
+  orders.forEach((order: any) => {
+    const key = getMonthKey(order?.createdAt ?? order?.created_at ?? order?.date);
+    if (!key || !merged[key]) return;
+
+    const status = String(order?.status ?? '').toUpperCase();
+    if (status !== 'CANCELLED') {
+      merged[key].orders = Number(merged[key].orders ?? 0) + 1;
+    }
+
+    const paymentStatus = String(order?.paymentStatus ?? order?.payment_status ?? '').toUpperCase();
+    if (paymentStatus === 'PAID') {
+      const amount = Number(order?.total ?? order?.totalAmount ?? order?.amount ?? 0);
+      if (Number.isFinite(amount)) {
+        merged[key].revenue = Number(merged[key].revenue ?? 0) + amount;
+      }
+    }
+  });
+
+  return Object.values(merged).sort((a, b) => a.month.localeCompare(b.month));
 };
 
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
@@ -87,13 +124,18 @@ export default function AdminDashboardPage() {
     setError(null);
 
     try {
-      const [overviewRes, lowStockRes, salesSeriesRes, quotationsRes, categoryRes] =
+      const last12Keys = buildLast12MonthKeys();
+      const dateFrom = `${last12Keys[0]?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`;
+      const dateTo = toIsoDate(new Date());
+
+      const [overviewRes, lowStockRes, salesSeriesRes, quotationsRes, categoryRes, ordersRes] =
         await Promise.allSettled([
           adminService.getOverview(),
           adminService.getLowStockProducts(),
           adminService.getMonthlySalesSeries(),
           adminService.getQuotationsTotalCount(),
           adminService.getByCategory(),
+            orderService.getOrders({ limit: 100, dateFrom, dateTo }),
         ]);
 
       // ── KPI cards ──
@@ -123,20 +165,68 @@ export default function AdminDashboardPage() {
 
       // ── Chart: merge revenue + orders by month ──
       const merged: Record<string, MonthlyDataPoint> = {};
-      buildLast12MonthKeys().forEach((month) => {
+      last12Keys.forEach((month) => {
         merged[month] = { month, revenue: 0, orders: 0 };
       });
 
-      const monthlySeries = salesSeriesRes.status === 'fulfilled' ? salesSeriesRes.value : [];
+      const monthlySeriesRaw = salesSeriesRes.status === 'fulfilled' ? salesSeriesRes.value : [];
+      const monthlySeries = Array.isArray(monthlySeriesRaw)
+        ? monthlySeriesRaw
+        : asArray<any>(unwrap<any>(monthlySeriesRaw));
+
       monthlySeries.forEach((entry: any) => {
-        const key = getMonthKey(entry?.month);
+        const key = getMonthKeyFromRow(entry);
         if (!key) return;
+
+        const revenue = Number(
+          entry?.revenue ?? entry?.totalRevenue ?? entry?.amount ?? entry?.value ?? 0
+        );
+        const orders = Number(
+          entry?.orders ?? entry?.orderCount ?? entry?.totalOrders ?? entry?.count ?? 0
+        );
+
         merged[key] = {
           month: key,
-          revenue: Number(entry?.revenue ?? 0),
-          orders: Number(entry?.orders ?? 0),
+          revenue: Number.isFinite(revenue) ? revenue : 0,
+          orders: Number.isFinite(orders) ? orders : 0,
         };
       });
+
+      const analyticsTotals = Object.values(merged).reduce(
+        (acc, item) => ({
+          revenue: acc.revenue + Number(item.revenue ?? 0),
+          orders: acc.orders + Number(item.orders ?? 0),
+        }),
+        { revenue: 0, orders: 0 }
+      );
+
+      if (ordersRes.status === 'fulfilled') {
+        const ordersData: any[] =
+          (ordersRes.value as any)?.data?.orders ??
+          (ordersRes.value as any)?.orders ??
+          [];
+
+        const orderBackedSeries = buildMonthlySeriesFromOrders(
+          Array.isArray(ordersData) ? ordersData : []
+        );
+        const orderBackedTotals = orderBackedSeries.reduce(
+          (acc, item) => ({
+            revenue: acc.revenue + Number(item.revenue ?? 0),
+            orders: acc.orders + Number(item.orders ?? 0),
+          }),
+          { revenue: 0, orders: 0 }
+        );
+
+        const useOrderBackedSeries =
+          orderBackedTotals.orders > analyticsTotals.orders ||
+          orderBackedTotals.revenue > analyticsTotals.revenue;
+
+        if (useOrderBackedSeries) {
+          orderBackedSeries.forEach((item) => {
+            merged[item.month] = item;
+          });
+        }
+      }
 
       setChartData(Object.values(merged).sort((a, b) => a.month.localeCompare(b.month)));
 
@@ -156,8 +246,22 @@ export default function AdminDashboardPage() {
           cats
             .map((c: any) => ({
               name: c.categoryName ?? c.name ?? 'Unknown',
-              value: c.productCount ?? c.count ?? c.value ?? 0,
+              // Prefer sales signals for "Top Selling" donut; only fall back to inventory count.
+              value: Number(
+                c.orderCount ??
+                  c.orders ??
+                  c.totalOrders ??
+                  c.soldCount ??
+                  c.salesCount ??
+                  c.revenue ??
+                  c.totalRevenue ??
+                  c.productCount ??
+                  c.count ??
+                  c.value ??
+                  0
+              ),
             }))
+            .filter((item) => Number.isFinite(item.value) && item.value > 0)
             .sort((a, b) => b.value - a.value)
             .slice(0, 6)
         );
