@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ScrollReveal from './ScrollReveal';
 
 export default function LandingFooter() {
   const { t, isRTL } = useLanguage();
@@ -28,8 +29,9 @@ export default function LandingFooter() {
   ];
 
   return (
-    <footer className="bg-[#0D1637] text-[#94A3B8]" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <ScrollReveal className="bg-[#0D1637] text-[#94A3B8]" delayMs={20} threshold={0.12}>
+      <footer dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
           {/* Brand */}
@@ -93,7 +95,7 @@ export default function LandingFooter() {
           </div>
 
         </div>
-      </div>
+        </div>
 
       {/* Bottom bar */}
       <div className="border-t border-white/5">
@@ -107,7 +109,7 @@ export default function LandingFooter() {
             </div>
           </div>
         </div>
-      </div>
-    </footer>
+      </footer>
+    </ScrollReveal>
   );
 }

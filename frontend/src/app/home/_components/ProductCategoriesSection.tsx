@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCategories } from '@/hooks/useCategories';
+import ScrollReveal from './ScrollReveal';
 // keyword is matched against the category name from the DB (case-insensitive)
 const CATEGORIES = [
   { nameKey: 'landingCat1Name', descKey: 'landingCat1Desc', keyword: 'air',    image: '/images/landing/product-cat-1.jpeg', href: '/products?category=air' },
@@ -30,8 +31,9 @@ export default function ProductCategoriesSection() {
   };
 
   return (
-    <section className="py-24 bg-[#0205A6]" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <ScrollReveal className="py-24 bg-[#0205A6]" delayMs={30} threshold={0.15}>
+      <section dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="text-center mb-14 space-y-4">
@@ -51,7 +53,7 @@ export default function ProductCategoriesSection() {
         {/* Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {CATEGORIES.map((cat, i) => (
-            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
+            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300" style={{ transitionDelay: `${i * 80}ms` }}>
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
                 <Image
@@ -80,8 +82,9 @@ export default function ProductCategoriesSection() {
           ))}
         </div>
 
-      </div>
-    </section>
+        </div>
+      </section>
+    </ScrollReveal>
   );
 }
 

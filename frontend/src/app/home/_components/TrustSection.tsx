@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ScrollReveal from './ScrollReveal';
 
 const POINTS = [
   'landingTrustPoint1','landingTrustPoint2','landingTrustPoint3',
@@ -21,8 +22,9 @@ export default function TrustSection() {
   ];
 
   return (
-    <section className="py-20 bg-[#F8FAFC]" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <ScrollReveal className="py-20 bg-[#F8FAFC]" delayMs={30} threshold={0.16}>
+      <section dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-14 items-start">
 
           {/* Image */}
@@ -76,7 +78,8 @@ export default function TrustSection() {
           </div>
 
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+    </ScrollReveal>
   );
 }

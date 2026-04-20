@@ -16,6 +16,14 @@ export default function HeroSection() {
   const { t, isRTL } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
+  const introStyle = (delayMs: number) => ({
+    opacity: mounted ? 1 : 0,
+    transform: mounted ? 'translate3d(0, 0, 0)' : 'translate3d(0, 12px, 0)',
+    transition: 'opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), transform 320ms cubic-bezier(0.22, 1, 0.36, 1)',
+    transitionDelay: `${delayMs}ms`,
+    willChange: 'opacity, transform',
+  });
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -39,26 +47,26 @@ export default function HeroSection() {
         {/* Text content — with gradient text and smooth animations */}
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 text-center space-y-6">
           {/* Badge with animation */}
-          <div className="animate-fade-in">
+          <div style={introStyle(0)}>
             <span className="inline-block bg-[#F97216] text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2 rounded-full shadow-lg hover:shadow-orange-500/30 hover:shadow-xl transition-all duration-300 cursor-default">
               {t('landingHeroBadge')}
             </span>
           </div>
 
           {/* Main heading with gradient text */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight animate-fade-in animation-delay-100">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight" style={introStyle(70)}>
             <span className="block text-[#0A1E36]">
               {t('landingHeroTitle')}
             </span>
           </h1>
 
           {/* Subtitle with animation */}
-          <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto animate-fade-in animation-delay-200">
+          <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto" style={introStyle(130)}>
             {t('landingHeroSubtitle')}
           </p>
 
           {/* CTA Buttons with hover effects */}
-          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fade-in animation-delay-300 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`} style={introStyle(190)}>
             <Link
               href="/products"
               className="group relative inline-flex items-center gap-2 bg-[#0205A6] hover:bg-[#0205A6]/90 text-white font-bold px-8 sm:px-9 py-3 sm:py-4 rounded-full transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-900/20 hover:-translate-y-1 w-full sm:w-auto justify-center"
@@ -77,9 +85,9 @@ export default function HeroSection() {
         </div>
 
       {/* ── Hero image block with animations ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-0 relative animate-fade-in animation-delay-400">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-0 relative" style={introStyle(250)}>
         {/* Rating badge — floats with animation */}
-        <div className={`absolute top-0 z-10 ${isRTL ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} -translate-y-1/2 animate-bounce`} style={{animationDelay: '0.2s'}}>
+        <div className={`absolute top-0 z-10 ${isRTL ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} -translate-y-1/2`}>
           <div className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.10)] px-5 py-3 flex flex-col gap-1 hover:shadow-[0_14px_36px_rgba(15,23,42,0.14)] transition-all border border-gray-100">
             <p className="text-[#F97216] font-bold text-xs sm:text-sm whitespace-nowrap">{t('landingHeroRatingText')}</p>
             <div className={`flex gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>

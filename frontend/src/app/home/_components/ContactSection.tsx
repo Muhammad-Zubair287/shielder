@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ScrollReveal from './ScrollReveal';
 
 export default function ContactSection() {
   const { t, isRTL } = useLanguage();
@@ -13,8 +14,9 @@ export default function ContactSection() {
   ];
 
   return (
-    <section id="contact" className="py-24 bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <ScrollReveal className="py-24 bg-white" delayMs={20} threshold={0.14}>
+      <section id="contact" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="text-center mb-12 space-y-4">
@@ -38,6 +40,7 @@ export default function ContactSection() {
               target={href.startsWith('http') ? '_blank' : undefined}
               rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
               className="bg-[#0D1637] rounded-2xl py-10 px-8 flex flex-col items-center justify-center text-center gap-2 hover:bg-[#0f1d4a] transition-colors shadow-md"
+              style={{ transitionDelay: `${i * 70}ms` }}
             >
               <p className="text-white font-bold text-xl">{label}</p>
               <p className="text-white/70 text-base font-medium" dir="ltr">{value}</p>
@@ -45,7 +48,8 @@ export default function ContactSection() {
           ))}
         </div>
 
-      </div>
-    </section>
+        </div>
+      </section>
+    </ScrollReveal>
   );
 }

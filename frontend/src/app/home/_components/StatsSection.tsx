@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ScrollReveal from './ScrollReveal';
 
 /** Parse a stat value string like "150+", "1000+", "15+", "24/7"
  *  Returns { prefix, target, suffix } so we can animate `target`.
@@ -108,21 +109,23 @@ export default function StatsSection() {
   ];
 
   return (
-    <section ref={sectionRef} className="bg-[#0205A6] py-7" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/10">
-          {stats.map((s, i) => (
-            <AnimatedStat
-              key={i}
-              rawValue={s.value}
-              label={s.label}
-              isRTL={isRTL}
-              active={hasAnimated}
-              index={i}
-            />
-          ))}
+    <ScrollReveal className="bg-[#0205A6] py-7" delayMs={40} threshold={0.22}>
+      <section ref={sectionRef} dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/10">
+            {stats.map((s, i) => (
+              <AnimatedStat
+                key={i}
+                rawValue={s.value}
+                label={s.label}
+                isRTL={isRTL}
+                active={hasAnimated}
+                index={i}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </ScrollReveal>
   );
 }
