@@ -4,7 +4,9 @@
  */
 
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
+import { logger } from '@/common/logger/logger';
 import { prisma } from '@/config/database';
+import { stockAlertRepository } from './stock-alert.repository';
 import NotificationService from '@/modules/notification/notification.service';
 import { NotificationType, UserRole } from '@prisma/client';
 
@@ -39,53 +41,34 @@ class StockAlertService {
    */
   static async getLowStockProducts(page: number = 1, limit: number = 10) {
     try {
-      const skip = (page - 1) * limit;
-
-      const products = await prisma.$queryRaw<Array<{
-        id: string;
-        stock: number | string;
-        minimumStockThreshold: number | string;
-        nameEn: string | null;
-        brandName: string | null;
-        total: number | string;
-      }>>`
-        SELECT
-          p.id,
-          p.stock,
-          p.minimum_stock_threshold AS "minimumStockThreshold",
-          COALESCE(pt.name, '') AS "nameEn",
-          b.name AS "brandName",
-          COUNT(*) OVER()::INT AS total
-        FROM products p
-        LEFT JOIN product_translations pt ON pt."productId" = p.id AND pt.locale = 'en'
-        LEFT JOIN brands b ON b.id = p."brandId"
-        WHERE p.is_active = true AND p.stock <= p.minimum_stock_threshold
-        ORDER BY p.stock ASC, p.created_at ASC
-        LIMIT ${limit} OFFSET ${skip}
-      `;
-
-      const total = Number(products[0]?.total || 0);
+      const products = await stockAlertRepository.getLowStockProducts(page, limit);
+      
+      const total = products[0]?.total || 0;
       const totalPages = Math.ceil(total / limit);
 
+      // Map repository response to maintain service layer response contract
       const fullyLoadedProducts = products.map((product) => ({
         id: product.id,
         stock: Number(product.stock || 0),
         minimumStockThreshold: Number(product.minimumStockThreshold || 0),
         nameEn: product.nameEn || undefined,
-        translations: product.nameEn ? [{ name: product.nameEn, locale: 'en' }] : [],
-        brand: product.brandName ? { name: product.brandName } : undefined,
+        translations: product.translations ? JSON.parse(product.translations) : [],
+        brand: product.brand ? { name: product.brand } : undefined,
+        category: product.category || undefined,
       }));
 
       return {
-        products: fullyLoadedProducts,
-        pagination: {
-          total,
-          page,
-          totalPages,
+        data: {
+          products: fullyLoadedProducts,
+          pagination: {
+            total,
+            page,
+            totalPages,
+          },
         },
       };
     } catch (error: unknown) {
-      console.error('ERROR in getLowStockProducts:', error);
+      logger.error('ERROR in getLowStockProducts:', error);
       throw error;
     }
   }
@@ -94,14 +77,7 @@ class StockAlertService {
    * Get low stock count for dashboard
    */
   static async getLowStockCount() {
-    const result = await prisma.$queryRaw<Array<{ count: number | string }>>`
-      SELECT COUNT(*) as count
-      FROM products
-      WHERE is_active = true AND stock <= minimum_stock_threshold
-    `;
-
-    const count = Number(result[0]?.count || 0);
-
+    const count = await stockAlertRepository.getLowStockCount();
     return { lowStockCount: count };
   }
 

@@ -6,6 +6,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG, API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
 import type { ApiResponse, ApiError } from '@/types';
+import type { TokenRefreshPromise } from '@/types/api.types';
 
 // Cache locale so we don't hit localStorage on every request
 let _cachedLocale: string | null = null;
@@ -20,7 +21,7 @@ const getCachedLocale = (): string => {
 // Invalidate when locale changes (called from LanguageContext)
 export const invalidateLocaleCache = () => { _cachedLocale = null; };
 
-let refreshAccessTokenPromise: Promise<string> | null = null;
+let refreshAccessTokenPromise: TokenRefreshPromise = null;
 
 /**
  * Create Axios instance
