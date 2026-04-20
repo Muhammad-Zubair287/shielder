@@ -17,7 +17,7 @@ async function debug() {
   console.log('\n--- Testing Low Stock Products ---');
   try {
     const lowStock = await StockAlertService.getLowStockProducts(1, 10);
-    console.log('Low Stock Products Success:', lowStock.products.length, 'items');
+    console.log('Low Stock Products Success:', lowStock.data.products.length, 'items');
   } catch (error) {
     console.error('Low Stock Products Failed:', error);
   }
