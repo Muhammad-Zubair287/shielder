@@ -217,28 +217,40 @@ export const AdminSidebar = () => {
                 </button>
                 {isExpanded && !collapsed && (
                   <div className={cn('ms-3 mt-0.5 space-y-0.5 ps-4', isRTL ? 'border-r border-gray-200' : 'border-l border-gray-200')}>
-                    {item.children.map(child => {
-                      const childLabel = t(child.nameKey);
-                      const isActive = pathname === child.href || pathname.startsWith(child.href + '/');
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={() => setIsMobileOpen(false)}
-                          onMouseEnter={() => prefetchRoute(child.href)}
-                          onFocus={() => prefetchRoute(child.href)}
-                          className={cn(
-                            'flex items-center py-2 px-3 rounded-lg text-xs transition-all duration-200',
-                            isActive
-                              ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-semibold'
-                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                          )}
-                        >
-                          <child.icon size={13} className="me-2.5 shrink-0" />
-                          <span>{childLabel}</span>
-                        </Link>
-                      );
-                    })}
+                    {(() => {
+                      const activeChild = item.children
+                        .filter(child => pathname === child.href || pathname.startsWith(child.href + '/'))
+                        .sort((a, b) => b.href.length - a.href.length)[0];
+
+                      return item.children.map(child => {
+                        const childLabel = t(child.nameKey);
+                        const isActive = activeChild?.href === child.href;
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setIsMobileOpen(false)}
+                            onMouseEnter={() => prefetchRoute(child.href)}
+                            onFocus={() => prefetchRoute(child.href)}
+                            className={cn(
+                              'flex items-center py-2 px-3 rounded-lg text-xs transition-all duration-200 group',
+                              isActive
+                                ? 'bg-[#FF6B35]/12 text-[#FF6B35] font-semibold'
+                                : 'text-gray-500 hover:bg-[#FF6B35]/10 hover:text-[#FF6B35]'
+                            )}
+                          >
+                            <child.icon
+                              size={13}
+                              className={cn(
+                                'me-2.5 shrink-0 transition-colors',
+                                isActive ? 'text-[#FF6B35]' : 'text-gray-400 group-hover:text-[#FF6B35]'
+                              )}
+                            />
+                            <span>{childLabel}</span>
+                          </Link>
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>
