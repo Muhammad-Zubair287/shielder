@@ -22,13 +22,13 @@ export default function TrustSection() {
   ];
 
   return (
-    <ScrollReveal className="py-20 bg-[#F8FAFC]" delayMs={30} threshold={0.16}>
+    <ScrollReveal className="py-20 bg-[#F8FAFC]" delayMs={30} threshold={0.16} effect="fade-up">
       <section dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-14 items-start">
 
           {/* Image */}
-          <div className={`relative ${isRTL ? 'lg:order-last' : ''}`}>
+          <div className={`relative ${isRTL ? 'lg:order-last' : ''}`} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="120">
             <div className="relative rounded-2xl overflow-hidden aspect-[1.1/1] shadow-2xl shadow-slate-200">
               <Image src="/images/landing/hero-robot.png" alt={t('landingTrustImageAlt')} fill className="object-cover" sizes="(max-width:1024px) 100vw, 50vw" />
               <div className="absolute inset-0 bg-gradient-to-br from-[#F97316]/10 to-transparent" />
@@ -38,7 +38,7 @@ export default function TrustSection() {
           </div>
 
           {/* Content */}
-          <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
+          <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`} data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="160">
             <div>
               <span className="inline-block bg-[#FFF3E8] text-[#F97316] text-[11px] font-bold px-5 py-2 rounded-full uppercase tracking-[0.15em]">
                 {t('landingTrustBadge')}

@@ -65,6 +65,8 @@ function AnimatedStat({ rawValue, label, isRTL, active, index }: AnimatedStatPro
   return (
     <div
       className={`flex items-center gap-3 px-6 first:pl-0 last:pr-0 ${isRTL ? 'text-right' : 'text-left'}`}
+      data-aos="zoom-in"
+      data-aos-delay={120 + index * 120}
     >
       <div className="flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
         <CheckCircle size={20} className="text-emerald-400" strokeWidth={2.5} />

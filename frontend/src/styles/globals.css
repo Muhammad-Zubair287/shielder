@@ -1,4 +1,5 @@
 @import '../../styles/theme.css';
+@import 'aos/dist/aos.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

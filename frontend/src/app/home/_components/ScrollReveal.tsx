@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
+import AOS from 'aos';
 
 interface ScrollRevealProps {
   children: React.ReactNode;
   className?: string;
   delayMs?: number;
   threshold?: number;
+  effect?: 'fade-up' | 'fade-right' | 'fade-left' | 'zoom-in' | 'zoom-out';
 }
 
 export default function ScrollReveal({
@@ -14,49 +16,21 @@ export default function ScrollReveal({
   className = '',
   delayMs = 0,
   threshold = 0.18,
+  effect = 'fade-up',
 }: ScrollRevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  // Map prior threshold semantics into an approximate AOS trigger offset.
+  const aosOffset = Math.max(0, Math.round((1 - threshold) * 120));
 
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
-      setIsVisible(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        threshold,
-        rootMargin: '0px 0px -8% 0px',
-      }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [threshold]);
+  React.useEffect(() => {
+    AOS.refreshHard();
+  }, []);
 
   return (
     <div
-      ref={ref}
       className={className}
-      style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translate3d(0, 0, 0)' : 'translate3d(0, 24px, 0)',
-        filter: isVisible ? 'blur(0)' : 'blur(6px)',
-        transition: 'opacity 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 420ms cubic-bezier(0.22, 1, 0.36, 1)',
-        transitionDelay: `${delayMs}ms`,
-        willChange: 'opacity, transform, filter',
-      }}
+      data-aos={effect}
+      data-aos-delay={delayMs}
+      data-aos-offset={aosOffset}
     >
       {children}
     </div>

@@ -31,7 +31,7 @@ export default function ProductCategoriesSection() {
   };
 
   return (
-    <ScrollReveal className="py-24 bg-[#0205A6]" delayMs={30} threshold={0.15}>
+    <ScrollReveal className="py-24 bg-[#0205A6]" delayMs={30} threshold={0.15} effect="fade-up">
       <section dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -53,7 +53,7 @@ export default function ProductCategoriesSection() {
         {/* Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {CATEGORIES.map((cat, i) => (
-            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300" style={{ transitionDelay: `${i * 80}ms` }}>
+            <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300" style={{ transitionDelay: `${i * 80}ms` }} data-aos="zoom-in" data-aos-delay={120 + i * 120}>
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
                 <Image
