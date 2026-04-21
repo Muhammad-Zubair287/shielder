@@ -16,7 +16,7 @@ const EMPTY: SecurityFormState = {
   passwordMinLength: 8,
   maxLoginAttempts: 5,
   accountLockDurationMinutes: 30,
-  sessionTimeoutMinutes: 60,
+  sessionTimeoutMinutes: 10,
   enableTwoFactorAuth: false,
   forceStrongPasswords: true,
 };
@@ -34,7 +34,7 @@ export default function SecuritySettingsForm({ settings, onSaved }: Props) {
       passwordMinLength: settings.passwordMinLength ?? 8,
       maxLoginAttempts: settings.maxLoginAttempts ?? 5,
       accountLockDurationMinutes: settings.accountLockDurationMinutes ?? 30,
-      sessionTimeoutMinutes: settings.sessionTimeoutMinutes ?? 60,
+      sessionTimeoutMinutes: Math.min(10, Math.max(5, settings.sessionTimeoutMinutes ?? 10)),
       enableTwoFactorAuth: settings.enableTwoFactorAuth ?? false,
       forceStrongPasswords: settings.forceStrongPasswords ?? true,
     };
@@ -57,7 +57,7 @@ export default function SecuritySettingsForm({ settings, onSaved }: Props) {
     if (form.maxLoginAttempts < 3 || form.maxLoginAttempts > 20) {
       e.maxLoginAttempts = t('settingsSecurityAttemptsRange');
     }
-    if (form.sessionTimeoutMinutes < 5) {
+    if (form.sessionTimeoutMinutes < 5 || form.sessionTimeoutMinutes > 10) {
       e.sessionTimeoutMinutes = t('settingsSecuritySessionRange');
     }
     setErrors(e);
@@ -134,6 +134,7 @@ export default function SecuritySettingsForm({ settings, onSaved }: Props) {
               value={form.sessionTimeoutMinutes}
               onChange={setNum('sessionTimeoutMinutes')}
               min={5}
+              max={10}
             />
           </div>
         </FormRow>

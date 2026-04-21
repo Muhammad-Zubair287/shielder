@@ -17,7 +17,9 @@ import settingsService from '@/services/settings.service';
 import { STORAGE_KEYS } from '@/utils/constants';
 import toast from 'react-hot-toast';
 
-const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000; // 60 min fallback
+const MIN_TIMEOUT_MINUTES = 5;
+const MAX_TIMEOUT_MINUTES = 10;
+const DEFAULT_TIMEOUT_MS = MAX_TIMEOUT_MINUTES * 60 * 1000; // 10 min fallback
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
 const getNow = () => Date.now();
 
@@ -40,6 +42,11 @@ function getStoredTimeoutMs(): number {
   const raw = sessionStorage.getItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
   const value = raw ? Number(raw) : NaN;
   return Number.isFinite(value) && value > 0 ? value : DEFAULT_TIMEOUT_MS;
+}
+
+function clampTimeoutMinutes(value: number): number {
+  if (!Number.isFinite(value)) return MAX_TIMEOUT_MINUTES;
+  return Math.min(MAX_TIMEOUT_MINUTES, Math.max(MIN_TIMEOUT_MINUTES, Math.floor(value)));
 }
 
 export default function SessionTimeoutWatcher() {
@@ -83,8 +90,8 @@ export default function SessionTimeoutWatcher() {
         .then((res: any) => {
           const mins: number = res?.data?.data?.sessionTimeoutMinutes
             ?? res?.data?.sessionTimeoutMinutes
-            ?? 60;
-          timeoutMsRef.current = Math.max(5, mins) * 60 * 1000;
+            ?? MAX_TIMEOUT_MINUTES;
+          timeoutMsRef.current = clampTimeoutMinutes(mins) * 60 * 1000;
           sessionStorage.setItem(STORAGE_KEYS.SESSION_TIMEOUT_MS, String(timeoutMsRef.current));
           scheduleTimeout();
         })

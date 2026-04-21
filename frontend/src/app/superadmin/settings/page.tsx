@@ -108,6 +108,7 @@ export default function SettingsPage() {
         paymentWebhookUrl: raw.paymentWebhookUrl ?? '',
         roleNotificationMappings: raw.roleNotificationMappings ?? null,
         autoCancelUnpaidOrdersHours: raw.autoCancelUnpaidOrdersHours ?? null,
+        sessionTimeoutMinutes: Math.min(10, Math.max(5, raw.sessionTimeoutMinutes ?? 10)),
         lastBackupDate: raw.lastBackupDate ?? null,
         autoBackupSchedule: raw.autoBackupSchedule ?? null,
       };
@@ -144,6 +145,11 @@ export default function SettingsPage() {
   const handleInputChange = (field: string, value: string | number | boolean | string[] | null) => {
     setFormData((prev) => {
       if (!prev) return null;
+      if (field === 'sessionTimeoutMinutes') {
+        const numeric = Number(value);
+        const clamped = Number.isFinite(numeric) ? Math.min(10, Math.max(5, numeric)) : 10;
+        return { ...prev, [field]: clamped };
+      }
       return { ...prev, [field]: value };
     });
   };
@@ -867,13 +873,13 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
                 <span className="text-sm font-black text-shielder-dark">{data.sessionTimeoutMinutes} {t('settingMinUnit')}</span>
              </div>
              <input 
-               type="range" min="5" max="480" 
+               type="range" min="5" max="10" 
                value={data.sessionTimeoutMinutes}
                onChange={(e) => onChange('sessionTimeoutMinutes', parseInt(e.target.value))}
-          style={getRangeStyle(Number(data.sessionTimeoutMinutes), 5, 480)}
+          style={getRangeStyle(Number(data.sessionTimeoutMinutes), 5, 10)}
           className={sliderClassName}
              />
-         <p className="text-[11px] text-gray-500 mt-2 text-right">Consider user convenience vs. security</p>
+         <p className="text-[11px] text-gray-500 mt-2 text-right">Recommended secure range: 5-10 mins</p>
           </div>
 
        <div className="bg-gray-50/60 p-6 rounded-3xl border border-gray-200 shadow-sm">

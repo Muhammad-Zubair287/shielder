@@ -1046,7 +1046,7 @@
   "settingsSecurityWarning": "Changes to security settings take effect immediately and may log out active sessions.",
   "settingsSecurityPwLenRange": "Password length must be between 8 and 32 characters",
   "settingsSecurityAttemptsRange": "Login attempts must be between 3 and 20",
-  "settingsSecuritySessionRange": "Session timeout must be at least 5 minutes",
+  "settingsSecuritySessionRange": "Session timeout must be between 5 and 10 minutes",
 
   "landingNavHome": "Home",
   "landingNavProducts": "Products",

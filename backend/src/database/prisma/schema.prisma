@@ -433,7 +433,7 @@ model SystemSettings {
   passwordMinLength              Int       @default(8) @map("password_min_length")
   maxLoginAttempts               Int       @default(5) @map("max_login_attempts")
   accountLockDurationMinutes     Int       @default(30) @map("account_lock_duration_minutes")
-  sessionTimeoutMinutes          Int       @default(60) @map("session_timeout_minutes")
+  sessionTimeoutMinutes          Int       @default(10) @map("session_timeout_minutes")
   enableTwoFactorAuth            Boolean   @default(false) @map("enable_two_factor_auth")
   forceStrongPasswords           Boolean   @default(true) @map("force_strong_passwords")
   lastBackupDate                 DateTime? @map("last_backup_date")

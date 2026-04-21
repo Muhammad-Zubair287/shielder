@@ -971,7 +971,7 @@
   "settingsSecurityWarning": "تدخل التغييرات على إعدادات الأمان حيز التنفيذ فورًا وقد تُسجّل الجلسات النشطة خروجًا.",
   "settingsSecurityPwLenRange": "يجب أن يتراوح طول كلمة المرور بين 8 و32 حرفًا",
   "settingsSecurityAttemptsRange": "يجب أن تتراوح محاولات تسجيل الدخول بين 3 و20",
-  "settingsSecuritySessionRange": "يجب أن تكون مهلة الجلسة 5 دقائق على الأقل",
+  "settingsSecuritySessionRange": "يجب أن تكون مهلة الجلسة بين 5 و10 دقائق",
   "landingNavHome": "الرئيسية",
   "landingNavProducts": "المنتجات",
   "landingNavContact": "تواصل معنا",

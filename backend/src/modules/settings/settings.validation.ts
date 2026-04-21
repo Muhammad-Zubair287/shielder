@@ -48,7 +48,7 @@ export const settingsValidation = {
     passwordMinLength: Joi.number().integer().min(8).max(32).required(),
     maxLoginAttempts: Joi.number().integer().min(3).max(20).required(),
     accountLockDurationMinutes: Joi.number().integer().min(1).required(),
-    sessionTimeoutMinutes: Joi.number().integer().min(5).required(),
+    sessionTimeoutMinutes: Joi.number().integer().min(5).max(10).required(),
     enableTwoFactorAuth: Joi.boolean().required(),
     forceStrongPasswords: Joi.boolean().required(),
   }),
