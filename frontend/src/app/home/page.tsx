@@ -7,8 +7,7 @@
  * Assembles all section components in order.
  */
 
-import React, { Suspense, lazy, useEffect } from 'react';
-import AOS from 'aos';
+import React, { Suspense, lazy } from 'react';
 import LandingNavbar from './_components/LandingNavbar';
 import HeroSection   from './_components/HeroSection';
 
@@ -22,20 +21,6 @@ const ContactSection           = lazy(() => import('./_components/ContactSection
 const LandingFooter            = lazy(() => import('./_components/LandingFooter'));
 
 export default function LandingPage() {
-  useEffect(() => {
-    AOS.init({
-      duration: 650,
-      easing: 'ease-out-cubic',
-      once: true,
-      offset: 24,
-      disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    });
-
-    // Lazy sections render after hydration; refresh so AOS can register them.
-    const refreshTimer = window.setTimeout(() => AOS.refreshHard(), 250);
-    return () => window.clearTimeout(refreshTimer);
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col">
       <LandingNavbar />

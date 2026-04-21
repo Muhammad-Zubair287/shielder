@@ -29,13 +29,13 @@ export default function LandingFooter() {
   ];
 
   return (
-    <ScrollReveal className="bg-[#0D1637] text-[#94A3B8]" delayMs={20} threshold={0.12}>
+    <ScrollReveal className="bg-[#0D1637] text-[#94A3B8]" delayMs={20} threshold={0.12} durationMs={1000}>
       <footer dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
           {/* Brand */}
-          <div className="space-y-5">
+          <div className="space-y-5" data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="80" data-aos-duration="1000">
             <Link href="/home" className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="relative w-9 h-9 flex-shrink-0">
                 <Image src="/images/shielder-logo.png" alt="Shielder" fill className="object-contain rounded-lg" sizes="36px" />
@@ -46,13 +46,13 @@ export default function LandingFooter() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="160" data-aos-duration="1000">
             <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-left'}`}>
               {t('landingFooterQuickLinks')}
             </h4>
             <ul className="space-y-3">
-              {quickLinks.map(l => (
-                <li key={l.href} className={isRTL ? 'text-right' : 'text-left'}>
+              {quickLinks.map((l, index) => (
+                <li key={l.href} className={isRTL ? 'text-right' : 'text-left'} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay={240 + index * 100} data-aos-duration="900">
                   <Link href={l.href} className="text-sm hover:text-[#F97316] transition-colors">{l.label}</Link>
                 </li>
               ))}
@@ -60,13 +60,13 @@ export default function LandingFooter() {
           </div>
 
           {/* Categories */}
-          <div>
+          <div data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="240" data-aos-duration="1000">
             <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-left'}`}>
               {t('landingFooterCategories')}
             </h4>
             <ul className="space-y-3">
-              {categories.map(c => (
-                <li key={c.href} className={isRTL ? 'text-right' : 'text-left'}>
+              {categories.map((c, index) => (
+                <li key={c.href} className={isRTL ? 'text-right' : 'text-left'} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay={300 + index * 100} data-aos-duration="900">
                   <Link href={c.href} className="text-sm hover:text-[#F97316] transition-colors">{c.label}</Link>
                 </li>
               ))}
@@ -74,20 +74,20 @@ export default function LandingFooter() {
           </div>
 
           {/* Contact */}
-          <div>
+          <div data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="320" data-aos-duration="1000">
             <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-left'}`}>
               {t('landingFooterContact')}
             </h4>
             <ul className="space-y-4">
-              <li className={`flex items-start gap-3 text-sm ${isRTL ? 'text-right' : ''}`}>
+              <li className={`flex items-start gap-3 text-sm ${isRTL ? 'text-right' : ''}`} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="400" data-aos-duration="900">
                 <MapPin size={15} className="text-[#F97316] mt-0.5 flex-shrink-0" />
                 <span>{t('landingFooterAddress')}</span>
               </li>
-              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'text-right' : ''}`}>
+              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'text-right' : ''}`} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="480" data-aos-duration="900">
                 <Phone size={15} className="text-[#F97316] flex-shrink-0" />
                 <a href="tel:+966506814416" className="hover:text-[#F97316] transition-colors" dir="ltr">+966 50 681 4416</a>
               </li>
-              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'text-right' : ''}`}>
+              <li className={`flex items-center gap-3 text-sm ${isRTL ? 'text-right' : ''}`} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="560" data-aos-duration="900">
                 <Mail size={15} className="text-[#F97316] flex-shrink-0" />
                 <a href="mailto:info@filterpro.com" className="hover:text-[#F97316] transition-colors">info@filterpro.com</a>
               </li>
@@ -100,11 +100,11 @@ export default function LandingFooter() {
         {/* Bottom bar */}
         <div className="border-t border-white/5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748B] ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+            <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748B] ${isRTL ? 'sm:flex-row-reverse' : ''}`} data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="180" data-aos-duration="950">
               <p>© {year} Shielder. All rights reserved.</p>
               <div className={`flex items-center gap-5 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 {legalLinks.map(l => (
-                  <Link key={l.label} href={l.href} className="hover:text-[#F97316] transition-colors">{l.label}</Link>
+                  <Link key={l.label} href={l.href} className="hover:text-[#F97316] transition-colors" data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="240" data-aos-duration="850">{l.label}</Link>
                 ))}
               </div>
             </div>

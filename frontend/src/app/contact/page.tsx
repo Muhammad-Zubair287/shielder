@@ -125,11 +125,11 @@ export default function ContactPage() {
       <main className="flex-1 pt-20">
 
         {/* ── Hero contact card ──────────────────────────────────────────── */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14" data-aos="fade-up" data-aos-duration="1000">
           <div className="flex flex-col md:flex-row rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
 
             {/* Left — dark navy info panel */}
-            <div className="relative bg-[#0D1637] text-white md:w-80 lg:w-96 flex-shrink-0 p-8 flex flex-col overflow-hidden">
+            <div className="relative bg-[#0D1637] text-white md:w-80 lg:w-96 flex-shrink-0 p-8 flex flex-col overflow-hidden" data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="100" data-aos-duration="1000">
               {/* Decorative circles */}
               <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#F97316]/70 rounded-full translate-x-12 translate-y-12 pointer-events-none" />
               <div className="absolute bottom-16 right-10 w-24 h-24 bg-[#F97316]/40 rounded-full pointer-events-none" />
@@ -191,7 +191,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right — contact form */}
-            <div className="flex-1 bg-white p-8 lg:p-10">
+            <div className="flex-1 bg-white p-8 lg:p-10" data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="180" data-aos-duration="1000">
               <h3 className="text-xl font-bold text-gray-900 text-center mb-8">{t('contactFormTitle')}</h3>
 
               {sent && (
@@ -310,13 +310,16 @@ export default function ContactPage() {
         </section>
 
         {/* ── Business Hours ─────────────────────────────────────────────── */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16" data-aos="fade-up" data-aos-delay="80" data-aos-duration="1000">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('contactBusinessHours')}</h2>
 
           <div className="space-y-3">
-            {BUSINESS_HOURS.map(({ day, from, to, closed }) => (
+            {BUSINESS_HOURS.map(({ day, from, to, closed }, index) => (
               <div key={day}
-                className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-6 py-4">
+                className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-6 py-4"
+                data-aos={isRTL ? 'fade-left' : 'fade-right'}
+                data-aos-delay={140 + index * 120}
+                data-aos-duration="850">
                 <span className={`text-sm font-semibold w-32 ${closed ? 'text-[#F97316]' : 'text-gray-900'}`}>
                   {day}
                 </span>

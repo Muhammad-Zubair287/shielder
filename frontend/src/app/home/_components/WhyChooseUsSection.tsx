@@ -16,7 +16,7 @@ export default function WhyChooseUsSection() {
   const { t, isRTL } = useLanguage();
 
   return (
-    <ScrollReveal className="py-24 bg-white" delayMs={30} threshold={0.16}>
+    <ScrollReveal className="py-24 bg-white" delayMs={30} threshold={0.16} durationMs={1000}>
       <section dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -38,7 +38,13 @@ export default function WhyChooseUsSection() {
         {/* Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {FEATURES.map(({ icon: Icon, titleKey, descKey }, i) => (
-            <div key={i} className={`bg-white border border-gray-200 rounded-2xl p-8 flex flex-col gap-4 hover:shadow-lg transition-shadow duration-300 ${isRTL ? 'items-end' : 'items-start'}`} style={{ transitionDelay: `${i * 70}ms` }}>
+            <div
+              key={i}
+              className={`bg-white border border-gray-200 rounded-2xl p-8 flex flex-col gap-4 hover:shadow-lg transition-shadow duration-300 ${isRTL ? 'items-end' : 'items-start'}`}
+              style={{ transitionDelay: `${i * 70}ms` }}
+              data-aos="zoom-in"
+              data-aos-delay={140 + i * 160}
+            >
               {/* Icon in orange circle border */}
               <div className="w-16 h-16 rounded-full border-2 border-[#F97316] flex items-center justify-center flex-shrink-0">
                 <Icon size={30} className="text-[#F97316]" strokeWidth={1.6} />

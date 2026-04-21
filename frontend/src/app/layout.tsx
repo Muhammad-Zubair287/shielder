@@ -3,6 +3,7 @@ import { Inter, Cairo } from 'next/font/google';
 import '@/styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/components/providers/AuthProvider';
+import { AOSProvider } from '@/components/providers/AOSProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { QuotationProvider } from '@/contexts/QuotationContext';
@@ -68,42 +69,44 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeClientWrapper />
         <SmartBackButton />
         <LanguageProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <SessionTimeoutWatcher />
-              <CurrencyProvider>
-              <CartProvider>
-                <QuotationProvider>
-                {children}
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
-                    duration: 1000,
-                    style: {
-                      background: '#363636',
-                      color: '#fff',
-                    },
-                    success: {
+          <AOSProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <SessionTimeoutWatcher />
+                <CurrencyProvider>
+                <CartProvider>
+                  <QuotationProvider>
+                  {children}
+                  <Toaster
+                    position="top-right"
+                    toastOptions={{
                       duration: 1000,
-                      iconTheme: {
-                        primary: '#10b981',
-                        secondary: '#fff',
+                      style: {
+                        background: '#363636',
+                        color: '#fff',
                       },
-                    },
-                    error: {
-                      duration: 1000,
-                      iconTheme: {
-                        primary: '#ef4444',
-                        secondary: '#fff',
+                      success: {
+                        duration: 1000,
+                        iconTheme: {
+                          primary: '#10b981',
+                          secondary: '#fff',
+                        },
                       },
-                    },
-                  }}
-                />
-                </QuotationProvider>
-              </CartProvider>
-              </CurrencyProvider>
-            </AuthProvider>
-          </QueryProvider>
+                      error: {
+                        duration: 1000,
+                        iconTheme: {
+                          primary: '#ef4444',
+                          secondary: '#fff',
+                        },
+                      },
+                    }}
+                  />
+                  </QuotationProvider>
+                </CartProvider>
+                </CurrencyProvider>
+              </AuthProvider>
+            </QueryProvider>
+          </AOSProvider>
         </LanguageProvider>
       </body>
     </html>

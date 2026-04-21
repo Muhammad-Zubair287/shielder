@@ -8,6 +8,7 @@ interface ScrollRevealProps {
   className?: string;
   delayMs?: number;
   threshold?: number;
+  durationMs?: number;
   effect?: 'fade-up' | 'fade-right' | 'fade-left' | 'zoom-in' | 'zoom-out';
 }
 
@@ -16,6 +17,7 @@ export default function ScrollReveal({
   className = '',
   delayMs = 0,
   threshold = 0.18,
+  durationMs = 950,
   effect = 'fade-up',
 }: ScrollRevealProps) {
   // Map prior threshold semantics into an approximate AOS trigger offset.
@@ -30,6 +32,7 @@ export default function ScrollReveal({
       className={className}
       data-aos={effect}
       data-aos-delay={delayMs}
+      data-aos-duration={durationMs}
       data-aos-offset={aosOffset}
     >
       {children}
