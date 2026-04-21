@@ -112,7 +112,11 @@ class RedisCacheService {
     try {
       const keys: string[] = [];
       for await (const key of this.client.scanIterator({ MATCH: `${prefix}*`, COUNT: 100 })) {
-        keys.push(key as string);
+        if (Array.isArray(key)) {
+          keys.push(...key);
+        } else {
+          keys.push(String(key));
+        }
       }
 
       if (keys.length > 0) {
