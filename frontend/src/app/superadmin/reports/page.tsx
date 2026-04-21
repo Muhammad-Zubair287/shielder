@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { useEffect, useMemo, useState, ReactNode } from 'react';
 import FixedSARMark from '@/components/FixedSARMark';
 import { 
   BarChart3, 
@@ -35,88 +35,93 @@ import {
 } from 'recharts';
 import { format, subDays, startOfDay } from 'date-fns';
 import toast from 'react-hot-toast';
-import { ApiErrorResponse } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const COLORS = ['#1a1a1a', '#eab308', '#22c55e', '#ef4444', '#3b82f6', '#a855f7'];
 
 export default function ReportsDashboard() {
   const { t, isRTL } = useLanguage();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('OVERVIEW');
   const [dateRange, setDateRange] = useState('30D');
   const [customRange, setCustomRange] = useState({ from: '', to: '' });
-  const [categories, setCategories] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     categoryId: '',
     paymentStatus: '',
     orderStatus: ''
   });
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
   const [salesTablePage, setSalesTablePage] = useState(1);
   const [ordersTablePage, setOrdersTablePage] = useState(1);
 
   const REPORT_TABLE_PAGE_SIZE = 10;
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const res = await adminService.getCategories();
-        setCategories(res?.data?.data || []);
-      } catch (err) {
-        console.error('Failed to load categories');
-      }
+  const getDateBounds = () => {
+    let fromDate = subDays(new Date(), 30);
+    let toDate = new Date();
+
+    if (dateRange === '7D') fromDate = subDays(new Date(), 7);
+    if (dateRange === 'TODAY') fromDate = startOfDay(new Date());
+    if (dateRange === 'CUSTOM' && customRange.from && customRange.to) {
+      fromDate = new Date(customRange.from);
+      toDate = new Date(customRange.to);
+    }
+
+    return { fromDate, toDate };
+  };
+
+  const categoriesQuery = useQuery({
+    queryKey: ['superadmin-reports-categories'],
+    queryFn: async () => {
+      const res = await adminService.getCategories();
+      return res?.data?.data || [];
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const reportParams = useMemo(() => {
+    const { fromDate, toDate } = getDateBounds();
+    const params: {
+      from: string;
+      to: string;
+      categoryId?: string;
+      paymentStatus?: string;
+      orderStatus?: string;
+    } = {
+      from: fromDate.toISOString(),
+      to: toDate.toISOString(),
     };
-    loadCategories();
-  }, []);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      let fromDate = subDays(new Date(), 30);
-      let toDate = new Date();
+    if (activeTab === 'SALES') {
+      if (filters.categoryId) params.categoryId = filters.categoryId;
+      if (filters.paymentStatus) params.paymentStatus = filters.paymentStatus;
+      if (filters.orderStatus) params.orderStatus = filters.orderStatus;
+    }
 
-      if (dateRange === '7D') fromDate = subDays(new Date(), 7);
-      if (dateRange === 'TODAY') fromDate = startOfDay(new Date());
-      if (dateRange === 'CUSTOM' && customRange.from && customRange.to) {
-        fromDate = new Date(customRange.from);
-        toDate = new Date(customRange.to);
-      }
+    return params;
+  }, [activeTab, dateRange, customRange.from, customRange.to, filters.categoryId, filters.paymentStatus, filters.orderStatus]);
 
-      const params: { from: string, to: string, categoryId?: string, paymentStatus?: string, orderStatus?: string } = { 
-        from: fromDate.toISOString(), 
-        to: toDate.toISOString() 
-      };
-
-      if (activeTab === 'SALES') {
-        if (filters.categoryId) params.categoryId = filters.categoryId;
-        if (filters.paymentStatus) params.paymentStatus = filters.paymentStatus;
-        if (filters.orderStatus) params.orderStatus = filters.orderStatus;
-      }
-
+  const reportQuery = useQuery({
+    queryKey: ['superadmin-reports-data', activeTab, reportParams],
+    queryFn: async () => {
       let res;
-      if (activeTab === 'OVERVIEW') res = await adminService.getReportsOverview(params);
-      else if (activeTab === 'SALES') res = await adminService.getSalesReport(params);
-      else if (activeTab === 'ORDERS') res = await adminService.getOrderReport(params);
+      if (activeTab === 'OVERVIEW') res = await adminService.getReportsOverview(reportParams);
+      else if (activeTab === 'SALES') res = await adminService.getSalesReport(reportParams);
+      else if (activeTab === 'ORDERS') res = await adminService.getOrderReport(reportParams);
       else if (activeTab === 'INVENTORY') res = await adminService.getInventoryReport();
-      else if (activeTab === 'PAYMENTS') res = await adminService.getPaymentReport(params);
-      else if (activeTab === 'PROFIT') res = await adminService.getProfitLossReport(params);
+      else if (activeTab === 'PAYMENTS') res = await adminService.getPaymentReport(reportParams);
+      else res = await adminService.getProfitLossReport(reportParams);
+      return res?.data?.data;
+    },
+    enabled: dateRange !== 'CUSTOM' || Boolean(customRange.from && customRange.to),
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
 
-      setData(res?.data?.data);
-    } catch (err) {
-      const error = err as ApiErrorResponse;
-      toast.error(error.response?.data?.message || 'Failed to load report data');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, dateRange, filters, customRange.from, customRange.to]);
-
-  useEffect(() => {
-    if (dateRange !== 'CUSTOM' || (customRange.from && customRange.to)) {
-      fetchData();
-    }
-  }, [fetchData, dateRange, customRange.from, customRange.to]);
+  const categories = categoriesQuery.data || [];
+  const data = reportQuery.data ?? null;
+  const loading = reportQuery.isLoading;
 
   useEffect(() => {
     setSalesTablePage(1);
@@ -210,11 +215,13 @@ export default function ReportsDashboard() {
                 className="bg-transparent text-[10px] font-bold uppercase tracking-widest px-2 py-1 focus:outline-none"
               />
               <button 
-                onClick={fetchData}
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['superadmin-reports-data'] });
+                }}
                 className="bg-shielder-dark text-white p-1.5 rounded-lg hover:bg-black transition-colors"
                 title="Apply Custom Range"
               >
-                <RefreshCcw size={12} />
+                <RefreshCcw size={12} className={reportQuery.isFetching ? 'animate-spin' : ''} />
               </button>
             </div>
           )}

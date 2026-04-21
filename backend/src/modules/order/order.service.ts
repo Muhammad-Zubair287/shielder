@@ -5,6 +5,8 @@ import { OrderStatus, PaymentStatus, StockChangeType, Prisma, NotificationType, 
 import NotificationService from '@/modules/notification/notification.service';
 import { StockAlertService } from '../inventory/stock-alert/stock-alert.service';
 import { orderRepository } from './order.repository';
+import redisCacheService from '@/common/services/redis-cache.service';
+import { CACHE_KEYS } from '@/common/constants/cache-keys';
 
 type OrderItemInput = {
   productId: string;
@@ -50,6 +52,13 @@ type AuthenticatedUser = {
 };
 
 export class OrderService {
+  private async invalidateDashboardCaches() {
+    await Promise.all([
+      redisCacheService.del(CACHE_KEYS.SUPERADMIN_DASHBOARD_SUMMARY),
+      redisCacheService.del(CACHE_KEYS.SUPERADMIN_MONTHLY_ANALYTICS),
+    ]);
+  }
+
   private static resolvePublicImageUrl(imagePath?: string | null): string | null {
     if (!imagePath) return null;
 
@@ -229,6 +238,8 @@ export class OrderService {
       roleTarget: UserRole.SUPER_ADMIN,
       relatedId: order.id
     }).catch((err) => console.error('[Order] createOrder notification failed:', err));
+
+    await this.invalidateDashboardCaches();
 
     return order;
   }
@@ -464,6 +475,8 @@ export class OrderService {
         }).catch((err) => console.error('[Order] updateStatus admin notification failed:', err));
       }
     }
+
+    await this.invalidateDashboardCaches();
 
     return updatedOrder;
   }

@@ -12,8 +12,17 @@ import {
 } from '../../common/utils/pagination';
 import bcrypt from 'bcryptjs';
 import { AuditService } from '../../common/services/audit.service';
+import redisCacheService from '@/common/services/redis-cache.service';
+import { CACHE_KEYS, CACHE_TTL_SECONDS } from '@/common/constants/cache-keys';
 
 export class SuperAdminService {
+  private async invalidateDashboardCaches() {
+    await Promise.all([
+      redisCacheService.del(CACHE_KEYS.SUPERADMIN_DASHBOARD_SUMMARY),
+      redisCacheService.del(CACHE_KEYS.SUPERADMIN_MONTHLY_ANALYTICS),
+    ]);
+  }
+
   /**
    * Get User Management Stats
    */
@@ -244,6 +253,8 @@ export class SuperAdminService {
       }
     }
 
+    await this.invalidateDashboardCaches();
+
     return user;
   }
 
@@ -339,6 +350,8 @@ export class SuperAdminService {
       },
     }).catch(err => console.error('Audit Log failed:', err));
 
+    await this.invalidateDashboardCaches();
+
     return updatedUser;
   }
 
@@ -383,6 +396,8 @@ export class SuperAdminService {
           },
         });
 
+        await this.invalidateDashboardCaches();
+
         return { success: true, message: 'User permanently deleted successfully.' };
       } catch (error) {
         throw new ApiError(
@@ -416,6 +431,8 @@ export class SuperAdminService {
       },
     });
 
+    await this.invalidateDashboardCaches();
+
     return { success: true, message: 'User archived successfully.' };
   }
 
@@ -445,6 +462,20 @@ export class SuperAdminService {
   }
 
   async getDashboardSummary() {
+    const cachedSummary = await redisCacheService.getJson<{
+      totalStock: number;
+      totalProducts: number;
+      totalOrders: number;
+      totalRevenue: number;
+      inventoryValue: number;
+      totalCategories: number;
+      totalUsers: number;
+    }>(CACHE_KEYS.SUPERADMIN_DASHBOARD_SUMMARY);
+
+    if (cachedSummary) {
+      return cachedSummary;
+    }
+
     const activePublishedFilter = { isActive: true, status: 'PUBLISHED' as const };
 
     const [totalStockResult, totalProducts, totalOrders, revenueResult, products, totalCategories, totalUsers] = await Promise.all([
@@ -476,7 +507,7 @@ export class SuperAdminService {
     const totalStock = totalStockResult._sum.stock || 0;
     const inventoryValue = products.reduce((sum, p) => sum + Number(p.price) * p.stock, 0);
 
-    return {
+    const summary = {
       totalStock,
       totalProducts,
       totalOrders,
@@ -485,9 +516,25 @@ export class SuperAdminService {
       totalCategories,
       totalUsers
     };
+
+    await redisCacheService.setJson(
+      CACHE_KEYS.SUPERADMIN_DASHBOARD_SUMMARY,
+      summary,
+      CACHE_TTL_SECONDS.SUPERADMIN_DASHBOARD_SUMMARY
+    );
+
+    return summary;
   }
 
   async getMonthlyAnalytics() {
+    const cachedAnalytics = await redisCacheService.getJson<Array<{ month: string; orders: number; revenue: number }>>(
+      CACHE_KEYS.SUPERADMIN_MONTHLY_ANALYTICS
+    );
+
+    if (cachedAnalytics) {
+      return cachedAnalytics;
+    }
+
     const lastSixMonths = Array.from({ length: 6 }, (_, i) => {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
@@ -509,6 +556,13 @@ export class SuperAdminService {
         return { month: m.month, orders: Number(orders._count.id || 0), revenue: Number(orders._sum.total || 0) };
       })
     );
+
+    await redisCacheService.setJson(
+      CACHE_KEYS.SUPERADMIN_MONTHLY_ANALYTICS,
+      stats,
+      CACHE_TTL_SECONDS.SUPERADMIN_MONTHLY_ANALYTICS
+    );
+
     return stats;
   }
 

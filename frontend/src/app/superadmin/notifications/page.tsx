@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Bell, 
   Search, 
@@ -27,17 +27,13 @@ import notificationService, { Notification, NotificationPreference } from '@/ser
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function NotificationsPage() {
   const { t, isRTL } = useLanguage();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'preferences'>('all');
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
-  
-  // Stats
-  const [stats, setStats] = useState({ total: 0, unread: 0, lowStock: 0, system: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
 
   // Filters
   const [filters, setFilters] = useState({ 
@@ -51,91 +47,117 @@ export default function NotificationsPage() {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  // Preferences
-  const [preferences, setPreferences] = useState<NotificationPreference | null>(null);
-  const [prefLoading, setPrefLoading] = useState(false);
+  const listParams = useMemo(
+    () => ({
+      page: pagination.page,
+      limit: pagination.limit,
+      search: filters.search,
+      type: filters.type,
+      module: filters.module,
+      read: filters.read,
+      global: true,
+    }),
+    [pagination.page, pagination.limit, filters.search, filters.type, filters.module, filters.read]
+  );
 
-  const fetchStats = async () => {
-    try {
+  const statsQuery = useQuery({
+    queryKey: ['superadmin-notifications-stats'],
+    queryFn: async () => {
       const { data } = await notificationService.getStats();
-      setStats(data.data);
-    } catch (err) {
-      console.error('Failed to fetch stats');
-    } finally {
-      setStatsLoading(false);
-    }
-  };
+      return data.data;
+    },
+    staleTime: 30 * 1000,
+  });
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await notificationService.getNotifications({ 
-        page: pagination.page, 
-        limit: pagination.limit,
-        search: filters.search,
-        type: filters.type,
-        module: filters.module,
-        read: filters.read,
-        global: true // Super Admin view
-      });
-      setNotifications(data.notifications);
-      setPagination(prev => ({ 
-        ...prev, 
-        total: data.pagination.total, 
-        pages: data.pagination.totalPages 
-      }));
-    } catch (err) {
-      toast.error(t('notifFetchFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.page, pagination.limit, filters]);
+  const notificationsQuery = useQuery({
+    queryKey: ['superadmin-notifications-list', listParams],
+    queryFn: async () => {
+      const { data } = await notificationService.getNotifications(listParams);
+      return data;
+    },
+    enabled: activeTab !== 'preferences',
+    staleTime: 15 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
 
-  const fetchPreferences = async () => {
-    setPrefLoading(true);
-    try {
+  const preferencesQuery = useQuery({
+    queryKey: ['superadmin-notifications-preferences'],
+    queryFn: async () => {
       const { data: responseData } = await notificationService.getPreferences();
-      // Ensure we extract the data object from the response wrapper { success: true, data: { ... } }
-      setPreferences(responseData.data || responseData);
-    } catch (err) {
-      toast.error('Failed to load preferences');
-    } finally {
-      setPrefLoading(false);
-    }
-  };
+      return responseData.data || responseData;
+    },
+    enabled: activeTab === 'preferences',
+    staleTime: 60 * 1000,
+  });
+
+  const notifications: Notification[] = notificationsQuery.data?.notifications || [];
+  const stats = statsQuery.data || { total: 0, unread: 0, lowStock: 0, system: 0 };
+  const statsLoading = statsQuery.isLoading;
+  const loading = notificationsQuery.isLoading;
+  const prefLoading = preferencesQuery.isLoading;
+  const preferences = (preferencesQuery.data as NotificationPreference | null) || null;
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: string) => notificationService.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-list'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-stats'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => notificationService.deleteNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-list'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-stats'] });
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationService.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-list'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-stats'] });
+    },
+  });
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (payload: Partial<NotificationPreference>) => notificationService.updatePreferences(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-preferences'] });
+    },
+  });
 
   useEffect(() => {
-    fetchStats();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'preferences') {
-      fetchPreferences();
-    } else {
-      fetchNotifications();
-    }
-  }, [activeTab, fetchNotifications]);
+    const total = notificationsQuery.data?.pagination?.total || 0;
+    const pages = notificationsQuery.data?.pagination?.totalPages || 1;
+    setPagination(prev => {
+      if (prev.total === total && prev.pages === pages) {
+        return prev;
+      }
+      return { ...prev, total, pages };
+    });
+  }, [notificationsQuery.data]);
 
   // Reset pagination when search or tab changes
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, [filters.search, activeTab]);
+
   // Real-time auto refresh (Requirement 7)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchStats();
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-stats'] });
       if (activeTab !== 'preferences' && pagination.page === 1) {
-        fetchNotifications();
+        queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-list'] });
       }
     }, 30000); // 30 seconds
     return () => clearInterval(interval);
-  }, [activeTab, pagination.page, fetchNotifications]);
+  }, [activeTab, pagination.page, queryClient]);
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await notificationService.markAsRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-      fetchStats();
+      await markAsReadMutation.mutateAsync(id);
     } catch (err) {
       toast.error('Action failed');
     }
@@ -144,10 +166,8 @@ export default function NotificationsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this notification for audit? It will be soft-deleted.')) return;
     try {
-      await notificationService.deleteNotification(id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      await deleteMutation.mutateAsync(id);
       toast.success('Notification removed from view');
-      fetchStats();
     } catch (err) {
       toast.error('Failed to delete');
     }
@@ -155,10 +175,8 @@ export default function NotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await markAllReadMutation.mutateAsync();
       toast.success('All marked as read');
-      fetchStats();
     } catch (err) {
       toast.error('Action failed');
     }
@@ -167,14 +185,11 @@ export default function NotificationsPage() {
   const togglePreference = async (field: keyof NotificationPreference) => {
     if (!preferences) return;
     const newPrefs = { ...preferences, [field]: !preferences[field] };
-    setPreferences(newPrefs);
-    
     try {
-      await notificationService.updatePreferences(newPrefs);
+      await updatePreferencesMutation.mutateAsync(newPrefs);
       toast.success('Preferences updated');
     } catch (err) {
       toast.error('Failed to update preference');
-      fetchPreferences();
     }
   };
 
@@ -231,10 +246,13 @@ export default function NotificationsPage() {
             {t('notifManageSettings')}
           </button>
           <button 
-            onClick={() => fetchNotifications()}
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-stats'] });
+              queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-list'] });
+            }}
             className="p-2 bg-[#FF6B35]/10 text-[#FF6B35] rounded-xl hover:bg-[#FF6B35]/20 transition-all"
           >
-            <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
+            <RefreshCcw size={20} className={notificationsQuery.isFetching ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>

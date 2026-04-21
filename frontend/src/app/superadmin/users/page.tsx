@@ -23,6 +23,7 @@ import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { getImageUrl } from '@/utils/helpers';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface UserStats {
   totalUsers: number;
@@ -33,17 +34,13 @@ interface UserStats {
 
 export default function UserManagement() {
   const { t, isRTL } = useLanguage();
-  const [users, setUsers] = useState<any[]>([]);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const queryClient = useQueryClient();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -55,34 +52,52 @@ export default function UserManagement() {
     status: 'ACTIVE'
   });
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [usersRes, statsRes] = await Promise.all([
-        adminService.getAllUsers({ 
-          search: searchTerm, 
-          role: roleFilter, 
-          status: statusFilter, 
-          page, 
-          limit: 10 
-        }),
-        adminService.getUserManagementStats()
-      ]);
+  const usersQuery = useQuery({
+    queryKey: ['superadmin-users-list', searchTerm, roleFilter, statusFilter, page],
+    queryFn: () =>
+      adminService.getAllUsers({
+        search: searchTerm,
+        role: roleFilter,
+        status: statusFilter,
+        page,
+        limit: 10,
+      }),
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
 
-      setUsers(usersRes.data || []);
-      setTotalPages(usersRes.pagination?.totalPages || usersRes.pagination?.pages || 1);
-      setTotalItems(usersRes.pagination?.total || 0);
-      setStats(statsRes.data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || t('fetchUsersFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, roleFilter, statusFilter, page]);
+  const statsQuery = useQuery({
+    queryKey: ['superadmin-users-stats'],
+    queryFn: () => adminService.getUserManagementStats(),
+    staleTime: 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const users = usersQuery.data?.data || [];
+  const totalPages = usersQuery.data?.pagination?.totalPages || usersQuery.data?.pagination?.pages || 1;
+  const totalItems = usersQuery.data?.pagination?.total || 0;
+  const stats = (statsQuery.data?.data as UserStats | undefined) ?? null;
+  const loading = usersQuery.isLoading || statsQuery.isLoading;
+
+  const upsertUserMutation = useMutation({
+    mutationFn: ({ id, payload }: { id?: string; payload: any }) => {
+      if (id) {
+        return adminService.updateUserAccount(id, payload);
+      }
+      return adminService.createUserAccount(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users-list'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users-stats'] });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: string) => adminService.deleteUserAccount(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users-list'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users-stats'] });
+    },
+  });
 
   const handleOpenModal = (user: any = null) => {
     if (user) {
@@ -116,15 +131,14 @@ export default function UserManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (editingUser) {
-        await adminService.updateUserAccount(editingUser.id, formData);
+      if (editingUser?.id) {
+        await upsertUserMutation.mutateAsync({ id: editingUser.id, payload: formData });
         toast.success(t('userUpdated'));
       } else {
-        await adminService.createUserAccount(formData);
+        await upsertUserMutation.mutateAsync({ payload: formData });
         toast.success(t('userCreated'));
       }
       setIsModalOpen(false);
-      fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('userCreateFailed'));
     }
@@ -133,9 +147,8 @@ export default function UserManagement() {
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('confirmDeleteMsg'))) return;
     try {
-      await adminService.deleteUserAccount(id);
+      await deleteUserMutation.mutateAsync(id);
       toast.success(t('userDeleted'));
-      fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('userDeleteFailed'));
     }
@@ -227,11 +240,12 @@ export default function UserManagement() {
               setRoleFilter('');
               setStatusFilter('');
               setPage(1);
+              queryClient.invalidateQueries({ queryKey: ['superadmin-users-list'] });
             }}
             className="p-2.5 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-shielder-dark hover:border-shielder-dark transition-all"
             title="Clear Filters"
           >
-            <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
+            <RefreshCcw size={20} className={usersQuery.isFetching ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>

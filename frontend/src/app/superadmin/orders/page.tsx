@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Search, 
   Eye, 
@@ -17,17 +17,11 @@ import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import SARSymbol from '@/components/SARSymbol';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function OrdersPage() {
   const { t, isRTL } = useLanguage();
-  const [orders, setOrders] = useState([]);
-  const [summary, setSummary] = useState({
-    totalOrders: 0,
-    pendingOrders: 0,
-    completedOrders: 0,
-    cancelledOrders: 0
-  });
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -44,37 +38,56 @@ export default function OrdersPage() {
     sortOrder: 'desc'
   });
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = {
+  const ordersQuery = useQuery({
+    queryKey: ['superadmin-orders-list', pagination.page, pagination.limit, filters],
+    queryFn: () =>
+      orderService.getOrders({
         page: pagination.page,
         limit: pagination.limit,
-        ...filters
-      };
-      const response = await orderService.getOrders(params);
-      setOrders(response.orders);
-      setPagination(response.pagination);
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.page, pagination.limit, filters]);
+        ...filters,
+      }),
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
 
-  const fetchSummary = async () => {
-    try {
-      const response = await orderService.getOrderSummary();
-      setSummary(response.data);
-    } catch (error) {
-      console.error('Failed to fetch order summary:', error);
-    }
-  };
+  const summaryQuery = useQuery({
+    queryKey: ['superadmin-orders-summary'],
+    queryFn: () => orderService.getOrderSummary(),
+    staleTime: 60 * 1000,
+  });
+
+  const orders = ordersQuery.data?.orders || [];
+  const summary =
+    summaryQuery.data?.data || {
+      totalOrders: 0,
+      pendingOrders: 0,
+      completedOrders: 0,
+      cancelledOrders: 0,
+    };
+  const loading = ordersQuery.isLoading;
 
   useEffect(() => {
-    fetchOrders();
-    fetchSummary();
-  }, [fetchOrders]);
+    if (!ordersQuery.data?.pagination) return;
+
+    setPagination(prev => {
+      const next = ordersQuery.data.pagination;
+      if (
+        prev.total === next.total &&
+        prev.pages === next.pages &&
+        prev.limit === next.limit &&
+        prev.page === next.page
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        total: next.total,
+        pages: next.pages,
+        page: next.page,
+        limit: next.limit,
+      };
+    });
+  }, [ordersQuery.data]);
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -105,10 +118,13 @@ export default function OrdersPage() {
         </div>
         <div className="flex items-center space-x-3">
           <button 
-            onClick={() => { fetchOrders(); fetchSummary(); }}
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['superadmin-orders-list'] });
+              queryClient.invalidateQueries({ queryKey: ['superadmin-orders-summary'] });
+            }}
             className="p-2.5 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
           >
-            <RefreshCcw size={18} />
+            <RefreshCcw size={18} className={ordersQuery.isFetching ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>

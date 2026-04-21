@@ -340,6 +340,12 @@ model AuditLog {
   location   String?
   user       User?    @relation(fields: [userId], references: [id])
 
+  @@index([entityType])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entityType, createdAt])
+  @@index([entityType, userId, createdAt])
+
   @@map("audit_logs")
 }
 
