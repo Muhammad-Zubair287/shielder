@@ -24,6 +24,8 @@ import { handleApiError } from '@/services/api.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { validatePassword } from '@/utils/password';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 type TabType = 'overview' | 'security';
 
@@ -97,6 +99,12 @@ export default function ProfilePage() {
     e.preventDefault();
     setError(null);
 
+    const passwordValidation = validatePassword(passwordData.newPassword);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors[0]);
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setError('New passwords do not match');
       return;
@@ -117,6 +125,17 @@ export default function ProfilePage() {
       setIsSubmitting(false);
     }
   };
+
+  const passwordValidation = validatePassword(passwordData.newPassword);
+  const livePasswordError =
+    passwordData.newPassword && !passwordValidation.isValid
+      ? passwordValidation.errors[0]
+      : null;
+  const liveConfirmError =
+    passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword
+      ? 'New passwords do not match'
+      : null;
+  const activePasswordError = error || livePasswordError || liveConfirmError;
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -390,6 +409,9 @@ export default function ProfilePage() {
                   <p className="text-[10px] text-gray-400 mt-1 px-1">
                     Min. 8 characters, at least one uppercase, lowercase, number and special character.
                   </p>
+                  {passwordData.newPassword && (
+                    <PasswordStrengthMeter password={passwordData.newPassword} showRequirements={true} className="mt-2" />
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -412,10 +434,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {error && (
+                {activePasswordError && (
                   <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-100 rounded-2xl animate-in fade-in slide-in-from-top-2">
                     <AlertCircle size={16} className="text-red-500 shrink-0" />
-                    <p className="text-xs font-bold text-red-600 leading-tight">{error}</p>
+                    <p className="text-xs font-bold text-red-600 leading-tight">{activePasswordError}</p>
                   </div>
                 )}
 
