@@ -4,6 +4,7 @@
  */
 
 import { env } from './env';
+import { logger } from '@/common/logger/logger';
 
 export const appConfig = {
   // Application Info
@@ -25,6 +26,11 @@ export const appConfig = {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
+
+      // Allow all Vercel-hosted frontend origins in production-like environments.
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
       
       const allowedOrigins = env.cors.allowedOrigins;
       
@@ -42,7 +48,7 @@ export const appConfig = {
       if (isAllowed) {
         callback(null, true);
       } else {
-        console.warn(`[CORS REJECTED] Origin: ${origin}`);
+        logger.warn('CORS rejected origin', { origin });
         callback(new Error('Not allowed by CORS'));
       }
     },

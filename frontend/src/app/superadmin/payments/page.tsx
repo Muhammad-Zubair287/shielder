@@ -63,11 +63,13 @@ export default function PaymentsPage() {
   const fetchPayments = useCallback(async () => {
     try {
       setLoading(true);
-      const params = {
+      const params = Object.fromEntries(
+        Object.entries({
         page: pagination.page,
         limit: pagination.limit,
         ...filters
-      };
+      }).filter(([, value]) => value !== '' && value !== undefined && value !== null)
+      );
       const response = await paymentService.getPayments(params);
       setPayments(response.data);
       setPagination(response.pagination);

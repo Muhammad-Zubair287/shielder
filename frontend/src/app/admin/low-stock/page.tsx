@@ -7,8 +7,27 @@ import Link from 'next/link';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+const ARABIC_RE = /[\u0600-\u06FF]/;
+
+function getProductName(product: any, locale: 'en' | 'ar') {
+  const translatedName = product.translations?.find((tr: any) => tr.locale === locale)?.name;
+  const englishName = product.translations?.find((tr: any) => tr.locale === 'en')?.name;
+  const arabicName = product.translations?.find((tr: any) => tr.locale === 'ar')?.name;
+
+  if (locale === 'ar') {
+    return translatedName || arabicName || product.name || product.nameEn || englishName || '—';
+  }
+
+  const preferred = product.nameEn || translatedName || englishName || product.name;
+  if (preferred && ARABIC_RE.test(preferred)) {
+    return englishName || product.nameEn || '—';
+  }
+
+  return preferred || englishName || '—';
+}
+
 export default function LowStockPage() {
-  const { isRTL } = useLanguage();
+  const { isRTL, locale } = useLanguage();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,7 +124,7 @@ export default function LowStockPage() {
               pagedProducts.map((product: any) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-5">
-                    <div className="font-semibold text-gray-800">{product.name}</div>
+                    <div className="font-semibold text-gray-800">{getProductName(product, locale)}</div>
                     <div className="text-xs text-gray-400 mt-0.5">ID: {product.id.slice(0, 8)}</div>
                   </td>
                   <td className="px-6 py-5">

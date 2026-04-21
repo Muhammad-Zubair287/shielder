@@ -192,13 +192,14 @@ export default function SuperAdminDashboard() {
           .sort((a: CategoryBreakdown, b: CategoryBreakdown) => b.revenueValue - a.revenueValue)
           .slice(0, 8)
       );
-      await fetchActivity(activityTimeWindow);
     } catch (err: any) {
       setError(t('fetchError'));
     } finally {
       hasLoadedDashboard.current = true;
       setLoading(false);
     }
+
+    void fetchActivity(activityTimeWindow);
   };
 
   useEffect(() => {
@@ -661,9 +662,9 @@ export default function SuperAdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('salesGraph')}</h3>
           </div>
-          <div className="w-full h-[320px] min-h-[320px]">
+          <div className="w-full h-[320px] min-h-[320px] min-w-0">
             {filteredAnalytics.length > 0 ? (
-              <ResponsiveContainer width="100%" height={320}>
+              <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={320}>
                 <LineChart data={filteredAnalytics}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <XAxis
@@ -743,9 +744,9 @@ export default function SuperAdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('dashboardRevenueBreakdown')}</h3>
           </div>
-          <div className="w-full flex flex-col animate-in fade-in duration-500">
+          <div className="w-full flex flex-col min-w-0 animate-in fade-in duration-500">
             <div className="relative h-[330px] sm:h-[360px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={330}>
                 <PieChart>
                   {breakdownTotal > 0 && (
                     <Tooltip

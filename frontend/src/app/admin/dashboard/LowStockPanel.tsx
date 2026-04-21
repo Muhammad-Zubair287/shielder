@@ -22,6 +22,32 @@ interface Props {
   loading: boolean;
 }
 
+const ARABIC_RE = /[\u0600-\u06FF]/;
+
+function getProductName(product: LowStockProduct, locale: 'en' | 'ar') {
+  const translatedName = product.translations?.find((tr) => tr.locale === locale)?.name;
+  const englishName = product.translations?.find((tr) => tr.locale === 'en')?.name;
+  const arabicName = product.translations?.find((tr) => tr.locale === 'ar')?.name;
+
+  if (locale === 'ar') {
+    return (
+      translatedName ||
+      arabicName ||
+      product.name ||
+      product.nameEn ||
+      englishName ||
+      '—'
+    );
+  }
+
+  const preferred = product.nameEn || translatedName || englishName || product.name;
+  if (preferred && ARABIC_RE.test(preferred)) {
+    return englishName || product.nameEn || '—';
+  }
+
+  return preferred || englishName || '—';
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const Skeleton = () => (
@@ -31,7 +57,7 @@ const Skeleton = () => (
 // ─── Low Stock Panel ──────────────────────────────────────────────────────────
 
 export default function LowStockPanel({ items, loading }: Props) {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, locale } = useLanguage();
 
   if (loading) return <Skeleton />;
 
@@ -76,12 +102,7 @@ export default function LowStockPanel({ items, loading }: Props) {
         {/* Product grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {items.slice(0, 6).map((product) => {
-            const name =
-              product.nameEn ||
-              product.translations?.find((tr) => tr.locale === 'en')?.name ||
-              product.name ||
-              product.translations?.[0]?.name ||
-              '—';
+            const name = getProductName(product, locale);
 
             return (
               <div

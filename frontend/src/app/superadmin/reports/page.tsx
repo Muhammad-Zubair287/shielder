@@ -177,15 +177,18 @@ export default function ReportsDashboard() {
   };
 
   return (
-    <div className="space-y-6 pb-12" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="relative min-h-screen overflow-hidden bg-slate-50/90 pb-12" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64 bg-gradient-to-b from-[#0C1B33]/8 via-transparent to-transparent" />
+      <div className="mx-auto max-w-7xl space-y-5 px-4 pt-4 md:px-8 md:pt-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-[2.25rem] border border-white/60 bg-white/85 p-5 md:p-6 shadow-[0_20px_60px_rgba(12,27,51,0.08)] backdrop-blur">
         <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-shielder-primary/70">Enterprise analytics</p>
           <h1 className="text-2xl font-black text-shielder-dark uppercase tracking-tight">{t('enterpriseReportsTitle')}</h1>
           <p className="text-gray-500 text-sm font-medium">{t('enterpriseReportsSubtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-gray-100 p-1 rounded-xl">
+          <div className="flex rounded-2xl bg-slate-100 p-1 shadow-inner">
             {['TODAY', '7D', '30D', 'CUSTOM'].map(range => (
               <button
                 key={range}
@@ -242,7 +245,7 @@ export default function ReportsDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
         {[
           { id: 'OVERVIEW', label: 'Overview', icon: BarChart3 },
           { id: 'SALES', label: 'Sales', icon: TrendingUp },
@@ -254,7 +257,7 @@ export default function ReportsDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center space-x-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border ${
+            className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border ${
               activeTab === tab.id 
                 ? 'bg-[#FF6B35] text-white border-[#FF6B35] shadow-lg shadow-[#FF6B35]/20' 
                 : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
@@ -268,7 +271,7 @@ export default function ReportsDashboard() {
 
       {/* Advanced Filters (Only for Sales) */}
       {activeTab === 'SALES' && (
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4 animate-in slide-in-from-top-2 duration-300">
+        <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-3 animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center space-x-2">
             <Filter size={14} className="text-gray-400" />
             <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Filters:</span>
@@ -576,7 +579,6 @@ function SalesTab({ data, page, pageSize, onPageChange, isRTL }: any) {
                   <td className="px-8 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">{product.categoryName}</td>
                   <td className="px-8 py-4 text-center text-sm font-medium text-gray-600">{product.quantitySold}</td>
                   <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(product.totalRevenue || 0).toLocaleString()}</span></td>
-                                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(product.totalRevenue || 0).toLocaleString()}</span></td>
                 </tr>
               ))}
               {salesByProduct.length === 0 && (
@@ -682,7 +684,6 @@ function OrdersTab({ data, page, pageSize, onPageChange, isRTL }: any) {
                   <td className="px-8 py-4 text-sm font-medium text-gray-600">{order.customerName}</td>
                   <td className="px-8 py-4 text-center text-sm font-medium text-gray-500">{order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : 'N/A'}</td>
                   <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(order.totalAmount || 0).toLocaleString()}</span></td>
-                                  <td className="px-8 py-4 text-right text-sm font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><FixedSARMark />{(order.totalAmount || 0).toLocaleString()}</span></td>
                 </tr>
               ))}
               {recentLargeOrders.length === 0 && (
@@ -811,15 +812,14 @@ function ProfitLossTab({ data }: any) {
   const margin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-shielder-dark text-white p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
+    <div className="max-w-5xl mx-auto space-y-5">
+      <div className="bg-shielder-dark text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-shielder-secondary/20 rounded-full blur-3xl -mr-32 -mt-32" />
         <p className="text-xs font-black uppercase tracking-[0.3em] opacity-50 mb-4">Enterprise P&L Statement</p>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-           <div>
-              <h2 className="text-6xl font-black tracking-tighter"><span className="inline-flex items-center gap-2"><FixedSARMark size={48} />{netProfit.toLocaleString()}</span></h2>
-                            <h2 className="text-6xl font-black tracking-tighter"><span className="inline-flex items-center gap-2"><FixedSARMark size={48} />{netProfit.toLocaleString()}</span></h2>
-              <p className="text-shielder-secondary font-black text-sm uppercase tracking-widest mt-2 flex items-center">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+           <div className="space-y-2">
+              <h2 className="text-5xl md:text-6xl font-black tracking-tighter"><span className="inline-flex items-center gap-2"><FixedSARMark size={48} />{netProfit.toLocaleString()}</span></h2>
+              <p className="text-shielder-secondary font-black text-xs md:text-sm uppercase tracking-widest flex items-center">
                 Net Industrial Profit
                 <ArrowUpRight size={16} className="ml-1" />
               </p>
@@ -829,48 +829,43 @@ function ProfitLossTab({ data }: any) {
               <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Profit Margin</p>
            </div>
         </div>
-        <button 
+          <button 
           onClick={() => {
             toast.success('Generating P&L Statement...');
           }}
-          className="mt-8 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all inline-flex items-center space-x-2"
+           className="mt-7 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all inline-flex items-center space-x-2"
         >
           <Download size={14} />
           <span>Download Statement</span>
         </button>
       </div>
 
-      <div className="bg-white p-10 rounded-3xl border border-gray-100 shadow-sm space-y-8">
-        <div className="flex justify-between items-center pb-8 border-b border-gray-50">
-           <div className="space-y-1">
+        <div className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100 shadow-sm space-y-7">
+          <div className="flex justify-between items-center pb-7 border-b border-gray-50">
+            <div className="space-y-1.5">
               <p className="text-2xl font-black text-shielder-dark leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{totalSales.toLocaleString()}</span></p>
-                            <p className="text-2xl font-black text-shielder-dark leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{totalSales.toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Gross Sales (Paid)</p>
            </div>
            <ChevronRight className="text-gray-200" />
-           <div className="space-y-1 text-right">
+            <div className="space-y-1.5 text-right">
               <p className="text-2xl font-black text-red-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalRefunds.toLocaleString()}</span></p>
-                            <p className="text-2xl font-black text-red-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalRefunds.toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Refunds</p>
            </div>
         </div>
-        <div className="flex justify-between items-center pb-8 border-b border-gray-50">
-           <div className="space-y-1">
+          <div className="flex justify-between items-center pb-7 border-b border-gray-50">
+            <div className="space-y-1.5">
               <p className="text-2xl font-black text-emerald-500 leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{(totalSales - totalRefunds).toLocaleString()}</span></p>
-                            <p className="text-2xl font-black text-emerald-500 leading-none"><span className="inline-flex items-center gap-1"><FixedSARMark />{(totalSales - totalRefunds).toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Gross Profit</p>
            </div>
            <ChevronRight className="text-gray-200" />
-           <div className="space-y-1 text-right">
+            <div className="space-y-1.5 text-right">
               <p className="text-2xl font-black text-orange-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalExpenses.toLocaleString()}</span></p>
-                            <p className="text-2xl font-black text-orange-500 leading-none">-<span className="inline-flex items-center gap-1"><FixedSARMark />{totalExpenses.toLocaleString()}</span></p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Operating Expenses</p>
            </div>
         </div>
-        <div className="pt-4 flex justify-between items-center bg-gray-50 rounded-2xl p-6">
+          <div className="flex justify-between items-center bg-gray-50 rounded-2xl px-6 py-5">
            <p className="text-xs font-black uppercase tracking-widest text-shielder-dark">Net Operating Income</p>
-           <p className="text-2xl font-black text-shielder-dark"><span className="inline-flex items-center gap-1"><FixedSARMark />{netProfit.toLocaleString()}</span></p>
-                   <p className="text-2xl font-black text-shielder-dark"><span className="inline-flex items-center gap-1"><FixedSARMark />{netProfit.toLocaleString()}</span></p>
+            <p className="text-2xl font-black text-shielder-dark"><span className="inline-flex items-center gap-1"><FixedSARMark />{netProfit.toLocaleString()}</span></p>
         </div>
       </div>
     </div>
@@ -888,12 +883,14 @@ interface SummaryCardProps {
 
 function SummaryCard({ title, value, subtitle, icon, color }: SummaryCardProps) {
   return (
-    <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:border-shielder-primary/20 transition-all group">
+    <div className="bg-white p-7 rounded-3xl border border-gray-100 shadow-sm hover:border-shielder-primary/20 transition-all group min-h-[220px] flex flex-col justify-between">
       <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center text-white shadow-md mb-5 group-hover:scale-105 transition-transform`}>
         {icon}
       </div>
-      <h3 className="text-3xl font-black text-shielder-dark tracking-tighter">{value}</h3>
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{title}</p>
+      <div className="space-y-1">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+        <h3 className="text-3xl font-black text-shielder-dark tracking-tighter leading-none">{value}</h3>
+      </div>
       <div className="w-12 h-1 bg-gray-50 my-4" />
       <p className="text-[10px] font-bold text-gray-400 italic lowercase">{subtitle}</p>
     </div>
@@ -908,8 +905,8 @@ interface OrderStatsProps {
 
 function OrderStats({ title, value, color }: OrderStatsProps) {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{title}</p>
+    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center space-y-1.5">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
       <p className={`text-2xl font-black ${color}`}>{value}</p>
     </div>
   );
@@ -930,11 +927,10 @@ function PaymentStatCard({ label, value, count, color }: PaymentStatCardProps) {
     gray: 'bg-gray-50 text-gray-600'
   };
   return (
-    <div className={`${colors[color]} p-6 rounded-3xl space-y-2`}>
+     <div className={`${colors[color]} p-5 rounded-3xl space-y-2 shadow-sm`}>
        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
       <h4 className="text-xl font-black tracking-tight"><span className="inline-flex items-center gap-1"><FixedSARMark />{value.toLocaleString()}</span></h4>
        <p className="text-[10px] font-bold opacity-60 uppercase">{count} TRANSACTIONS</p>
-       <h4 className="text-xl font-black tracking-tight"><span className="inline-flex items-center gap-1"><FixedSARMark />{value.toLocaleString()}</span></h4>
     </div>
   );
 }
