@@ -183,7 +183,7 @@ export default function PaymentsPage() {
         <SummaryCard 
           title={t('totalSales')} 
           value={<span className="inline-flex items-center gap-0.5"><SARSymbol />{stats.totalRevenue.toLocaleString()}</span>} 
-          icon={<DollarSign size={24} />} 
+          icon={<SARSymbol size={24} className="brightness-0 invert" />} 
           color="bg-shielder-dark" 
           description="Total money made so far"
           onClick={() => setFilters(prev => ({ ...prev, status: 'PAID' }))}
