@@ -352,6 +352,7 @@ export default function ReportsDashboard() {
           {activeTab === 'PROFIT' && <ProfitLossTab data={data} />}
         </div>
       )}
+      </div>
     </div>
   );
 }
