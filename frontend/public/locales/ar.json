@@ -427,7 +427,6 @@
   "activityCsvHeaderTimestamp": "الوقت",
   "kpiDetails": "التفاصيل",
   "exportCsv": "تصدير CSV",
-
   "adminMgmtTitle": "إدارة المسؤولين",
   "adminMgmtSubtitle": "إدارة جميع حسابات المسؤولين عبر المنصة",
   "totalAdmins": "إجمالي المسؤولين",
@@ -1201,7 +1200,6 @@
   "quot.rejectSuccess": "تم رفض عرض السعر بنجاح",
   "quot.actionError": "تعذر تحديث حالة عرض السعر",
   "quot.rejectReasonPrompt": "اختياري: أدخل سبب رفض عرض السعر",
-
   "settingTabGeneral": "عام",
   "settingTabOrder": "الطلبات",
   "settingTabPayment": "المدفوعات",
@@ -1300,7 +1298,6 @@
   "settingsSaved": "تم حفظ الإعدادات بنجاح",
   "settingPasswordInvalid": "تأكيد كلمة المرور غير صحيح",
   "settingTabSettingsLabel": "إعدادات",
-
   "checkout.title": "إتمام الطلب",
   "checkout.shippingInfo": "معلومات الشحن",
   "checkout.fullName": "الاسم الكامل",
@@ -1333,7 +1330,6 @@
   "checkout.submitError": "فشل تقديم الطلب، يرجى المحاولة مرة أخرى.",
   "checkout.paymentFailed": "لم تكتمل عملية الدفع، يرجى المحاولة مرة أخرى.",
   "checkout.paymentGatewayError": "خطأ في بوابة الدفع، يرجى المحاولة مرة أخرى.",
-
   "orderConfirmation.orderPlaced": "تم تقديم الطلب بنجاح!",
   "orderConfirmation.paymentSuccess": "تم الدفع بنجاح!",
   "orderConfirmation.subtitle": "شكرًا لطلبك. سنقوم بمعالجته قريبًا.",
@@ -1358,7 +1354,6 @@
   "orderConfirmation.paymentStatus.pending": "معلق",
   "orderConfirmation.paymentStatus.failed": "فشل",
   "orderConfirmation.paymentStatus.refunded": "مسترجع",
-
   "myOrders.title": "طلباتي",
   "myOrders.empty": "لا توجد طلبات بعد.",
   "myOrders.emptySubtitle": "تصفح المنتجات وضع طلبك الأول!",
@@ -1369,5 +1364,11 @@
   "myOrders.total": "الإجمالي",
   "myOrders.items": "المنتجات",
   "myOrders.viewDetails": "عرض",
-  "myOrders.loadError": "فشل تحميل الطلبات."
+  "myOrders.loadError": "فشل تحميل الطلبات.",
+  "profile.phoneMinLength": "يجب أن يتضمن رقم الهاتف على الأقل 7 أحرف",
+  "profile.passwordDifferent": "يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور الحالية",
+  "profile.fileTooLarge": "الملف كبير جداً (الحد الأقصى 2 ميجابايت)",
+  "profile.invalidFileType": "نوع ملف غير صحيح (JPEG و PNG و WebP فقط)",
+  "profile.photoRemoved": "تم إزالة صورة الملف الشخصي بنجاح",
+  "profile.photoRemoveFailed": "فشل إزالة الصورة"
 }

@@ -17,11 +17,13 @@ import { ROUTES } from '@/utils/constants';
 import { getImageUrl } from '@/utils/helpers';
 import profileService from '@/services/profile.service';
 import { useAuthStore } from '@/store/auth.store';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'react-hot-toast';
 
 export const ProfileDropdown = () => {
   const { user, logout } = useAuth();
   const { setUser } = useAuthStore();
+  const { isRTL } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -107,9 +109,9 @@ export const ProfileDropdown = () => {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 md:gap-3 cursor-pointer group hover:bg-secondary/10 dark:hover:bg-white/5 p-1 px-2 rounded-xl transition-all rtl:flex-row-reverse"
+        className={`flex items-center gap-2 md:gap-3 cursor-pointer group hover:bg-secondary/10 dark:hover:bg-white/5 p-1 px-2 rounded-xl transition-all ${isRTL ? 'flex-row-reverse' : ''}`}
       >
-        <div className="flex flex-col hidden sm:flex ltr:items-end rtl:items-start">
+        <div className={`flex flex-col hidden sm:flex ${isRTL ? 'items-start' : 'ltr:items-end'}`}>
           <span className="text-sm font-bold text-gray-900 dark:text-slate-100 line-clamp-1 max-w-[120px]">
             {user?.profile?.fullName || 'Super Admin'}
           </span>
@@ -149,7 +151,7 @@ export const ProfileDropdown = () => {
       />
 
       {isOpen && (
-        <div className="absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 fixed md:absolute left-4 right-4 md:left-auto ltr:md:right-0 rtl:md:left-0 rtl:md:right-auto">
+        <div className={`absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 fixed md:absolute left-4 right-4 md:left-auto ${isRTL ? 'md:left-0' : 'md:right-0'}`}>
           {/* Header with avatar + change photo */}
           <div className="p-4 bg-secondary/5 dark:bg-slate-900/70 border-b border-secondary/10 dark:border-slate-800">
             <div className="flex items-center gap-3 mb-2">
