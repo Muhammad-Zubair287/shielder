@@ -115,7 +115,7 @@ const PIE_COLORS = ['#5B5FC7', '#16A34A', '#FF6B35', '#0891B2', '#E11D48', '#374
 const ORDERS_PIE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#0EA5E9'];
 
 export default function SuperAdminDashboard() {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, locale } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [lowStock, setLowStock] = useState<LowStockProduct[]>([]);
   const [analytics, setAnalytics] = useState<MonthlyAnalytic[]>([]);
@@ -131,10 +131,24 @@ export default function SuperAdminDashboard() {
   const [activityTimeWindow, setActivityTimeWindow] = useState<ActivityTimeWindow>('7d');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedDashboard = useRef(false);
   const itemsPerPage = 10;
+
+  const resolveLowStockProductName = (product: LowStockProduct) => {
+    const translations = Array.isArray(product.translations) ? product.translations : [];
+    const englishName = translations.find((entry) => entry?.locale === 'en')?.name;
+    const arabicName = translations.find((entry) => entry?.locale === 'ar')?.name;
+
+    if (locale === 'ar') {
+      return arabicName || englishName || product.nameEn || t('noDataAvailable');
+    }
+
+    return englishName || product.nameEn || arabicName || t('noDataAvailable');
+  };
 
   const fetchActivity = async (window: ActivityTimeWindow = activityTimeWindow) => {
     try {
@@ -149,57 +163,95 @@ export default function SuperAdminDashboard() {
   };
 
   const fetchData = async () => {
+    const isInitialLoad = !hasLoadedDashboard.current;
+
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       setError(null);
-      const [summaryRes, lowStockRes, analyticsRes, categoryRes] = await Promise.all([
+
+      // Load critical dashboard data first so the page becomes interactive quickly.
+      const [summaryRes, lowStockRes] = await Promise.allSettled([
         adminService.getDashboardSummary(),
         adminService.getLowStockProducts(),
-        adminService.getMonthlySalesSeries(),
-        adminService.getByCategory()
       ]);
 
-      setSummary(summaryRes.data.data);
-      const lowStockProducts =
-        lowStockRes?.data?.data?.products ||
-        lowStockRes?.data?.products ||
-        [];
-      setLowStock(Array.isArray(lowStockProducts) ? lowStockProducts : []);
-      setAnalytics(Array.isArray(analyticsRes) ? analyticsRes : []);
-      const categoryPayload = Array.isArray(categoryRes?.data?.data)
-        ? categoryRes.data.data
-        : Array.isArray(categoryRes?.data)
-          ? categoryRes.data
-          : [];
-      setCategories(
-        categoryPayload
-          .map((item: any) => {
-            const revenueValue = Number(item.revenue ?? item.totalRevenue ?? item.sales ?? item.value ?? 0);
-            const ordersValue = Number(item.orders ?? item.orderCount ?? item.productCount ?? item.count ?? 0);
-            const comparisonValue = Number(item.comparison ?? item.score ?? revenueValue ?? 0);
+      if (summaryRes.status === 'fulfilled') {
+        setSummary(summaryRes.value.data.data);
+      }
 
-            return {
-              name: item.categoryName ?? item.name ?? 'Unknown',
-              value: revenueValue,
-              revenueValue,
-              ordersValue,
-              comparisonValue,
-            };
-          })
-          .filter((item: CategoryBreakdown) =>
-            item.revenueValue > 0 || item.ordersValue > 0 || item.comparisonValue > 0
-          )
-          .sort((a: CategoryBreakdown, b: CategoryBreakdown) => b.revenueValue - a.revenueValue)
-          .slice(0, 8)
-      );
-    } catch (err: any) {
-      setError(t('fetchError'));
+      const lowStockProducts =
+        lowStockRes.status === 'fulfilled'
+          ? lowStockRes.value?.data?.data?.products ||
+            lowStockRes.value?.data?.products ||
+            []
+          : [];
+
+      setLowStock(Array.isArray(lowStockProducts) ? lowStockProducts : []);
+
+      if (summaryRes.status !== 'fulfilled' && !summary) {
+        setError(t('fetchError'));
+      }
+
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+
+      setAnalyticsLoading(true);
+      const [analyticsRes, categoryRes] = await Promise.allSettled([
+        adminService.getMonthlySalesSeries(),
+        adminService.getByCategory(),
+      ]);
+
+      if (analyticsRes.status === 'fulfilled') {
+        setAnalytics(Array.isArray(analyticsRes.value) ? analyticsRes.value : []);
+      }
+
+      if (categoryRes.status === 'fulfilled') {
+        const categoryPayload = Array.isArray(categoryRes.value?.data?.data)
+          ? categoryRes.value.data.data
+          : Array.isArray(categoryRes.value?.data)
+            ? categoryRes.value.data
+            : [];
+
+        setCategories(
+          categoryPayload
+            .map((item: any) => {
+              const revenueValue = Number(item.revenue ?? item.totalRevenue ?? item.sales ?? item.value ?? 0);
+              const ordersValue = Number(item.orders ?? item.orderCount ?? item.productCount ?? item.count ?? 0);
+              const comparisonValue = Number(item.comparison ?? item.score ?? revenueValue ?? 0);
+
+              return {
+                name: item.categoryName ?? item.name ?? 'Unknown',
+                value: revenueValue,
+                revenueValue,
+                ordersValue,
+                comparisonValue,
+              };
+            })
+            .filter((item: CategoryBreakdown) =>
+              item.revenueValue > 0 || item.ordersValue > 0 || item.comparisonValue > 0
+            )
+            .sort((a: CategoryBreakdown, b: CategoryBreakdown) => b.revenueValue - a.revenueValue)
+            .slice(0, 8)
+        );
+      }
+
+      void fetchActivity(activityTimeWindow);
+    } catch (_err: any) {
+      if (!summary) {
+        setError(t('fetchError'));
+      }
     } finally {
       hasLoadedDashboard.current = true;
       setLoading(false);
+      setRefreshing(false);
+      setAnalyticsLoading(false);
     }
-
-    void fetchActivity(activityTimeWindow);
   };
 
   useEffect(() => {
@@ -489,9 +541,10 @@ export default function SuperAdminDashboard() {
         </div>
         <button 
           onClick={fetchData}
+          disabled={refreshing}
           className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all font-medium text-gray-700 bg-white"
         >
-          <RefreshCcw size={16} />
+          <RefreshCcw size={16} className={refreshing ? 'animate-spin' : ''} />
           {t('refreshBtn')}
         </button>
       </div>
@@ -512,7 +565,7 @@ export default function SuperAdminDashboard() {
                 <div key={product.id} className="bg-white p-4 rounded-xl border border-red-100 flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold line-clamp-1 text-gray-800">{product.translations?.[0]?.name || product.nameEn || t('noDataAvailable')}</h4>
+                      <h4 className="font-bold line-clamp-1 text-gray-800">{resolveLowStockProductName(product)}</h4>
                       {product.stock <= 2 ? (
                         <span className="px-2 py-1 bg-red-100 text-red-500 text-[10px] font-black rounded uppercase">{t('criticalBadge')}</span>
                       ) : (
@@ -661,6 +714,9 @@ export default function SuperAdminDashboard() {
               <TrendingUp size={20} />
             </div>
             <h3 className="font-bold text-gray-800 text-lg">{t('salesGraph')}</h3>
+            {analyticsLoading && (
+              <span className="ml-auto text-xs font-semibold text-gray-500">Loading...</span>
+            )}
           </div>
           <div className="w-full h-[320px] min-h-[320px] min-w-0">
             {filteredAnalytics.length > 0 ? (
