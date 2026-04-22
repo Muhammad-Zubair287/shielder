@@ -29,7 +29,6 @@ interface ValidationResult {
  * @param {string} [data.phone] - User's phone (optional)
  * @param {string} [data.location] - User's location (optional)
  * @param {string} [data.address] - User's address (optional)
- * @param {string} [data.company] - User's company (optional)
  * @returns {ValidationResult} Validation result with errors
  * 
  * @example
@@ -44,7 +43,6 @@ export function validateProfileUpdate(data: {
   phone?: string;
   location?: string;
   address?: string;
-  company?: string;
 }): ValidationResult {
   const errors: Record<string, string> = {};
 

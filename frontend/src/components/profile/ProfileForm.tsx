@@ -4,7 +4,7 @@
  * ProfileForm Component
  * ─────────────────────────────────────────────────────────────────────────────
  * Manages user profile information editing including:
- * - Full name, email, phone, location, address, and company
+ * - Full name, email, phone, location, and address
  * - Real-time form validation with error feedback
  * - Unsaved changes tracking with save/cancel buttons
  * - Bidirectional language support (EN/AR) with automatic RTL layout
@@ -18,7 +18,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, User, Mail, MapPin, Phone, Building2 } from 'lucide-react';
+import { AlertCircle, User, Mail, MapPin, Phone } from 'lucide-react';
 import profileService from '@/services/profile.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,7 +34,6 @@ import { toast } from 'react-hot-toast';
  * @property {string} [phone] - User's phone number (optional)
  * @property {string} [location] - User's location (optional)
  * @property {string} [address] - User's address (optional)
- * @property {string} [company] - User's company name (optional)
  */
 interface ProfileFormData {
   fullName: string;
@@ -42,7 +41,6 @@ interface ProfileFormData {
   phone?: string;
   location?: string;
   address?: string;
-  company?: string;
 }
 
 /**
@@ -69,7 +67,6 @@ export const ProfileForm = () => {
     phone: '',
     location: '',
     address: '',
-    company: '',
   });
 
   const [initialData, setInitialData] = useState<ProfileFormData | null>(null);
@@ -90,7 +87,6 @@ export const ProfileForm = () => {
             phone: user.profile.phoneNumber || '',
             location: user.profile.location || '',
             address: user.profile.address || '',
-            company: user.profile.company || '',
           };
           setFormData(userData);
           setInitialData(userData);
@@ -120,7 +116,6 @@ export const ProfileForm = () => {
       phone: formData.phone,
       location: formData.location,
       address: formData.address,
-      company: formData.company,
     });
 
     // Map translation keys to translated error messages
@@ -164,7 +159,6 @@ export const ProfileForm = () => {
         phoneNumber: formData.phone,
         location: formData.location,
         address: formData.address,
-        company: formData.company,
       };
 
       const response = await profileService.updateProfile(updateData);
@@ -329,24 +323,6 @@ export const ProfileForm = () => {
             rows={3}
             className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right' : ''}`}
           />
-        </div>
-
-        {/* Company Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {t('profile.company')}
-          </label>
-          <div className="relative">
-            <Building2 className={`absolute top-3 w-5 h-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-            <input
-              type="text"
-              name="company"
-              value={formData.company}
-              onChange={handleChange}
-              placeholder={t('profile.companyPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'}`}
-            />
-          </div>
         </div>
 
         {/* Action Buttons */}

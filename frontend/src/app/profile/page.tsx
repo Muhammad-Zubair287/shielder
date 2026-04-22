@@ -32,6 +32,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { ChangePasswordSection } from '@/components/profile/ChangePasswordSection';
 import { ProfileImageUpload } from '@/components/profile/ProfileImageUpload';
+import LandingNavbar from '@/app/home/_components/LandingNavbar';
+import LandingFooter from '@/app/home/_components/LandingFooter';
 import { ROUTES } from '@/utils/constants';
 
 /**
@@ -76,33 +78,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900 py-8 px-4 sm:px-6 lg:px-8 ${isRTL ? 'dir-rtl' : ''}`}>
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className={`mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('profile.title')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t('profile.subtitle')}
-          </p>
-        </div>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 ${isRTL ? 'dir-rtl' : ''}`}>
+      <LandingNavbar />
 
-        {/* Profile Image Upload */}
-        <div className="mb-8">
-          <ProfileImageUpload />
-        </div>
+      <main className="pt-28 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className={`mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">
+              {t('profile.title')}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-base">
+              {t('profile.subtitle')}
+            </p>
+          </div>
 
-        {/* Profile Form */}
-        <div className="mb-8">
-          <ProfileForm />
+          <div className="space-y-8">
+            <ProfileImageUpload />
+            <ProfileForm />
+            <ChangePasswordSection />
+          </div>
         </div>
+      </main>
 
-        {/* Change Password Section */}
-        <div>
-          <ChangePasswordSection />
-        </div>
-      </div>
+      <LandingFooter />
     </div>
   );
 }

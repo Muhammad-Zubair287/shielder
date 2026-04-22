@@ -80,7 +80,7 @@ export default function LandingNavbar() {
                   )}
                 </span>
                 <span className="hidden lg:inline text-sm font-semibold text-gray-700">
-                  {user.profile?.fullName || 'Profile'}
+                  {user.profile?.fullName || t('profile.viewProfile')}
                 </span>
               </Link>
             ) : (
@@ -141,7 +141,7 @@ export default function LandingNavbar() {
                 </span>
               )}
             </span>
-            <span>{user ? (user.profile?.fullName || 'Profile') : t('landingNavLogin')}</span>
+            <span>{user ? (user.profile?.fullName || t('profile.viewProfile')) : t('landingNavLogin')}</span>
           </Link>
         </div>
       )}

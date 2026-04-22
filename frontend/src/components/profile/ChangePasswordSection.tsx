@@ -19,11 +19,11 @@
  */
 
 import React, { useState } from 'react';
-import { AlertCircle, Lock } from 'lucide-react';
+import { AlertCircle, Lock, Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validatePasswordChange } from '@/utils/profile.validation';
+import authService from '@/services/auth.service';
 import { toast } from 'react-hot-toast';
-import api from '@/services/api.service';
 
 /**
  * ChangePasswordSection Component
@@ -53,6 +53,9 @@ export const ChangePasswordSection = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = (): boolean => {
     const result = validatePasswordChange({
@@ -94,7 +97,7 @@ export const ChangePasswordSection = () => {
 
     setLoading(true);
     try {
-      await api.patch('/auth/change-password', {
+      await authService.changePassword({
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
       });
@@ -138,15 +141,23 @@ export const ChangePasswordSection = () => {
           <div className="relative">
             <Lock className={`absolute top-3 w-5 h-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
             <input
-              type="password"
+              type={showCurrentPassword ? 'text' : 'password'}
               name="currentPassword"
               value={formData.currentPassword}
               onChange={handleChange}
               placeholder={t('profile.currentPasswordPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
+              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
                 errors.currentPassword ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />
+            <button
+              type="button"
+              onClick={() => setShowCurrentPassword((prev) => !prev)}
+              className={`absolute top-2.5 text-gray-400 hover:text-gray-600 ${isRTL ? 'left-3' : 'right-3'}`}
+              aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
+            >
+              {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
           {errors.currentPassword && (
             <div className="flex items-center gap-1 mt-1 text-red-600 dark:text-red-400 text-sm">
@@ -164,15 +175,23 @@ export const ChangePasswordSection = () => {
           <div className="relative">
             <Lock className={`absolute top-3 w-5 h-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
             <input
-              type="password"
+              type={showNewPassword ? 'text' : 'password'}
               name="newPassword"
               value={formData.newPassword}
               onChange={handleChange}
               placeholder={t('profile.newPasswordPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
+              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
                 errors.newPassword ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />
+            <button
+              type="button"
+              onClick={() => setShowNewPassword((prev) => !prev)}
+              className={`absolute top-2.5 text-gray-400 hover:text-gray-600 ${isRTL ? 'left-3' : 'right-3'}`}
+              aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+            >
+              {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
           {errors.newPassword && (
             <div className="flex items-center gap-1 mt-1 text-red-600 dark:text-red-400 text-sm">
@@ -190,15 +209,23 @@ export const ChangePasswordSection = () => {
           <div className="relative">
             <Lock className={`absolute top-3 w-5 h-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
             <input
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               name="confirmNewPassword"
               value={formData.confirmNewPassword}
               onChange={handleChange}
               placeholder={t('profile.confirmNewPasswordPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
+              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
                 errors.confirmNewPassword ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className={`absolute top-2.5 text-gray-400 hover:text-gray-600 ${isRTL ? 'left-3' : 'right-3'}`}
+              aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+            >
+              {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
           {errors.confirmNewPassword && (
             <div className="flex items-center gap-1 mt-1 text-red-600 dark:text-red-400 text-sm">
