@@ -32,6 +32,9 @@ export default function LandingNavbar() {
     { label: t('landingNavContact'),  href: '/contact'  },
   ];
 
+  const profileDisplayName = user?.profile?.fullName?.trim() || user?.email || t('profile.viewProfile');
+  const profileFirstName = profileDisplayName.split(/\s+/)[0] || t('profile.viewProfile');
+
   return (
     <>
     <header
@@ -58,39 +61,14 @@ export default function LandingNavbar() {
               </Link>
             ))}
 
-            {user ? (
-              <Link
-                href="/profile"
-                className={`ml-2 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1.5 shadow-sm transition hover:border-[#F97316]/40 hover:shadow-md ${isRTL ? 'flex-row-reverse' : ''}`}
-                aria-label="Open profile"
-              >
-                <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-gray-600">
-                  {user.profile?.profileImage ? (
-                    <Image
-                      src={getImageUrl(user.profile.profileImage)}
-                      alt={user.profile?.fullName || user.email || 'Profile'}
-                      fill
-                      className="object-cover"
-                      sizes="32px"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold uppercase">
-                      {(user.profile?.fullName || user.email || 'U').slice(0, 1)}
-                    </span>
-                  )}
-                </span>
-                <span className="hidden lg:inline text-sm font-semibold text-gray-700">
-                  {user.profile?.fullName || t('profile.viewProfile')}
-                </span>
-              </Link>
-            ) : (
+            {!user ? (
               <Link
                 href="/login"
                 className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap"
               >
                 {t('landingNavLogin')}
               </Link>
-            )}
+            ) : null}
           </nav>
 
           <div className="flex-1" />
@@ -104,6 +82,32 @@ export default function LandingNavbar() {
             </a>
             <CartBadge />
             <QuotationBadge />
+            {user ? (
+              <Link
+                href="/profile"
+                className={`hidden md:flex flex-col items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition hover:border-[#F97316]/40 hover:shadow-md ${isRTL ? 'text-right' : 'text-left'}`}
+                aria-label="Open profile"
+              >
+                <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#F97316]/20 bg-gray-100 text-gray-600">
+                  {user.profile?.profileImage ? (
+                    <Image
+                      src={getImageUrl(user.profile.profileImage)}
+                      alt={profileDisplayName}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold uppercase">
+                      {profileFirstName.slice(0, 1)}
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-gray-700 leading-none max-w-[64px] truncate text-center">
+                  {profileFirstName}
+                </span>
+              </Link>
+            ) : null}
             <button className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg" onClick={() => setMobileOpen(v => !v)}>
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -141,7 +145,7 @@ export default function LandingNavbar() {
                 </span>
               )}
             </span>
-            <span>{user ? (user.profile?.fullName || t('profile.viewProfile')) : t('landingNavLogin')}</span>
+            <span>{user ? profileFirstName : t('landingNavLogin')}</span>
           </Link>
         </div>
       )}
