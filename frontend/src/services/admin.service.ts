@@ -299,8 +299,8 @@ class AdminService {
     return apiClient.get(API_ENDPOINTS.PRODUCTS.BASE, { params });
   }
 
-  async getLowStockProducts() {
-    return apiClient.get(API_ENDPOINTS.PRODUCTS.LOW_STOCK);
+  async getLowStockProducts(params?: { page?: number; limit?: number }) {
+    return apiClient.get(API_ENDPOINTS.PRODUCTS.LOW_STOCK, { params });
   }
 
   async getLowStockCount() {

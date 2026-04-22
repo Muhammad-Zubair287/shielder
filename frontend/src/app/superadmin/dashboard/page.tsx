@@ -130,7 +130,6 @@ export default function SuperAdminDashboard() {
   const [activityViewFilter, setActivityViewFilter] = useState<ActivityViewFilter>('all');
   const [activityTimeWindow, setActivityTimeWindow] = useState<ActivityTimeWindow>('7d');
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activityLoading, setActivityLoading] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -166,9 +165,7 @@ export default function SuperAdminDashboard() {
     const isInitialLoad = !hasLoadedDashboard.current;
 
     try {
-      if (isInitialLoad) {
-        setLoading(true);
-      } else {
+      if (!isInitialLoad) {
         setRefreshing(true);
       }
 
@@ -177,7 +174,7 @@ export default function SuperAdminDashboard() {
       // Load critical dashboard data first so the page becomes interactive quickly.
       const [summaryRes, lowStockRes] = await Promise.allSettled([
         adminService.getDashboardSummary(),
-        adminService.getLowStockProducts(),
+        adminService.getLowStockProducts({ page: 1, limit: 6 }),
       ]);
 
       if (summaryRes.status === 'fulfilled') {
@@ -195,10 +192,6 @@ export default function SuperAdminDashboard() {
 
       if (summaryRes.status !== 'fulfilled' && !summary) {
         setError(t('fetchError'));
-      }
-
-      if (isInitialLoad) {
-        setLoading(false);
       }
 
       setAnalyticsLoading(true);
@@ -248,7 +241,6 @@ export default function SuperAdminDashboard() {
       }
     } finally {
       hasLoadedDashboard.current = true;
-      setLoading(false);
       setRefreshing(false);
       setAnalyticsLoading(false);
     }
@@ -508,10 +500,6 @@ export default function SuperAdminDashboard() {
       chip: t('drilldownLabelUsers'),
     },
   ];
-
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
 
   if (error) {
     return (

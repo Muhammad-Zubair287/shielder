@@ -478,7 +478,7 @@ export class SuperAdminService {
 
     const activePublishedFilter = { isActive: true, status: 'PUBLISHED' as const };
 
-    const [totalStockResult, totalProducts, totalOrders, revenueResult, products, totalCategories, totalUsers] = await Promise.all([
+    const [totalStockResult, totalProducts, totalOrders, revenueResult, inventoryValueResult, totalCategories, totalUsers] = await Promise.all([
       // Only sum stock for active + published products
       prisma.product.aggregate({
         where: activePublishedFilter,
@@ -493,11 +493,13 @@ export class SuperAdminService {
         where: { paymentStatus: 'PAID' },
         _sum: { total: true }
       }),
-      // Only compute inventory value from active + published products
-      prisma.product.findMany({
-        where: activePublishedFilter,
-        select: { stock: true, price: true }
-      }),
+      // Compute inventory value in SQL to avoid loading all products into Node.js memory
+      prisma.$queryRaw<{ inventory_value: number | string | null }[]>`
+        SELECT COALESCE(SUM(price * stock), 0) AS inventory_value
+        FROM products
+        WHERE is_active = true
+          AND status = 'PUBLISHED'
+      `,
       // Count all active categories
       prisma.category.count({ where: { isActive: true } }),
       // Count all non-deleted users for platform KPI card
@@ -505,7 +507,7 @@ export class SuperAdminService {
     ]);
 
     const totalStock = totalStockResult._sum.stock || 0;
-    const inventoryValue = products.reduce((sum, p) => sum + Number(p.price) * p.stock, 0);
+    const inventoryValue = Number(inventoryValueResult[0]?.inventory_value) || 0;
 
     const summary = {
       totalStock,
