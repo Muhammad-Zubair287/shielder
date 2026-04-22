@@ -61,6 +61,7 @@ type ProductUpsertPayload = {
   sku?: string;
   categoryId: string;
   subcategoryId: string;
+  warehouseId?: string;
   brandId?: string;
   supplierId?: string;
   price: number;
@@ -79,12 +80,42 @@ type ProductUpsertPayload = {
 };
 
 export class ProductService {
+  private async getMainWarehouseId(): Promise<string> {
+    const existing = await prisma.warehouse.findFirst({
+      where: {
+        name: {
+          equals: 'Main Warehouse',
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) return existing.id;
+
+    const created = await prisma.warehouse.create({
+      data: {
+        name: 'Main Warehouse',
+        address: 'Default warehouse (auto-created)',
+        city: 'N/A',
+        country: 'N/A',
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    return created.id;
+  }
+
   async create(data: ProductUpsertPayload) {
+    const warehouseId = data.warehouseId || await this.getMainWarehouseId();
+
     const product = await prisma.product.create({
       data: {
         sku: data.sku,
         categoryId: data.categoryId,
         subcategoryId: data.subcategoryId,
+        warehouseId,
         brandId: data.brandId,
         supplierId: data.supplierId,
         price: data.price,
@@ -377,6 +408,7 @@ export class ProductService {
     if (data.sku !== undefined) updateData.sku = data.sku;
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
     if (data.subcategoryId !== undefined) updateData.subcategoryId = data.subcategoryId;
+    if (data.warehouseId !== undefined) updateData.warehouseId = data.warehouseId;
     if (data.brandId !== undefined) updateData.brandId = data.brandId;
     if (data.supplierId !== undefined) updateData.supplierId = data.supplierId;
     if (data.price !== undefined) updateData.price = data.price;
@@ -782,6 +814,7 @@ export class ProductService {
       warnings: [] as string[],
       errors: [] as { row: number; error: string; sku?: string }[]
     };
+    const defaultWarehouseId = await this.getMainWarehouseId();
     const embeddedImageRows: number[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -911,6 +944,7 @@ export class ProductService {
             minimumStockThreshold: minStock,
             categoryId,
             subcategoryId,
+            warehouseId: defaultWarehouseId,
             brandId,
             mainImage,
             filterNumber,

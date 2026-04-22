@@ -177,6 +177,7 @@ model Product {
   filterType            String?                @map("filter_type")
   material              String?
   dimensions            String?
+  warehouseId           String?                @db.Uuid @map("warehouse_id")
   cartItems             CartItem[]
   orderItems            OrderItem[]
   attachments           ProductAttachment[]
@@ -189,6 +190,7 @@ model Product {
   category              Category               @relation(fields: [categoryId], references: [id])
   subcategory           Subcategory            @relation(fields: [subcategoryId], references: [id])
   supplier              User?                  @relation(fields: [supplierId], references: [id])
+  warehouse             Warehouse?             @relation(fields: [warehouseId], references: [id])
   quotationItems        QuotationItem[]
   stockHistory          stock_history[]
 
@@ -202,6 +204,7 @@ model Product {
   @@index([minimumStockThreshold])
   @@index([isActive])
   @@index([createdAt])
+  @@index([warehouseId])
   @@map("products")
 }
 
@@ -818,6 +821,7 @@ model Warehouse {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  products  Product[]
 
   @@unique([name])
   @@index([isActive])
