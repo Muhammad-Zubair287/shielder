@@ -49,20 +49,20 @@ export default function LandingNavbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center h-20 gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-center h-20 gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
 
           {/* Logo */}
           <Link href="/home" className="flex-shrink-0 flex items-center">
-            <div className="relative h-20 w-64" style={{ transform: 'scale(1.4)', transformOrigin: 'left center' }}>
+            <div className="relative h-14 w-40 sm:w-44 lg:w-48 xl:w-52">
               <Image src="/images/shielder-logo.png" alt="Shielder" fill className="object-contain object-left" sizes="256px" priority />
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className={`hidden md:flex items-center gap-1 ${isRTL ? 'mr-6' : 'ml-6'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+          <nav className={`hidden xl:flex items-center gap-0.5 ${isRTL ? 'mr-4' : 'ml-4'}`} dir={isRTL ? 'rtl' : 'ltr'}>
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
-                className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap">
+                className="px-3 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap">
                 {link.label}
               </Link>
             ))}
@@ -70,7 +70,7 @@ export default function LandingNavbar() {
             {!user ? (
               <Link
                 href="/login"
-                className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap"
+                className="px-3 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap"
               >
                 {t('landingNavLogin')}
               </Link>
@@ -91,7 +91,7 @@ export default function LandingNavbar() {
             {user ? (
               <Link
                 href="/profile"
-                className={`hidden md:flex flex-col items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition hover:border-[#F97316]/40 hover:shadow-md ${isRTL ? 'text-right' : 'text-left'}`}
+                className={`hidden xl:flex flex-col items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition hover:border-[#F97316]/40 hover:shadow-md ${isRTL ? 'text-right' : 'text-left'}`}
                 aria-label="Open profile"
               >
                 <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#F97316]/20 bg-gray-100 text-gray-600">
@@ -114,7 +114,7 @@ export default function LandingNavbar() {
                 </span>
               </Link>
             ) : null}
-            <button className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg" onClick={() => setMobileOpen(v => !v)}>
+            <button className="xl:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg" onClick={() => setMobileOpen(v => !v)}>
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -123,7 +123,7 @@ export default function LandingNavbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="xl:hidden border-t border-gray-100 bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
           {navLinks.map(link => (
             <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
               className={`block px-6 py-3.5 text-sm font-semibold text-gray-700 hover:text-[#F97316] hover:bg-orange-50 border-b border-gray-50 ${isRTL ? 'text-right' : 'text-left'}`}>
