@@ -26,10 +26,16 @@ export default function LandingNavbar() {
   }, []);
 
   const navLinks = [
-    { label: t('landingNavHome'),     href: '/home'     },
+    { label: t('landingNavHome'), href: '/home' },
     { label: t('landingNavProducts'), href: '/products' },
     { label: t('landingNavRequestQuote'), href: '/generate-quotation' },
-    { label: t('landingNavContact'),  href: '/contact'  },
+    { label: t('landingNavContact'), href: '/contact' },
+    ...(user
+      ? [
+          { label: t('myOrders.title'), href: '/my-orders' },
+          { label: t('myQuotations.title'), href: '/my-quotations' },
+        ]
+      : []),
   ];
 
   const profileDisplayName = user?.profile?.fullName?.trim() || user?.email || t('profile.viewProfile');
