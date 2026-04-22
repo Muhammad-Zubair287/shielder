@@ -9,7 +9,9 @@ import {
   ChevronDown,
   ShieldCheck,
   Camera,
-  Loader2
+  Loader2,
+  ShoppingBag,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
@@ -23,7 +25,7 @@ import { toast } from 'react-hot-toast';
 export const ProfileDropdown = () => {
   const { user, logout } = useAuth();
   const { setUser } = useAuthStore();
-  const { isRTL } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -189,6 +191,35 @@ export const ProfileDropdown = () => {
 
           {/* Links */}
           <div className="p-2">
+            {/* Customer-only links */}
+            {user?.role === 'USER' && (
+              <>
+                <Link 
+                  href="/my-orders" 
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center space-x-3 p-3 rounded-xl text-secondary dark:text-slate-300 hover:bg-secondary/10 dark:hover:bg-white/5 hover:text-primary dark:hover:text-[#ff8a5b] transition-colors group"
+                >
+                  <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
+                    <ShoppingBag size={18} />
+                  </div>
+                  <span className="font-semibold">{t('myOrders.title')}</span>
+                </Link>
+                
+                <Link 
+                  href="/my-quotations" 
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center space-x-3 p-3 rounded-xl text-secondary dark:text-slate-300 hover:bg-secondary/10 dark:hover:bg-white/5 hover:text-primary dark:hover:text-[#ff8a5b] transition-colors group"
+                >
+                  <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
+                    <FileText size={18} />
+                  </div>
+                  <span className="font-semibold">{t('myQuotations.title')}</span>
+                </Link>
+
+                <div className="border-t border-gray-100 dark:border-slate-800 my-1"></div>
+              </>
+            )}
+
             <Link 
               href={getProfileLink()} 
               onClick={() => setIsOpen(false)}
@@ -197,7 +228,7 @@ export const ProfileDropdown = () => {
               <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
                 <User size={18} />
               </div>
-              <span className="font-semibold">Profile</span>
+              <span className="font-semibold">{t('profile.title')}</span>
             </Link>
 
             <Link 
@@ -208,7 +239,7 @@ export const ProfileDropdown = () => {
               <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
                 <Lock size={18} />
               </div>
-              <span className="font-semibold">Change Password</span>
+              <span className="font-semibold">{t('changePassword')}</span>
             </Link>
 
             {getSettingsLink() && (
@@ -220,7 +251,7 @@ export const ProfileDropdown = () => {
                 <div className="p-2 bg-secondary/5 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 dark:group-hover:bg-white/10 group-hover:text-primary dark:group-hover:text-[#ff8a5b] transition-colors">
                   <Settings size={18} />
                 </div>
-                <span className="font-semibold">Settings</span>
+                <span className="font-semibold">{t('settings')}</span>
               </Link>
             )}
           </div>
@@ -235,7 +266,7 @@ export const ProfileDropdown = () => {
               <div className="p-2 bg-critical-100 dark:bg-red-950/50 rounded-lg group-hover:bg-critical-500 group-hover:text-white transition-colors text-critical-600 dark:text-red-300">
                 <LogOut size={18} />
               </div>
-              <span className="font-bold">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+              <span className="font-bold">{isLoggingOut ? 'Logging out...' : t('logout')}</span>
             </button>
           </div>
         </div>

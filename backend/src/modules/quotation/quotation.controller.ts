@@ -12,6 +12,47 @@ export class QuotationController {
 
     /**
      * @swagger
+     * /api/quotations/my:
+     *   get:
+     *     summary: Get authenticated customer's quotations
+     *     tags: [Quotations]
+     *     security: [{ bearerAuth: [] }]
+     *     parameters:
+     *       - in: query
+     *         name: page
+     *         schema: { type: integer, default: 1 }
+     *       - in: query
+     *         name: limit
+     *         schema: { type: integer, default: 10 }
+     *       - in: query
+     *         name: status
+     *         schema: { type: string }
+     *     responses:
+     *       200:
+     *         description: Customer's quotations
+     *       401:
+     *         description: Unauthorized
+     */
+    getMyQuotations = asyncHandler(async (req: AuthRequest, res: Response) => {
+        const customerEmail = req.user!.email;
+        const { page = 1, limit = 10, status } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+
+        const filters: any = {};
+        if (status && Object.values(QuotationStatus).includes(status as QuotationStatus)) {
+            filters.status = status as QuotationStatus;
+        }
+
+        const result = await quotationService.getMyQuotations(
+            customerEmail,
+            { skip, limit: Number(limit) },
+            filters
+        );
+        res.json({ success: true, ...result });
+    });
+
+    /**
+     * @swagger
      * /api/quotations:
      *   get:
      *     summary: List all quotations with filters and pagination (Super Admin)

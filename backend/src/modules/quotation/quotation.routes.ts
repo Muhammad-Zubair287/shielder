@@ -1,5 +1,5 @@
 /**
- * Quotation Routes — Super Admin only
+ * Quotation Routes
  */
 
 import { Router } from 'express';
@@ -12,8 +12,18 @@ import { UserRole } from '@/common/constants/roles';
 
 const router = Router();
 
-// All quotation routes require authentication and admin or super admin role
-router.use(authenticate, requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN));
+// Apply authentication to all quotation routes
+router.use(authenticate);
+
+/**
+ * GET /api/quotations/my
+ * Customer-facing: Get authenticated user's quotations
+ * Must be before /:id so it isn't swallowed as a parameterized route
+ */
+router.get('/my', quotationController.getMyQuotations.bind(quotationController));
+
+// All remaining routes require admin or super admin role
+router.use(requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN));
 
 // Listing & analytics
 router.get('/', quotationController.getAll);

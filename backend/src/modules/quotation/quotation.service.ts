@@ -561,6 +561,53 @@ export class QuotationService {
 
         return { total, draft, sent, viewed, approved, rejected, converted, expired, revenue, conversionRate, monthly };
     }
+
+    /**
+     * Get quotations for a customer by their email (for frontend)
+     */
+    async getMyQuotations(customerEmail: string, pagination: QuotationPagination, filters?: { status?: QuotationStatus }) {
+        const { skip, limit } = pagination;
+
+        const where: Prisma.QuotationWhereInput = {
+            customerEmail: customerEmail.toLowerCase()
+        };
+
+        if (filters?.status) {
+            where.status = filters.status;
+        }
+
+        const [total, quotations] = await Promise.all([
+            prisma.quotation.count({ where }),
+            prisma.quotation.findMany({
+                where,
+                include: {
+                    items: {
+                        select: {
+                            id: true,
+                            productName: true,
+                            quantity: true,
+                            unitPrice: true,
+                            totalPrice: true
+                        }
+                    },
+                    _count: { select: { items: true } }
+                },
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            })
+        ]);
+
+        return {
+            data: quotations,
+            pagination: {
+                total,
+                page: Math.floor(skip / limit) + 1,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        };
+    }
 }
 
 export const quotationService = new QuotationService();

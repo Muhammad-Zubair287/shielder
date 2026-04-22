@@ -26,6 +26,7 @@ import {
   LocateFixed,
   RotateCcw,
   Ban,
+  ChevronRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';

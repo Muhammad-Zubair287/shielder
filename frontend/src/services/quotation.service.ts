@@ -26,8 +26,21 @@ export interface CreateQuotationData {
 }
 
 const quotationService = {
-    getAll: (params?: Record<string, string | number | boolean>) =>
-        apiClient.get('/quotations', { params }),
+    /**
+     * Get all quotations (admin view)
+     */
+    getAll: async (params?: Record<string, string | number | boolean>) => {
+        const response = await apiClient.get('/quotations', { params });
+        return response.data;
+    },
+
+    /**
+     * Get customer's quotations
+     */
+    getMyQuotations: async (params?: Record<string, string | number | boolean>) => {
+        const response = await apiClient.get('/quotations/my', { params });
+        return response.data;
+    },
 
     searchProducts: (search: string, limit = 5) =>
         apiClient.get('/inventory/products', { params: { search, limit } }),
