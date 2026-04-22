@@ -809,6 +809,21 @@ model InventoryAlert {
   @@map("inventory_alerts")
 }
 
+model Warehouse {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  address   String   @db.Text
+  city      String   @db.VarChar(120)
+  country   String   @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([name])
+  @@index([isActive])
+  @@map("warehouses")
+}
+
 enum ContactStatus {
   PENDING
   RESOLVED

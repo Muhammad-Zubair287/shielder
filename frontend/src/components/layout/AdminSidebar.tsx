@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Users,
   FileText,
+  Warehouse,
   BarChart3,
   Bell,
   Settings,
@@ -52,6 +53,7 @@ const adminMenuItems: MenuItem[] = [
   { nameKey: 'products',      icon: Package,          href: '/admin/products' },
   { nameKey: 'orders',        icon: ShoppingCart,     href: '/admin/orders' },
   { nameKey: 'users',         icon: Users,            href: '/admin/users' },
+  { nameKey: 'warehouse',     icon: Warehouse,        href: '/admin/warehouses' },
   {
     nameKey: 'quotations',
     icon: FileText,

@@ -15,6 +15,7 @@ import {
   FolderTree,
   Package,
   ShoppingCart,
+  Warehouse,
   Wallet,
   X,
   ChevronLeft,
@@ -54,6 +55,7 @@ const superAdminMenuItems: MenuItem[] = [
   { nameKey: 'products',       icon: Package,         href: '/superadmin/products' },
   { nameKey: 'orders',         icon: ShoppingCart,    href: '/superadmin/orders' },
   { nameKey: 'users',          icon: Users,           href: '/superadmin/users' },
+  { nameKey: 'warehouse',      icon: Warehouse,       href: '/superadmin/warehouses' },
   { nameKey: 'payments',       icon: Wallet,          href: '/superadmin/payments' },
   {
     nameKey: 'quotations',

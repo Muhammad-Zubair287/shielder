@@ -14,6 +14,7 @@ import { validate } from '../../common/middleware/validation.middleware';
 import { adminValidation } from './admin.validation';
 import adminContactRoutes from './contact/admin-contact.routes';
 import adminNewsletterRoutes from '@/modules/newsletter/admin-newsletter.routes';
+import warehouseRoutes from '@/modules/warehouse/warehouse.routes';
 
 const router = Router();
 
@@ -98,5 +99,11 @@ router.use('/contacts', adminContactRoutes);
  * Admin/Super Admin newsletter subscriber management
  */
 router.use('/newsletter', adminNewsletterRoutes);
+
+/**
+ * /api/admin/warehouses
+ * Admin/Super Admin warehouse management
+ */
+router.use('/warehouses', warehouseRoutes);
 
 export default router;
