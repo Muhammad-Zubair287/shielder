@@ -203,10 +203,12 @@ export class CustomerQuotationController {
       const quotation = await prisma.quotation.create({
         data: {
           quotationNumber,
+          status: QuotationStatus.PENDING,
           customerName:    req.user!.email,
           customerEmail:   req.user!.email,
           companyName:     companyName.trim(),
           customerAddress: normalizedAddress,
+          userMessage:     sanitizedNotes || null,
           subtotal,
           discount:        new Prisma.Decimal(0),
           tax:             new Prisma.Decimal(0),

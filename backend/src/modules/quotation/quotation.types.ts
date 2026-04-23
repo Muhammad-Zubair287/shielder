@@ -33,6 +33,8 @@ export interface CreateQuotationInput {
   discount?: number;
   taxRate?: number;
   notes?: string;
+  userMessage?: string;
+  adminReply?: string;
   terms?: string;
   quotationDate?: Date;
   expiryDate: Date;
@@ -48,6 +50,8 @@ export interface UpdateQuotationInput {
   discount?: number;
   taxRate?: number;
   notes?: string;
+  userMessage?: string;
+  adminReply?: string;
   terms?: string;
   expiryDate?: Date;
   status?: QuotationStatus;

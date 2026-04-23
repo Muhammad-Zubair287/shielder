@@ -81,6 +81,13 @@ type ProductUpsertPayload = {
 
 export class ProductService {
   private async getMainWarehouseId(): Promise<string> {
+    const flaggedMain = await prisma.warehouse.findFirst({
+      where: { isMain: true },
+      select: { id: true },
+    });
+
+    if (flaggedMain) return flaggedMain.id;
+
     const existing = await prisma.warehouse.findFirst({
       where: {
         name: {
@@ -88,10 +95,15 @@ export class ProductService {
           mode: 'insensitive',
         },
       },
-      select: { id: true },
+      select: { id: true, isMain: true },
     });
 
-    if (existing) return existing.id;
+    if (existing) {
+      if (!existing.isMain) {
+        await prisma.warehouse.update({ where: { id: existing.id }, data: { isMain: true } });
+      }
+      return existing.id;
+    }
 
     const created = await prisma.warehouse.create({
       data: {
@@ -99,6 +111,7 @@ export class ProductService {
         address: 'Default warehouse (auto-created)',
         city: 'N/A',
         country: 'N/A',
+        isMain: true,
         isActive: true,
       },
       select: { id: true },

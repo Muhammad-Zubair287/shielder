@@ -604,6 +604,8 @@ model Quotation {
   customerPhone    String?             @map("customer_phone")
   customerAddress  String?             @map("customer_address")
   companyName      String?             @map("company_name")
+  userMessage      String?             @map("user_message")
+  adminReply       String?             @map("admin_reply")
   subtotal         Decimal             @db.Decimal(10, 2)
   discount         Decimal             @default(0) @db.Decimal(10, 2)
   tax              Decimal             @default(0) @db.Decimal(10, 2)
@@ -756,6 +758,8 @@ enum StockChangeType {
 }
 
 enum QuotationStatus {
+  PENDING
+  REPLIED
   DRAFT
   SENT
   VIEWED
@@ -848,6 +852,7 @@ model Warehouse {
   address   String   @db.Text
   city      String   @db.VarChar(120)
   country   String   @db.VarChar(120)
+  isMain    Boolean  @default(false) @map("is_main")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

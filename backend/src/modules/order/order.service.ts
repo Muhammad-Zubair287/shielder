@@ -55,6 +55,39 @@ type AuthenticatedUser = {
 };
 
 export class OrderService {
+  private validateStatusTransition(current: OrderStatus, next: OrderStatus, deliveryType: 'DELIVERY' | 'PICKUP') {
+    if (current === next) return;
+
+    const deliveryTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.PENDING]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+      [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+      [OrderStatus.DELIVERED]: [],
+      [OrderStatus.COMPLETED]: [],
+      [OrderStatus.CANCELLED]: [],
+      [OrderStatus.READY_FOR_PICKUP]: [],
+    };
+
+    const pickupTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.READY_FOR_PICKUP]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
+      [OrderStatus.COMPLETED]: [],
+      [OrderStatus.CANCELLED]: [],
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.PROCESSING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.SHIPPED]: [],
+      [OrderStatus.DELIVERED]: [],
+    };
+
+    const transitions = deliveryType === 'PICKUP' ? pickupTransitions : deliveryTransitions;
+    const allowed = transitions[current] || [];
+
+    if (!allowed.includes(next)) {
+      throw new BadRequestError(`Invalid status transition from ${current} to ${next}`);
+    }
+  }
+
   private async invalidateDashboardCaches() {
     await Promise.all([
       redisCacheService.del(CACHE_KEYS.SUPERADMIN_DASHBOARD_SUMMARY),
@@ -179,6 +212,7 @@ export class OrderService {
 
     // STEP 1: Validate warehouse for PICKUP orders
     let validatedWarehouseId: string | undefined = undefined;
+    let pickupWarehouseSummary: string | undefined = undefined;
     if (deliveryType === 'PICKUP') {
       // PICKUP requires warehouseId
       if (!warehouseId) {
@@ -200,6 +234,7 @@ export class OrderService {
       }
 
       validatedWarehouseId = warehouse.id;
+      pickupWarehouseSummary = `${warehouse.name}`;
     }
     // For DELIVERY: warehouseId is ignored (remains undefined)
 
@@ -292,14 +327,27 @@ export class OrderService {
     });
 
     // 5. Trigger Notifications (fire-and-forget — never block the order response)
+    const pickupSuffix = deliveryType === 'PICKUP'
+      ? ` Pickup warehouse: ${pickupWarehouseSummary || validatedWarehouseId || 'N/A'}.`
+      : '';
+
     NotificationService.notify({
       type: NotificationType.ORDER_CREATED,
       title: 'New Order Created',
-      message: `A new order ${order.orderNumber} has been placed. Total: SAR ${order.total}`,
+      message: `A new order ${order.orderNumber} has been placed. Total: SAR ${order.total}.${pickupSuffix}`,
       module: 'ORDER',
       roleTarget: UserRole.SUPER_ADMIN,
       relatedId: order.id
     }).catch((err) => console.error('[Order] createOrder notification failed:', err));
+
+    NotificationService.notify({
+      type: NotificationType.ORDER_CREATED,
+      title: 'New Order Created',
+      message: `A new order ${order.orderNumber} has been placed. Total: SAR ${order.total}.${pickupSuffix}`,
+      module: 'ORDER',
+      roleTarget: UserRole.ADMIN,
+      relatedId: order.id,
+    }).catch((err) => console.error('[Order] createOrder admin notification failed:', err));
 
     await this.invalidateDashboardCaches();
 
@@ -421,6 +469,10 @@ export class OrderService {
     const previousStatus = order.status;
     const newStatus = data.status;
     const performedBy = data.performedBy || 'System/Admin';
+
+    if (newStatus) {
+      this.validateStatusTransition(previousStatus, newStatus, order.deliveryType as 'DELIVERY' | 'PICKUP');
+    }
 
     const updatedOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const orderWarehouseId = await this.resolveOrderWarehouseId(

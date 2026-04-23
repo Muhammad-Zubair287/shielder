@@ -30,6 +30,8 @@ export const quotationValidation = {
         discount: Joi.number().min(0).default(0),
         taxRate: Joi.number().min(0).default(0),
         notes: Joi.string().allow('', null).optional(),
+        userMessage: Joi.string().allow('', null).optional(),
+        adminReply: Joi.string().allow('', null).optional(),
         terms: Joi.string().allow('', null).optional(),
         quotationDate: Joi.date().iso().optional(),
         expiryDate: Joi.date().iso().required().messages({
@@ -48,6 +50,8 @@ export const quotationValidation = {
         discount: Joi.number().min(0).optional(),
         taxRate: Joi.number().min(0).optional(),
         notes: Joi.string().allow('', null).optional(),
+        userMessage: Joi.string().allow('', null).optional(),
+        adminReply: Joi.string().allow('', null).optional(),
         terms: Joi.string().allow('', null).optional(),
         expiryDate: Joi.date().iso().optional(),
     }),

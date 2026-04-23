@@ -5,6 +5,7 @@ export type WarehouseCreateInput = {
   address: string;
   city: string;
   country: string;
+  isMain?: boolean;
   isActive?: boolean;
 };
 
@@ -18,6 +19,7 @@ export class WarehouseRepository {
         address: data.address,
         city: data.city,
         country: data.country,
+        isMain: data.isMain ?? false,
         isActive: data.isActive ?? true,
       },
     });
@@ -48,6 +50,13 @@ export class WarehouseRepository {
     return prisma.warehouse.update({
       where: { id },
       data,
+    });
+  }
+
+  unsetMainWarehouse(exceptId?: string) {
+    return prisma.warehouse.updateMany({
+      where: exceptId ? { id: { not: exceptId }, isMain: true } : { isMain: true },
+      data: { isMain: false },
     });
   }
 

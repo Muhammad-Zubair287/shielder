@@ -7,7 +7,6 @@ import { prisma } from '@/config/database';
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
 import { QuotationStatus, QuotationActivityType, NotificationType, UserRole, Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 import NotificationService from '@/modules/notification/notification.service';
-import { emailService } from '@/common/services/email.service';
 import { QuotationItem } from './quotation.types';
 
 type QuotationListFilters = {
@@ -41,6 +40,8 @@ type CreateQuotationInput = {
     taxRate?: number;
     notes?: string;
     terms?: string;
+    userMessage?: string;
+    adminReply?: string;
     quotationDate?: string;
     expiryDate: string;
 };
@@ -76,7 +77,7 @@ export class QuotationService {
      */
     async createQuotation(data: CreateQuotationInput, userId: string) {
             const { customerName, customerEmail, customerPhone, customerAddress, companyName,
-            items, discount = 0, taxRate = 0, notes, terms, quotationDate, expiryDate } = data;
+            items, discount = 0, taxRate = 0, notes, terms, userMessage, adminReply, quotationDate, expiryDate } = data;
 
         if (!items || items.length === 0) {
             throw new BadRequestError('Quotation must have at least one product.');
@@ -135,6 +136,9 @@ export class QuotationService {
                 total,
                 notes,
                 terms,
+                userMessage,
+                adminReply,
+                status: adminReply ? QuotationStatus.REPLIED : QuotationStatus.DRAFT,
                 quotationDate: quotationDate ? new Date(quotationDate) : new Date(),
                 expiryDate: new Date(expiryDate),
                 createdById: userId,
@@ -279,6 +283,10 @@ export class QuotationService {
         if (rest.expiryDate) updateData.expiryDate = new Date(rest.expiryDate);
         if (rest.quotationDate) updateData.quotationDate = new Date(rest.quotationDate);
 
+        if (typeof rest.adminReply === 'string' && rest.adminReply.trim() && quotation.status !== QuotationStatus.APPROVED && quotation.status !== QuotationStatus.REJECTED && quotation.status !== QuotationStatus.CONVERTED) {
+            updateData.status = QuotationStatus.REPLIED;
+        }
+
         const updated = await prisma.quotation.update({
             where: { id },
             data: updateData,
@@ -313,38 +321,32 @@ export class QuotationService {
     /**
      * Send quotation to customer
      */
-    async sendQuotation(id: string, userId: string) {
+    async sendQuotation(id: string, userId: string, adminReply?: string) {
         const quotation = await prisma.quotation.findUnique({ where: { id }, include: { items: true } });
         if (!quotation) throw new NotFoundError('Quotation not found');
 
-        if (!['DRAFT', 'SENT'].includes(quotation.status)) {
+        if (!['DRAFT', 'SENT', 'PENDING', 'VIEWED'].includes(quotation.status)) {
             throw new BadRequestError(`Cannot send a quotation with status: ${quotation.status}`);
         }
 
+        const normalizedReply = adminReply?.trim() || quotation.adminReply || null;
+
         const updated = await prisma.quotation.update({
             where: { id },
-            data: { status: QuotationStatus.SENT }
+            data: {
+                status: normalizedReply ? QuotationStatus.REPLIED : QuotationStatus.SENT,
+                adminReply: normalizedReply,
+            }
         });
 
         await prisma.quotationActivity.create({
-            data: { quotationId: id, action: QuotationActivityType.SENT, performedBy: userId, note: `Sent to ${quotation.customerEmail}` }
+            data: {
+                quotationId: id,
+                action: QuotationActivityType.SENT,
+                performedBy: userId,
+                note: normalizedReply ? `In-app reply posted for ${quotation.customerEmail}` : `Sent in-app to ${quotation.customerEmail}`,
+            }
         });
-
-        // Send email
-        try {
-                        const maybeQuotationEmailSender = emailService as {
-                            sendQuotationEmail?: (to: string, name: string, data: unknown) => Promise<void>;
-                        };
-                        if (maybeQuotationEmailSender.sendQuotationEmail) {
-                            await maybeQuotationEmailSender.sendQuotationEmail(
-                                quotation.customerEmail,
-                                quotation.customerName,
-                                quotation
-                            );
-                        }
-        } catch (e) {
-            console.error('Quotation email failed:', e);
-        }
 
         return updated;
     }

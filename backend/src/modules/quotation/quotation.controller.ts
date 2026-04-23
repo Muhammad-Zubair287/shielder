@@ -243,7 +243,8 @@ export class QuotationController {
      */
     send = asyncHandler(async (req: AuthRequest, res: Response) => {
         const userId = req.user!.id;
-        const quotation = await quotationService.sendQuotation(req.params.id as string, userId);
+        const { adminReply } = req.body as { adminReply?: string };
+        const quotation = await quotationService.sendQuotation(req.params.id as string, userId, adminReply);
         res.json({ success: true, data: quotation, message: 'Quotation sent successfully.' });
     });
 

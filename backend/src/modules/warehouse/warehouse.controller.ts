@@ -20,6 +20,24 @@ export class WarehouseController {
     });
   });
 
+  getWarehouseById = asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { productSearch, orderSearch, orderStatus, page, limit } = req.query as Record<string, string | undefined>;
+
+    const data = await warehouseService.getWarehouseDetails(id, {
+      productSearch,
+      orderSearch,
+      orderStatus,
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+    });
+
+    res.json({
+      success: true,
+      data,
+    });
+  });
+
   updateWarehouse = asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const warehouse = await warehouseService.updateWarehouse(id, req.body);

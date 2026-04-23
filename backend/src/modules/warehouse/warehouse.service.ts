@@ -1,5 +1,7 @@
 import { BadRequestError, ConflictError, NotFoundError } from '@/common/errors/api.error';
 import { warehouseRepository, WarehouseCreateInput, WarehouseUpdateInput } from './warehouse.repository';
+import { prisma } from '@/config/database';
+import { Prisma, OrderStatus } from '@prisma/client';
 
 export class WarehouseService {
   async createWarehouse(data: WarehouseCreateInput) {
@@ -18,13 +20,20 @@ export class WarehouseService {
       throw new ConflictError('A warehouse with this name already exists.');
     }
 
-    return warehouseRepository.create({
+    if (data.isMain) {
+      await warehouseRepository.unsetMainWarehouse();
+    }
+
+    const warehouse = await warehouseRepository.create({
       name,
       address,
       city,
       country,
+      isMain: data.isMain ?? false,
       isActive: data.isActive ?? true,
     });
+
+    return warehouse;
   }
 
   getWarehouses() {
@@ -73,6 +82,14 @@ export class WarehouseService {
       payload.isActive = Boolean(data.isActive);
     }
 
+    if (typeof data.isMain !== 'undefined') {
+      payload.isMain = Boolean(data.isMain);
+    }
+
+    if (payload.isMain) {
+      await warehouseRepository.unsetMainWarehouse(id);
+    }
+
     return warehouseRepository.update(id, payload);
   }
 
@@ -80,9 +97,112 @@ export class WarehouseService {
     const warehouse = await warehouseRepository.findById(id);
     if (!warehouse) throw new NotFoundError('Warehouse not found.');
 
+    if (warehouse.isMain) {
+      throw new BadRequestError('Main warehouse cannot be deleted. Set another warehouse as main first.');
+    }
+
     await warehouseRepository.delete(id);
 
     return { id, deleted: true };
+  }
+
+  async getWarehouseDetails(
+    id: string,
+    options?: {
+      productSearch?: string;
+      orderSearch?: string;
+      orderStatus?: string;
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const warehouse = await warehouseRepository.findById(id);
+    if (!warehouse) throw new NotFoundError('Warehouse not found.');
+
+    const page = Math.max(1, Number(options?.page || 1));
+    const limit = Math.max(1, Math.min(50, Number(options?.limit || 10)));
+    const skip = (page - 1) * limit;
+
+    const productSearch = options?.productSearch?.trim();
+    const orderSearch = options?.orderSearch?.trim();
+
+    const productWhere: Prisma.ProductWhereInput = {
+      warehouseId: id,
+      ...(productSearch
+        ? {
+            OR: [
+              { sku: { contains: productSearch, mode: 'insensitive' } },
+              {
+                translations: {
+                  some: {
+                    name: { contains: productSearch, mode: 'insensitive' },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const orderWhere: Prisma.OrderWhereInput = {
+      warehouseId: id,
+      ...(options?.orderStatus ? { status: options.orderStatus as OrderStatus } : {}),
+      ...(orderSearch
+        ? {
+            OR: [
+              { orderNumber: { contains: orderSearch, mode: 'insensitive' } },
+              { customerName: { contains: orderSearch, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const [productsTotal, ordersTotal, products, orders] = await Promise.all([
+      prisma.product.count({ where: productWhere }),
+      prisma.order.count({ where: orderWhere }),
+      prisma.product.findMany({
+        where: productWhere,
+        include: {
+          translations: {
+            where: { locale: 'en' },
+            select: { name: true },
+            take: 1,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.order.findMany({
+        where: orderWhere,
+        include: {
+          users: {
+            select: {
+              email: true,
+              profile: { select: { fullName: true } },
+            },
+          },
+          _count: { select: { orderItems: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      warehouse,
+      products,
+      orders,
+      pagination: {
+        totalProducts: productsTotal,
+        totalOrders: ordersTotal,
+        page,
+        limit,
+        productPages: Math.ceil(productsTotal / limit),
+        orderPages: Math.ceil(ordersTotal / limit),
+      },
+    };
   }
 }
 
