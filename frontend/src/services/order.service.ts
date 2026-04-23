@@ -39,6 +39,8 @@ class OrderService {
     phoneNumber: string;
     shippingAddress: string;
     notes?: string;
+      deliveryType?: 'DELIVERY' | 'PICKUP';
+      warehouseId?: string | null;
   }) {
     const response = await apiClient.post(API_ENDPOINTS.EPG.INITIALIZE, payload);
     return response.data;

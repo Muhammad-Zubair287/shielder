@@ -113,6 +113,13 @@ export default function AdminOrderDetailPage() {
 
   const allStatuses: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
   const nextStatuses = allStatuses.filter((s) => s !== order.status);
+  const isPickupOrder = order.deliveryType === 'PICKUP';
+  const warehouseName = order.warehouse?.name || (order.warehouseId ? `Warehouse #${order.warehouseId}` : '—');
+  const warehouseAddress = [
+    order.warehouse?.address,
+    order.warehouse?.city,
+    order.warehouse?.country,
+  ].filter(Boolean).join(', ');
 
   return (
     <main className="space-y-6 pb-20" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -128,6 +135,11 @@ export default function AdminOrderDetailPage() {
               <h1 className="text-2xl font-black text-gray-900">{order.orderNumber}</h1>
               <OrderStatusBadge status={order.status} />
               <PaymentStatusBadge status={order.paymentStatus} />
+              {isPickupOrder && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                  {t('orders.pickupOrderBadge')}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-400 mt-0.5">
               {formatDate(order.createdAt, locale)}
@@ -335,6 +347,22 @@ export default function AdminOrderDetailPage() {
               {order.shippingAddress}
             </p>
           </div>
+
+          {/* Pickup Information */}
+          {isPickupOrder && (
+            <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5 space-y-3">
+              <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <MapPin size={15} className="text-amber-600" />
+                <h3 className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                  {t('orders.pickupInformation')}
+                </h3>
+              </div>
+              <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-100">
+                <p className="text-sm font-bold text-amber-900">{warehouseName}</p>
+                <p className="text-sm text-amber-800 mt-1">{warehouseAddress || t('orders.addressUnavailable')}</p>
+              </div>
+            </div>
+          )}
 
           {/* Payment */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">

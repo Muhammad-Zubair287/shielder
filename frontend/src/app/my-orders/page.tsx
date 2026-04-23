@@ -48,6 +48,15 @@ interface Order {
   status: string;
   paymentStatus: string;
   paymentMethod: string;
+  deliveryType?: 'DELIVERY' | 'PICKUP';
+  warehouseId?: string | null;
+  warehouse?: {
+    id: string;
+    name?: string | null;
+    address?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
   total: number;
   createdAt: string;
   _count?: { orderItems: number };
@@ -65,10 +74,10 @@ interface PaginationInfo {
 
 function statusColor(status: string) {
   const s = (status || '').toUpperCase();
-  if (s === 'CONFIRMED' || s === 'DELIVERED') return 'bg-green-100 text-green-700';
-  if (s === 'CANCELLED')                      return 'bg-red-100 text-red-700';
-  if (s === 'PROCESSING' || s === 'SHIPPED')  return 'bg-blue-100 text-blue-700';
-  return 'bg-orange-100 text-orange-700';
+  if (s === 'CONFIRMED' || s === 'DELIVERED' || s === 'COMPLETED') return 'bg-green-100 text-green-700';
+  if (s === 'CANCELLED')                                             return 'bg-red-100 text-red-700';
+  if (s === 'PROCESSING' || s === 'SHIPPED')                         return 'bg-blue-100 text-blue-700';
+  return 'bg-yellow-100 text-yellow-700';
 }
 
 function paymentStatusColor(status: string) {
@@ -238,7 +247,16 @@ export default function MyOrdersPage() {
                 {orders.map(order => {
                   const itemCount = order._count?.orderItems ?? order.orderItems?.length ?? 0;
                   const status = (order.status || '').toUpperCase();
+                  const isPickupOrder = order.deliveryType === 'PICKUP';
                   const canRequestCancel = ['PENDING', 'PROCESSING', 'CONFIRMED'].includes(status);
+                  const warehouseName =
+                    order.warehouse?.name ||
+                    (order.warehouseId ? `${t('myOrders.warehouseLabel')} #${order.warehouseId}` : t('myOrders.notAssigned'));
+                  const warehouseAddress = [
+                    order.warehouse?.address,
+                    order.warehouse?.city,
+                    order.warehouse?.country,
+                  ].filter(Boolean).join(', ');
                   let dateStr = '';
                   try { dateStr = format(new Date(order.createdAt), 'dd MMM yyyy'); } catch { dateStr = order.createdAt?.slice(0, 10) ?? ''; }
 
@@ -286,6 +304,28 @@ export default function MyOrdersPage() {
                             <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
                           </Link>
                         </div>
+                      </div>
+
+                      {/* Delivery / Pickup info */}
+                      <div className="px-5 pb-3 space-y-2">
+                        <div className={`text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <span className="text-gray-500">{t('myOrders.deliveryType')}: </span>
+                          <span className="font-semibold text-gray-800">
+                            {isPickupOrder ? t('myOrders.deliveryPickup') : t('myOrders.deliveryHome')}
+                          </span>
+                        </div>
+
+                        {isPickupOrder && (
+                          <div className={`bg-amber-50 border border-amber-100 rounded-xl p-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                            <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-1">
+                              {t('myOrders.pickupDetails')}
+                            </p>
+                            <p className="text-sm font-semibold text-amber-900">{warehouseName}</p>
+                            <p className="text-sm text-amber-800 mt-0.5">
+                              {warehouseAddress || t('myOrders.addressUnavailable')}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Quick actions */}

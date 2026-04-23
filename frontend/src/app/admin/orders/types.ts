@@ -21,6 +21,8 @@ export type PaymentMethod =
   | 'BANK_TRANSFER'
   | 'ONLINE';
 
+export type DeliveryType = 'DELIVERY' | 'PICKUP';
+
 export interface OrderItem {
   id: string;
   productId: string;
@@ -41,6 +43,15 @@ export interface Order {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  deliveryType?: DeliveryType;
+  warehouseId?: string | null;
+  warehouse?: {
+    id: string;
+    name?: string | null;
+    address?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
   paymentStatus: PaymentStatus;
   paymentMethod?: string;
   customerName: string;

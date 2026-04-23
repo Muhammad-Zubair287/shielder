@@ -24,6 +24,8 @@ type CreateOrderInput = {
   paymentStatus?: PaymentStatus;
   status?: OrderStatus;
   notes?: string;
+  deliveryType?: 'DELIVERY' | 'PICKUP';
+  warehouseId?: string;
 };
 
 type OrderFilters = {
@@ -148,7 +150,36 @@ export class OrderService {
    * Create a new order with stock deduction
    */
   async createOrder(data: CreateOrderInput) {
-    const { userId, items, ...orderData } = data;
+    const { userId, items, deliveryType: requestedDeliveryType, warehouseId, ...orderData } = data;
+
+    // Apply safe defaults: DELIVERY is default if not specified
+    const deliveryType = requestedDeliveryType || 'DELIVERY';
+
+    // STEP 1: Validate warehouse for PICKUP orders
+    let validatedWarehouseId: string | undefined = undefined;
+    if (deliveryType === 'PICKUP') {
+      // PICKUP requires warehouseId
+      if (!warehouseId) {
+        throw new BadRequestError('warehouseId is required for PICKUP delivery type');
+      }
+
+      // Validate warehouse exists and is active
+      const warehouse = await prisma.warehouse.findUnique({
+        where: { id: warehouseId },
+        select: { id: true, isActive: true, name: true }
+      });
+
+      if (!warehouse) {
+        throw new NotFoundError(`Warehouse with ID ${warehouseId} not found`);
+      }
+
+      if (!warehouse.isActive) {
+        throw new BadRequestError(`Warehouse "${warehouse.name}" is not active`);
+      }
+
+      validatedWarehouseId = warehouse.id;
+    }
+    // For DELIVERY: warehouseId is ignored (remains undefined)
 
     // Read configured default order status
     const { defaultOrderStatus, paymentMethodsEnabled } = await this.getOrderSettings();
@@ -214,6 +245,8 @@ export class OrderService {
           paymentStatus: orderData.paymentStatus || PaymentStatus.PENDING,
           status: orderData.status || defaultOrderStatus,
           notes: orderData.notes,
+          deliveryType,
+          warehouseId: validatedWarehouseId || undefined,
           orderItems: {
             create: orderItemsData
           }

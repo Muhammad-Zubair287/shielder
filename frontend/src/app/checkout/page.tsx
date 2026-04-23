@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Loader2,
   ChevronRight,
+  Warehouse,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
@@ -41,11 +42,13 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { orderService } from '@/services/order.service';
+import { warehouseService, type Warehouse as WarehouseType } from '@/services/warehouse.service';
 import { getImageUrl } from '@/utils/helpers';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CREDIT_CARD';
+type DeliveryType = 'DELIVERY' | 'PICKUP';
 
 // Static shipping cost — replace with dynamic value if needed
 const SHIPPING_COST = 0;
@@ -134,6 +137,25 @@ function CheckoutPageInner() {
     }
   }, [params, t]);
 
+  // ── Fetch warehouses (for PICKUP delivery)
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        setWarehousesLoading(true);
+        const res = await warehouseService.list();
+        const activeWarehouses = (res?.data || []).filter((w: WarehouseType) => w.isActive);
+        setWarehouses(activeWarehouses);
+      } catch (err) {
+        console.error('Failed to load warehouses:', err);
+        // Silently fail - user can still use delivery
+      } finally {
+        setWarehousesLoading(false);
+      }
+    };
+    
+    fetchWarehouses();
+  }, []);
+
   // ── Form state
   const [form, setForm] = useState({
     customerName:    (user?.profile?.fullName) || '',
@@ -142,6 +164,10 @@ function CheckoutPageInner() {
     notes:           '',
   });
   const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('CASH');
+  const [deliveryType, setDeliveryType]     = useState<DeliveryType>('DELIVERY');
+  const [warehouseId, setWarehouseId]       = useState<string | null>(null);
+  const [warehouses, setWarehouses]         = useState<WarehouseType[]>([]);
+  const [warehousesLoading, setWarehousesLoading] = useState(false);
   const [submitting, setSubmitting]         = useState(false);
 
   // Pre-fill name when user loads
@@ -176,6 +202,10 @@ function CheckoutPageInner() {
     if (!form.shippingAddress.trim()) {
       toast.error(t('checkout.errorAddress')); return false;
     }
+    // PICKUP requires warehouse selection
+    if (deliveryType === 'PICKUP' && !warehouseId) {
+      toast.error(t('checkout.errorWarehouse')); return false;
+    }
     return true;
   };
 
@@ -199,6 +229,7 @@ function CheckoutPageInner() {
           phoneNumber:     form.phoneNumber,
           shippingAddress: form.shippingAddress,
           notes:           form.notes || undefined,
+          ...(deliveryType === 'PICKUP' && { deliveryType: 'PICKUP', warehouseId }),
         });
         if (res?.data?.paymentUrl) {
           window.location.href = res.data.paymentUrl;
@@ -215,6 +246,7 @@ function CheckoutPageInner() {
           shippingAddress: form.shippingAddress,
           paymentMethod,
           notes:           form.notes || undefined,
+          ...(deliveryType === 'PICKUP' && { deliveryType: 'PICKUP', warehouseId }),
         });
         const orderId = res?.data?.id;
         await clearCart();
@@ -368,6 +400,102 @@ function CheckoutPageInner() {
                           ${isRTL ? 'text-right' : 'text-left'}`}
                       />
                     </div>
+                  </div>
+                </section>
+
+                {/* Delivery Method */}
+                <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Warehouse size={18} className="text-[#F97316]" />
+                    {t('checkout.deliveryMethod')}
+                  </h2>
+
+                  <div className="space-y-4">
+                    {/* Delivery Type: Home Delivery */}
+                    <label className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors
+                      ${deliveryType === 'DELIVERY'
+                        ? 'border-[#F97316] bg-orange-50'
+                        : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
+                      ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        deliveryType === 'DELIVERY' ? 'border-[#F97316]' : 'border-gray-300'
+                      }`}>
+                        {deliveryType === 'DELIVERY' && <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />}
+                      </div>
+                      <input
+                        type="radio"
+                        name="deliveryType"
+                        value="DELIVERY"
+                        checked={deliveryType === 'DELIVERY'}
+                        onChange={(e) => setDeliveryType(e.target.value as DeliveryType)}
+                        className="hidden"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">{t('checkout.deliveryHome')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('checkout.deliveryHomeDesc')}</p>
+                      </div>
+                    </label>
+
+                    {/* Delivery Type: Pickup from Warehouse */}
+                    <label className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors
+                      ${deliveryType === 'PICKUP'
+                        ? 'border-[#F97316] bg-orange-50'
+                        : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
+                      ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        deliveryType === 'PICKUP' ? 'border-[#F97316]' : 'border-gray-300'
+                      }`}>
+                        {deliveryType === 'PICKUP' && <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />}
+                      </div>
+                      <input
+                        type="radio"
+                        name="deliveryType"
+                        value="PICKUP"
+                        checked={deliveryType === 'PICKUP'}
+                        onChange={(e) => setDeliveryType(e.target.value as DeliveryType)}
+                        className="hidden"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">{t('checkout.deliveryPickup')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('checkout.deliveryPickupDesc')}</p>
+                      </div>
+                    </label>
+
+                    {/* Warehouse Selector (only show when PICKUP selected) */}
+                    {deliveryType === 'PICKUP' && (
+                      <div className="mt-4">
+                        <label htmlFor="warehouse-select" className={`block text-sm font-medium text-gray-700 mb-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          {t('checkout.selectWarehouse')} <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            id="warehouse-select"
+                            value={warehouseId || ''}
+                            onChange={(e) => setWarehouseId(e.target.value || null)}
+                            disabled={warehousesLoading || warehouses.length === 0}
+                            className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
+                              bg-white focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                              disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400
+                              ${isRTL ? 'text-right' : 'text-left'}`}
+                          >
+                            <option value="">{warehousesLoading ? t('checkout.loadingWarehouses') : t('checkout.selectWarehousePlaceholder')}</option>
+                            {warehouses.map(warehouse => (
+                              <option key={warehouse.id} value={warehouse.id}>
+                                {warehouse.name} {warehouse.city && `- ${warehouse.city}`}
+                              </option>
+                            ))}
+                          </select>
+                          {!warehouseId && deliveryType === 'PICKUP' && (
+                            <div className={`flex items-start gap-2 mt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                              <AlertCircle size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
+                              <p className={`text-xs text-orange-600 ${isRTL ? 'text-right' : 'text-left'}`}>
+                                {t('checkout.warehouseRequired')}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </section>
 

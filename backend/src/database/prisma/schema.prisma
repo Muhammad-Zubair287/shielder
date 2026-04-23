@@ -267,15 +267,20 @@ model Order {
   updatedAt          DateTime        @updatedAt @map("updated_at")
   userId             String          @map("user_id")
   status             OrderStatus     @default(PENDING)
+  deliveryType       DeliveryType    @default(DELIVERY) @map("delivery_type")
+  warehouseId        String?         @db.Uuid @map("warehouse_id")
   orderItems         OrderItem[]
   users              User            @relation(fields: [userId], references: [id])
   payments           Payment[]
+  warehouse          Warehouse?      @relation(fields: [warehouseId], references: [id])
   convertedQuotation Quotation?
   stockHistory       stock_history[] @relation("OrderToStockHistory")
 
   @@index([orderNumber])
   @@index([status])
   @@index([userId])
+  @@index([deliveryType])
+  @@index([warehouseId])
   @@map("orders")
 }
 
@@ -709,6 +714,11 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum DeliveryType {
+  DELIVERY
+  PICKUP
+}
+
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
@@ -822,6 +832,7 @@ model Warehouse {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   products  Product[]
+  orders    Order[]
 
   @@unique([name])
   @@index([isActive])

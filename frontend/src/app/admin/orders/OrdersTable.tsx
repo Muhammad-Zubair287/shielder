@@ -43,6 +43,7 @@ export default function OrdersTable({ orders, loading, pagination, onPageChange 
     t('customer'),
     t('productsLabel'),
     t('orderTotal'),
+    t('orders.type'),
     t('paymentStatus'),
     t('orderStatus'),
     t('actions'),
@@ -145,6 +146,19 @@ export default function OrdersTable({ orders, loading, pagination, onPageChange 
                   {/* Total */}
                   <td className="px-5 py-4 whitespace-nowrap text-xs font-black text-gray-800">
                     {formatCurrency(order.total, locale)}
+                  </td>
+
+                  {/* Type */}
+                  <td className="px-5 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                        order.deliveryType === 'PICKUP'
+                          ? 'bg-amber-100 text-amber-800 border-amber-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {order.deliveryType === 'PICKUP' ? t('orders.typePickup') : t('orders.typeDelivery')}
+                    </span>
                   </td>
 
                   {/* Payment status */}

@@ -72,6 +72,13 @@ export default function OrderDetailPage() {
   const subtotal = parseFloat(order.subtotal);
   const tax = parseFloat(order.tax);
   const total = parseFloat(order.total);
+  const isPickupOrder = order.deliveryType === 'PICKUP';
+  const warehouseName = order.warehouse?.name || (order.warehouseId ? `Warehouse #${order.warehouseId}` : '—');
+  const warehouseAddress = [
+    order.warehouse?.address,
+    order.warehouse?.city,
+    order.warehouse?.country,
+  ].filter(Boolean).join(', ');
 
   return (
     <div className="space-y-8 pb-20" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -93,6 +100,11 @@ export default function OrderDetailPage() {
               }`}>
                 {order.status}
               </span>
+              {isPickupOrder && (
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border bg-amber-100 text-amber-800 border-amber-200">
+                  {t('orders.pickupOrderBadge')}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-500 font-medium">{t('placedOn')} {new Date(order.createdAt).toLocaleString()}</p>
           </div>
@@ -296,6 +308,19 @@ export default function OrderDetailPage() {
                 {order.shippingAddress}
             </p>
           </div>
+
+          {isPickupOrder && (
+            <div className="bg-white rounded-3xl border border-amber-200 shadow-sm p-6 space-y-4">
+              <h3 className="flex items-center space-x-2 text-sm font-black text-amber-800 uppercase tracking-widest">
+                <MapPin size={16} className="text-amber-600" />
+                <span>{t('orders.pickupInformation')}</span>
+              </h3>
+              <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                <p className="text-sm font-black text-amber-900">{warehouseName}</p>
+                <p className="text-sm font-bold text-amber-800 mt-1">{warehouseAddress || t('orders.addressUnavailable')}</p>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
              <h3 className="flex items-center space-x-2 text-sm font-black text-gray-900 uppercase tracking-widest">

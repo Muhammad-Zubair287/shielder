@@ -228,6 +228,7 @@ export default function OrdersPage() {
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('customer')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('productsLabel')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('orderTotal')}</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('orders.type')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('paymentStatus')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('orderStatus')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">{t('actions')}</th>
@@ -238,7 +239,7 @@ export default function OrdersPage() {
                 Array.from({ length: 5 }).map((_, i) => <TableSkeleton key={i} />)
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400 font-medium">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-400 font-medium">
                     {t('noOrdersFound')}
                   </td>
                 </tr>
@@ -270,6 +271,17 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-shielder-dark">
                       <span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(order.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${
+                          order.deliveryType === 'PICKUP'
+                            ? 'bg-amber-100 text-amber-800 border-amber-200'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {order.deliveryType === 'PICKUP' ? t('orders.typePickup') : t('orders.typeDelivery')}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${
@@ -336,7 +348,7 @@ function SummaryCard({ title, value, icon, color, description }: any) {
 function TableSkeleton() {
   return (
     <tr className="animate-pulse">
-      <td colSpan={7} className="px-6 py-4">
+      <td colSpan={8} className="px-6 py-4">
         <div className="h-10 bg-gray-50 rounded-lg w-full"></div>
       </td>
     </tr>
