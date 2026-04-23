@@ -29,7 +29,8 @@ export default function DraftQuotationsPage() {
     useEffect(() => { fetch(); }, [fetch]);
 
     const handleSend = async (id: string) => {
-        try { setSendingId(id); await quotationService.send(id); fetch(); }
+        const adminReply = window.prompt('Optional admin reply for customer:') || undefined;
+        try { setSendingId(id); await quotationService.send(id, adminReply); fetch(); }
         catch (e: any) { alert(e?.response?.data?.message || 'Failed'); }
         finally { setSendingId(''); }
     };

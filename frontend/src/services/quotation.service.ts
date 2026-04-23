@@ -57,8 +57,8 @@ const quotationService = {
     delete: (id: string) =>
         apiClient.delete(`/quotations/${id}`),
 
-    send: (id: string) =>
-        apiClient.post(`/quotations/${id}/send`),
+    send: (id: string, adminReply?: string) =>
+        apiClient.post(`/quotations/${id}/send`, adminReply ? { adminReply } : {}),
 
     approve: (id: string) =>
         apiClient.post(`/quotations/${id}/approve`),

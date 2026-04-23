@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import WarehouseFormModal from './WarehouseFormModal';
 import { warehouseService, Warehouse } from '@/services/warehouse.service';
+import Link from 'next/link';
 
 export default function AdminWarehousesPage() {
   const { isRTL, t } = useLanguage();
@@ -145,7 +146,14 @@ export default function AdminWarehousesPage() {
               ) : (
                 filtered.map((w) => (
                   <tr key={w.id} className="border-t border-gray-100 text-gray-700">
-                    <td className="px-4 py-3 font-semibold text-gray-900">{w.name}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-900">
+                      <Link href={`/admin/warehouses/${w.id}`} className="hover:text-[#FF6B35]">
+                        {w.name}
+                      </Link>
+                      {w.isMain && (
+                        <span className="ml-2 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">Main</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 max-w-[340px] truncate" title={w.address}>{w.address}</td>
                     <td className="px-4 py-3">{w.city}</td>
                     <td className="px-4 py-3">{w.country}</td>

@@ -21,6 +21,7 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
     address: '',
     city: '',
     country: '',
+    isMain: false,
     isActive: true,
   });
 
@@ -31,6 +32,7 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
         address: warehouse.address,
         city: warehouse.city,
         country: warehouse.country,
+        isMain: warehouse.isMain,
         isActive: warehouse.isActive,
       });
     }
@@ -53,6 +55,7 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
           address: form.address.trim(),
           city: form.city.trim(),
           country: form.country.trim(),
+          isMain: form.isMain,
           isActive: form.isActive,
         });
         toast.success('Warehouse created successfully.');
@@ -62,6 +65,7 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
           address: form.address.trim(),
           city: form.city.trim(),
           country: form.country.trim(),
+          isMain: form.isMain,
           isActive: form.isActive,
         });
         toast.success('Warehouse updated successfully.');
@@ -130,6 +134,15 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
                 onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
               />
               <span className="text-sm font-medium text-gray-700">Active</span>
+            </label>
+
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={form.isMain}
+                onChange={(e) => setForm((prev) => ({ ...prev, isMain: e.target.checked }))}
+              />
+              <span className="text-sm font-medium text-gray-700">Main Warehouse</span>
             </label>
           </div>
 

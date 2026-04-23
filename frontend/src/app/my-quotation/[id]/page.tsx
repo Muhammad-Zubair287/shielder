@@ -234,6 +234,23 @@ export default function MyQuotationPage() {
                 <Detail icon={MapPin} label={t('quot.addressLabel')} value={quotation.customerAddress || '—'} isRTL={isRTL} />
               </div>
 
+              {(quotation.userMessage || quotation.adminReply) && (
+                <div className="px-8 py-4 border-b border-gray-100 space-y-3">
+                  {quotation.userMessage && (
+                    <div className={`rounded-xl border border-gray-100 bg-gray-50 p-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Your Message</p>
+                      <p className="mt-1 text-sm text-gray-700">{quotation.userMessage}</p>
+                    </div>
+                  )}
+                  {quotation.adminReply && (
+                    <div className={`rounded-xl border border-emerald-100 bg-emerald-50 p-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Admin Reply</p>
+                      <p className="mt-1 text-sm text-emerald-800">{quotation.adminReply}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ── Product table ─────────────────────────────────────────── */}
               <div className="px-8 py-5">
 

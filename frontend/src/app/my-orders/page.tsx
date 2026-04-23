@@ -258,6 +258,11 @@ export default function MyOrdersPage() {
                     order.warehouse?.city,
                     order.warehouse?.country,
                   ].filter(Boolean).join(', ');
+                  const productSummary = (order.orderItems || [])
+                    .slice(0, 2)
+                    .map((item: any) => item?.product?.translations?.[0]?.name || item?.product?.sku || 'Product')
+                    .join(', ');
+                  const remainingProducts = Math.max(0, (order.orderItems?.length || 0) - 2);
                   let dateStr = '';
                   try { dateStr = format(new Date(order.createdAt), 'dd MMM yyyy'); } catch { dateStr = order.createdAt?.slice(0, 10) ?? ''; }
 
@@ -309,6 +314,16 @@ export default function MyOrdersPage() {
 
                       {/* Delivery / Pickup info */}
                       <div className="px-5 pb-3 space-y-2">
+                        {!!productSummary && (
+                          <div className={`text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                            <span className="text-gray-500">{t('myOrders.productsSummary') || 'Products'}: </span>
+                            <span className="font-medium text-gray-700">
+                              {productSummary}
+                              {remainingProducts > 0 ? ` +${remainingProducts}` : ''}
+                            </span>
+                          </div>
+                        )}
+
                         <div className={`text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
                           <span className="text-gray-500">{t('myOrders.deliveryType')}: </span>
                           <span className="font-semibold text-gray-800">

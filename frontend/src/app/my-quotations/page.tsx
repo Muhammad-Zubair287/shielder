@@ -46,6 +46,8 @@ interface Quotation {
   items?: Array<{ id: string; productName: string; quantity: number }>;
   convertedOrderId?: string;
   notes?: string;
+  userMessage?: string | null;
+  adminReply?: string | null;
 }
 
 interface PaginationInfo {
@@ -60,6 +62,7 @@ interface PaginationInfo {
 function statusColor(status: string) {
   const s = (status || '').toUpperCase();
   if (s === 'APPROVED' || s === 'CONVERTED') return 'bg-green-100 text-green-700';
+  if (s === 'REPLIED')                     return 'bg-teal-100 text-teal-700';
   if (s === 'REJECTED')                     return 'bg-red-100 text-red-700';
   if (s === 'REVIEWED')                     return 'bg-blue-100 text-blue-700';
   if (s === 'EXPIRED')                      return 'bg-red-100 text-red-700';
@@ -69,6 +72,7 @@ function statusColor(status: string) {
 function statusIcon(status: string) {
   const s = (status || '').toUpperCase();
   if (s === 'APPROVED') return <CheckCircle size={16} className="text-green-600" />;
+  if (s === 'REPLIED') return <CheckCircle size={16} className="text-teal-600" />;
   if (s === 'REJECTED') return <XCircle size={16} className="text-red-600" />;
   if (s === 'EXPIRED')  return <AlertCircle size={16} className="text-red-600" />;
   if (s === 'CONVERTED') return <CheckCircle size={16} className="text-green-600" />;
@@ -249,6 +253,12 @@ export default function MyQuotationsPage() {
                           <p className="text-sm text-gray-600 mb-2">
                             <span className="font-semibold text-gray-700">{t('myQuotations.notes') || 'Notes'}:</span> {quotation.notes.substring(0, 100)}
                             {quotation.notes.length > 100 ? '...' : ''}
+                          </p>
+                        )}
+                        {quotation.adminReply && (
+                          <p className="text-sm text-teal-700 mb-2">
+                            <span className="font-semibold text-teal-800">Admin Reply:</span> {quotation.adminReply.substring(0, 100)}
+                            {quotation.adminReply.length > 100 ? '...' : ''}
                           </p>
                         )}
                         <div className={`flex items-center justify-between text-sm text-gray-500 ${isRTL ? 'flex-row-reverse' : ''}`}>

@@ -42,6 +42,8 @@ export interface QuotationResult {
   customerAddress: string;
   customerEmail: string;
   vatNumber: string;
+  userMessage?: string | null;
+  adminReply?: string | null;
   subtotal: number;
   shipping: number;
   total: number;

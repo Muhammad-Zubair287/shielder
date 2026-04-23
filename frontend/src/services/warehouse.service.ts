@@ -6,6 +6,7 @@ export type Warehouse = {
   address: string;
   city: string;
   country: string;
+  isMain: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,7 +17,16 @@ export type WarehousePayload = {
   address: string;
   city: string;
   country: string;
+  isMain?: boolean;
   isActive?: boolean;
+};
+
+export type WarehouseDetailsParams = {
+  page?: number;
+  limit?: number;
+  productSearch?: string;
+  orderSearch?: string;
+  orderStatus?: string;
 };
 
 class WarehouseService {
@@ -32,6 +42,11 @@ class WarehouseService {
 
   async update(id: string, payload: Partial<WarehousePayload>) {
     const res = await apiClient.patch(`/admin/warehouses/${id}`, payload);
+    return res.data;
+  }
+
+  async getById(id: string, params?: WarehouseDetailsParams) {
+    const res = await apiClient.get(`/admin/warehouses/${id}`, { params });
     return res.data;
   }
 
