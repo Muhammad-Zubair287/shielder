@@ -21,8 +21,8 @@ export default function ExpiredQuotationsPage() {
         try {
             setLoading(true);
             const res = await quotationService.getAll({ status: 'EXPIRED', page, limit: 10 });
-            setQuotations(res.data.data.quotations || []);
-            setPagination(res.data.data.pagination || { total: 0, pages: 1 });
+            setQuotations(res.data?.quotations || []);
+            setPagination(res.data?.pagination || { total: 0, pages: 1 });
         } catch { setQuotations([]); } finally { setLoading(false); }
     }, [page]);
 

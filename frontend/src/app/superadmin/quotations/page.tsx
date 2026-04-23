@@ -36,8 +36,8 @@ export default function AllQuotationsPage() {
         try {
             setLoading(true);
             const res = await quotationService.getAll({ page: pagination.page, limit: pagination.limit, ...filters });
-            setQuotations(res.data.data.quotations || []);
-            setPagination(prev => ({ ...prev, ...res.data.data.pagination }));
+            setQuotations(res.data?.quotations || []);
+            setPagination(prev => ({ ...prev, ...(res.data?.pagination || {}) }));
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     }, [pagination.page, pagination.limit, filters]);
@@ -45,7 +45,7 @@ export default function AllQuotationsPage() {
     const fetchAnalytics = async () => {
         try {
             const res = await quotationService.getAnalytics();
-            setSummary(res.data.data);
+            setSummary(res.data || {});
         } catch (e) { console.error(e); }
     };
 
