@@ -69,6 +69,14 @@ const normalizeOrder = (req: Request, order: any) => {
 
   return {
     ...order,
+    orderId: order.id,
+    orderType: order.deliveryType,
+    warehouse: order.deliveryType === 'PICKUP' && order.warehouse ? {
+      name: order.warehouse.name,
+      address: order.warehouse.address,
+      city: order.warehouse.city,
+      country: order.warehouse.country,
+    } : undefined,
     orderItems,
   };
 };

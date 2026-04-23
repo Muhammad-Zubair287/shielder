@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { OrderStatus, PaymentStatus, StockChangeType, Prisma, NotificationType, UserRole } from '@prisma/client';
 import NotificationService from '@/modules/notification/notification.service';
 import { StockAlertService } from '../inventory/stock-alert/stock-alert.service';
+import { inventoryService } from '../inventory/inventory.service';
 import { orderRepository } from './order.repository';
 import redisCacheService from '@/common/services/redis-cache.service';
 import { CACHE_KEYS } from '@/common/constants/cache-keys';
@@ -81,6 +82,27 @@ export class OrderService {
     }
 
     return imagePath;
+  }
+
+  private async resolveOrderWarehouseId(
+    deliveryType: 'DELIVERY' | 'PICKUP',
+    pickupWarehouseId?: string,
+  ): Promise<string> {
+    return inventoryService.resolveWarehouseForOrder(deliveryType, pickupWarehouseId);
+  }
+
+  private async reserveInventoryForItem(
+    tx: Prisma.TransactionClient,
+    productId: string,
+    warehouseId: string,
+    orderedQuantity: number,
+  ) {
+    const quantityToReserve = Math.max(0, Math.trunc(orderedQuantity));
+    if (quantityToReserve <= 0) {
+      throw new BadRequestError('Invalid order quantity');
+    }
+
+    await inventoryService.reserveStock(productId, warehouseId, quantityToReserve, tx);
   }
 
   private static normalizeAttachments(product: any) {
@@ -194,6 +216,11 @@ export class OrderService {
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const reservationWarehouseId = await this.resolveOrderWarehouseId(deliveryType, validatedWarehouseId);
+      const initialStatus = orderData.status || (deliveryType === 'PICKUP'
+        ? OrderStatus.READY_FOR_PICKUP
+        : OrderStatus.PENDING);
+
       // 1. Prepare order items and check basic existence
       const orderItemsData = [];
       
@@ -214,6 +241,8 @@ export class OrderService {
           });
           if (!variant) throw new NotFoundError(`Variant with ID ${item.variantId} not found`);
         }
+
+        await this.reserveInventoryForItem(tx, item.productId, reservationWarehouseId, item.quantity);
 
         orderItemsData.push({
           productId: item.productId,
@@ -243,7 +272,7 @@ export class OrderService {
           shippingAddress: orderData.shippingAddress,
           paymentMethod: orderData.paymentMethod || 'CASH',
           paymentStatus: orderData.paymentStatus || PaymentStatus.PENDING,
-          status: orderData.status || defaultOrderStatus,
+          status: initialStatus || defaultOrderStatus,
           notes: orderData.notes,
           deliveryType,
           warehouseId: validatedWarehouseId || undefined,
@@ -394,30 +423,46 @@ export class OrderService {
     const performedBy = data.performedBy || 'System/Admin';
 
     const updatedOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Handle "Completed" (DELIVERED) logic
-      if (newStatus === OrderStatus.DELIVERED && previousStatus !== OrderStatus.DELIVERED) {
+      const orderWarehouseId = await this.resolveOrderWarehouseId(
+        order.deliveryType as 'DELIVERY' | 'PICKUP',
+        order.warehouseId ?? undefined,
+      );
+
+      const completionStatuses = new Set<OrderStatus>([OrderStatus.DELIVERED, OrderStatus.COMPLETED]);
+      const wasAlreadyCompleted = completionStatuses.has(previousStatus);
+      const isMovingToCompleted = Boolean(newStatus && completionStatuses.has(newStatus));
+
+      // 1. Handle completion logic (DELIVERED / COMPLETED)
+      if (isMovingToCompleted && !wasAlreadyCompleted && newStatus) {
         for (const item of order.orderItems) {
-          // Check Stock (Normal Product or Variant)
+          // Check stock for variant path (variant remains global for now).
           if (item.variantId && item.variant) {
             if (item.variant.stock < item.quantity) {
               throw new BadRequestError(`Insufficient stock for variant "${item.variant.name}". Cannot complete this order.`);
             }
-          } else {
-            if (item.product.stock < item.quantity) {
-              const productName = item.product.translations[0]?.name || 'Product';
-              throw new BadRequestError(`Insufficient stock for "${productName}". Cannot complete this order.`);
-            }
           }
 
-          // Deduct Stock
+          // Consume reserved inventory from the order warehouse.
+          await inventoryService.consumeReservedStock(item.productId, orderWarehouseId, item.quantity, tx);
+
+          // Maintain legacy aggregate stock field for backward compatibility.
+          const productUpdate = await tx.product.updateMany({
+            where: {
+              id: item.productId,
+              stock: { gte: item.quantity },
+            },
+            data: { stock: { decrement: item.quantity } },
+          });
+
+          if (productUpdate.count === 0) {
+            const productName = item.product.translations[0]?.name || 'Product';
+            throw new BadRequestError(`Insufficient stock for "${productName}". Cannot complete this order.`);
+          }
+
+          // Keep existing variant stock logic intact.
           if (item.variantId) {
             await tx.product_variants.update({
               where: { id: item.variantId },
-              data: { stock: { decrement: item.quantity } }
-            });
-          } else {
-            await tx.product.update({
-              where: { id: item.productId },
               data: { stock: { decrement: item.quantity } }
             });
           }
@@ -433,7 +478,7 @@ export class OrderService {
               quantity: -item.quantity,
               type: StockChangeType.ORDER_COMPLETED,
               performed_by: performedBy,
-              note: `Order ${order.orderNumber} marked as Completed`
+              note: `Order ${order.orderNumber} marked as ${newStatus}`
             }
           });
 
@@ -442,18 +487,20 @@ export class OrderService {
         }
       }
 
-      // 2. Handle "Cancelled" Restoration (only if it was previously COMPLETED/DELIVERED)
-      if (newStatus === OrderStatus.CANCELLED && previousStatus === OrderStatus.DELIVERED) {
+      // 2. Handle cancellation paths.
+      if (newStatus === OrderStatus.CANCELLED && wasAlreadyCompleted) {
         for (const item of order.orderItems) {
+          await inventoryService.increaseStock(item.productId, orderWarehouseId, item.quantity, tx);
+
           // Restore Stock
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          });
+
           if (item.variantId) {
             await tx.product_variants.update({
               where: { id: item.variantId },
-              data: { stock: { increment: item.quantity } }
-            });
-          } else {
-            await tx.product.update({
-              where: { id: item.productId },
               data: { stock: { increment: item.quantity } }
             });
           }
@@ -472,6 +519,13 @@ export class OrderService {
               note: `Order ${order.orderNumber} cancelled. Stock restored.`
             }
           });
+        }
+      }
+
+      // If order is cancelled before completion, release reservation only.
+      if (newStatus === OrderStatus.CANCELLED && !wasAlreadyCompleted) {
+        for (const item of order.orderItems) {
+          await inventoryService.releaseReservedStock(item.productId, orderWarehouseId, item.quantity, tx);
         }
       }
 
@@ -497,11 +551,11 @@ export class OrderService {
         relatedId: order.id
       }).catch((err) => console.error('[Order] updateStatus user notification failed:', err));
 
-      if (newStatus === OrderStatus.DELIVERED) {
+      if (newStatus === OrderStatus.DELIVERED || newStatus === OrderStatus.COMPLETED) {
         NotificationService.notify({
           type: NotificationType.ORDER_COMPLETED,
           title: 'Order Delivered',
-          message: `Order ${order.orderNumber} has been successfully delivered and completed.`,
+          message: `Order ${order.orderNumber} has been successfully completed.`,
           module: 'ORDER',
           roleTarget: UserRole.SUPER_ADMIN,
           relatedId: order.id
@@ -526,6 +580,14 @@ export class OrderService {
       prisma.order.findMany({
         where,
         include: {
+          warehouse: {
+            select: {
+              name: true,
+              address: true,
+              city: true,
+              country: true,
+            },
+          },
           orderItems: {
             include: {
               product: {

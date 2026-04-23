@@ -15,7 +15,8 @@ import {
   ChevronRight,
   ShieldCheck,
   Truck,
-  XCircle
+  XCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { orderService } from '@/services/order.service';
 import { getImageUrl } from '@/utils/helpers';
@@ -23,6 +24,9 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+const DELIVERY_STATUSES = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+const PICKUP_STATUSES = ['READY_FOR_PICKUP', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
 export default function OrderDetailPage() {
   const { t, isRTL } = useLanguage();
@@ -80,6 +84,8 @@ export default function OrderDetailPage() {
     order.warehouse?.country,
   ].filter(Boolean).join(', ');
 
+  const availableStatuses = order.deliveryType === 'PICKUP' ? PICKUP_STATUSES : DELIVERY_STATUSES;
+
   return (
     <div className="space-y-8 pb-20" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Back & Actions */}
@@ -119,14 +125,14 @@ export default function OrderDetailPage() {
             <span>{t('printInvoice')}</span>
           </button>
           
-          {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+          {order.status !== 'DELIVERED' && order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
             <div className="relative group">
               <button className="bg-[#FF6B35] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#FF6B35]/20 flex items-center space-x-2 transition-all active:scale-95 hover:bg-[#FF5722]">
                 <span>{t('updateStatus')}</span>
                 <ChevronRight size={16} />
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
-                {['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(stat => (
+                {availableStatuses.filter(stat => stat !== order.status).map(stat => (
                   <button 
                     key={stat}
                     onClick={() => updateStatus(stat)}
@@ -259,6 +265,18 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-sm">{t('orderDeliveredLabel')}</p>
+                    <p className="text-xs text-gray-400 font-medium">{new Date(order.updatedAt).toLocaleString()}</p>
+                  </div>
+                </div>
+              )}
+
+              {order.status === 'COMPLETED' && (
+                <div className="relative pl-10">
+                  <div className="absolute left-0 top-1 w-7 h-7 bg-green-600 rounded-full border-4 border-white shadow-sm flex items-center justify-center text-white">
+                    <CheckCircle2 size={12} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">{t('orderCompleted')}</p>
                     <p className="text-xs text-gray-400 font-medium">{new Date(order.updatedAt).toLocaleString()}</p>
                   </div>
                 </div>

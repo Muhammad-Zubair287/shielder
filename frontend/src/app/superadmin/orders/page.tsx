@@ -101,10 +101,12 @@ export default function OrdersPage() {
 
   const statusColors: any = {
     PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    READY_FOR_PICKUP: 'bg-amber-100 text-amber-800 border-amber-200',
     CONFIRMED: 'bg-blue-100 text-blue-800 border-blue-200',
     PROCESSING: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     SHIPPED: 'bg-purple-100 text-purple-800 border-purple-200',
     DELIVERED: 'bg-green-100 text-green-800 border-green-200',
+    COMPLETED: 'bg-green-100 text-green-800 border-green-200',
     CANCELLED: 'bg-red-100 text-red-800 border-red-200'
   };
 
@@ -184,9 +186,12 @@ export default function OrdersPage() {
             >
               <option value="">{t('allStatuses')}</option>
               <option value="PENDING">{t('pending')}</option>
+              <option value="READY_FOR_PICKUP">{t('orderReadyForPickup')}</option>
+              <option value="CONFIRMED">{t('orderConfirmed')}</option>
               <option value="PROCESSING">{t('processing')}</option>
               <option value="SHIPPED">{t('shipped')}</option>
               <option value="DELIVERED">{t('delivered')}</option>
+              <option value="COMPLETED">{t('orderCompleted')}</option>
               <option value="CANCELLED">{t('cancelled')}</option>
             </select>
             <select 
@@ -229,6 +234,7 @@ export default function OrdersPage() {
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('productsLabel')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('orderTotal')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('orders.type')}</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('warehouse')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('paymentStatus')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('orderStatus')}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">{t('actions')}</th>
@@ -239,7 +245,7 @@ export default function OrdersPage() {
                 Array.from({ length: 5 }).map((_, i) => <TableSkeleton key={i} />)
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-400 font-medium">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-400 font-medium">
                     {t('noOrdersFound')}
                   </td>
                 </tr>
@@ -282,6 +288,9 @@ export default function OrdersPage() {
                       >
                         {order.deliveryType === 'PICKUP' ? t('orders.typePickup') : t('orders.typeDelivery')}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold text-gray-600">
+                      {order.deliveryType === 'PICKUP' ? (order.warehouse?.name || '—') : '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${
@@ -348,7 +357,7 @@ function SummaryCard({ title, value, icon, color, description }: any) {
 function TableSkeleton() {
   return (
     <tr className="animate-pulse">
-      <td colSpan={8} className="px-6 py-4">
+      <td colSpan={9} className="px-6 py-4">
         <div className="h-10 bg-gray-50 rounded-lg w-full"></div>
       </td>
     </tr>

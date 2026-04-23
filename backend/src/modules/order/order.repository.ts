@@ -6,6 +6,14 @@ export class OrderRepository {
     return prisma.order.findUnique({
       where: { id },
       include: {
+        warehouse: {
+          select: {
+            name: true,
+            address: true,
+            city: true,
+            country: true,
+          },
+        },
         orderItems: {
           include: {
             product: {
@@ -29,6 +37,14 @@ export class OrderRepository {
     return prisma.order.findMany({
       where,
       include: {
+        warehouse: {
+          select: {
+            name: true,
+            address: true,
+            city: true,
+            country: true,
+          },
+        },
         users: {
           select: {
             email: true,

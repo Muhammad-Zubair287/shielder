@@ -2,9 +2,12 @@
 
 export type OrderStatus =
   | 'PENDING'
+  | 'READY_FOR_PICKUP'
+  | 'CONFIRMED'
   | 'PROCESSING'
   | 'SHIPPED'
   | 'DELIVERED'
+  | 'COMPLETED'
   | 'CANCELLED';
 
 export type PaymentStatus =

@@ -21,7 +21,8 @@ export class WarehouseController {
   });
 
   updateWarehouse = asyncHandler(async (req: Request, res: Response) => {
-    const warehouse = await warehouseService.updateWarehouse(req.params.id, req.body);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const warehouse = await warehouseService.updateWarehouse(id, req.body);
     res.json({
       success: true,
       message: 'Warehouse updated successfully.',
@@ -30,7 +31,8 @@ export class WarehouseController {
   });
 
   deleteWarehouse = asyncHandler(async (req: Request, res: Response) => {
-    const result = await warehouseService.deleteWarehouse(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await warehouseService.deleteWarehouse(id);
     res.json({
       success: true,
       message: 'Warehouse deleted successfully.',

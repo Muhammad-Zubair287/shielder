@@ -107,45 +107,80 @@ export class ProductService {
     return created.id;
   }
 
-  async create(data: ProductUpsertPayload) {
-    const warehouseId = data.warehouseId || await this.getMainWarehouseId();
+  private async ensureMainWarehouseInventory(
+    tx: Prisma.TransactionClient,
+    productId: string,
+    quantity: number,
+    warehouseId: string,
+  ) {
+    const normalizedQuantity = Number.isFinite(quantity) ? Math.max(0, Math.trunc(quantity)) : 0;
 
-    const product = await prisma.product.create({
-      data: {
-        sku: data.sku,
-        categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId,
-        warehouseId,
-        brandId: data.brandId,
-        supplierId: data.supplierId,
-        price: data.price,
-        stock: data.stock,
-        minimumStockThreshold: data.minimumStockThreshold || 5,
-        mainImage: data.mainImage,
-        filterNumber: data.filterNumber,
-        alternateNumbers: data.alternateNumbers,
-        filterType: data.filterType,
-        material: data.material,
-        dimensions: data.dimensions,
-        status: ProductStatus.PENDING,
-        translations: {
-          create: data.translations,
+    return tx.inventory.upsert({
+      where: {
+        productId_warehouseId: {
+          productId,
+          warehouseId,
         },
-        specifications: data.specifications ? {
-          create: data.specifications.map(s => ({
-            spec_key: s.specKey.trim(),
-            spec_value: s.specValue.trim(),
-            updated_at: new Date()
-          })),
-        } : undefined,
       },
-      include: {
-        translations: true,
-        category: true,
-        subcategory: true,
-        brand: true,
-        specifications: true,
+      update: {
+        quantity: normalizedQuantity,
+        reservedQuantity: 0,
       },
+      create: {
+        productId,
+        warehouseId,
+        quantity: normalizedQuantity,
+        reservedQuantity: 0,
+      },
+    });
+  }
+
+  async create(data: ProductUpsertPayload) {
+    const mainWarehouseId = await this.getMainWarehouseId();
+    const warehouseId = data.warehouseId || mainWarehouseId;
+    const stockQuantity = Number.isFinite(data.stock) ? data.stock : 0;
+
+    const product = await prisma.$transaction(async (tx) => {
+      const createdProduct = await tx.product.create({
+        data: {
+          sku: data.sku,
+          categoryId: data.categoryId,
+          subcategoryId: data.subcategoryId,
+          warehouseId,
+          brandId: data.brandId,
+          supplierId: data.supplierId,
+          price: data.price,
+          stock: stockQuantity,
+          minimumStockThreshold: data.minimumStockThreshold || 5,
+          mainImage: data.mainImage,
+          filterNumber: data.filterNumber,
+          alternateNumbers: data.alternateNumbers,
+          filterType: data.filterType,
+          material: data.material,
+          dimensions: data.dimensions,
+          status: ProductStatus.PENDING,
+          translations: {
+            create: data.translations,
+          },
+          specifications: data.specifications ? {
+            create: data.specifications.map(s => ({
+              spec_key: s.specKey.trim(),
+              spec_value: s.specValue.trim(),
+              updated_at: new Date()
+            })),
+          } : undefined,
+        },
+        include: {
+          translations: true,
+          category: true,
+          subcategory: true,
+          brand: true,
+          specifications: true,
+        },
+      });
+
+      await this.ensureMainWarehouseInventory(tx, createdProduct.id, stockQuantity, mainWarehouseId);
+      return createdProduct;
     });
 
     // Trigger notification for Admin regarding new product approval
@@ -936,33 +971,37 @@ export class ProductService {
           }
         });
 
-        await prisma.product.create({
-          data: {
-            sku,
-            price,
-            stock,
-            minimumStockThreshold: minStock,
-            categoryId,
-            subcategoryId,
-            warehouseId: defaultWarehouseId,
-            brandId,
-            mainImage,
-            filterNumber,
-            alternateNumbers,
-            filterType,
-            material,
-            dimensions,
-            status: ProductStatus.PUBLISHED, // Auto-approve bulk uploads for now as they come from SuperAdmin
-            translations: {
-              create: [
-                { locale: 'en', name, description },
-                { locale: 'ar', name: nameAr, description: descriptionAr || description }
-              ]
-            },
-            specifications: specifications.length > 0 ? {
-              create: specifications
-            } : undefined
-          }
+        await prisma.$transaction(async (tx) => {
+          const createdProduct = await tx.product.create({
+            data: {
+              sku,
+              price,
+              stock,
+              minimumStockThreshold: minStock,
+              categoryId,
+              subcategoryId,
+              warehouseId: defaultWarehouseId,
+              brandId,
+              mainImage,
+              filterNumber,
+              alternateNumbers,
+              filterType,
+              material,
+              dimensions,
+              status: ProductStatus.PUBLISHED, // Auto-approve bulk uploads for now as they come from SuperAdmin
+              translations: {
+                create: [
+                  { locale: 'en', name, description },
+                  { locale: 'ar', name: nameAr, description: descriptionAr || description }
+                ]
+              },
+              specifications: specifications.length > 0 ? {
+                create: specifications
+              } : undefined
+            }
+          });
+
+          await this.ensureMainWarehouseInventory(tx, createdProduct.id, stock, defaultWarehouseId);
         });
 
         results.success++;

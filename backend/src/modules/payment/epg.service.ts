@@ -34,6 +34,8 @@ interface InitializeParams {
   phoneNumber: string;
   shippingAddress: string;
   notes?: string;
+  deliveryType?: 'DELIVERY' | 'PICKUP';
+  warehouseId?: string;
   successUrl: string;
   failureUrl: string;
 }
@@ -83,6 +85,8 @@ export class EPGService {
       paymentMethod:   PaymentMethod.CREDIT_CARD,
       paymentStatus:   PaymentStatus.PENDING,
       notes:           params.notes,
+      deliveryType:    params.deliveryType,
+      warehouseId:     params.warehouseId,
     });
 
     const amount   = Number(order.total);

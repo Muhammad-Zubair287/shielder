@@ -218,9 +218,12 @@ export default function AdminOrdersPage() {
             >
               <option value="">{t('allStatuses')}</option>
               <option value="PENDING">{t('orderPending')}</option>
+              <option value="READY_FOR_PICKUP">{t('orderReadyForPickup')}</option>
+              <option value="CONFIRMED">{t('orderConfirmed')}</option>
               <option value="PROCESSING">{t('orderProcessing')}</option>
               <option value="SHIPPED">{t('orderShipped')}</option>
               <option value="DELIVERED">{t('orderDelivered')}</option>
+              <option value="COMPLETED">{t('orderCompleted')}</option>
               <option value="CANCELLED">{t('orderCancelled')}</option>
             </select>
           </div>

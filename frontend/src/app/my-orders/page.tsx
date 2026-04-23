@@ -74,6 +74,7 @@ interface PaginationInfo {
 
 function statusColor(status: string) {
   const s = (status || '').toUpperCase();
+  if (s === 'READY_FOR_PICKUP') return 'bg-amber-100 text-amber-700';
   if (s === 'CONFIRMED' || s === 'DELIVERED' || s === 'COMPLETED') return 'bg-green-100 text-green-700';
   if (s === 'CANCELLED')                                             return 'bg-red-100 text-red-700';
   if (s === 'PROCESSING' || s === 'SHIPPED')                         return 'bg-blue-100 text-blue-700';
@@ -248,7 +249,7 @@ export default function MyOrdersPage() {
                   const itemCount = order._count?.orderItems ?? order.orderItems?.length ?? 0;
                   const status = (order.status || '').toUpperCase();
                   const isPickupOrder = order.deliveryType === 'PICKUP';
-                  const canRequestCancel = ['PENDING', 'PROCESSING', 'CONFIRMED'].includes(status);
+                  const canRequestCancel = ['PENDING', 'PROCESSING', 'CONFIRMED', 'READY_FOR_PICKUP'].includes(status);
                   const warehouseName =
                     order.warehouse?.name ||
                     (order.warehouseId ? `${t('myOrders.warehouseLabel')} #${order.warehouseId}` : t('myOrders.notAssigned'));

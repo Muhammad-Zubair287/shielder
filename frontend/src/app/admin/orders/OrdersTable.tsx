@@ -44,6 +44,7 @@ export default function OrdersTable({ orders, loading, pagination, onPageChange 
     t('productsLabel'),
     t('orderTotal'),
     t('orders.type'),
+    t('warehouse'),
     t('paymentStatus'),
     t('orderStatus'),
     t('actions'),
@@ -159,6 +160,13 @@ export default function OrdersTable({ orders, loading, pagination, onPageChange 
                     >
                       {order.deliveryType === 'PICKUP' ? t('orders.typePickup') : t('orders.typeDelivery')}
                     </span>
+                  </td>
+
+                  {/* Warehouse */}
+                  <td className="px-5 py-4 whitespace-nowrap text-xs font-semibold text-gray-600">
+                    {order.deliveryType === 'PICKUP'
+                      ? (order.warehouse?.name || '—')
+                      : '—'}
                   </td>
 
                   {/* Payment status */}

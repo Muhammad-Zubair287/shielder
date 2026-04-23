@@ -15,6 +15,7 @@ import { adminValidation } from './admin.validation';
 import adminContactRoutes from './contact/admin-contact.routes';
 import adminNewsletterRoutes from '@/modules/newsletter/admin-newsletter.routes';
 import warehouseRoutes from '@/modules/warehouse/warehouse.routes';
+import { inventoryController } from '@/modules/inventory/inventory.controller';
 
 const router = Router();
 
@@ -105,5 +106,12 @@ router.use('/newsletter', adminNewsletterRoutes);
  * Admin/Super Admin warehouse management
  */
 router.use('/warehouses', warehouseRoutes);
+
+/**
+ * /api/admin/inventory
+ * Admin/Super Admin warehouse-based inventory management
+ */
+router.post('/inventory', inventoryController.upsertStock);
+router.get('/inventory', inventoryController.getInventory);
 
 export default router;

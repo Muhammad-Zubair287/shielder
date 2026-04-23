@@ -713,6 +713,8 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   REFUNDED
+  READY_FOR_PICKUP
+  COMPLETED
 }
 
 enum DeliveryType {
@@ -827,7 +829,7 @@ model Inventory {
   id               String    @id @default(uuid()) @db.Uuid
   productId        String    @map("product_id")
   warehouseId      String    @db.Uuid @map("warehouse_id")
-  quantity         Int
+  quantity         Int       @default(0)
   reservedQuantity Int       @default(0) @map("reserved_quantity")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")

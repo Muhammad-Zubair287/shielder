@@ -3,7 +3,17 @@ import Joi from 'joi';
 export const orderValidation = {
   createOrder: Joi.object({
     userId: Joi.string().uuid().required(),
-    shippingAddress: Joi.string().required(),
+    deliveryType: Joi.string().valid('DELIVERY', 'PICKUP').default('DELIVERY'),
+    warehouseId: Joi.when('deliveryType', {
+      is: 'PICKUP',
+      then: Joi.string().uuid().required(),
+      otherwise: Joi.string().uuid().optional().allow(null),
+    }),
+    shippingAddress: Joi.when('deliveryType', {
+      is: 'DELIVERY',
+      then: Joi.string().required(),
+      otherwise: Joi.string().allow('', null).optional(),
+    }),
     phoneNumber: Joi.string().required(),
     customerName: Joi.string().required(),
     paymentMethod: Joi.string().required(),
@@ -21,16 +31,33 @@ export const orderValidation = {
   }),
 
   updateStatus: Joi.object({
-    status: Joi.string().valid('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED').optional(),
-    paymentStatus: Joi.string().valid('UNPAID', 'PAID', 'PARTIAL', 'REFUNDED', 'FAILED').optional(),
+    status: Joi.string()
+      .valid(
+        'PENDING',
+        'READY_FOR_PICKUP',
+        'CONFIRMED',
+        'PROCESSING',
+        'SHIPPED',
+        'DELIVERED',
+        'COMPLETED',
+        'CANCELLED',
+      )
+      .optional(),
+    paymentStatus: Joi.string()
+      .valid('UNPAID', 'PAID', 'PENDING', 'FAILED', 'REFUNDED', 'PARTIALLY_PAID', 'PARTIALLY_REFUNDED')
+      .optional(),
   }),
 
   queryParams: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
     search: Joi.string().allow('', null),
-    status: Joi.string().valid('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED').allow('', null),
-    paymentStatus: Joi.string().valid('UNPAID', 'PAID', 'PARTIAL', 'REFUNDED', 'FAILED').allow('', null),
+    status: Joi.string()
+      .valid('PENDING', 'READY_FOR_PICKUP', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED')
+      .allow('', null),
+    paymentStatus: Joi.string()
+      .valid('UNPAID', 'PAID', 'PENDING', 'FAILED', 'REFUNDED', 'PARTIALLY_PAID', 'PARTIALLY_REFUNDED')
+      .allow('', null),
     dateFrom: Joi.date().iso().allow('', null),
     dateTo: Joi.date().iso().allow('', null),
     sortBy: Joi.string().valid('createdAt', 'total', 'status').default('createdAt'),

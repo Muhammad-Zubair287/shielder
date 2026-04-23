@@ -25,6 +25,9 @@ import StatusUpdateModal from '../StatusUpdateModal';
 import type { Order, OrderStatus } from '../types';
 import { getImageUrl } from '@/utils/helpers';
 
+const DELIVERY_STATUSES: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+const PICKUP_STATUSES: OrderStatus[] = ['READY_FOR_PICKUP', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+
 function formatCurrency(value: number | string, locale: string): string {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   return new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US', {
@@ -111,7 +114,7 @@ export default function AdminOrderDetailPage() {
   const taxNum      = parseFloat(String(order.tax));
   const totalNum    = parseFloat(String(order.total));
 
-  const allStatuses: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+  const allStatuses = order.deliveryType === 'PICKUP' ? PICKUP_STATUSES : DELIVERY_STATUSES;
   const nextStatuses = allStatuses.filter((s) => s !== order.status);
   const isPickupOrder = order.deliveryType === 'PICKUP';
   const warehouseName = order.warehouse?.name || (order.warehouseId ? `Warehouse #${order.warehouseId}` : '—');
@@ -157,7 +160,7 @@ export default function AdminOrderDetailPage() {
             {t('printInvoice')}
           </button>
 
-          {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+          {order.status !== 'DELIVERED' && order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
             <div className="relative">
               <button
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
