@@ -9,9 +9,10 @@ import { AuthRequest } from '../../types/global';
 import { prisma } from '../../config/database';
 import { BadRequestError, NotFoundError } from '../../common/errors/api.error';
 import { Prisma } from '@prisma/client';
-import { QuotationStatus, QuotationActivityType } from '@prisma/client';
+import { QuotationStatus, QuotationActivityType, NotificationType, UserRole } from '@prisma/client';
 import PDFDocument from 'pdfkit';
 import { customerQuotationRepository } from './customer-quotation.repository';
+import NotificationService from '../notification/notification.service';
 
 type RequestedQuotationItem = {
   productId: string;
@@ -241,6 +242,27 @@ export class CustomerQuotationController {
           },
         },
       });
+
+      // Notify admins so customer self-service quotations are visible operationally.
+      void NotificationService.notify({
+        type: NotificationType.QUOTATION_CREATED,
+        title: 'New Customer Quotation',
+        message: `Customer ${req.user!.email} generated quotation ${quotation.quotationNumber}.`,
+        module: 'QUOTATION',
+        roleTarget: UserRole.ADMIN,
+        relatedId: quotation.id,
+        triggeredById: userId,
+      }).catch((err) => console.error('[CustomerQuotation] admin notification failed:', err));
+
+      void NotificationService.notify({
+        type: NotificationType.QUOTATION_CREATED,
+        title: 'New Customer Quotation',
+        message: `Customer ${req.user!.email} generated quotation ${quotation.quotationNumber}.`,
+        module: 'QUOTATION',
+        roleTarget: UserRole.SUPER_ADMIN,
+        relatedId: quotation.id,
+        triggeredById: userId,
+      }).catch((err) => console.error('[CustomerQuotation] super-admin notification failed:', err));
 
       // Enrich items with thumbnail
       const enrichedItems = quotation.items.map((item) => ({
@@ -576,6 +598,26 @@ export class CustomerQuotationController {
         },
       });
 
+      void NotificationService.notify({
+        type: NotificationType.QUOTATION_APPROVED,
+        title: 'Customer Accepted Quotation',
+        message: `Customer ${req.user!.email} accepted quotation ${quotation.quotationNumber}.`,
+        module: 'QUOTATION',
+        roleTarget: UserRole.ADMIN,
+        relatedId: updated.id,
+        triggeredById: userId,
+      }).catch((err) => console.error('[CustomerQuotation] admin accept notification failed:', err));
+
+      void NotificationService.notify({
+        type: NotificationType.QUOTATION_APPROVED,
+        title: 'Customer Accepted Quotation',
+        message: `Customer ${req.user!.email} accepted quotation ${quotation.quotationNumber}.`,
+        module: 'QUOTATION',
+        roleTarget: UserRole.SUPER_ADMIN,
+        relatedId: updated.id,
+        triggeredById: userId,
+      }).catch((err) => console.error('[CustomerQuotation] super-admin accept notification failed:', err));
+
       res.json({
         success: true,
         data: updated,
@@ -618,6 +660,28 @@ export class CustomerQuotationController {
           },
         },
       });
+
+      const rejectReason = reason ? ` Reason: ${reason}` : '';
+
+      void NotificationService.notify({
+        type: NotificationType.SYSTEM_ALERT,
+        title: 'Customer Rejected Quotation',
+        message: `Customer ${req.user!.email} rejected quotation ${quotation.quotationNumber}.${rejectReason}`,
+        module: 'QUOTATION',
+        roleTarget: UserRole.ADMIN,
+        relatedId: updated.id,
+        triggeredById: userId,
+      }).catch((err) => console.error('[CustomerQuotation] admin reject notification failed:', err));
+
+      void NotificationService.notify({
+        type: NotificationType.SYSTEM_ALERT,
+        title: 'Customer Rejected Quotation',
+        message: `Customer ${req.user!.email} rejected quotation ${quotation.quotationNumber}.${rejectReason}`,
+        module: 'QUOTATION',
+        roleTarget: UserRole.SUPER_ADMIN,
+        relatedId: updated.id,
+        triggeredById: userId,
+      }).catch((err) => console.error('[CustomerQuotation] super-admin reject notification failed:', err));
 
       res.json({
         success: true,
