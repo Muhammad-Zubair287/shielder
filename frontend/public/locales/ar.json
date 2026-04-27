@@ -1338,6 +1338,8 @@
   "checkout.paymentMethod": "طريقة الدفع",
   "checkout.methodCash": "الدفع عند الاستلام",
   "checkout.methodCashDesc": "ادفع نقدًا عند وصول طلبك",
+  "checkout.methodCashPickup": "الدفع عند الاستلام من المستودع",
+  "checkout.methodCashPickupDesc": "ادفع نقدًا عند استلام طلبك من المستودع",
   "checkout.methodBank": "تحويل بنكي",
   "checkout.methodBankDesc": "تحويل إلى حسابنا البنكي قبل الشحن",
   "checkout.methodCard": "بطاقة مدى / ائتمانية",

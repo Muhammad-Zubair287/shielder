@@ -205,6 +205,34 @@ function CheckoutPageInner() {
     }
     return value;
   })();
+
+  const cashMethodTitle = (() => {
+    if (deliveryType === 'PICKUP') {
+      const value = t('checkout.methodCashPickup');
+      if (!value || value === 'checkout.methodCashPickup') {
+        return locale === 'ar'
+          ? 'الدفع عند الاستلام من المستودع'
+          : 'Cash on Pickup';
+      }
+      return value;
+    }
+
+    return t('checkout.methodCash');
+  })();
+
+  const cashMethodDescription = (() => {
+    if (deliveryType === 'PICKUP') {
+      const value = t('checkout.methodCashPickupDesc');
+      if (!value || value === 'checkout.methodCashPickupDesc') {
+        return locale === 'ar'
+          ? 'ادفع نقدًا عند استلام طلبك من المستودع.'
+          : 'Pay in cash when you collect your order from the warehouse.';
+      }
+      return value;
+    }
+
+    return t('checkout.methodCashDesc');
+  })();
   const [submitting, setSubmitting]         = useState(false);
 
   // Pre-fill name when user loads
@@ -582,8 +610,8 @@ function CheckoutPageInner() {
                     <MethodCard
                       id="CASH"
                       icon={<Banknote size={20} />}
-                      title={t('checkout.methodCash')}
-                      description={t('checkout.methodCashDesc')}
+                      title={cashMethodTitle}
+                      description={cashMethodDescription}
                       selected={paymentMethod === 'CASH'}
                       onSelect={() => setPaymentMethod('CASH')}
                       isRTL={isRTL}

@@ -1338,6 +1338,8 @@
   "checkout.paymentMethod": "Payment Method",
   "checkout.methodCash": "Cash on Delivery",
   "checkout.methodCashDesc": "Pay in cash when your order arrives",
+  "checkout.methodCashPickup": "Cash on Pickup",
+  "checkout.methodCashPickupDesc": "Pay in cash when you collect your order from the warehouse",
   "checkout.methodBank": "Bank Transfer",
   "checkout.methodBankDesc": "Transfer to our bank account before shipment",
   "checkout.methodCard": "Debit / Credit Card",
