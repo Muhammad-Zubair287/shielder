@@ -142,9 +142,8 @@ function CheckoutPageInner() {
     const fetchWarehouses = async () => {
       try {
         setWarehousesLoading(true);
-        const res = await warehouseService.list();
-        const activeWarehouses = (res?.data || []).filter((w: WarehouseType) => w.isActive);
-        setWarehouses(activeWarehouses);
+        const res = await warehouseService.listActiveForCheckout();
+        setWarehouses(res?.data || []);
       } catch (err) {
         console.error('Failed to load warehouses:', err);
         // Silently fail - user can still use delivery
@@ -408,7 +407,13 @@ function CheckoutPageInner() {
                               disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400
                               ${isRTL ? 'text-right' : 'text-left'}`}
                           >
-                            <option value="">{warehousesLoading ? t('checkout.loadingWarehouses') : t('checkout.selectWarehousePlaceholder')}</option>
+                            <option value="">
+                              {warehousesLoading
+                                ? t('checkout.loadingWarehouses')
+                                : warehouses.length === 0
+                                  ? (locale === 'ar' ? 'لا توجد مستودعات متاحة حالياً للاستلام' : 'No pickup warehouses available right now')
+                                  : t('checkout.selectWarehousePlaceholder')}
+                            </option>
                             {warehouses.map(warehouse => (
                               <option key={warehouse.id} value={warehouse.id}>
                                 {warehouse.name} {warehouse.city && `- ${warehouse.city}`}

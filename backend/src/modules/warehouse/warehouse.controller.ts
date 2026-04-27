@@ -20,6 +20,14 @@ export class WarehouseController {
     });
   });
 
+  getActiveWarehouses = asyncHandler(async (_req: Request, res: Response) => {
+    const warehouses = await warehouseService.getWarehouses();
+    res.json({
+      success: true,
+      data: warehouses.filter((warehouse) => warehouse.isActive),
+    });
+  });
+
   getWarehouseById = asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { productSearch, orderSearch, orderStatus, page, limit } = req.query as Record<string, string | undefined>;

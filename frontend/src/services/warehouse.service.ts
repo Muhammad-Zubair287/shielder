@@ -35,6 +35,11 @@ class WarehouseService {
     return res.data;
   }
 
+  async listActiveForCheckout() {
+    const res = await apiClient.get('/warehouses/active');
+    return res.data;
+  }
+
   async create(payload: WarehousePayload) {
     const res = await apiClient.post('/admin/warehouses', payload);
     return res.data;

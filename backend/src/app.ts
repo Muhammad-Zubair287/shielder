@@ -37,6 +37,7 @@ import contactRoutes from './modules/contact/contact.routes';
 import newsletterRoutes from './modules/newsletter/newsletter.routes';
 import productReviewRoutes from './modules/product-review/product-review.routes';
 import inventoryAlertRoutes from './modules/inventory-alert/inventory-alert.routes';
+import publicWarehouseRoutes from './modules/warehouse/public-warehouse.routes';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
@@ -172,6 +173,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/contact`, contactRoutes);
     app.use(`${prefix}/newsletter`, newsletterRoutes);
     app.use(`${prefix}/reviews`, productReviewRoutes);
+    app.use(`${prefix}/warehouses`, publicWarehouseRoutes);
     app.use(`${prefix}/admin/inventory-alerts`, inventoryAlertRoutes);
   };
 
