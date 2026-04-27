@@ -229,20 +229,55 @@ export default function NotificationsPage() {
     );
   };
 
+  const statCards = [
+    {
+      label: t('notifTotalNotifications'),
+      value: stats.total,
+      icon: <Bell size={20} />,
+      type: '',
+      iconClass: 'bg-blue-50 text-blue-600',
+      ringClass: 'ring-blue-100',
+    },
+    {
+      label: t('notifUnreadNotifications'),
+      value: stats.unread,
+      icon: <Clock size={20} />,
+      type: 'unread',
+      iconClass: 'bg-amber-50 text-amber-600',
+      ringClass: 'ring-amber-100',
+    },
+    {
+      label: t('notifSystemAlerts'),
+      value: stats.system,
+      icon: <Activity size={20} />,
+      type: 'SYSTEM_ALERT',
+      iconClass: 'bg-violet-50 text-violet-600',
+      ringClass: 'ring-violet-100',
+    },
+    {
+      label: t('notifLowStockAlerts'),
+      value: stats.lowStock,
+      icon: <AlertTriangle size={20} />,
+      type: 'LOW_STOCK',
+      iconClass: 'bg-rose-50 text-rose-600',
+      ringClass: 'ring-rose-100',
+    },
+  ];
+
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-screen font-sans" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* 🧭 1️⃣ Top Section – Overview Cards */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-black text-shielder-dark tracking-tight uppercase">{t('notificationsTitle')}</h1>
-          <p className="text-gray-500 text-sm font-medium">{t('notificationsSubtitle')}</p>
+      <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : 'text-left'}>
+          <h1 className="text-2xl md:text-3xl font-black text-shielder-dark tracking-tight">{t('notificationsTitle')}</h1>
+          <p className="text-gray-500 text-sm font-medium mt-1">{t('notificationsSubtitle')}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <button 
             onClick={() => setActiveTab('preferences')}
-            className="hidden md:flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-black uppercase tracking-widest text-shielder-dark hover:bg-gray-50 transition-all shadow-sm"
+            className="hidden md:inline-flex items-center px-4 h-10 bg-white border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wide text-shielder-dark hover:bg-gray-50 transition-colors shadow-sm"
           >
-            <Settings size={16} className="mr-2" />
+            <Settings size={16} className={isRTL ? 'ml-2' : 'mr-2'} />
             {t('notifManageSettings')}
           </button>
           <button 
@@ -250,7 +285,7 @@ export default function NotificationsPage() {
               queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-stats'] });
               queryClient.invalidateQueries({ queryKey: ['superadmin-notifications-list'] });
             }}
-            className="p-2 bg-[#FF6B35]/10 text-[#FF6B35] rounded-xl hover:bg-[#FF6B35]/20 transition-all"
+            className="h-10 w-10 flex items-center justify-center bg-[#FF6B35]/10 text-[#FF6B35] rounded-xl hover:bg-[#FF6B35]/20 transition-colors"
           >
             <RefreshCcw size={20} className={notificationsQuery.isFetching ? 'animate-spin' : ''} />
           </button>
@@ -258,12 +293,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: t('notifTotalNotifications'), value: stats.total, icon: <Bell />, color: 'blue', type: '' },
-          { label: t('notifUnreadNotifications'), value: stats.unread, icon: <Clock />, color: 'amber', type: 'unread' },
-          { label: t('notifSystemAlerts'), value: stats.system, icon: <Activity />, color: 'purple', type: 'SYSTEM_ALERT' },
-          { label: t('notifLowStockAlerts'), value: stats.lowStock, icon: <AlertTriangle />, color: 'red', type: 'LOW_STOCK' },
-        ].map((card, i) => (
+        {statCards.map((card, i) => (
           <div 
             key={i}
             onClick={() => {
@@ -272,18 +302,15 @@ export default function NotificationsPage() {
               else setFilters({ search: '', type: '', module: '', read: undefined });
               setActiveTab('all');
             }}
-            className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+            className={`bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group ring-1 ${card.ringClass}`}
           >
-            <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 transition-transform group-hover:scale-110 text-${card.color}-500 uppercase font-black text-6xl pointer-events-none`}>
-              {card.label[0]}
-            </div>
-            <div className="flex items-center justify-between relative z-10">
-              <div className={`p-4 rounded-2xl bg-${card.color}-50 text-${card.color}-600`}>
-                {React.cloneElement(card.icon as React.ReactElement, { size: 24 })}
+            <div className="flex items-center justify-between">
+              <div className={`p-3 rounded-xl ${card.iconClass}`}>
+                {card.icon}
               </div>
-              <div className="text-right">
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{card.label}</p>
-                <h3 className="text-3xl font-black text-shielder-dark">{statsLoading ? '...' : card.value}</h3>
+              <div className={isRTL ? 'text-left' : 'text-right'}>
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide leading-none mb-1">{card.label}</p>
+                <h3 className="text-3xl font-black text-shielder-dark tabular-nums">{statsLoading ? '...' : card.value}</h3>
               </div>
             </div>
           </div>
@@ -291,8 +318,8 @@ export default function NotificationsPage() {
       </div>
 
       {/* 🔎 3️⃣ Filtering & Controls */}
-      <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden mb-8">
-        <div className="p-6 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <div className="p-5 md:p-6 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex bg-gray-100/50 p-1 rounded-2xl w-full max-w-sm">
             <button 
               onClick={() => setActiveTab('all')}
@@ -313,21 +340,21 @@ export default function NotificationsPage() {
           </div>
 
           {activeTab !== 'preferences' && (
-            <div className="flex flex-wrap items-center gap-3">
+            <div className={`flex flex-wrap items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} size={16} />
                 <input 
                   type="text"
                   placeholder={t('notifSearchPlaceholder')}
                   value={filters.search}
                   onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
-                  className="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm w-full md:w-64 focus:ring-2 focus:ring-shielder-primary outline-none transition-all"
+                  className={`py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm w-full md:w-64 focus:ring-2 focus:ring-shielder-primary/30 focus:border-shielder-primary outline-none transition-all ${isRTL ? 'pr-10 pl-4 text-right' : 'pl-10 pr-4'}`}
                 />
               </div>
               <select 
                 value={filters.module}
                 onChange={(e) => setFilters(f => ({ ...f, module: e.target.value }))}
-                className="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none font-bold text-gray-600"
+                className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none font-semibold text-gray-600"
               >
                 <option value="">{t('notifAllModules')}</option>
                 <option value="ORDER">Orders</option>
@@ -338,9 +365,9 @@ export default function NotificationsPage() {
               </select>
               <button 
                 onClick={handleMarkAllRead}
-                className="flex items-center px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-100 transition-all"
+                className="flex items-center px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-emerald-100 transition-colors"
               >
-                <CheckCheck size={16} className="mr-2" /> {t('notifMarkAllRead')}
+                <CheckCheck size={16} className={isRTL ? 'ml-2' : 'mr-2'} /> {t('notifMarkAllRead')}
               </button>
             </div>
           )}
@@ -439,25 +466,24 @@ export default function NotificationsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-50/50">
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('notifIdCol')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('notifIdentityCol')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('notifContextCol')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('status')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('createdAt')}</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">{t('actions')}</th>
+                <tr className="bg-gray-50/80 border-b border-gray-100">
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">{t('notifIdentityCol')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">{t('notifContextCol')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">{t('status')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500">{t('createdAt')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={6} className="px-6 py-8"><div className="h-4 bg-gray-100 rounded w-full"></div></td>
+                      <td colSpan={5} className="px-6 py-8"><div className="h-4 bg-gray-100 rounded w-full"></div></td>
                     </tr>
                   ))
                 ) : notifications.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-32 text-center">
+                    <td colSpan={5} className="px-6 py-24 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-4"><Bell size={40} /></div>
                         <h4 className="text-lg font-black text-shielder-dark uppercase tracking-tight">{t('notifEmpty')}</h4>
@@ -467,13 +493,10 @@ export default function NotificationsPage() {
                     </td>
                   </tr>
                 ) : notifications.map((n) => (
-                  <tr key={n.id} className={`hover:bg-gray-50 group transition-all ${!n.isRead ? 'bg-[#FF6B35]/[0.01]' : ''}`}>
-                    <td className="px-6 py-5">
-                      <span className="text-[10px] font-mono text-gray-400 uppercase">#{n.id.slice(0, 8)}...</span>
-                    </td>
+                  <tr key={n.id} className={`hover:bg-gray-50 group transition-colors ${!n.isRead ? 'bg-[#FF6B35]/[0.03]' : ''}`}>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl border border-transparent group-hover:border-white shadow-sm transition-all ${!n.isRead ? 'bg-white' : 'bg-gray-50'}`}>
+                        <div className={`p-2.5 rounded-xl border border-gray-100 shadow-sm transition-all ${!n.isRead ? 'bg-white' : 'bg-gray-50'}`}>
                           {getIcon(n.type)}
                         </div>
                         <div>
@@ -481,6 +504,7 @@ export default function NotificationsPage() {
                           <p className="text-[11px] text-gray-400 font-medium flex items-center gap-1.5 mt-0.5">
                             Source: <span className="text-gray-600 font-bold uppercase tracking-tighter">{n.triggeredBy || 'System'}</span>
                           </p>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-1">{n.message}</p>
                         </div>
                       </div>
                     </td>
@@ -515,13 +539,13 @@ export default function NotificationsPage() {
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => openNotificationDetail(n)}
-                          className="p-2 text-shielder-primary hover:bg-shielder-primary/10 rounded-lg transition-all"
+                          className="p-2 text-shielder-primary hover:bg-shielder-primary/10 rounded-lg transition-colors"
                         >
                           <Eye size={18} />
                         </button>
                         <button 
                           onClick={() => handleDelete(n.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 size={18} />
                         </button>
