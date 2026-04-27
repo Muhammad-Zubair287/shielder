@@ -168,6 +168,26 @@ function CheckoutPageInner() {
   const [warehouseId, setWarehouseId]       = useState<string | null>(null);
   const [warehouses, setWarehouses]         = useState<WarehouseType[]>([]);
   const [warehousesLoading, setWarehousesLoading] = useState(false);
+
+  const pickupNoAddressText = (() => {
+    const value = t('checkout.pickupNoShippingAddress');
+    if (!value || value === 'checkout.pickupNoShippingAddress') {
+      return locale === 'ar'
+        ? 'لا يلزم إدخال عنوان شحن عند اختيار الاستلام من المستودع.'
+        : 'No shipping address is needed for pickup orders.';
+    }
+    return value;
+  })();
+
+  const pickupWarehouseNoteText = (() => {
+    const value = t('checkout.pickupWarehouseNote');
+    if (!value || value === 'checkout.pickupWarehouseNote') {
+      return locale === 'ar'
+        ? 'سيتم استلام الطلب من المستودع الذي اخترته.'
+        : 'Your order will be collected from the selected warehouse.';
+    }
+    return value;
+  })();
   const [submitting, setSubmitting]         = useState(false);
 
   // Pre-fill name when user loads
@@ -502,11 +522,11 @@ function CheckoutPageInner() {
                       </>
                     ) : (
                       <div className={`rounded-xl border border-amber-100 bg-amber-50 p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        <p className="text-sm font-semibold text-amber-900">
-                          {t('checkout.pickupNoShippingAddress') || 'No shipping address is needed for pickup orders.'}
+                        <p className="text-sm font-semibold text-amber-900 leading-tight">
+                          {pickupNoAddressText}
                         </p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          {t('checkout.pickupWarehouseNote') || 'You will collect your order from the selected warehouse.'}
+                        <p className="text-xs text-amber-700 mt-0 leading-tight">
+                          {pickupWarehouseNoteText}
                         </p>
                       </div>
                     )}
