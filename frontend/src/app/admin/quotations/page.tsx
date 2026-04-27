@@ -13,6 +13,7 @@ import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import SARSymbol from '@/components/SARSymbol';
 
 const STATUS_COLORS: Record<string, string> = {
+    PENDING: 'bg-amber-100 text-amber-700 border-amber-200',
     DRAFT: 'bg-gray-100 text-gray-700 border-gray-200',
     SENT: 'bg-blue-100 text-blue-700 border-blue-200',
     VIEWED: 'bg-purple-100 text-purple-700 border-purple-200',
@@ -20,6 +21,11 @@ const STATUS_COLORS: Record<string, string> = {
     REJECTED: 'bg-red-100 text-red-700 border-red-200',
     EXPIRED: 'bg-orange-100 text-orange-700 border-orange-200',
     CONVERTED: 'bg-teal-100 text-teal-700 border-teal-200',
+};
+
+const getStatusLabel = (status: string) => {
+    if (status === 'PENDING') return 'Pending Customer Submission';
+    return status;
 };
 
 function StatCard({ label, value, icon, color }: any) {
@@ -124,8 +130,8 @@ export default function AdminQuotationsPage() {
                 </div>
                 <select className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" value={filters.status} onChange={e => setFilters(p => ({ ...p, status: e.target.value }))}>
                     <option value="">All Statuses</option>
-                    {['DRAFT', 'SENT', 'VIEWED', 'APPROVED', 'REJECTED', 'EXPIRED', 'CONVERTED'].map(s => (
-                        <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>
+                    {['PENDING', 'DRAFT', 'SENT', 'VIEWED', 'APPROVED', 'REJECTED', 'EXPIRED', 'CONVERTED'].map(s => (
+                        <option key={s} value={s}>{s === 'PENDING' ? 'Pending Customer' : (s.charAt(0) + s.slice(1).toLowerCase())}</option>
                     ))}
                 </select>
             </div>
@@ -164,7 +170,7 @@ export default function AdminQuotationsPage() {
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.customerEmail}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs font-black text-[#0C1B33]"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${STATUS_COLORS[q.status] || ''}`}>{q.status}</span>
+                                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${STATUS_COLORS[q.status] || ''}`}>{getStatusLabel(q.status)}</span>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.expiryDate ? format(new Date(q.expiryDate), 'MMM dd, yyyy') : '—'}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.createdBy?.profile?.fullName || q.createdBy?.email || '—'}</td>
@@ -172,10 +178,10 @@ export default function AdminQuotationsPage() {
                                     <td className="px-5 py-4 whitespace-nowrap">
                                         <div className="flex items-center space-x-1">
                                             <Link href={`/admin/quotations/${q.id}`} className="p-1.5 text-gray-400 hover:text-[#FF6B35] hover:bg-[#FF6B35]/5 rounded-lg transition-all" title="View"><Eye size={15} /></Link>
-                                            {['DRAFT', 'SENT'].includes(q.status) && (
+                                            {['PENDING', 'DRAFT', 'SENT'].includes(q.status) && (
                                                 <Link href={`/admin/quotations/${q.id}/edit`} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Edit"><Edit3 size={15} /></Link>
                                             )}
-                                            {['DRAFT', 'SENT'].includes(q.status) && (
+                                            {['PENDING', 'DRAFT', 'SENT'].includes(q.status) && (
                                                 <button disabled={!!actionLoading} onClick={() => handleAction('send', q.id)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Send"><Send size={15} /></button>
                                             )}
                                             {['SENT', 'VIEWED'].includes(q.status) && (

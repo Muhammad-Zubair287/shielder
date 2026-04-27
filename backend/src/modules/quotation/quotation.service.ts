@@ -236,13 +236,13 @@ export class QuotationService {
     }
 
     /**
-     * Update quotation (only DRAFT or SENT)
+     * Update quotation (DRAFT, SENT, or PENDING)
      */
     async updateQuotation(id: string, data: UpdateQuotationInput, userId: string) {
         const quotation = await prisma.quotation.findUnique({ where: { id } });
         if (!quotation) throw new NotFoundError('Quotation not found');
 
-        if (!['DRAFT', 'SENT'].includes(quotation.status)) {
+        if (!['DRAFT', 'SENT', 'PENDING'].includes(quotation.status)) {
             throw new BadRequestError(`Cannot edit a quotation with status: ${quotation.status}`);
         }
 

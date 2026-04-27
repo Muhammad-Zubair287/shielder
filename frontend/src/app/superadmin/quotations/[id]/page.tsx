@@ -14,6 +14,7 @@ import SARSymbol from '@/components/SARSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const STATUS_COLORS: Record<string, string> = {
+    PENDING: 'bg-amber-100 text-amber-700',
     DRAFT: 'bg-gray-100 text-gray-700',
     SENT: 'bg-blue-100 text-blue-700',
     VIEWED: 'bg-purple-100 text-purple-700',
@@ -33,6 +34,11 @@ export default function ViewQuotationPage() {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [reactivateDate, setReactivateDate] = useState('');
     const [showReactivateModal, setShowReactivateModal] = useState(false);
+
+    const getStatusLabel = (status: string) => {
+        if (status === 'PENDING') return t('pendingCustomerSubmitted');
+        return status;
+    };
 
     const fetchQuotation = async () => {
         try {
@@ -70,8 +76,8 @@ export default function ViewQuotationPage() {
     );
     if (!quotation) return <div className="text-center py-20 text-gray-400">Quotation not found.</div>;
 
-    const isEditable = ['DRAFT', 'SENT'].includes(quotation.status);
-    const canSend = ['DRAFT', 'SENT'].includes(quotation.status);
+    const isEditable = ['PENDING', 'DRAFT', 'SENT'].includes(quotation.status);
+    const canSend = ['PENDING', 'DRAFT', 'SENT'].includes(quotation.status);
     const canApprove = ['SENT', 'VIEWED'].includes(quotation.status);
     const canReject = ['SENT', 'VIEWED', 'APPROVED'].includes(quotation.status);
     const canConvert = quotation.status === 'APPROVED' && !quotation.convertedOrderId;
@@ -86,7 +92,7 @@ export default function ViewQuotationPage() {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-xl font-black text-shielder-dark">{quotation.quotationNumber}</h1>
-                            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{quotation.status}</span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{getStatusLabel(quotation.status)}</span>
                         </div>
                         <p className="text-gray-400 text-xs mt-1">Created {format(new Date(quotation.createdAt), 'MMM dd, yyyy')}</p>
                     </div>
@@ -137,7 +143,7 @@ export default function ViewQuotationPage() {
                         <div className="text-right">
                             <p className="text-white/60 text-xs uppercase font-bold tracking-widest">Quotation</p>
                             <p className="text-2xl font-black mt-1">{quotation.quotationNumber}</p>
-                            <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{quotation.status}</span>
+                            <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{getStatusLabel(quotation.status)}</span>
                         </div>
                     </div>
                 </div>

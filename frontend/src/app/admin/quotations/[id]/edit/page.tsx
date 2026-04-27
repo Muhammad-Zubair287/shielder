@@ -122,7 +122,7 @@ export default function EditQuotationPage() {
     };
 
     if (loading) return <div className="flex items-center justify-center h-64"><Loader2 size={32} className="animate-spin text-shielder-primary" /></div>;
-    if (!quotation || !['DRAFT', 'SENT'].includes(quotation.status)) return (
+    if (!quotation || !['PENDING', 'DRAFT', 'SENT'].includes(quotation.status)) return (
         <div className="text-center py-20">
             <p className="text-gray-500 font-medium mb-4">This quotation cannot be edited in its current state ({quotation?.status}).</p>
             <Link href={`/admin/quotations/${id}`} className="text-shielder-primary font-bold hover:underline">← Back to Quotation</Link>
