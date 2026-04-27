@@ -199,7 +199,7 @@ function CheckoutPageInner() {
     if (!form.phoneNumber.trim()) {
       toast.error(t('checkout.errorPhone'));    return false;
     }
-    if (!form.shippingAddress.trim()) {
+    if (deliveryType === 'DELIVERY' && !form.shippingAddress.trim()) {
       toast.error(t('checkout.errorAddress')); return false;
     }
     // PICKUP requires warehouse selection
@@ -219,6 +219,7 @@ function CheckoutPageInner() {
 
     setSubmitting(true);
     const items = cart.items.map(i => ({ productId: i.productId, quantity: i.quantity }));
+    const shippingAddress = deliveryType === 'DELIVERY' ? form.shippingAddress : '';
 
     try {
       if (paymentMethod === 'CREDIT_CARD') {
@@ -227,7 +228,7 @@ function CheckoutPageInner() {
           items,
           customerName:    form.customerName,
           phoneNumber:     form.phoneNumber,
-          shippingAddress: form.shippingAddress,
+          shippingAddress,
           notes:           form.notes || undefined,
           ...(deliveryType === 'PICKUP' && { deliveryType: 'PICKUP', warehouseId }),
         });
@@ -243,7 +244,7 @@ function CheckoutPageInner() {
           items,
           customerName:    form.customerName,
           phoneNumber:     form.phoneNumber,
-          shippingAddress: form.shippingAddress,
+          shippingAddress,
           paymentMethod,
           notes:           form.notes || undefined,
           ...(deliveryType === 'PICKUP' && { deliveryType: 'PICKUP', warehouseId }),
@@ -311,97 +312,6 @@ function CheckoutPageInner() {
 
               {/* ── Left column: form ───────────────────────────────────── */}
               <div className="lg:col-span-3 space-y-6">
-
-                {/* Shipping Information */}
-                <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <MapPin size={18} className="text-[#F97316]" />
-                    {t('checkout.shippingInfo')}
-                  </h2>
-
-                  <div className="space-y-4">
-                    {/* Full Name */}
-                    <div>
-                      <label htmlFor="checkout-customer-name" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        {t('checkout.fullName')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <UserIcon size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-                        <input
-                          id="checkout-customer-name"
-                          type="text"
-                          name="customerName"
-                          value={form.customerName}
-                          onChange={handleChange}
-                          placeholder={t('checkout.fullNamePlaceholder')}
-                          required
-                          className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
-                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
-                            ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'}`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Phone */}
-                    <div>
-                      <label htmlFor="checkout-phone-number" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        {t('checkout.phone')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Phone size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-                        <input
-                          id="checkout-phone-number"
-                          type="tel"
-                          name="phoneNumber"
-                          value={form.phoneNumber}
-                          onChange={handleChange}
-                          placeholder={t('checkout.phonePlaceholder')}
-                          required
-                          className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
-                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
-                            ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'}`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Shipping Address */}
-                    <div>
-                      <label htmlFor="checkout-shipping-address" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        {t('checkout.shippingAddress')} <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        id="checkout-shipping-address"
-                        name="shippingAddress"
-                        value={form.shippingAddress}
-                        onChange={handleChange}
-                        rows={3}
-                        placeholder={t('checkout.shippingAddressPlaceholder')}
-                        required
-                        className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
-                          placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent resize-none
-                          ${isRTL ? 'text-right' : 'text-left'}`}
-                      />
-                    </div>
-
-                    {/* Notes (optional) */}
-                    <div>
-                      <label htmlFor="checkout-notes" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        {t('checkout.notes')}
-                      </label>
-                      <input
-                        id="checkout-notes"
-                        type="text"
-                        name="notes"
-                        value={form.notes}
-                        onChange={handleChange}
-                        placeholder={t('checkout.notesPlaceholder')}
-                        className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
-                          placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
-                          ${isRTL ? 'text-right' : 'text-left'}`}
-                      />
-                    </div>
-                  </div>
-                </section>
 
                 {/* Delivery Method */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -494,6 +404,110 @@ function CheckoutPageInner() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Shipping Information */}
+                <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <MapPin size={18} className="text-[#F97316]" />
+                    {deliveryType === 'PICKUP' ? t('checkout.customerInfo') || 'Customer Information' : t('checkout.shippingInfo')}
+                  </h2>
+
+                  <div className="space-y-4">
+                    {/* Full Name */}
+                    <div>
+                      <label htmlFor="checkout-customer-name" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        {t('checkout.fullName')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <UserIcon size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                        <input
+                          id="checkout-customer-name"
+                          type="text"
+                          name="customerName"
+                          value={form.customerName}
+                          onChange={handleChange}
+                          placeholder={t('checkout.fullNamePlaceholder')}
+                          required
+                          className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
+                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                            ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label htmlFor="checkout-phone-number" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        {t('checkout.phone')} <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Phone size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                        <input
+                          id="checkout-phone-number"
+                          type="tel"
+                          name="phoneNumber"
+                          value={form.phoneNumber}
+                          onChange={handleChange}
+                          placeholder={t('checkout.phonePlaceholder')}
+                          required
+                          className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
+                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                            ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'}`}
+                        />
+                      </div>
+                    </div>
+
+                    {deliveryType === 'DELIVERY' ? (
+                      <>
+                        {/* Shipping Address */}
+                        <div>
+                          <label htmlFor="checkout-shipping-address" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {t('checkout.shippingAddress')} <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            id="checkout-shipping-address"
+                            name="shippingAddress"
+                            value={form.shippingAddress}
+                            onChange={handleChange}
+                            rows={3}
+                            placeholder={t('checkout.shippingAddressPlaceholder')}
+                            required
+                            className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
+                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent resize-none
+                              ${isRTL ? 'text-right' : 'text-left'}`}
+                          />
+                        </div>
+
+                        {/* Notes (optional) */}
+                        <div>
+                          <label htmlFor="checkout-notes" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {t('checkout.notes')}
+                          </label>
+                          <input
+                            id="checkout-notes"
+                            type="text"
+                            name="notes"
+                            value={form.notes}
+                            onChange={handleChange}
+                            placeholder={t('checkout.notesPlaceholder')}
+                            className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
+                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                              ${isRTL ? 'text-right' : 'text-left'}`}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className={`rounded-xl border border-amber-100 bg-amber-50 p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <p className="text-sm font-semibold text-amber-900">
+                          {t('checkout.pickupNoShippingAddress') || 'No shipping address is needed for pickup orders.'}
+                        </p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          {t('checkout.pickupWarehouseNote') || 'You will collect your order from the selected warehouse.'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -616,10 +630,8 @@ function CheckoutPageInner() {
                   >
                     {submitting ? (
                       <><Loader2 size={18} className="animate-spin" />{t('checkout.processing')}</>
-                    ) : paymentMethod === 'CREDIT_CARD' ? (
-                      <><CreditCard size={18} />{t('checkout.payNow')}</>
                     ) : (
-                      <>{t('checkout.placeOrder')}<ChevronRight size={18} className={isRTL ? 'rotate-180' : ''} /></>
+                      <><ChevronRight size={18} className={isRTL ? 'rotate-180' : ''} />Checkout</>
                     )}
                   </button>
 

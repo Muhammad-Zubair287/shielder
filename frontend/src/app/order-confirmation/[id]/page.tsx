@@ -98,6 +98,16 @@ function methodIcon(method: string) {
   return <Banknote size={14} />;
 }
 
+function orderStatusLabel(status: string) {
+  const value = (status || '').toUpperCase();
+  return `Order Status: ${value.charAt(0)}${value.slice(1).toLowerCase()}`;
+}
+
+function paymentStatusLabel(status: string) {
+  const value = (status || '').toUpperCase();
+  return `Payment Status: ${value.charAt(0)}${value.slice(1).toLowerCase()}`;
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function OrderConfirmationPage() {
@@ -206,11 +216,11 @@ function OrderConfirmationPageInner() {
               <div className={`flex items-center gap-2 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor(order.status)}`}>
                   <Clock size={11} />
-                  {t(`orderConfirmation.status.${order.status.toLowerCase()}`) || order.status}
+                  {orderStatusLabel(t(`orderConfirmation.status.${order.status.toLowerCase()}`) || order.status)}
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${paymentStatusColor(order.paymentStatus)}`}>
                   {methodIcon(order.paymentMethod)}
-                  {t(`orderConfirmation.paymentStatus.${order.paymentStatus.toLowerCase()}`) || order.paymentStatus}
+                  {paymentStatusLabel(t(`orderConfirmation.paymentStatus.${order.paymentStatus.toLowerCase()}`) || order.paymentStatus)}
                 </span>
               </div>
             </div>
