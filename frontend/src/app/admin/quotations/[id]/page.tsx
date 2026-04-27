@@ -23,11 +23,6 @@ const STATUS_COLORS: Record<string, string> = {
     CONVERTED: 'bg-teal-100 text-teal-700',
 };
 
-const getStatusLabel = (status: string) => {
-    if (status === 'PENDING') return 'Pending Customer Submission';
-    return status;
-};
-
 export default function ViewQuotationPage() {
     const { id } = useParams();
     const [quotation, setQuotation] = useState<any>(null);
@@ -90,7 +85,7 @@ export default function ViewQuotationPage() {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-xl font-black text-shielder-dark">{quotation.quotationNumber}</h1>
-                            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{getStatusLabel(quotation.status)}</span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{quotation.status}</span>
                         </div>
                         <p className="text-gray-400 text-xs mt-1">Created {format(new Date(quotation.createdAt), 'MMM dd, yyyy')}</p>
                     </div>
@@ -141,7 +136,7 @@ export default function ViewQuotationPage() {
                         <div className="text-right">
                             <p className="text-white/60 text-xs uppercase font-bold tracking-widest">Quotation</p>
                             <p className="text-2xl font-black mt-1">{quotation.quotationNumber}</p>
-                            <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{getStatusLabel(quotation.status)}</span>
+                            <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{quotation.status}</span>
                         </div>
                     </div>
                 </div>

@@ -23,11 +23,6 @@ const STATUS_COLORS: Record<string, string> = {
     CONVERTED: 'bg-teal-100 text-teal-700 border-teal-200',
 };
 
-const getStatusLabel = (status: string) => {
-    if (status === 'PENDING') return 'Pending Customer Submission';
-    return status;
-};
-
 function StatCard({ label, value, icon, color }: any) {
     return (
         <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">
@@ -131,7 +126,7 @@ export default function AdminQuotationsPage() {
                 <select className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" value={filters.status} onChange={e => setFilters(p => ({ ...p, status: e.target.value }))}>
                     <option value="">All Statuses</option>
                     {['PENDING', 'DRAFT', 'SENT', 'VIEWED', 'APPROVED', 'REJECTED', 'EXPIRED', 'CONVERTED'].map(s => (
-                        <option key={s} value={s}>{s === 'PENDING' ? 'Pending Customer' : (s.charAt(0) + s.slice(1).toLowerCase())}</option>
+                        <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>
                     ))}
                 </select>
             </div>
@@ -170,7 +165,7 @@ export default function AdminQuotationsPage() {
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.customerEmail}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs font-black text-[#0C1B33]"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(q.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
                                     <td className="px-5 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${STATUS_COLORS[q.status] || ''}`}>{getStatusLabel(q.status)}</span>
+                                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${STATUS_COLORS[q.status] || ''}`}>{q.status}</span>
                                     </td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.expiryDate ? format(new Date(q.expiryDate), 'MMM dd, yyyy') : '—'}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">{q.createdBy?.profile?.fullName || q.createdBy?.email || '—'}</td>

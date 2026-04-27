@@ -247,8 +247,6 @@ export const translations = {
     noQuotations: 'No quotations found',
     pendingQuotations: 'Pending',
     respondedQuotations: 'Responded',
-    pendingCustomerSubmitted: 'Pending Customer Submission',
-    pendingCustomerSubmittedShort: 'Pending Customer',
 
     // Reports Page
     reportsTitle: 'Reports',
@@ -562,8 +560,6 @@ export const translations = {
     noQuotations: 'لا توجد عروض أسعار',
     pendingQuotations: 'قيد الانتظار',
     respondedQuotations: 'تمت الاستجابة',
-    pendingCustomerSubmitted: 'بانتظار مراجعة طلب العميل',
-    pendingCustomerSubmittedShort: 'طلب عميل قيد الانتظار',
 
     // صفحة التقارير
     reportsTitle: 'التقارير',

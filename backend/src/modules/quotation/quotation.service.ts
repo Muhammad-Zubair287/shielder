@@ -421,13 +421,24 @@ export class QuotationService {
             throw new BadRequestError('This quotation has already been converted to an order.');
         }
 
+        const quotationCustomer = await prisma.user.findFirst({
+            where: {
+                email: { equals: quotation.customerEmail, mode: 'insensitive' },
+                isActive: true,
+                deletedAt: null,
+            },
+            select: { id: true },
+        });
+
+        const orderOwnerUserId = quotationCustomer?.id || userId;
+
         const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
         const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const newOrder = await tx.order.create({
                 data: {
                     orderNumber,
-                    userId,
+                    userId: orderOwnerUserId,
                     customerName: quotation.customerName,
                     phoneNumber: quotation.customerPhone,
                     shippingAddress: quotation.customerAddress,

@@ -52,6 +52,7 @@ type PublicImageAttachment = {
 type AuthenticatedUser = {
   userId: string;
   role: UserRole;
+  email?: string;
 };
 
 export class OrderService {
@@ -416,7 +417,19 @@ export class OrderService {
     // Ownership check: customer can only access their own orders
     // Admin/Super Admin bypass this check
     if (user && user.role === UserRole.USER && order.userId !== user.userId) {
-      throw new NotFoundError('Order not found'); // Return 404 to avoid leaking existence
+      const linkedQuotation = user.email
+        ? await prisma.quotation.findFirst({
+            where: {
+              convertedOrderId: id,
+              customerEmail: { equals: user.email, mode: 'insensitive' },
+            },
+            select: { id: true },
+          })
+        : null;
+
+      if (!linkedQuotation) {
+        throw new NotFoundError('Order not found'); // Return 404 to avoid leaking existence
+      }
     }
 
     return OrderService.normalizeOrder(order);
