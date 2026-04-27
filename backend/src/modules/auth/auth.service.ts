@@ -46,6 +46,7 @@ type SanitizedAuthUser = {
     lastName?: string;
     phoneNumber?: string;
     phone?: string;
+    address?: string;
     companyName?: string;
     profileImage?: string;
     locale?: string;
@@ -1158,6 +1159,7 @@ export class AuthService {
       profile?: {
         fullName?: string;
         phoneNumber?: string | null;
+        address?: string | null;
         companyName?: string | null;
         profileImage?: string | null;
         preferredLanguage?: string;
@@ -1181,6 +1183,7 @@ export class AuthService {
             lastName: lastName || undefined,
             phoneNumber: sanitized.profile.phoneNumber || undefined,
             phone: sanitized.profile.phoneNumber || undefined,
+            address: sanitized.profile.address || undefined,
             companyName: sanitized.profile.companyName || undefined,
             profileImage: sanitized.profile.profileImage || undefined,
             locale: sanitized.profile.preferredLanguage || undefined,

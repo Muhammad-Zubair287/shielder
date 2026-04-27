@@ -25,7 +25,7 @@
  * router.push('/profile');
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -54,9 +54,10 @@ import { ROUTES } from '@/utils/constants';
  * @returns {JSX.Element} Profile management page
  */
 export default function ProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
   const { t, isRTL } = useLanguage();
+  const hasRefreshedProfile = useRef(false);
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -64,6 +65,15 @@ export default function ProfilePage() {
       router.replace(ROUTES.LOGIN);
     }
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (!authLoading && user && !hasRefreshedProfile.current) {
+      hasRefreshedProfile.current = true;
+      refreshUser().catch((error) => {
+        console.error('Profile refresh failed:', error);
+      });
+    }
+  }, [authLoading, refreshUser, user]);
 
   if (authLoading) {
     return (

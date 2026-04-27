@@ -118,6 +118,7 @@ export interface AuthResponse {
       firstName?: string;
       lastName?: string;
       phone?: string;
+      address?: string;
       companyName?: string;
       locale?: string;
     };
