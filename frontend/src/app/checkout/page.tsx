@@ -168,6 +168,24 @@ function CheckoutPageInner() {
   const [warehouses, setWarehouses]         = useState<WarehouseType[]>([]);
   const [warehousesLoading, setWarehousesLoading] = useState(false);
 
+  const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId) || null;
+
+  const warehouseCountryLine = (() => {
+    if (!selectedWarehouse?.country?.trim()) return 'SAUDI ARABIA';
+    return /saudi|ksa|السعود/i.test(selectedWarehouse.country)
+      ? 'SAUDI ARABIA'
+      : selectedWarehouse.country.trim().toUpperCase();
+  })();
+
+  const warehouseAddressLines = selectedWarehouse
+    ? [
+        selectedWarehouse.name?.trim(),
+        selectedWarehouse.address?.trim(),
+        selectedWarehouse.city?.trim() ? selectedWarehouse.city.trim().toUpperCase() : '',
+        warehouseCountryLine,
+      ].filter((line): line is string => Boolean(line))
+    : [];
+
   const pickupNoAddressText = (() => {
     const value = t('checkout.pickupNoShippingAddress');
     if (!value || value === 'checkout.pickupNoShippingAddress') {
@@ -429,6 +447,21 @@ function CheckoutPageInner() {
                             </div>
                           )}
                         </div>
+
+                        {selectedWarehouse && warehouseAddressLines.length > 0 && (
+                          <div className={`mt-3 rounded-xl border border-blue-100 bg-blue-50 p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+                            <p className="text-xs font-semibold tracking-wide text-blue-800 uppercase mb-2">
+                              {locale === 'ar' ? 'عنوان المستودع للاستلام' : 'Pickup Warehouse Address'}
+                            </p>
+                            <address className="not-italic text-sm text-blue-900 leading-6 whitespace-pre-line">
+                              {warehouseAddressLines.map((line, index) => (
+                                <span key={`${selectedWarehouse.id}-${index}`} className="block">
+                                  {line}
+                                </span>
+                              ))}
+                            </address>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
