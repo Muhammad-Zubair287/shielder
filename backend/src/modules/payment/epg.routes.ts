@@ -28,6 +28,12 @@ const initializeSchema = Joi.object({
   phoneNumber:     Joi.string().trim().min(7).required(),
   shippingAddress: Joi.string().trim().min(5).required(),
   notes:           Joi.string().allow('', null).optional(),
+  deliveryType:    Joi.string().valid('DELIVERY', 'PICKUP').default('DELIVERY'),
+  warehouseId:     Joi.when('deliveryType', {
+    is: 'PICKUP',
+    then: Joi.string().uuid().required(),
+    otherwise: Joi.string().uuid().optional().allow(null),
+  }),
 });
 
 // Initialize EPG payment (customer must be authenticated)
