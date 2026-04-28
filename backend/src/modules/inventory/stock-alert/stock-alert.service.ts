@@ -43,16 +43,26 @@ class StockAlertService {
 
     if (product && product.isActive && product.stock <= product.minimumStockThreshold) {
       const productName = product.translations[0]?.name || 'Unknown Product';
-      
-      await NotificationService.notify({
+
+      const payload = {
         type: NotificationType.LOW_STOCK,
         title: 'Low Stock Alert',
         message: `Product "${productName}" is below its minimum threshold. Current stock: ${product.stock}`,
-        module: 'INVENTORY',
-        roleTarget: UserRole.SUPER_ADMIN,
+        module: 'INVENTORY' as const,
         relatedId: productId,
-        metadata: { sku: product.sku, stock: product.stock }
-      });
+        metadata: { sku: product.sku, stock: product.stock },
+      };
+
+      await Promise.all([
+        NotificationService.notify({
+          ...payload,
+          roleTarget: UserRole.SUPER_ADMIN,
+        }),
+        NotificationService.notify({
+          ...payload,
+          roleTarget: UserRole.ADMIN,
+        }),
+      ]);
     }
   }
   /**
