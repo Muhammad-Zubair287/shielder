@@ -91,7 +91,7 @@ export default function LandingNavbar() {
             {user ? (
               <Link
                 href="/profile"
-                className={`hidden xl:flex flex-col items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition hover:border-[#F97316]/40 hover:shadow-md ${isRTL ? 'text-right' : 'text-left'}`}
+                className={`hidden xl:flex flex-col items-center justify-center gap-1 rounded-2xl bg-white px-3 py-2 shadow-sm transition hover:shadow-md ${isRTL ? 'text-right' : 'text-left'}`}
                 aria-label="Open profile"
               >
                 <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#F97316]/20 bg-gray-100 text-gray-600">

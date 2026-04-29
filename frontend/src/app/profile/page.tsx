@@ -28,6 +28,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { ChangePasswordSection } from '@/components/profile/ChangePasswordSection';
@@ -54,7 +55,8 @@ import { ROUTES } from '@/utils/constants';
  * @returns {JSX.Element} Profile management page
  */
 export default function ProfilePage() {
-  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { isLoading: authLoading } = useAuthStore();
   const router = useRouter();
   const { t, isRTL } = useLanguage();
   const hasRefreshedProfile = useRef(false);
