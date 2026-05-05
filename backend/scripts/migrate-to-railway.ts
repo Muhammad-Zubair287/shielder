@@ -7,7 +7,7 @@
 import { PrismaClient } from '@prisma/client';
 
 const LOCAL_URL   = 'postgresql://postgres:jerry2244@127.0.0.1:5432/shielderDB';
-const RAILWAY_URL = 'postgresql://postgres:gDgTUsVbJXqJNgBsiZcJbEtuXVlufdfE@shinkansen.proxy.rlwy.net:14339/railway';
+const RAILWAY_URL = 'postgresql://postgres:YSvGEyPpWmqTgpZvhFQRawLTSZffWjBM@trolley.proxy.rlwy.net:58723/railway';
 
 const local   = new PrismaClient({ datasources: { db: { url: LOCAL_URL } } });
 const railway = new PrismaClient({ datasources: { db: { url: RAILWAY_URL } } });
