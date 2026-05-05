@@ -870,7 +870,7 @@ export class ProductService {
       const rowNum = i + 2; // +1 for 0-index, +1 for header
       
       try {
-        const name = asString(getRowValue(row, 'Product Name'));
+        const name = asString(getRowValue(row, 'Product Name', 'Name'));
         const sku = asString(getRowValue(row, 'SKU')) || undefined;
         const price = Number(getRowValue(row, 'Price'));
         const stock = Number(getRowValue(row, 'Stock'));
@@ -923,8 +923,8 @@ export class ProductService {
         }
 
         // Validations
-        if (!name || !price || isNaN(price) || isNaN(stock)) {
-          throw new Error('Name, Price, and Stock are required and must be numeric');
+        if (!name || isNaN(price) || isNaN(stock)) {
+          throw new Error('Name is required, and Price/Stock must be valid numbers');
         }
 
         // Auto-create category if it doesn't exist
