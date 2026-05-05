@@ -876,9 +876,9 @@ export class ProductService {
         const stock = Number(getRowValue(row, 'Stock'));
         const minimumStockRaw = Number(getRowValue(row, 'Minimum Stock'));
         const minStock = Number.isFinite(minimumStockRaw) && minimumStockRaw > 0 ? minimumStockRaw : 5;
-        const catName = asString(getRowValue(row, 'Category Name')).toLowerCase();
-        const subName = asString(getRowValue(row, 'Subcategory Name')).toLowerCase();
-        const brandName = asString(getRowValue(row, 'Brand Name')).toLowerCase();
+        const catName = asString(getRowValue(row, 'Category Name', 'Category')).toLowerCase();
+        const subName = asString(getRowValue(row, 'Subcategory Name', 'Subcategory')).toLowerCase();
+        const brandName = asString(getRowValue(row, 'Brand Name', 'Brand')).toLowerCase();
         const description = asString(getRowValue(row, 'Description'));
         const nameArInput = asString(getRowValue(row, 'Arabic Name'));
         const descArInput = asString(getRowValue(row, 'Arabic Description'));
