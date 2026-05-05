@@ -78,7 +78,8 @@ export default function SuperAdminWarehousesPage() {
             </p>
           </div>
 
-          <button
+          {/* Add Warehouse button disabled for now per request */}
+          {/* <button
             onClick={() => {
               setSelected(null);
               setFormMode('create');
@@ -87,7 +88,7 @@ export default function SuperAdminWarehousesPage() {
           >
             <Plus size={16} />
             {t('addWarehouse') || 'Add Warehouse'}
-          </button>
+          </button> */}
         </div>
       </section>
 
