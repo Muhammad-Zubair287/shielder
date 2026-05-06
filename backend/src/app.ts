@@ -31,6 +31,7 @@ import paymentRoutes from './modules/payment/payment.routes';
 import epgRoutes from './modules/payment/epg.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import settingsRoutes from './modules/settings/settings.routes';
+import privacyPolicyRoutes from './modules/privacy-policy/privacy-policy.routes';
 import quotationRoutes from './modules/quotation/quotation.routes';
 import customerQuotationRoutes from './modules/customer-quotation/customer-quotation.routes';
 import contactRoutes from './modules/contact/contact.routes';
@@ -168,6 +169,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/epg`, epgRoutes);
     app.use(`${prefix}/reports`, reportsRoutes);
     app.use(`${prefix}/settings`, settingsRoutes);
+    app.use(`${prefix}/privacy-policy`, privacyPolicyRoutes);
     app.use(`${prefix}/quotations`, quotationRoutes);
     app.use(`${prefix}/customer-quotations`, customerQuotationRoutes);
     app.use(`${prefix}/contact`, contactRoutes);

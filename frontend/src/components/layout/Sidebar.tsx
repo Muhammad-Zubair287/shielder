@@ -72,6 +72,7 @@ const superAdminMenuItems: MenuItem[] = [
   },
   { nameKey: 'reports',        icon: BarChart3, href: '/superadmin/reports' },
   { nameKey: 'notifications',  icon: Bell,      href: '/superadmin/notifications', badge: true },
+  { nameKey: 'privacyPolicy',  icon: ShieldCheck, href: '/superadmin/privacy-policy' },
   { nameKey: 'settings',       icon: Settings,  href: '/superadmin/settings' },
 ];
 

@@ -30,6 +30,7 @@ export default function LandingNavbar() {
     { label: t('landingNavProducts'), href: '/products' },
     { label: t('landingNavRequestQuote'), href: '/generate-quotation' },
     { label: t('landingNavContact'), href: '/contact' },
+    { label: t('landingNavPrivacy'), href: '/privacy-policy' },
     ...(user
       ? [
           { label: t('myOrders.title'), href: '/my-orders' },

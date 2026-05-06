@@ -459,6 +459,16 @@ model SystemSettings {
   @@map("system_settings")
 }
 
+model PrivacyPolicy {
+  id        String   @id @default("CURRENT")
+  contentEn String   @map("content_en") @db.Text
+  contentAr String   @map("content_ar") @db.Text
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("privacy_policy")
+}
+
 model SystemConfigSnapshot {
   id          String   @id @default(uuid())
   config      Json

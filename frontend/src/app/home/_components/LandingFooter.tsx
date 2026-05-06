@@ -23,7 +23,7 @@ export default function LandingFooter() {
     { label: t('landingFooterCatOil'),    href: '/products?category=oil'    },
   ];
   const legalLinks = [
-    { label: t('landingFooterPrivacy'), href: '#' },
+    { label: t('landingNavPrivacy'), href: '/privacy-policy' },
     { label: t('landingFooterTerms'),   href: '#' },
     { label: t('landingFooterCookies'), href: '#' },
   ];
