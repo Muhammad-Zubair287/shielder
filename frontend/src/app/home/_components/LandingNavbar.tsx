@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, MessageCircle } from 'lucide-react';
+import { Menu, X, MessageCircle, User, LogOut, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -15,14 +15,27 @@ import { getImageUrl } from '@/utils/helpers';
 
 export default function LandingNavbar() {
   const { t, isRTL } = useLanguage();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const navLinks = [
@@ -49,21 +62,21 @@ export default function LandingNavbar() {
         scrolled ? 'shadow-lg' : 'shadow-sm border-b border-gray-100'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center h-20 gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className={`flex items-center h-20 gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
 
           {/* Logo */}
           <Link href="/home" className="flex-shrink-0 flex items-center">
-            <div className="relative h-14 w-40 sm:w-44 lg:w-48 xl:w-52">
-              <Image src="/images/shielder-logo.png" alt="Shielder" fill className="object-contain object-left" sizes="256px" priority />
+            <div className="relative h-12 w-36 sm:w-40 lg:w-44">
+              <Image src="/images/shielder-logo.png" alt="Shielder" fill className="object-contain object-left" sizes="200px" priority />
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className={`hidden xl:flex items-center gap-0.5 ${isRTL ? 'mr-4' : 'ml-4'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+          <nav className={`hidden lg:flex items-center gap-0 ${isRTL ? 'mr-2' : 'ml-2'}`} dir={isRTL ? 'rtl' : 'ltr'}>
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
-                className="px-3 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap">
+                className="px-2 py-2 text-[13px] font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap">
                 {link.label}
               </Link>
             ))}
@@ -71,7 +84,7 @@ export default function LandingNavbar() {
             {!user ? (
               <Link
                 href="/login"
-                className="px-3 py-2 text-sm font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap"
+                className="px-2 py-2 text-[13px] font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap"
               >
                 {t('landingNavLogin')}
               </Link>
@@ -81,41 +94,74 @@ export default function LandingNavbar() {
           <div className="flex-1" />
 
           {/* Actions */}
-          <div className={`flex items-center gap-0.5 ${isRTL ? 'flex-row-reverse' : ''} ml-2`}>
-            <LanguageSwitcher variant="pills" />
+          <div className={`flex items-center gap-0.5 ${isRTL ? 'flex-row-reverse' : ''} ml-1`}>
+            <div className="scale-90 origin-right">
+              <LanguageSwitcher variant="pills" />
+            </div>
             <a href="https://wa.me/966506814416" target="_blank" rel="noopener noreferrer"
-              className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors">
-              <MessageCircle size={20} />
+              className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-colors">
+              <MessageCircle size={18} />
             </a>
             <CartBadge />
             <QuotationBadge />
             {user ? (
-              <Link
-                href="/profile"
-                className={`hidden xl:flex flex-col items-center justify-center gap-1 rounded-2xl bg-white px-3 py-2 shadow-sm transition hover:shadow-md ${isRTL ? 'text-right' : 'text-left'}`}
-                aria-label="Open profile"
-              >
-                <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#F97316]/20 bg-gray-100 text-gray-600">
-                  {user.profile?.profileImage ? (
-                    <Image
-                      src={getImageUrl(user.profile.profileImage)}
-                      alt={profileDisplayName}
-                      fill
-                      className="object-cover"
-                      sizes="40px"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold uppercase">
-                      {profileFirstName.slice(0, 1)}
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs font-semibold text-gray-700 leading-none max-w-[64px] truncate text-center">
-                  {profileFirstName}
-                </span>
-              </Link>
+              <div className="relative" ref={profileRef}>
+                <button
+                  onClick={() => setProfileOpen(v => !v)}
+                  className={`hidden lg:flex flex-col items-center justify-center gap-1 transition-all hover:opacity-80 active:scale-95`}
+                  aria-label="Toggle profile menu"
+                >
+                  <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#F97316]/20 bg-gray-100 text-gray-600 shadow-sm">
+                    {user.profile?.profileImage ? (
+                      <Image
+                        src={getImageUrl(user.profile.profileImage) || '/images/default-avatar.png'}
+                        alt={profileDisplayName}
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold uppercase">
+                        {profileFirstName.slice(0, 1)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[10px] font-bold text-gray-700 leading-none truncate max-w-[64px] text-center">
+                    {profileFirstName}
+                  </span>
+                </button>
+
+                {profileOpen && (
+                  <div className={`fixed lg:absolute ${isRTL ? 'left-4 lg:left-0' : 'right-4 lg:right-0'} top-20 lg:top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-xl py-1.5 z-[100] overflow-hidden`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link
+                      href="/profile"
+                      onClick={() => setProfileOpen(false)}
+                      className={`flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-[#F97316] transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                    >
+                      <User size={16} />
+                      <span>{t('profile.viewProfile')}</span>
+                    </Link>
+                    <div className="h-px bg-gray-50 my-1" />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        logout();
+                        setProfileOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                    >
+                      <LogOut size={16} />
+                      <span>{t('logout')}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : null}
-            <button className="xl:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg" onClick={() => setMobileOpen(v => !v)}>
+            <button className="lg:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg" onClick={() => setMobileOpen(v => !v)}>
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -124,7 +170,7 @@ export default function LandingNavbar() {
       </div>
 
       {mobileOpen && (
-        <div className="xl:hidden border-t border-gray-100 bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="lg:hidden border-t border-gray-100 bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
           {navLinks.map(link => (
             <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
               className={`block px-6 py-3.5 text-sm font-semibold text-gray-700 hover:text-[#F97316] hover:bg-orange-50 border-b border-gray-50 ${isRTL ? 'text-right' : 'text-left'}`}>
@@ -140,7 +186,7 @@ export default function LandingNavbar() {
             <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-gray-600">
               {user?.profile?.profileImage ? (
                 <Image
-                  src={getImageUrl(user.profile.profileImage)}
+                  src={getImageUrl(user.profile.profileImage) || '/images/default-avatar.png'}
                   alt={user.profile?.fullName || user.email || 'Profile'}
                   width={32}
                   height={32}
@@ -154,6 +200,19 @@ export default function LandingNavbar() {
             </span>
             <span>{user ? profileFirstName : t('landingNavLogin')}</span>
           </Link>
+
+          {user && (
+            <button
+              onClick={() => {
+                logout();
+                setMobileOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-red-600 hover:bg-red-50 border-b border-gray-50 ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
+            >
+              <LogOut size={20} className={isRTL ? 'rotate-180' : ''} />
+              <span>{t('auth.logout')}</span>
+            </button>
+          )}
         </div>
       )}
     </header>
