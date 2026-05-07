@@ -68,6 +68,9 @@ export const API_ENDPOINTS = {
     USER_STATS: 'super-admin/users/stats',
     USER_CREATE: 'super-admin/users/create',
     USER_BY_ID: (id: string) => `super-admin/users/${id}`,
+    INQUIRIES: 'super-admin/inquiries',
+    INQUIRY_STATS: 'super-admin/inquiries/stats',
+    INQUIRY_RESOLVE: (id: string) => `super-admin/inquiries/${id}/resolve`,
   },
   // Admin Management
   ADMINS: {

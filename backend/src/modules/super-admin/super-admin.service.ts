@@ -639,6 +639,96 @@ export class SuperAdminService {
     // All other completed actions (including USER_LOGIN) are successful.
     return 'success';
   }
+
+  /**
+   * Get Inquiries with filters and pagination
+   */
+  async getInquiries(filters: any, pagination: PaginationParams) {
+    const { status, search } = filters;
+    const where: any = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, inquiries] = await Promise.all([
+      prisma.contact.count({ where }),
+      prisma.contact.findMany({
+        where,
+        skip: pagination.skip,
+        take: pagination.limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return createPaginatedResponse(inquiries, total, pagination.page, pagination.limit);
+  }
+
+  /**
+   * Get Inquiry Statistics
+   */
+  async getInquiryStats() {
+    const [pending, resolved] = await Promise.all([
+      prisma.contact.count({ where: { status: 'PENDING' } }),
+      prisma.contact.count({ where: { status: 'RESOLVED' } }),
+    ]);
+
+    return {
+      pending,
+      resolved,
+      total: pending + resolved,
+    };
+  }
+
+  /**
+   * Resolve an inquiry
+   */
+  async resolveInquiry(id: string, resolvedBy: string) {
+    if (!id || typeof id !== 'string') {
+      throw new ApiError('Inquiry ID is required', 400);
+    }
+    
+    const inquiry = await prisma.contact.findUnique({ where: { id } });
+    if (!inquiry) throw new ApiError('Inquiry not found', 404);
+
+    const updated = await prisma.contact.update({
+      where: { id },
+      data: { status: 'RESOLVED' },
+    });
+
+    // Log the resolution in audit log
+    await AuditService.log({
+      userId: resolvedBy,
+      action: 'INQUIRY_RESOLVED',
+      entityType: 'CONTACT',
+      entityId: id,
+      changes: {
+        previousStatus: inquiry.status,
+        newStatus: 'RESOLVED',
+      },
+    });
+
+    // Also mark associated notifications as read for the user who resolved it
+    await prisma.notification.updateMany({
+      where: {
+        relatedId: id,
+        type: 'NEW_INQUIRY',
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    return updated;
+  }
 }
 
 export const superAdminService = new SuperAdminService();

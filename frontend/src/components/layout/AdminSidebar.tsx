@@ -25,6 +25,7 @@ import {
   AlertCircle,
   PieChart,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -68,6 +69,7 @@ const adminMenuItems: MenuItem[] = [
     ],
   },
   { nameKey: 'reports',       icon: BarChart3, href: '/admin/reports' },
+  { nameKey: 'inquiries',     icon: MessageSquare, href: '/admin/inquiries', badge: true },
   { nameKey: 'notifications', icon: Bell,      href: '/admin/notifications', badge: true },
   { nameKey: 'settings',      icon: Settings,  href: '/admin/settings' },
 ];
@@ -79,6 +81,7 @@ export const AdminSidebar = () => {
   const { logout } = useAuth();
   const { t, isRTL } = useLanguage();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
   const prefetchedRoutes = useRef(new Set<string>());
   const [expandedMenus, setExpandedMenus] = useState<string[]>(
     pathname.includes('/admin/quotations') ? ['quotations'] : []
@@ -113,9 +116,17 @@ export const AdminSidebar = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await apiService.get('/notifications/unread-count');
-        if (response.data && typeof response.data.data === 'number') {
-          setUnreadCount(response.data.data);
+        const [notifRes, inquiryRes] = await Promise.all([
+          apiService.get('/notifications/unread-count'),
+          apiService.get('/admin/contacts/stats')
+        ]);
+
+        if (notifRes.data && typeof notifRes.data.data === 'number') {
+          setUnreadCount(notifRes.data.data);
+        }
+
+        if (inquiryRes.data && inquiryRes.data.data && typeof inquiryRes.data.data.pending === 'number') {
+          setPendingInquiriesCount(inquiryRes.data.data.pending);
         }
       } catch {
         // silent fail
@@ -291,12 +302,16 @@ export const AdminSidebar = () => {
                 {label}
               </span>
               {/* Notification badge */}
-              {item.badge && unreadCount > 0 && (
+              {item.badge && (item.nameKey === 'inquiries' ? pendingInquiriesCount > 0 : unreadCount > 0) && (
                 <span className={cn(
                   'absolute bg-red-500 text-white text-[9px] font-black rounded-full transition-all duration-300',
                   collapsed ? 'top-1.5 end-1.5 w-2 h-2' : 'end-3 px-1.5 py-0.5 min-w-[18px] text-center'
                 )}>
-                  {collapsed ? '' : (unreadCount > 99 ? '99+' : unreadCount)}
+                  {collapsed ? '' : (
+                    item.nameKey === 'inquiries'
+                      ? (pendingInquiriesCount > 99 ? '99+' : pendingInquiriesCount)
+                      : (unreadCount > 99 ? '99+' : unreadCount)
+                  )}
                 </span>
               )}
             </Link>

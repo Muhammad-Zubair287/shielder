@@ -64,6 +64,19 @@ class AdminContactService {
     };
   }
 
+  async getInquiryStats() {
+    const [pending, resolved] = await Promise.all([
+      prisma.contact.count({ where: { status: 'PENDING' } }),
+      prisma.contact.count({ where: { status: 'RESOLVED' } }),
+    ]);
+
+    return {
+      pending,
+      resolved,
+      total: pending + resolved,
+    };
+  }
+
   async resolveContact(id: string, actorUserId: string) {
     const existing = await prisma.contact.findUnique({
       where: { id },

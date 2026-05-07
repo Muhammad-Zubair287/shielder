@@ -108,8 +108,8 @@ export default function ContactPage() {
       setCaptchaToken('');
       setForm(initialFormValues);
       setTimeout(() => setSent(false), 4000);
-    } catch (error) {
-      toast.error('Unable to send your message right now. Please try again.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Unable to send your message right now. Please try again.');
     } finally {
       setSending(false);
     }

@@ -3,6 +3,8 @@ import { env } from '@/config/env';
 import { logger } from '@/common/logger/logger';
 import { BadRequestError } from '@/common/errors/api.error';
 import { emailService } from '@/common/services/email.service';
+import { NotificationService } from '@/modules/notification/notification.service';
+import { NotificationType, UserRole } from '@prisma/client';
 
 const ALLOWED_FILE_TYPES = new Set([
   'application/pdf',
@@ -187,49 +189,35 @@ class ContactService {
       },
     });
 
-    const adminRecipients = (await prisma.user.findMany({
-      where: {
-        role: { in: ['ADMIN', 'SUPER_ADMIN'] },
-        isActive: true,
-        deletedAt: null,
+    // Notify all admins and super admins via in-app notification
+    void NotificationService.notify({
+      type: NotificationType.NEW_INQUIRY,
+      title: 'New Customer Inquiry',
+      message: `New inquiry from ${input.firstName} ${input.lastName}: ${input.subject}`,
+      module: 'CONTACT',
+      roleTarget: UserRole.SUPER_ADMIN,
+      global: true, // Also target super admins
+      relatedId: contact.id,
+      metadata: {
+        contactId: contact.id,
+        senderName: `${input.firstName} ${input.lastName}`,
+        subject: input.subject,
       },
-      select: {
-        email: true,
-        profile: {
-          select: {
-            fullName: true,
-          },
-        },
-      },
-    })) as AdminRecipient[];
+      sendEmail: false, // External email disabled as per requirement
+    });
 
-    void Promise.allSettled(
-      adminRecipients.map((recipient) =>
-        emailService.sendEmail({
-          to: recipient.email,
-          subject: `[Shielder] New contact submission: ${input.subject}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px; color: #1f2937;">
-              <h2 style="margin: 0 0 16px; color: #0d1637;">New contact submission</h2>
-              <p style="margin: 0 0 12px;"><strong>Name:</strong> ${input.firstName} ${input.lastName}</p>
-              <p style="margin: 0 0 12px;"><strong>Email:</strong> ${input.email}</p>
-              <p style="margin: 0 0 12px;"><strong>Phone:</strong> ${input.phone || '—'}</p>
-              <p style="margin: 0 0 12px;"><strong>Subject:</strong> ${input.subject}</p>
-              <p style="margin: 0 0 12px;"><strong>Message:</strong></p>
-              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; white-space: pre-wrap;">${input.message}</div>
-            </div>
-          `,
-        })
-      )
-    ).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          logger.error('Failed to send contact notification email', {
-            recipient: adminRecipients[index]?.email,
-            error: result.reason,
-          });
-        }
-      });
+    // Notify normal admins as well
+    void NotificationService.notify({
+      type: NotificationType.NEW_INQUIRY,
+      title: 'New Customer Inquiry',
+      message: `New inquiry from ${input.firstName} ${input.lastName}: ${input.subject}`,
+      module: 'CONTACT',
+      roleTarget: UserRole.ADMIN,
+      relatedId: contact.id,
+      metadata: {
+        contactId: contact.id,
+      },
+      sendEmail: false,
     });
 
     // Keep response shape unchanged; return a stable id for the submission.

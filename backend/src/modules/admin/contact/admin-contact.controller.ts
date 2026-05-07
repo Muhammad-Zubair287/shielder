@@ -18,6 +18,14 @@ class AdminContactController {
     });
   });
 
+  getInquiryStats = asyncHandler(async (_req: Request, res: Response) => {
+    const result = await adminContactService.getInquiryStats();
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  });
+
   resolveContact = asyncHandler(async (req: Request, res: Response) => {
     const userIdRaw = req.user?.id || req.user?.userId;
     const userId = Array.isArray(userIdRaw) ? userIdRaw[0] : userIdRaw;

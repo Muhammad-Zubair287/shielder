@@ -308,6 +308,51 @@ export class SuperAdminController {
       next(error);
     }
   }
+
+  /**
+   * Get Inquiries
+   */
+  async getInquiries(req: Request, res: Response, next: NextFunction) {
+    try {
+      const pagination = getPaginationParams(req);
+      const filters = {
+        status: req.query.status,
+        search: req.query.search,
+      };
+
+      const result = await superAdminService.getInquiries(filters, pagination);
+      res.json({ success: true, message: 'Inquiries retrieved', ...result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get Inquiry Stats
+   */
+  async getInquiryStats(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await superAdminService.getInquiryStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Resolve Inquiry
+   */
+  async resolveInquiry(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const resolvedBy = req.user?.id!;
+      const result = await superAdminService.resolveInquiry(id, resolvedBy);
+
+      res.status(200).json({ success: true, message: 'Inquiry marked as resolved', data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const superAdminController = new SuperAdminController();

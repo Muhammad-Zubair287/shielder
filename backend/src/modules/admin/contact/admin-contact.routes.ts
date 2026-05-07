@@ -5,6 +5,7 @@ import { adminContactValidation } from './admin-contact.validation';
 
 const router = Router();
 
+router.get('/stats', adminContactController.getInquiryStats);
 router.get('/', validate(adminContactValidation.list, 'query'), adminContactController.listContacts);
 router.patch(
   '/:id/resolve',

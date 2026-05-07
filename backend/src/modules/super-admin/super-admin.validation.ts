@@ -50,4 +50,8 @@ export const superAdminValidation = {
     dateFrom: Joi.date().optional(),
     dateTo: Joi.date().optional(),
   }),
+
+  resolveInquiry: Joi.object({
+    id: sharedValidationSchemas.uuid,
+  }),
 };

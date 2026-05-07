@@ -4,8 +4,10 @@
 
 import { Router } from 'express';
 import { superAdminController } from './super-admin.controller';
+import { superAdminValidation } from './super-admin.validation';
 import { authenticate } from '../auth/auth.middleware';
 import { requireSuperAdmin } from '../../common/middleware/rbac.middleware';
+import { validate } from '../../common/middleware/validation.middleware';
 
 const router = Router();
 
@@ -33,5 +35,9 @@ router.get('/dashboard/summary', superAdminController.getDashboardSummary.bind(s
 router.get('/analytics/monthly', superAdminController.getMonthlyAnalytics.bind(superAdminController));
 router.get('/activity', superAdminController.getRecentActivity.bind(superAdminController));
 
+// Inquiry Management
+router.get('/inquiries', superAdminController.getInquiries.bind(superAdminController));
+router.get('/inquiries/stats', superAdminController.getInquiryStats.bind(superAdminController));
+router.put('/inquiries/:id/resolve', validate(superAdminValidation.resolveInquiry, 'params'), superAdminController.resolveInquiry.bind(superAdminController));
 
 export default router;

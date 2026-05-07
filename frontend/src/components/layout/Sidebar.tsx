@@ -26,7 +26,8 @@ import {
   PlusCircle,
   Clock,
   AlertCircle,
-  PieChart
+  PieChart,
+  MessageSquare
 } from 'lucide-react';
 import Image from 'next/image';
 import { clsx, type ClassValue } from 'clsx';
@@ -71,9 +72,35 @@ const superAdminMenuItems: MenuItem[] = [
     ]
   },
   { nameKey: 'reports',        icon: BarChart3, href: '/superadmin/reports' },
+  { nameKey: 'inquiries',      icon: MessageSquare,   href: '/superadmin/inquiries', badge: true },
   { nameKey: 'notifications',  icon: Bell,      href: '/superadmin/notifications', badge: true },
   { nameKey: 'privacyPolicy',  icon: ShieldCheck, href: '/superadmin/privacy-policy' },
   { nameKey: 'settings',       icon: Settings,  href: '/superadmin/settings' },
+];
+
+const adminMenuItems: MenuItem[] = [
+  { nameKey: 'dashboard',      icon: LayoutDashboard, href: '/admin/dashboard' },
+  { nameKey: 'categories',     icon: FolderTree,      href: '/admin/categories' },
+  { nameKey: 'products',       icon: Package,         href: '/admin/products' },
+  { nameKey: 'inventory',      icon: Box,             href: '/admin/inventory' },
+  { nameKey: 'orders',         icon: ShoppingCart,    href: '/admin/orders' },
+  { nameKey: 'users',          icon: Users,           href: '/admin/users' },
+  { nameKey: 'warehouse',      icon: Warehouse,       href: '/admin/warehouses' },
+  {
+    nameKey: 'quotations',
+    icon: FileText,
+    children: [
+      { nameKey: 'allQuotations',    href: '/admin/quotations',         icon: FileText },
+      { nameKey: 'createQuotation',  href: '/admin/quotations/create',  icon: PlusCircle },
+      { nameKey: 'draftQuotations',  href: '/admin/quotations/drafts',  icon: Clock },
+      { nameKey: 'expired',          href: '/admin/quotations/expired', icon: AlertCircle },
+      { nameKey: 'quotationReports', href: '/admin/quotations/reports', icon: PieChart },
+    ]
+  },
+  { nameKey: 'reports',        icon: BarChart3, href: '/admin/reports' },
+  { nameKey: 'inquiries',      icon: MessageSquare,   href: '/admin/inquiries', badge: true },
+  { nameKey: 'notifications',  icon: Bell,      href: '/admin/notifications', badge: true },
+  { nameKey: 'settings',       icon: Settings,  href: '/admin/settings' },
 ];
 
 export const Sidebar = () => {
@@ -83,13 +110,14 @@ export const Sidebar = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
   const prefetchedRoutes = useRef(new Set<string>());
   const [expandedMenus, setExpandedMenus] = useState<string[]>(
     // Auto-expand if a quotation path is active
     pathname.includes('/superadmin/quotations') ? ['quotations'] : []
   );
 
-  const menuItems = superAdminMenuItems;
+  const menuItems = user?.role === 'SUPER_ADMIN' ? superAdminMenuItems : adminMenuItems;
 
   const prefetchRoute = (href: string) => {
     if (prefetchedRoutes.current.has(href)) return;
@@ -122,12 +150,20 @@ export const Sidebar = () => {
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
       const fetchNotifications = async () => {
         try {
-          const response = await apiService.get('/notifications/unread-count');
-          if (response.data && typeof response.data.data === 'number') {
-            setUnreadCount(response.data.data);
+          const [notifRes, inquiryRes] = await Promise.all([
+            apiService.get('/notifications/unread-count'),
+            apiService.get('/super-admin/inquiries/stats')
+          ]);
+
+          if (notifRes.data && typeof notifRes.data.data === 'number') {
+            setUnreadCount(notifRes.data.data);
+          }
+
+          if (inquiryRes.data && inquiryRes.data.data && typeof inquiryRes.data.data.pending === 'number') {
+            setPendingInquiriesCount(inquiryRes.data.data.pending);
           }
         } catch (error) {
-          console.error('Failed to fetch notifications', error);
+          console.error('Failed to fetch sidebar counts', error);
         }
       };
       
@@ -291,6 +327,11 @@ export const Sidebar = () => {
           // Regular item
           const isActive = pathname === item.href;
           const label = t(item.nameKey);
+          
+          let badgeCount = 0;
+          if (item.nameKey === 'notifications') badgeCount = unreadCount;
+          if (item.nameKey === 'inquiries') badgeCount = pendingInquiriesCount;
+
           return (
             <Link
               key={item.href}
@@ -321,14 +362,14 @@ export const Sidebar = () => {
                 {label}
               </span>
 
-              {item.badge && unreadCount > 0 && (
+              {item.badge && badgeCount > 0 && (
                 <span className={cn(
-                  'absolute bg-red-500 text-white text-[10px] font-bold rounded-full text-center transition-all duration-300',
+                  'absolute bg-red-500 text-white text-[10px] font-bold rounded-full text-center transition-all duration-300 flex items-center justify-center',
                   collapsed
                     ? 'top-2 end-2 w-2 h-2 p-0'
-                    : 'end-4 px-1.5 py-0.5 min-w-[20px]'
+                    : 'end-4 px-1.5 py-0.5 min-w-[20px] h-[20px]'
                 )}>
-                  {collapsed ? '' : (unreadCount > 99 ? '99+' : unreadCount)}
+                  {collapsed ? '' : (badgeCount > 99 ? '99+' : badgeCount)}
                 </span>
               )}
             </Link>

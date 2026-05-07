@@ -715,6 +715,7 @@ enum NotificationType {
   QUOTATION_APPROVED
   QUOTATION_EXPIRED
   QUOTATION_CREATED
+  NEW_INQUIRY
 }
 
 enum OrderStatus {
