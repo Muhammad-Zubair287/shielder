@@ -14,7 +14,7 @@ import { MultiStepRegistrationForm } from '@/components/auth/MultiStepRegistrati
 export default function RegisterPage() {
   const { register, isSubmitting } = useAuth();
   const { isAuthenticated, user, isLoading } = useAuthStore();
-  const { isRTL } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const router = useRouter();
   const redirectHandled = useRef(false);
 
