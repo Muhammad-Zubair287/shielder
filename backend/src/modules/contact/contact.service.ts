@@ -2,7 +2,7 @@ import { prisma } from '@/config/database';
 import { env } from '@/config/env';
 import { logger } from '@/common/logger/logger';
 import { BadRequestError } from '@/common/errors/api.error';
-import { NotificationService } from '@/modules/notification/notification.service';
+import NotificationService from '@/modules/notification/notification.service';
 import { NotificationType, UserRole } from '@prisma/client';
 
 const ALLOWED_FILE_TYPES = new Set([

@@ -348,9 +348,9 @@ export class SuperAdminController {
   async resolveInquiry(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const resolvedByRaw = req.user?.id!;
-      const resolvedBy = Array.isArray(resolvedByRaw) ? resolvedByRaw[0] : resolvedByRaw;
-      const result = await superAdminService.resolveInquiry(id, resolvedBy);
+      const targetId: any = id;
+      const actorId: any = req.user!.id;
+      const result = await superAdminService.resolveInquiry(targetId, actorId);
 
       res.status(200).json({ success: true, message: 'Inquiry marked as resolved', data: result });
     } catch (error) {
