@@ -34,6 +34,7 @@ import LandingFooter from '@/app/home/_components/LandingFooter';
 import SARSymbol from '@/components/SARSymbol';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
 import { useAuthStore } from '@/store/auth.store';
 import { orderService } from '@/services/order.service';
 import { getImageUrl } from '@/utils/helpers';
@@ -110,6 +111,7 @@ function paymentStatusLabel(status: string) {
 
 export default function MyOrdersPage() {
   const { t, isRTL, locale } = useLanguage();
+  const { addItem } = useCart();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
 
@@ -173,7 +175,7 @@ export default function MyOrdersPage() {
             null,
           ) || null;
 
-        await cartService.addItem(
+        await addItem(
           productId,
           quantity,
           {
