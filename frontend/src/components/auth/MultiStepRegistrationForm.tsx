@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthMeter } from './PasswordStrengthMeter';
+import { PASSWORD_REQUIREMENTS } from '@/utils/password';
 import {
   MultiStepRegistrationData,
   MultiStepRegistrationErrors,
@@ -233,6 +234,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             onChange={handleInputChange}
             error={errors.password}
             required
+            maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
             placeholder="Create a strong password"
           />
 
@@ -250,6 +252,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             onChange={handleInputChange}
             error={errors.confirmPassword}
             required
+            maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
             placeholder="Confirm your password"
           />
 

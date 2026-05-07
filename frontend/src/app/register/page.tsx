@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -58,9 +59,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10 ${isRTL ? 'font-arabic' : ''}`}>
-      <div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-10">
-        <div className="text-center mb-8">
+    <div className={`min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10 ${isRTL ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-10 relative">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push(ROUTES.LOGIN)}
+          className={`absolute top-6 ${isRTL ? 'right-6' : 'left-6'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg`}
+          aria-label="Back to Login"
+        >
+          <ChevronLeft className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+          <span>Back to Login</span>
+        </button>
+
+        <div className="text-center mb-8 mt-4">
           <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
           <p className="text-sm text-gray-600 mt-2">
             Register securely in three guided steps with password-strength checks and protected account setup.

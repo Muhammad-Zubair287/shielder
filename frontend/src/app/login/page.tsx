@@ -17,6 +17,7 @@ import type { LoginRequest } from '@/types';
 import toast from 'react-hot-toast';
 import { validateLoginForm } from '@/services/validation.service';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import { PASSWORD_REQUIREMENTS } from '@/utils/password';
 import authService from '@/services/auth.service';
 
 const LOGIN_TOAST_DURATION_MS = 4000;
@@ -331,6 +332,7 @@ function LoginPageContent() {
                         onFocus={() => prefetchRoute('/forgot-password')}
                         placeholder="••••••••"
                         autoComplete="current-password"
+                        maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
                         className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-12' : 'pl-12 pr-12'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
                           errors.password ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
                         }`}

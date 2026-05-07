@@ -8,6 +8,7 @@
  */
 export const PASSWORD_REQUIREMENTS = {
   MIN_LENGTH: 8,
+  MAX_LENGTH: 32,
   HAS_UPPERCASE: /[A-Z]/,
   HAS_LOWERCASE: /[a-z]/,
   HAS_NUMBER: /\d/,
@@ -78,6 +79,10 @@ export function validatePassword(password: string): {
 
   if (password.length < PASSWORD_REQUIREMENTS.MIN_LENGTH) {
     errors.push(`Password must be at least ${PASSWORD_REQUIREMENTS.MIN_LENGTH} characters long`);
+  }
+
+  if (password.length > PASSWORD_REQUIREMENTS.MAX_LENGTH) {
+    errors.push(`Password cannot exceed ${PASSWORD_REQUIREMENTS.MAX_LENGTH} characters`);
   }
 
   if (!PASSWORD_REQUIREMENTS.HAS_UPPERCASE.test(password)) {
