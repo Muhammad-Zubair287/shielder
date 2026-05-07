@@ -19,7 +19,7 @@ export function VerifyEmailContent() {
   useEffect(() => {
     const verifyEmail = async () => {
       if (!token) {
-        setError(t('auth.invalidVerificationLink'));
+        setError(t('invalidVerificationLink'));
         setLoading(false);
         return;
       }
@@ -37,7 +37,7 @@ export function VerifyEmailContent() {
           typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
             'string'
             ? (err as { response: { data: { message: string } } }).response.data.message
-            : t('auth.errors.verificationFailed');
+            : t('errors.verificationFailed');
         setError(message);
       } finally {
         setLoading(false);
@@ -55,8 +55,8 @@ export function VerifyEmailContent() {
             <div className="mb-4">
               <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('auth.verifyingEmail')}</h2>
-            <p className="text-slate-600">{t('auth.pleaseWait')}</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('verifyingEmail')}</h2>
+            <p className="text-slate-600">{t('pleaseWait')}</p>
           </>
         )}
 
@@ -69,8 +69,8 @@ export function VerifyEmailContent() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('auth.emailVerified')}</h2>
-            <p className="text-slate-600 mb-6">{t('auth.redirectingToLogin')}</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('emailVerified')}</h2>
+            <p className="text-slate-600 mb-6">{t('redirectingToLogin')}</p>
           </>
         )}
 
@@ -83,10 +83,10 @@ export function VerifyEmailContent() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-red-600 mb-2">{t('auth.verificationFailed')}</h2>
+            <h2 className="text-2xl font-bold text-red-600 mb-2">{t('verificationFailed')}</h2>
             <p className="text-slate-600 mb-6">{error}</p>
             <Link href="/login" className="text-blue-600 hover:underline font-semibold">
-              {t('auth.backToLogin')}
+              {t('backToLogin')}
             </Link>
           </>
         )}

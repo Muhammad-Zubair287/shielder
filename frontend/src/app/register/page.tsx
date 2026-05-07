@@ -65,25 +65,25 @@ export default function RegisterPage() {
         <button
           onClick={() => router.push(ROUTES.LOGIN)}
           className={`absolute top-6 ${isRTL ? 'right-6' : 'left-6'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg`}
-          aria-label="Back to Login"
+          aria-label={t('backToLogin')}
         >
           <ChevronLeft className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
-          <span>Back to Login</span>
+          <span>{t('backToLogin')}</span>
         </button>
 
         <div className="text-center mb-8 mt-4">
-          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('createAccount')}</h1>
           <p className="text-sm text-gray-600 mt-2">
-            Register securely in three guided steps with password-strength checks and protected account setup.
+            {t('createAccountDesc')}
           </p>
         </div>
 
         <MultiStepRegistrationForm onSubmit={handleSubmit} isLoading={isSubmitting} />
 
         <div className="text-center mt-8 text-sm text-gray-600">
-          Already have an account?{' '}
+          {t('alreadyHaveAccount')}{' '}
           <Link href={ROUTES.LOGIN} className="text-[#FF6B35] font-semibold hover:text-[#FF5722]">
-            Sign In
+            {t('signIn')}
           </Link>
         </div>
       </div>

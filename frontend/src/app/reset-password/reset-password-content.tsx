@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validateResetPassword } from '@/services/validation/auth.validation';
+import { PASSWORD_REQUIREMENTS } from '@/utils/password';
 
 export function ResetPasswordContent() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export function ResetPasswordContent() {
 
   useEffect(() => {
     if (!token) {
-      setError(t('auth.invalidResetLink'));
+      setError(t('invalidResetLink'));
     }
   }, [token, t]);
 
@@ -50,7 +51,7 @@ export function ResetPasswordContent() {
         typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
           'string'
           ? (err as { response: { data: { message: string } } }).response.data.message
-          : t('auth.errors.resetFailed');
+          : t('errors.resetFailed');
       setError(message);
     } finally {
       setLoading(false);
@@ -61,9 +62,9 @@ export function ResetPasswordContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('auth.invalidResetLink')}</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('invalidResetLink')}</h2>
           <Link href="/forgot-password" className="text-blue-600 hover:underline">
-            {t('auth.requestNewLink')}
+            {t('requestNewLink')}
           </Link>
         </div>
       </div>
@@ -81,8 +82,8 @@ export function ResetPasswordContent() {
               </svg>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('auth.passwordReset')}</h2>
-          <p className="text-slate-600 mb-6">{t('auth.redirectingToLogin')}</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('passwordReset')}</h2>
+          <p className="text-slate-600 mb-6">{t('redirectingToLogin')}</p>
         </div>
       </div>
     );
@@ -91,8 +92,8 @@ export function ResetPasswordContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('auth.resetPassword')}</h1>
-        <p className="text-slate-600 mb-6">{t('auth.enterNewPassword')}</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('resetPassword')}</h1>
+        <p className="text-slate-600 mb-6">{t('enterNewPassword')}</p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
@@ -103,7 +104,7 @@ export function ResetPasswordContent() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-              {t('auth.newPassword')}
+              {t('newPassword')}
             </label>
             <div className="relative">
               <input
@@ -111,7 +112,8 @@ export function ResetPasswordContent() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('auth.passwordPlaceholder')}
+                placeholder={t('passwordPlaceholder')}
+                maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none pr-10"
                 disabled={loading}
               />
@@ -127,14 +129,15 @@ export function ResetPasswordContent() {
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">
-              {t('auth.confirmPassword')}
+              {t('confirmPassword')}
             </label>
             <input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder={t('auth.confirmPasswordPlaceholder')}
+              placeholder={t('confirmPasswordPlaceholder')}
+              maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               disabled={loading}
             />
@@ -145,7 +148,7 @@ export function ResetPasswordContent() {
             disabled={loading}
             className="w-full py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {loading ? t('auth.processing') : t('auth.resetPassword')}
+            {loading ? t('processing') : t('resetPassword')}
           </button>
         </form>
 
