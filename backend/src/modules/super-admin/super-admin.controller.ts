@@ -131,7 +131,8 @@ export class SuperAdminController {
    */
   async createUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const createdBy = req.user?.id!;
+      const createdByRaw = req.user?.id!;
+      const createdBy = Array.isArray(createdByRaw) ? createdByRaw[0] : createdByRaw;
       const user = await superAdminService.createUser(req.body, createdBy);
 
       res.status(201).json({ 
@@ -180,7 +181,8 @@ export class SuperAdminController {
    */
   async updateUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const updatedBy = req.user?.id!;
+      const updatedByRaw = req.user?.id!;
+      const updatedBy = Array.isArray(updatedByRaw) ? updatedByRaw[0] : updatedByRaw;
       const user = await superAdminService.updateUser(
         String(req.params.id),
         req.body,
@@ -202,7 +204,8 @@ export class SuperAdminController {
    */
   async deleteUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const deletedBy = req.user?.id!;
+      const deletedByRaw = req.user?.id!;
+      const deletedBy = Array.isArray(deletedByRaw) ? deletedByRaw[0] : deletedByRaw;
       const result = await superAdminService.deleteUser(
         String(req.params.id),
         deletedBy,
@@ -345,7 +348,8 @@ export class SuperAdminController {
   async resolveInquiry(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const resolvedBy = req.user?.id!;
+      const resolvedByRaw = req.user?.id!;
+      const resolvedBy = Array.isArray(resolvedByRaw) ? resolvedByRaw[0] : resolvedByRaw;
       const result = await superAdminService.resolveInquiry(id, resolvedBy);
 
       res.status(200).json({ success: true, message: 'Inquiry marked as resolved', data: result });

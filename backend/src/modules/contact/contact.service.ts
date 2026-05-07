@@ -2,7 +2,6 @@ import { prisma } from '@/config/database';
 import { env } from '@/config/env';
 import { logger } from '@/common/logger/logger';
 import { BadRequestError } from '@/common/errors/api.error';
-import { emailService } from '@/common/services/email.service';
 import { NotificationService } from '@/modules/notification/notification.service';
 import { NotificationType, UserRole } from '@prisma/client';
 
@@ -36,11 +35,6 @@ interface CaptchaVerificationResult {
   valid: boolean;
   reason?: string;
 }
-
-type AdminRecipient = {
-  email: string;
-  profile: { fullName: string | null } | null;
-};
 
 type JsonRecord = Record<string, unknown>;
 
