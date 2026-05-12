@@ -11,6 +11,8 @@ import { ROUTES } from '@/utils/constants';
 import type { RegisterRequest } from '@/types';
 import { MultiStepRegistrationForm } from '@/components/auth/MultiStepRegistrationForm';
 
+export const dynamic = 'force-dynamic';
+
 export default function RegisterPage() {
   const { register, isSubmitting } = useAuth();
   const { isAuthenticated, user, isLoading } = useAuthStore();
