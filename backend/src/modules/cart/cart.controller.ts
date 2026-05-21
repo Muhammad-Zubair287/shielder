@@ -81,6 +81,7 @@ export class CartController {
             (item.product as any).mainImage || item.product.attachments?.[0]?.fileUrl || null
           ),
           isActive: item.product.isActive,
+          stock: item.product.stock,
         },
       };
     });

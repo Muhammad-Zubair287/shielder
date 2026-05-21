@@ -24,6 +24,9 @@ export default function PrivacyPolicyPage() {
       const { data } = await privacyPolicyService.getPublicPolicy();
       if (data.success) {
         const policyData = data.data;
+        if (!policyData) {
+          return;
+        }
         const rawContent = locale === 'ar' ? policyData.contentAr : policyData.contentEn;
         // Sanitize content before rendering
         setContent(DOMPurify.sanitize(rawContent));

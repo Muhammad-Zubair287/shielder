@@ -13,6 +13,7 @@ interface Pagination {
   limit: number;
   total: number;
   pages: number;
+  totalPages?: number;
 }
 
 interface Props {

@@ -23,6 +23,7 @@ export interface UserProfile {
   fullName: string | null;
   phoneNumber: string | null;
   address: string | null;
+  location?: string | null;
   profileImage: string | null;
   companyName: string | null;
   taxId: string | null;

@@ -35,6 +35,7 @@ export interface TokenPair {
 export interface DeviceInfo {
   userAgent?: string;
   ipAddress?: string;
+  trustedDeviceToken?: string;
 }
 
 /**

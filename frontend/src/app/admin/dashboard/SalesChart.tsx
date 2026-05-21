@@ -126,7 +126,7 @@ export default function SalesChart({ data, loading }: Props) {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   fontSize: 12,
                 }}
-                formatter={(value: any, name: string | undefined) => [
+                formatter={(value: any, name: string | number | undefined) => [
                   name === 'revenue'
                     ? formatSAR(Number(value), locale)
                     : formatNum(Number(value), locale),

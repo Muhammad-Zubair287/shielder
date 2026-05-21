@@ -85,7 +85,8 @@ export default function SubcategoryManagementPage() {
     page: 1,
     limit: 10,
     total: 0,
-    pages: 1
+    pages: 1,
+    totalPages: 1,
   });
   
   // Filters

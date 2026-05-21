@@ -779,7 +779,7 @@ function ProductsContent() {
           <div className={`flex flex-col lg:flex-row lg:items-center gap-2.5 mb-6 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
             <div className="relative w-full lg:max-w-[430px] xl:max-w-[460px]">
               <Search size={18} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'right-4' : 'left-4'}`} />
-              <input type="search" value={searchInput}
+              <input type="text" value={searchInput}
                 aria-label={t('productsSearchPlaceholder')}
                 onChange={e => handleSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}

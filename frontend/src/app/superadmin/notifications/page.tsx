@@ -33,7 +33,7 @@ export default function NotificationsPage() {
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'preferences'>('all');
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1, totalPages: 1 });
 
   // Filters
   const [filters, setFilters] = useState({ 

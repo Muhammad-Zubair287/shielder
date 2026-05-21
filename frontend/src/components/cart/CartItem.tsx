@@ -27,17 +27,26 @@ export default function CartItem({ item, isLast }: CartItemProps) {
   const { updateItem, removeItem, loading } = useCart();
 
   const image = getImageUrl(item.product.thumbnail) ?? PLACEHOLDER;
+  const stockLimit = typeof item.product.stock === 'number' ? item.product.stock : null;
+
+  const clampQuantity = (nextQuantity: number) => {
+    if (stockLimit === null) {
+      return Math.max(1, nextQuantity);
+    }
+
+    return Math.max(1, Math.min(nextQuantity, stockLimit));
+  };
 
   const handleDecrease = () => {
     if (item.quantity <= 1) {
       removeItem(item.productId);
     } else {
-      updateItem(item.productId, item.quantity - 1);
+      updateItem(item.productId, clampQuantity(item.quantity - 1));
     }
   };
 
   const handleIncrease = () => {
-    updateItem(item.productId, item.quantity + 1);
+    updateItem(item.productId, clampQuantity(item.quantity + 1));
   };
 
   return (
@@ -65,7 +74,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
           <div className={`flex items-center gap-3 mt-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <button
               onClick={handleIncrease}
-              disabled={loading}
+              disabled={loading || (stockLimit !== null && item.quantity >= stockLimit)}
               aria-label="increase"
               className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-orange-50 hover:border-[#F97316] hover:text-[#F97316] transition-colors disabled:opacity-40"
             >

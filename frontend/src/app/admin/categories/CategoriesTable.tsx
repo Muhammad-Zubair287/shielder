@@ -10,7 +10,7 @@ import type { Category } from './types';
 interface Props {
   categories: Category[];
   loading: boolean;
-  pagination: { page: number; pages: number; total: number };
+  pagination: { page: number; pages: number; total: number; totalPages?: number };
   onPageChange: (page: number) => void;
   onEdit: (cat: Category) => void;
   onDelete: (cat: Category) => void;

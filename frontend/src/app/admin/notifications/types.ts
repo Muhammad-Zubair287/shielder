@@ -44,6 +44,7 @@ export interface AdminNotification {
 export interface Pagination {
   page: number;
   total: number;
+  pages?: number;
   totalPages: number;
 }
 

@@ -98,7 +98,7 @@ export const ChangePasswordSection = () => {
     setLoading(true);
     try {
       await authService.changePassword({
-        currentPassword: formData.currentPassword,
+        oldPassword: formData.currentPassword,
         newPassword: formData.newPassword,
       });
 

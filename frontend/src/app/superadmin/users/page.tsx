@@ -289,7 +289,7 @@ export default function UserManagement() {
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                users.map((user: any) => (
                   <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">

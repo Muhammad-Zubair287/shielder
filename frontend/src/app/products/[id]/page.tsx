@@ -95,6 +95,15 @@ export default function ProductDetailPage() {
     ?.replace(/filters?/i, '')
     .trim()
     .toUpperCase() || product.category?.name?.toUpperCase();
+  const maxQuantity = product.stock && product.stock > 0 ? product.stock : null;
+
+  const normalizeQuantity = (nextQuantity: number) => {
+    if (maxQuantity === null) {
+      return Math.max(1, nextQuantity);
+    }
+
+    return Math.max(1, Math.min(nextQuantity, maxQuantity));
+  };
 
   const handleAddToCart = () => {
     if (!user) {
@@ -105,12 +114,14 @@ export default function ProductDetailPage() {
       router.push('/login');
       return;
     }
-    addToCart(product.id, quantity, {
+    const normalizedQuantity = normalizeQuantity(quantity);
+
+    addToCart(product.id, normalizedQuantity, {
       id: product.id,
       name: product.name,
       thumbnail: product.mainImage || null,
     }, price);
-    toast.success(`${quantity} item(s) added to cart`);
+    toast.success(`${normalizedQuantity} item(s) added to cart`);
   };
 
   const handleRequestQuote = () => {
@@ -281,7 +292,7 @@ export default function ProductDetailPage() {
                   <span className="text-sm font-semibold text-gray-700">{t('productsQty') || 'Quantity'}</span>
                   <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                     <button
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      onClick={() => setQuantity(q => normalizeQuantity(q - 1))}
                       aria-label="Decrease quantity"
                       className="px-3 py-2 hover:bg-gray-100 transition-colors"
                     >
@@ -289,14 +300,17 @@ export default function ProductDetailPage() {
                     </button>
                     <input
                       type="number"
+                      min={1}
+                      max={maxQuantity ?? undefined}
                       value={quantity}
                       aria-label="Quantity"
-                      onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={e => setQuantity(normalizeQuantity(parseInt(e.target.value) || 1))}
                       className="w-12 text-center border-l border-r border-gray-300 py-2 focus:outline-none font-semibold"
                     />
                     <button
-                      onClick={() => setQuantity(q => q + 1)}
+                      onClick={() => setQuantity(q => normalizeQuantity(q + 1))}
                       aria-label="Increase quantity"
+                      disabled={maxQuantity !== null && quantity >= maxQuantity}
                       className="px-3 py-2 hover:bg-gray-100 transition-colors"
                     >
                       +

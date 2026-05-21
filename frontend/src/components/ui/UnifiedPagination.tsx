@@ -4,7 +4,8 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface UnifiedPaginationProps {
-  page: number;
+  page?: number;
+  currentPage?: number;
   totalPages: number;
   totalItems?: number;
   pageSize?: number;
@@ -40,6 +41,7 @@ const buildPages = (page: number, totalPages: number): Array<number | 'ellipsis'
 
 export default function UnifiedPagination({
   page,
+  currentPage,
   totalPages,
   totalItems,
   pageSize,
@@ -50,12 +52,13 @@ export default function UnifiedPagination({
 }: UnifiedPaginationProps) {
   if (totalPages <= 1) return null;
 
+  const activePage = page ?? currentPage ?? 1;
   const prevIcon = isRTL ? <ChevronRight size={16} /> : <ChevronLeft size={16} />;
   const nextIcon = isRTL ? <ChevronLeft size={16} /> : <ChevronRight size={16} />;
-  const pages = buildPages(page, totalPages);
+  const pages = buildPages(activePage, totalPages);
 
-  const start = totalItems && pageSize ? (page - 1) * pageSize + 1 : undefined;
-  const end = totalItems && pageSize ? Math.min(page * pageSize, totalItems) : undefined;
+  const start = totalItems && pageSize ? (activePage - 1) * pageSize + 1 : undefined;
+  const end = totalItems && pageSize ? Math.min(activePage * pageSize, totalItems) : undefined;
 
   return (
     <div
@@ -72,8 +75,8 @@ export default function UnifiedPagination({
 
       <div className="flex items-center gap-1">
         <button
-          onClick={() => onPageChange(Math.max(1, page - 1))}
-          disabled={page <= 1}
+          onClick={() => onPageChange(Math.max(1, activePage - 1))}
+          disabled={activePage <= 1}
           className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label={labels?.previous ?? 'Previous'}
         >
@@ -90,7 +93,7 @@ export default function UnifiedPagination({
               key={item}
               onClick={() => onPageChange(item)}
               className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                page === item
+                activePage === item
                   ? 'bg-[#5B5FC7] text-white'
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
@@ -101,8 +104,8 @@ export default function UnifiedPagination({
         )}
 
         <button
-          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-          disabled={page >= totalPages}
+          onClick={() => onPageChange(Math.min(totalPages, activePage + 1))}
+          disabled={activePage >= totalPages}
           className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label={labels?.next ?? 'Next'}
         >

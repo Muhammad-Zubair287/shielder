@@ -14,6 +14,7 @@ export interface CartProduct {
   description?: string;
   thumbnail?: string | null;
   isActive?: boolean;
+  stock?: number;
 }
 
 export interface CartItem {
@@ -235,9 +236,9 @@ const cartService = {
     writeGuestCart([]);
   },
 
-  /** Count total items in cart (sum of quantities) */
+  /** Count distinct products in cart */
   countItems(cart: Cart): number {
-    return cart.items.reduce((sum, i) => sum + i.quantity, 0);
+    return cart.items.length;
   },
 };
 

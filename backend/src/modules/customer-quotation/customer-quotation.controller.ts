@@ -408,6 +408,13 @@ export class CustomerQuotationController {
       const PAGE_WIDTH = doc.page.width;
       const MARGIN     = 50;
       const COL_WIDTH  = PAGE_WIDTH - MARGIN * 2;
+      const LEFT_META_WIDTH = 260;
+      const PRODUCT_NAME_WIDTH = COL_WIDTH * 0.52;
+
+      const measureHeight = (text: string, width: number, font: string, fontSize: number) => {
+        doc.font(font).fontSize(fontSize);
+        return doc.heightOfString(text || '', { width });
+      };
 
       // ── Header ─────────────────────────────────────────────────────────────
 
@@ -435,13 +442,25 @@ export class CustomerQuotationController {
       doc.fillColor('#374151').font('Helvetica').fontSize(9);
 
       // Left: company info
+      let leftMetaY = topY;
+
       doc
         .font('Helvetica-Bold').fillColor('#0D1637').fontSize(11)
-        .text(quotation.companyName || '', MARGIN, topY)
+        .text(quotation.companyName || '', MARGIN, leftMetaY, { width: LEFT_META_WIDTH });
+      leftMetaY += Math.max(14, measureHeight(quotation.companyName || '', LEFT_META_WIDTH, 'Helvetica-Bold', 11)) + 4;
+
+      doc
         .font('Helvetica').fillColor('#6B7280').fontSize(9)
-        .text(`VAT: ${vatNumber}`, MARGIN, topY + 18)
-        .text(quotation.customerAddress || '', MARGIN, topY + 32)
-        .text(quotation.customerEmail, MARGIN, topY + 46);
+        .text(`VAT: ${vatNumber}`, MARGIN, leftMetaY, { width: LEFT_META_WIDTH });
+      leftMetaY += Math.max(12, measureHeight(`VAT: ${vatNumber}`, LEFT_META_WIDTH, 'Helvetica', 9)) + 4;
+
+      doc
+        .text(quotation.customerAddress || '', MARGIN, leftMetaY, { width: LEFT_META_WIDTH });
+      leftMetaY += Math.max(12, measureHeight(quotation.customerAddress || '', LEFT_META_WIDTH, 'Helvetica', 9)) + 4;
+
+      doc
+        .text(quotation.customerEmail, MARGIN, leftMetaY, { width: LEFT_META_WIDTH });
+      leftMetaY += Math.max(12, measureHeight(quotation.customerEmail, LEFT_META_WIDTH, 'Helvetica', 9));
 
       // Right: quotation details
       doc
@@ -460,7 +479,8 @@ export class CustomerQuotationController {
 
       // ── Divider ────────────────────────────────────────────────────────────
 
-      const divY = topY + 100;
+      const rightMetaBottom = topY + 92;
+      const divY = Math.max(leftMetaY, rightMetaBottom) + 12;
       doc.strokeColor('#E5E7EB').lineWidth(1).moveTo(MARGIN, divY).lineTo(PAGE_WIDTH - MARGIN, divY).stroke();
 
       // ── Table header ───────────────────────────────────────────────────────
@@ -489,7 +509,7 @@ export class CustomerQuotationController {
 
       let rowY = tableTop + 28;
       for (const item of quotation.items) {
-        const rowHeight = 28;
+        const rowHeight = Math.max(28, Math.ceil(measureHeight(item.productName, PRODUCT_NAME_WIDTH, 'Helvetica-Bold', 9)) + 14);
 
         doc
           .fillColor('#F9FAFB')
@@ -506,7 +526,7 @@ export class CustomerQuotationController {
           .fillColor('#111827')
           .font('Helvetica-Bold')
           .fontSize(9)
-          .text(item.productName, colName + 4, rowY + 6, { width: COL_WIDTH * 0.52 });
+          .text(item.productName, colName + 4, rowY + 6, { width: PRODUCT_NAME_WIDTH, height: rowHeight - 10 });
 
         doc
           .fillColor('#374151')

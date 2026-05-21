@@ -17,8 +17,8 @@ import ar from '../../public/locales/ar.json'; // updated
 
 export type Locale = 'en' | 'ar';
 
-export type TranslationDictionary = typeof en;
-export type TranslationKey = keyof TranslationDictionary;
+export type TranslationDictionary = Record<string, unknown>;
+export type TranslationKey = string;
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -62,10 +62,10 @@ export function createT(locale: Locale) {
   const fallback = getDict(DEFAULT_LOCALE);
   return function t(key: TranslationKey | string): string {
     return (
-      (dict as Record<string, string>)[key] ??
-      (fallback as Record<string, string>)[key] ??
+      (dict as Record<string, unknown>)[key] ??
+      (fallback as Record<string, unknown>)[key] ??
       key
-    );
+    ) as string;
   };
 }
 
