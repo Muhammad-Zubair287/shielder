@@ -153,7 +153,7 @@ export const ProfileDropdown = () => {
       />
 
       {isOpen && (
-        <div className={`absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 fixed md:absolute left-4 right-4 md:left-auto ${isRTL ? 'md:left-0' : 'md:right-0'}`}>
+        <div className={`absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 left-4 right-4 md:right-0 md:left-auto`}>
           {/* Header with avatar + change photo */}
           <div className="p-4 bg-secondary/5 dark:bg-slate-900/70 border-b border-secondary/10 dark:border-slate-800">
             <div className="flex items-center gap-3 mb-2">
