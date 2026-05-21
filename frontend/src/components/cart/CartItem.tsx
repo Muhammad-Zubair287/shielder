@@ -70,6 +70,14 @@ export default function CartItem({ item, isLast }: CartItemProps) {
         <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
           <p className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</p>
 
+          {typeof item.product.stock === 'number' && (
+            <p className={`mt-1 text-xs font-semibold ${item.product.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
+              {item.product.stock === 0
+                ? (t('productsOutOfStock') || 'Out of Stock')
+                : `${item.product.stock} ${t('productsInStock') || 'in stock'}`}
+            </p>
+          )}
+
           {/* Quantity selector */}
           <div className={`flex items-center gap-3 mt-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <button

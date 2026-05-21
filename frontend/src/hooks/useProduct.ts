@@ -5,15 +5,22 @@
 
 import { useState, useEffect } from 'react';
 import apiClient from '@/services/api.service';
+import { resolveProductDescription, resolveProductImage, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
 
 export interface Product {
   id: string;
-  name: string;
-  description: string;
+  name?: string;
+  nameEn?: string;
+  nameAr?: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  translations?: ProductTranslationLike[];
   price: number | string;
   originalPrice?: number | string;
   mainImage?: string;
   images?: string[];
+  attachments?: Array<ProductAttachmentLike>;
   category?: { id?: string; name: string };
   categoryId?: string;
   categoryName?: string;
@@ -65,7 +72,13 @@ export const useProduct = (productId: string, locale = 'en'): UseProductResult =
           headers: { Accept: 'application/json' },
         });
         const productData: Product = productRes.data?.data || productRes.data;
-        setProduct(productData);
+        const normalizedProduct = {
+          ...productData,
+          name: resolveProductName(productData as ProductDisplayLike, locale),
+          description: resolveProductDescription(productData as ProductDisplayLike, locale),
+          mainImage: resolveProductImage(productData as ProductDisplayLike) ?? productData.mainImage,
+        };
+        setProduct(normalizedProduct);
 
         // Fetch related products
         const categoryId = productData?.categoryId || productData?.category?.id;
@@ -79,7 +92,17 @@ export const useProduct = (productId: string, locale = 'en'): UseProductResult =
             headers: { Accept: 'application/json' },
           });
           const relatedData: Product[] = relatedRes.data?.products || relatedRes.data?.data || [];
-          setRelatedProducts(relatedData.filter((item) => item.id !== productId).slice(0, 3));
+          setRelatedProducts(
+            relatedData
+              .filter((item) => item.id !== productId)
+              .slice(0, 3)
+              .map((item) => ({
+                ...item,
+                name: resolveProductName(item as ProductDisplayLike, locale),
+                description: resolveProductDescription(item as ProductDisplayLike, locale),
+                mainImage: resolveProductImage(item as ProductDisplayLike) ?? item.mainImage,
+              }))
+          );
         } else {
           setRelatedProducts([]);
         }

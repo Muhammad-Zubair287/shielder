@@ -10,6 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { useQuotation } from '@/contexts/QuotationContext';
 import { getImageUrl } from '@/utils/helpers';
+import { resolveProductDescription, resolveProductImage, resolveProductName } from '@/utils/productDisplay';
 import SARSymbol from '@/components/SARSymbol';
 import { useAuthStore } from '@/store/auth.store';
 import { useProductsCatalog } from '@/hooks/useProductsCatalog';
@@ -18,12 +19,11 @@ import {
   type ComparedProductItem,
 } from '@/services/product-comparison.service';
 import {
-  PRODUCT_UI_LABELS,
   PRODUCTS_ITEMS_PER_PAGE,
   PRODUCTS_SORT_OPTIONS,
+  PRODUCT_UI_LABELS,
 } from './products.constants';
 import { ActiveFilters, Category, Product, ProductTab } from './products.types';
-import { PRODUCT_COMPARE } from '@/constants/ui.constants';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +38,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
   isCompared: boolean;
   onToggleCompare: (product: Product) => void;
 }) {
-  const rawImage = product.mainImage ?? product.images?.[0] ?? null;
+  const rawImage = resolveProductImage(product);
   const image     = getImageUrl(rawImage) ?? null;
   const [imgError, setImgError] = useState(false);
   const price     = Number(product.price);
@@ -46,6 +46,8 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
   const isQuotation = tab === 'quotation';
   const { addItem, loading: cartLoading } = useCart();
   const router = useRouter();
+  const productName = resolveProductName(product, isRTL ? 'ar' : 'en');
+  const productDescription = resolveProductDescription(product, isRTL ? 'ar' : 'en');
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -59,8 +61,9 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
       1,
       {
         id: product.id,
-        name: product.name,
-        thumbnail: product.mainImage ?? product.images?.[0] ?? null,
+        name: productName,
+        thumbnail: rawImage,
+        stock: product.stock,
       },
       price,
     );
@@ -98,7 +101,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-100">
             <ImageOff size={36} className="text-gray-300" />
-            <span className="text-xs text-gray-400 font-medium">{PRODUCT_UI_LABELS.noImage}</span>
+            <span className="text-xs text-gray-400 font-medium">{t('productsNoImage') || 'No Image'}</span>
           </div>
         )}
         {product.stock === 0 && (
@@ -118,7 +121,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
         )}
 
         {/* Name */}
-        <h3 className="font-bold text-gray-900 text-sm leading-snug mt-0.5">{product.name}</h3>
+        <h3 className="font-bold text-gray-900 text-sm leading-snug mt-0.5">{productName}</h3>
 
         {/* Filter Number / SKU */}
         {(product.filterNumber || product.sku) && (
@@ -128,7 +131,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
         )}
 
         {/* Description */}
-        <p className="text-gray-500 text-xs line-clamp-2 mt-0.5">{product.description}</p>
+        <p className="text-gray-500 text-xs line-clamp-2 mt-0.5">{productDescription}</p>
 
         {/* Price */}
         {isQuotation ? (
@@ -173,7 +176,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
               : 'border-gray-300 text-gray-700 hover:bg-gray-50'
           }`}
         >
-          {isCompared ? PRODUCT_COMPARE.REMOVE_TEXT : PRODUCT_COMPARE.ADD_TEXT}
+          {isCompared ? t('productsCompareRemove') : t('productsCompareAdd')}
         </button>
       </div>
     </div>
@@ -188,7 +191,7 @@ function ProductDetailModal({
   product: Product; tab: Tab; t: (k: string) => string; isRTL: boolean;
   isAuthenticated: boolean; onClose: () => void;
 }) {
-  const rawImage = product.mainImage ?? product.images?.[0] ?? null;
+  const rawImage = resolveProductImage(product);
   const image    = getImageUrl(rawImage) ?? null;
   const [imgError, setImgError] = useState(false);
   const [qty, setQty] = useState(1);
@@ -197,6 +200,8 @@ function ProductDetailModal({
   const badgeLabel = product.categoryName
     ? product.categoryName.replace(/filters?/i, '').trim().toUpperCase() || product.categoryName.toUpperCase()
     : null;
+  const productName = resolveProductName(product, isRTL ? 'ar' : 'en');
+  const productDescription = resolveProductDescription(product, isRTL ? 'ar' : 'en');
   const modalTitle = t('productsDetailTitle');
   const resolvedModalTitle = modalTitle && modalTitle !== 'productsDetailTitle'
     ? modalTitle
@@ -224,7 +229,7 @@ function ProductDetailModal({
       return;
     }
     addItem(product.id, 1, {
-      id: product.id, name: product.name, thumbnail: product.mainImage ?? product.images?.[0] ?? null,
+      id: product.id, name: productName, thumbnail: rawImage,
     }, price);
     onClose();
   };
@@ -236,10 +241,10 @@ function ProductDetailModal({
       return;
     }
     addToQuotation({
-      productId: product.id, name: product.name, sku: product.sku,
-      price, quantity: qty, thumbnail: product.mainImage ?? product.images?.[0] ?? null,
+      productId: product.id, name: productName, sku: product.sku,
+      price, quantity: qty, thumbnail: rawImage,
     });
-    toast.success(`${product.name} ${t('products.addedToQuotationBasket')}`);
+    toast.success(`${productName} ${t('products.addedToQuotationBasket')}`);
     onClose();
   };
 
@@ -272,7 +277,7 @@ function ProductDetailModal({
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <ImageOff size={40} className="text-gray-300" />
-                  <span className="text-xs text-gray-400 font-medium">{PRODUCT_UI_LABELS.noImage}</span>
+                  <span className="text-xs text-gray-400 font-medium">{t('productsNoImage') || 'No Image'}</span>
                 </div>
               )}
             </div>
@@ -292,11 +297,11 @@ function ProductDetailModal({
               </div>
 
               {/* Name */}
-              <h3 className="text-xl font-extrabold text-gray-900 leading-tight">{product.name}</h3>
+              <h3 className="text-xl font-extrabold text-gray-900 leading-tight">{productName}</h3>
 
               {/* Description */}
-              {product.description && (
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{product.description}</p>
+              {productDescription && (
+                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{productDescription}</p>
               )}
 
               {/* Filter Type / Material / Dimensions */}
@@ -464,6 +469,7 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
         role="dialog"
         aria-modal="true"
         aria-label={t('productsFilterTitle')}
+        dir={isRTL ? 'rtl' : 'ltr'}
       >
 
         {/* Header */}
@@ -836,7 +842,7 @@ function ProductsContent() {
           {/* Grid */}
           {comparedProducts.length > 0 && (
             <div className="mb-4 bg-white border border-gray-200 rounded-2xl p-4 flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">Compare:</span>
+                <span className="text-sm font-semibold text-gray-700">{t('productsCompareLabel')}</span>
               {comparedProducts.map((item) => (
                 <span key={item.id} className="inline-flex items-center gap-2 text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
                   {item.name}
@@ -864,7 +870,7 @@ function ProductsContent() {
                   disabled={comparedProducts.length < 2}
                   className="text-xs bg-[#0205A6] text-white font-semibold px-3 py-1.5 rounded-full hover:bg-[#0103d4] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {showCompareTable ? 'Hide Comparison' : 'Compare in Table'}
+                  {showCompareTable ? t('productsCompareHideTable') : t('productsCompareShowTable')}
                 </button>
                 <button
                   type="button"
@@ -875,7 +881,7 @@ function ProductsContent() {
                   }}
                   className="text-xs text-[#0205A6] font-semibold hover:underline"
                 >
-                  Clear Compare
+                  {t('productsCompareClear')}
                 </button>
               </div>
             </div>
@@ -884,13 +890,13 @@ function ProductsContent() {
           {showCompareTable && comparedProducts.length >= 2 && (
             <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-200">
-                <h3 className="text-sm font-bold text-gray-900">Product Comparison</h3>
+                <h3 className="text-sm font-bold text-gray-900">{t('productsComparisonTitle')}</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className={`px-4 py-3 font-semibold text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>Field</th>
+                      <th className={`px-4 py-3 font-semibold text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>{t('productsComparisonField')}</th>
                       {comparedProducts.map((item) => (
                         <th key={item.id} className={`px-4 py-3 font-semibold text-gray-900 min-w-[220px] ${isRTL ? 'text-right' : 'text-left'}`}>{item.name}</th>
                       ))}
@@ -898,37 +904,37 @@ function ProductsContent() {
                   </thead>
                   <tbody>
                     <tr className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-700">Price</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonPrice')}</td>
                       {comparedProducts.map((item) => (
                         <td key={`${item.id}-price`} className="px-4 py-3 text-[#0205A6] font-bold">SAR {item.price.toFixed(2)}</td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-700">SKU</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonSku')}</td>
                       {comparedProducts.map((item) => (
                         <td key={`${item.id}-sku`} className="px-4 py-3 text-gray-700">{item.sku || '-'}</td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-700">Filter Type</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonFilterType')}</td>
                       {comparedProducts.map((item) => (
                         <td key={`${item.id}-type`} className="px-4 py-3 text-gray-700">{item.filterType || '-'}</td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-700">Material</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonMaterial')}</td>
                       {comparedProducts.map((item) => (
                         <td key={`${item.id}-material`} className="px-4 py-3 text-gray-700">{item.material || '-'}</td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-700">Dimensions</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonDimensions')}</td>
                       {comparedProducts.map((item) => (
                         <td key={`${item.id}-dimensions`} className="px-4 py-3 text-gray-700">{item.dimensions || '-'}</td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-700">Action</td>
+                      <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonAction')}</td>
                       {comparedProducts.map((item) => (
                         <td key={`${item.id}-action`} className="px-4 py-3">
                           <button
@@ -936,7 +942,7 @@ function ProductsContent() {
                             onClick={() => router.push(`/products/${item.id}`)}
                             className="text-xs font-semibold text-[#0205A6] hover:underline"
                           >
-                            View Product
+                            {t('productsComparisonViewProduct')}
                           </button>
                         </td>
                       ))}

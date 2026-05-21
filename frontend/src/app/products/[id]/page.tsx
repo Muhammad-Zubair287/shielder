@@ -96,6 +96,28 @@ export default function ProductDetailPage() {
     .trim()
     .toUpperCase() || product.category?.name?.toUpperCase();
   const maxQuantity = product.stock && product.stock > 0 ? product.stock : null;
+  const detailLabels = {
+    specs: t('productsSpecs') || 'Specifications',
+    qty: t('productsQty') || 'Quantity',
+    filterType: t('productsDetailFilterType') || 'Filter Type',
+    material: t('productsDetailMaterial') || 'Material',
+    dimensions: t('productsDetailDimensions') || 'Dimensions',
+    alternateNumbers: t('productsDetailAlternateNumbers') || 'Alternate Numbers',
+    noSpecs: t('productsDetailNoSpecs') || 'No specs available',
+    whyChoose: t('productsWhyChooseThisProduct') || 'Why Choose This Product?',
+    qualityAssurance: t('productsQualityAssurance') || 'Quality Assurance',
+    certifications: t('productsCertificationsDocumentation') || 'Certifications & Documentation',
+    datasheetUnavailable: t('productsDatasheetUnavailable') || 'Datasheet not available for this product.',
+    productCertification: t('productsProductCertification') || 'Product Certification',
+    download: t('productsDownload') || 'Download',
+    reviews: t('productsReviews') || 'Reviews',
+    reviewsLoading: t('productsReviewsLoading') || 'Loading reviews...',
+    noApprovedReviews: t('productsNoApprovedReviews') || 'No approved reviews yet. Be the first to review this product!',
+    writeReview: t('productsWriteReview') || 'Write a Review',
+    anonymous: t('productsAnonymous') || 'Anonymous',
+    inStock: t('productsInStock') || 'in stock',
+    outOfStock: t('productsOutOfStock') || 'Out of Stock',
+  };
 
   const normalizeQuantity = (nextQuantity: number) => {
     if (maxQuantity === null) {
@@ -177,7 +199,7 @@ export default function ProductDetailPage() {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-100">
                     <ImageOff size={48} className="text-gray-300" />
-                    <span className="text-sm text-gray-400 font-medium">No Image</span>
+                    <span className="text-sm text-gray-400 font-medium">{t('productsNoImage') || 'No Image'}</span>
                   </div>
                 )}
                 {discount > 0 && (
@@ -221,7 +243,7 @@ export default function ProductDetailPage() {
             <div className="space-y-6 animate-fade-in animation-delay-100">
               {/* Category Badge */}
               {categoryName && (
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${isRTL ? 'justify-end' : ''}`}>
                   <span className="inline-block bg-[#F97316]/10 text-[#F97316] text-xs font-bold px-3 py-1 rounded-full">
                     {categoryName}
                   </span>
@@ -229,7 +251,7 @@ export default function ProductDetailPage() {
               )}
 
               {/* Title & Meta */}
-              <div className="space-y-2">
+              <div className={`space-y-2 ${isRTL ? 'text-right' : ''}`}>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">{product.name}</h1>
                 {(product.filterNumber || product.sku) && (
                   <p className="text-gray-500 text-sm">
@@ -249,7 +271,7 @@ export default function ProductDetailPage() {
                     />
                   ))}
                 </div>
-                <span className="text-sm text-gray-600">({(averageRating || 0).toFixed(1)} • {reviewCount} reviews)</span>
+                <span className="text-sm text-gray-600">({(averageRating || 0).toFixed(1)} • {reviewCount} {detailLabels.reviews.toLowerCase()})</span>
               </div>
 
               {/* Price */}
@@ -263,7 +285,7 @@ export default function ProductDetailPage() {
                   </span>
                 </div>
                 <p className="text-green-600 font-semibold text-sm">
-                  {product.stock === 0 ? '❌ Out of Stock' : `✅ ${product.stock} in stock`}
+                  {product.stock === 0 ? `❌ ${detailLabels.outOfStock}` : `✅ ${product.stock} ${detailLabels.inStock}`}
                 </p>
               </div>
 
@@ -273,14 +295,35 @@ export default function ProductDetailPage() {
               )}
 
               {/* Specifications Preview */}
-              <div className="space-y-2 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                <h3 className="font-bold text-gray-900 text-sm">{t('productsSpecs') || 'Specifications'}</h3>
-                <div className="space-y-1 text-sm text-gray-600">
-                  {product.filterType && <p>🔧 Type: {product.filterType}</p>}
-                  {product.material && <p>📋 Material: {product.material}</p>}
-                  {product.dimensions && <p>📐 Dimensions: {product.dimensions}</p>}
-                  {!product.filterType && !product.material && !product.dimensions && (
-                    <p className="text-gray-400 italic">No specs available</p>
+              <div className={`space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200 ${isRTL ? 'text-right' : ''}`}>
+                <h3 className="font-bold text-gray-900 text-sm">{detailLabels.specs}</h3>
+                <div className="space-y-2 text-sm text-gray-600">
+                  {product.filterType && (
+                    <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <span className="font-semibold text-gray-700">{detailLabels.filterType}</span>
+                      <span>{product.filterType}</span>
+                    </p>
+                  )}
+                  {product.material && (
+                    <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <span className="font-semibold text-gray-700">{detailLabels.material}</span>
+                      <span>{product.material}</span>
+                    </p>
+                  )}
+                  {product.dimensions && (
+                    <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <span className="font-semibold text-gray-700">{detailLabels.dimensions}</span>
+                      <span>{product.dimensions}</span>
+                    </p>
+                  )}
+                  {product.alternateNumbers && (
+                    <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <span className="font-semibold text-gray-700">{detailLabels.alternateNumbers}</span>
+                      <span>{product.alternateNumbers}</span>
+                    </p>
+                  )}
+                  {!product.filterType && !product.material && !product.dimensions && !product.alternateNumbers && (
+                    <p className="text-gray-400 italic">{detailLabels.noSpecs}</p>
                   )}
                 </div>
               </div>
@@ -289,7 +332,7 @@ export default function ProductDetailPage() {
               <div className="space-y-3">
                 {/* Quantity Selector */}
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-semibold text-gray-700">{t('productsQty') || 'Quantity'}</span>
+                    <span className="text-sm font-semibold text-gray-700">{detailLabels.qty}</span>
                   <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                     <button
                       onClick={() => setQuantity(q => normalizeQuantity(q - 1))}
@@ -319,7 +362,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Primary Buttons */}
-                <div className={`grid md:grid-cols-2 gap-3 ${isRTL ? 'direction-rtl' : ''}`}>
+                <div className="grid md:grid-cols-2 gap-3">
                   <button
                     onClick={handleAddToCart}
                     disabled={cartLoading || product.stock === 0}
@@ -354,8 +397,8 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Key Benefits */}
-              <div className="space-y-2 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-                <h4 className="font-bold text-gray-900 text-sm">Why Choose This Product?</h4>
+              <div className={`space-y-2 p-4 bg-blue-50 border border-blue-100 rounded-lg ${isRTL ? 'text-right' : ''}`}>
+                <h4 className="font-bold text-gray-900 text-sm">{detailLabels.whyChoose}</h4>
                 <ul className="text-xs text-gray-600 space-y-1">
                   <li>✓ Premium quality industrial filter</li>
                   <li>✓ Fast delivery available</li>
@@ -365,9 +408,9 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Certifications & Documentation */}
-              <div className="space-y-3">
-                <h4 className="font-bold text-gray-900 text-sm">Certifications & Documentation</h4>
-                <div className="flex gap-2 flex-wrap">
+              <div className={`space-y-3 ${isRTL ? 'text-right' : ''}`}>
+                <h4 className="font-bold text-gray-900 text-sm">{detailLabels.certifications}</h4>
+                <div className={`flex gap-2 flex-wrap ${isRTL ? 'justify-end' : ''}`}>
                   {certificates.length > 0 ? (
                     certificates.map((certificate) => (
                       <a
@@ -402,20 +445,20 @@ export default function ProductDetailPage() {
                         className="text-sm text-[#0205A6] hover:underline font-medium flex items-center gap-1"
                       >
                         <Download size={14} />
-                        Download {datasheet.fileName}
+                        {detailLabels.download} {datasheet.fileName}
                       </a>
                     ))}
                   </div>
                 ) : (
-                  <span className="text-sm text-gray-500">Datasheet not available for this product.</span>
+                  <span className="text-sm text-gray-500">{detailLabels.datasheetUnavailable}</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* ── Certifications Banner ── */}
-          <div className="mt-12 bg-gradient-to-r from-slate-50 to-slate-100 p-6 rounded-xl border border-slate-200">
-            <h3 className="font-bold text-gray-900 mb-4">Quality Assurance</h3>
+          <div className={`mt-12 bg-gradient-to-r from-slate-50 to-slate-100 p-6 rounded-xl border border-slate-200 ${isRTL ? 'text-right' : ''}`}>
+            <h3 className="font-bold text-gray-900 mb-4">{detailLabels.qualityAssurance}</h3>
             <div className="grid md:grid-cols-4 gap-4">
               {(certificates.length > 0 ? certificates : [
                 { id: 'iso', fileName: 'ISO 9001', fileUrl: '#', type: 'CERTIFICATE' as const, mimeType: 'text/plain', language: 'en' },
@@ -425,7 +468,7 @@ export default function ProductDetailPage() {
               ]).slice(0, 4).map((certificate) => (
                 <div key={certificate.id} className="text-center">
                   <div className="text-sm font-semibold text-gray-700">✓ {certificate.fileName}</div>
-                  <p className="text-xs text-gray-500 mt-1">Product Certification</p>
+                  <p className="text-xs text-gray-500 mt-1">{detailLabels.productCertification}</p>
                 </div>
               ))}
             </div>
@@ -433,7 +476,7 @@ export default function ProductDetailPage() {
 
           {/* ── Details Tabs ── */}
           <div className="mt-16 border-t border-gray-200 pt-8">
-            <div className="flex gap-6 border-b border-gray-200 mb-8">
+            <div className={`flex gap-6 border-b border-gray-200 mb-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <button
                 onClick={() => setActiveTab('specs')}
                 className={`pb-3 font-semibold text-sm transition-colors ${
@@ -442,7 +485,7 @@ export default function ProductDetailPage() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                {t('productsSpecs') || 'Specifications'}
+                {detailLabels.specs}
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
@@ -452,7 +495,7 @@ export default function ProductDetailPage() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                {t('productsReviews') || 'Reviews'} ({reviewCount})
+                {detailLabels.reviews} ({reviewCount})
               </button>
             </div>
 
@@ -461,7 +504,7 @@ export default function ProductDetailPage() {
                 {product.filterType && (
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Filter Type</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">{detailLabels.filterType}</h4>
                       <p className="text-gray-600">{product.filterType}</p>
                     </div>
                   </div>
@@ -469,7 +512,7 @@ export default function ProductDetailPage() {
                 {product.material && (
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Material</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">{detailLabels.material}</h4>
                       <p className="text-gray-600">{product.material}</p>
                     </div>
                   </div>
@@ -477,7 +520,7 @@ export default function ProductDetailPage() {
                 {product.dimensions && (
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Dimensions</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">{detailLabels.dimensions}</h4>
                       <p className="text-gray-600">{product.dimensions}</p>
                     </div>
                   </div>
@@ -485,7 +528,7 @@ export default function ProductDetailPage() {
                 {product.alternateNumbers && (
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Alternate Numbers</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">{detailLabels.alternateNumbers}</h4>
                       <p className="text-gray-600">{product.alternateNumbers}</p>
                     </div>
                   </div>
@@ -531,12 +574,12 @@ export default function ProductDetailPage() {
                     </div>
 
                     {/* Reviews List */}
-                    <div className="space-y-4">
+                    <div className={`space-y-4 ${isRTL ? 'text-right' : ''}`}>
                       {reviews.map((review) => (
                         <div key={review.id} className="p-4 border border-gray-200 rounded-lg">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h4 className="font-semibold text-gray-900">{review.authorName || 'Anonymous'}</h4>
+                              <h4 className="font-semibold text-gray-900">{review.authorName || detailLabels.anonymous}</h4>
                               <div className="flex gap-1 mt-1">
                                 {[...Array(5)].map((_, i) => (
                                   <Star
@@ -558,15 +601,15 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-6 rounded-lg text-center">
+                  <div className={`bg-gray-50 p-6 rounded-lg text-center ${isRTL ? 'rtl' : ''}`}>
                     {reviewsLoading ? (
-                      <p className="text-gray-600">Loading reviews...</p>
+                      <p className="text-gray-600">{detailLabels.reviewsLoading}</p>
                     ) : (
                       <>
-                        <p className="text-gray-600 mb-4">No approved reviews yet. Be the first to review this product!</p>
+                        <p className="text-gray-600 mb-4">{detailLabels.noApprovedReviews}</p>
                         {user && (
                           <button className="text-[#0205A6] hover:underline font-semibold">
-                            Write a Review
+                            {detailLabels.writeReview}
                           </button>
                         )}
                       </>
@@ -580,7 +623,7 @@ export default function ProductDetailPage() {
           {/* ── Related Products ── */}
           {relatedProducts.length > 0 && (
             <div className="mt-16 pt-8 border-t border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">{t('productsRelated') || 'Related Products'}</h2>
+              <h2 className={`text-2xl font-bold text-gray-900 mb-8 ${isRTL ? 'text-right' : ''}`}>{t('productsRelated') || 'Related Products'}</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {relatedProducts.map((p, idx) => (
                   <Link key={p.id} href={`/products/${p.id}`} passHref>

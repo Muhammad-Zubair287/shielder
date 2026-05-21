@@ -1,11 +1,19 @@
+import type { ProductAttachmentLike, ProductTranslationLike } from '@/utils/productDisplay';
+
 export interface Product {
   id: string;
+  nameEn?: string;
+  nameAr?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  translations?: ProductTranslationLike[];
   name: string;
   description: string;
   price: number | string;
   originalPrice?: number | string;
   mainImage?: string;
   images?: string[];
+  attachments?: ProductAttachmentLike[];
   category?: { name: string };
   categoryName?: string;
   stock?: number;

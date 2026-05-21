@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api.service';
 import { PRODUCTS_ITEMS_PER_PAGE } from '@/app/products/products.constants';
+import { resolveProductDescription, resolveProductImage, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
 
 export interface ProductsCatalogFilters {
   search: string;
@@ -14,12 +15,18 @@ export interface ProductsCatalogFilters {
 
 export interface ProductsCatalogProduct {
   id: string;
-  name: string;
-  description: string;
+  name?: string;
+  nameEn?: string;
+  nameAr?: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
   price: number | string;
   originalPrice?: number | string;
   mainImage?: string;
   images?: string[];
+  translations?: ProductTranslationLike[];
+  attachments?: ProductAttachmentLike[];
   categoryName?: string;
   stock?: number;
   sku?: string;
@@ -97,7 +104,12 @@ export function useProductsCatalog({ filters, page, locale }: UseProductsCatalog
         const items: ProductsCatalogProduct[] = data?.products ?? (Array.isArray(data?.data) ? data.data : []);
 
         return {
-          products: items,
+          products: items.map((item) => ({
+            ...item,
+            name: resolveProductName(item as ProductDisplayLike, locale),
+            description: resolveProductDescription(item as ProductDisplayLike, locale),
+            mainImage: resolveProductImage(item as ProductDisplayLike) ?? item.mainImage,
+          })),
           total: data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length,
         };
       } catch (error) {
