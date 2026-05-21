@@ -8,7 +8,8 @@ type UpdateProfileInput = {
   fullName?: string;
   phoneNumber?: string;
   address?: string;
-  profileImage?: string;
+  location?: string;
+  profileImage?: string | null;
   companyName?: string;
   taxId?: string;
   preferences?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;

@@ -37,6 +37,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     email: '',
     phoneNumber: '',
     address: '',
+    location: '',
     companyName: '',
     password: '',
     confirmPassword: '',
@@ -190,6 +191,20 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             {errors.address && (
               <p className="text-sm text-red-500 mt-1">{errors.address}</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Location
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleInputChange}
+              placeholder="City, district, or area"
+              className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 border-gray-300"
+            />
           </div>
         </div>
       )}

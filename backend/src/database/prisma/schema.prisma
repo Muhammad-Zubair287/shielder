@@ -102,6 +102,7 @@ model UserProfile {
   userId            String   @unique
   preferences       Json?
   address           String?
+  location          String?
   companyName       String?  @default("Shielder") @map("company_name")
   createdAt         DateTime @default(now()) @map("created_at")
   fullName          String?  @map("full_name")

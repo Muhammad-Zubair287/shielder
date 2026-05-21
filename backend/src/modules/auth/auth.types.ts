@@ -12,6 +12,7 @@ export interface RegisterRequest {
   fullName: string;
   phoneNumber: string;
   address: string;
+  location?: string;
   companyName?: string;
   role?: 'ADMIN' | 'USER';
   preferredLanguage?: string;
@@ -121,6 +122,7 @@ export interface AuthResponse {
       lastName?: string;
       phone?: string;
       address?: string;
+      location?: string;
       companyName?: string;
       locale?: string;
     };

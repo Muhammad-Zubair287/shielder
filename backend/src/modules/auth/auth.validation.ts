@@ -39,6 +39,7 @@ export const authValidation = {
     address: Joi.string().trim().max(255).required().messages({
       'any.required': 'Address is required',
     }),
+    location: Joi.string().trim().max(255).optional(),
     companyName: Joi.string().trim().max(100).optional(),
     role: Joi.string().valid('ADMIN', 'USER').default('USER'),
     preferredLanguage: Joi.string().valid('en', 'ar').default('en'),

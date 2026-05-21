@@ -5,6 +5,7 @@ export interface MultiStepRegistrationData {
   email: string;
   phoneNumber: string;
   address: string;
+  location: string;
   companyName: string;
   password: string;
   confirmPassword: string;

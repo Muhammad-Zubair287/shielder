@@ -47,6 +47,7 @@ type SanitizedAuthUser = {
     phoneNumber?: string;
     phone?: string;
     address?: string;
+    location?: string;
     companyName?: string;
     profileImage?: string;
     locale?: string;
@@ -208,6 +209,7 @@ export class AuthService {
                     fullName: data.fullName || existingUser.profile.fullName || '',
                     phoneNumber: data.phoneNumber ?? existingUser.profile.phoneNumber,
                     address: data.address ?? existingUser.profile.address,
+                    location: data.location ?? existingUser.profile.location,
                     companyName: data.companyName ?? existingUser.profile.companyName,
                     preferredLanguage: data.preferredLanguage || existingUser.profile.preferredLanguage || 'en',
                   },
@@ -217,6 +219,7 @@ export class AuthService {
                     fullName: data.fullName || '',
                     phoneNumber: data.phoneNumber,
                     address: data.address,
+                    location: data.location,
                     companyName: data.companyName,
                     preferredLanguage: data.preferredLanguage || 'en',
                   },
@@ -377,6 +380,7 @@ export class AuthService {
               preferredLanguage: true,
               phoneNumber: true,
               companyName: true,
+              location: true,
               profileImage: true,
             },
           },
@@ -1121,6 +1125,7 @@ export class AuthService {
               fullName: true,
               phoneNumber: true,
               address: true,
+              location: true,
               companyName: true,
               preferredLanguage: true,
               profileImage: true,
@@ -1322,6 +1327,7 @@ export class AuthService {
         fullName?: string;
         phoneNumber?: string | null;
         address?: string | null;
+        location?: string | null;
         companyName?: string | null;
         profileImage?: string | null;
         preferredLanguage?: string;
@@ -1346,6 +1352,7 @@ export class AuthService {
             phoneNumber: sanitized.profile.phoneNumber || undefined,
             phone: sanitized.profile.phoneNumber || undefined,
             address: sanitized.profile.address || undefined,
+            location: sanitized.profile.location || undefined,
             companyName: sanitized.profile.companyName || undefined,
             profileImage: sanitized.profile.profileImage || undefined,
             locale: sanitized.profile.preferredLanguage || undefined,
@@ -1453,6 +1460,7 @@ export class AuthService {
               fullName: true,
               phoneNumber: true,
               address: true,
+              location: true,
               companyName: true,
               preferredLanguage: true,
               profileImage: true,

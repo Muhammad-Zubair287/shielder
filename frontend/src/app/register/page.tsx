@@ -42,6 +42,7 @@ export default function RegisterPage() {
     email: string;
     phoneNumber: string;
     address: string;
+    location: string;
     companyName: string;
     password: string;
     confirmPassword: string;
@@ -53,6 +54,7 @@ export default function RegisterPage() {
       email: data.email,
       phoneNumber: data.phoneNumber,
       address: data.address,
+      location: data.location,
       companyName: data.companyName,
       password: data.password,
     };
