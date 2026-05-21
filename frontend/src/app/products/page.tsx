@@ -316,12 +316,12 @@ function ProductDetailModal({
               {/* Price + Stock */}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-2xl font-extrabold text-[#0205A6] flex items-center gap-1">
-                  <SARSymbol />{price.toFixed(2)}
+                <div className={`grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-3 ${isRTL ? 'sm:[direction:rtl]' : ''}`}>
                 </span>
                 {product.stock !== undefined && product.stock !== null && (
                   <span className={`text-sm font-semibold ${product.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
                     {product.stock === 0 ? t('productsOutOfStock') : `${product.stock} ${t('productsInStock') || 'in stock'}`}
-                  </span>
+                  <span className="hidden sm:flex items-center justify-center text-gray-400 text-sm shrink-0">—</span>
                 )}
               </div>
 
@@ -330,8 +330,8 @@ function ProductDetailModal({
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}
                     aria-label="Decrease quantity"
-                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
-                    <Minus size={14} />
+              <div className={`rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-4 flex items-center justify-between gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`min-w-0 flex-1 ${isRTL ? 'text-right' : ''}`}>
                   </button>
                   <input type="number" min={1} value={qty}
                     aria-label="Quantity"
