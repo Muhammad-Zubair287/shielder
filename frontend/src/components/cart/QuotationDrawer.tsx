@@ -195,6 +195,13 @@ export default function QuotationDrawer() {
                     {item.sku && (
                       <p className="text-xs text-gray-400">{item.sku}</p>
                     )}
+                    {typeof item.stock === 'number' && (
+                      <p className={`mt-1 text-xs font-semibold ${item.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                        {item.stock === 0
+                          ? (t('productsOutOfStock') || 'Out of Stock')
+                          : `${item.stock} ${t('productsInStock') || 'in stock'}`}
+                      </p>
+                    )}
                     <p className="text-xs font-bold text-[#0D1637] flex items-center gap-0.5 mt-0.5">
                       <SARSymbol />{(item.price * item.quantity).toFixed(2)}
                     </p>
@@ -202,27 +209,41 @@ export default function QuotationDrawer() {
 
                   {/* Qty controls */}
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => {
-                        if (item.quantity <= 1) {
-                          removeItem(item.productId);
-                          return;
+                    {(() => {
+                      const stockLimit = typeof item.stock === 'number' ? item.stock : null;
+                      const clampQuantity = (nextQuantity: number) => {
+                        if (stockLimit === null) {
+                          return Math.max(1, nextQuantity);
                         }
-                        updateQty(item.productId, item.quantity - 1);
-                      }}
-                      className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                    >
-                      <Minus size={10} />
-                    </button>
-                    <span className="w-6 text-center text-sm font-semibold text-gray-800">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() => updateQty(item.productId, item.quantity + 1)}
-                      className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
-                    >
-                      <Plus size={10} />
-                    </button>
+                        return Math.max(1, Math.min(nextQuantity, stockLimit));
+                      };
+                      return (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (item.quantity <= 1) {
+                                removeItem(item.productId);
+                                return;
+                              }
+                              updateQty(item.productId, clampQuantity(item.quantity - 1));
+                            }}
+                            className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                          >
+                            <Minus size={10} />
+                          </button>
+                          <span className="w-6 text-center text-sm font-semibold text-gray-800">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQty(item.productId, clampQuantity(item.quantity + 1))}
+                            disabled={stockLimit !== null && item.quantity >= stockLimit}
+                            className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                          >
+                            <Plus size={10} />
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Remove */}

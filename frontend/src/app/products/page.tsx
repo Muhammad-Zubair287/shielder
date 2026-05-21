@@ -242,7 +242,7 @@ function ProductDetailModal({
     }
     addToQuotation({
       productId: product.id, name: productName, sku: product.sku,
-      price, quantity: qty, thumbnail: rawImage,
+      price, quantity: qty, thumbnail: rawImage, stock: product.stock,
     });
     toast.success(`${productName} ${t('products.addedToQuotationBasket')}`);
     onClose();
@@ -326,27 +326,37 @@ function ProductDetailModal({
               </div>
 
               {/* Quotation qty */}
-              {isQuotation && (
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}
-                    aria-label="Decrease quantity"
-                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
-                    <Minus size={14} />
-                  </button>
-                  <input type="number" min={1} value={qty}
-                    aria-label="Quantity"
-                    onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />
-                  <button type="button" onClick={() => setQty(q => q + 1)}
-                    aria-label="Increase quantity"
-                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-                    <Plus size={14} />
-                  </button>
-                  <span className="text-xs text-gray-400 ml-1">
-                    Total: <span className="font-bold text-gray-700"><SARSymbol className="inline" />{(price * qty).toFixed(2)}</span>
-                  </span>
-                </div>
-              )}
+              {isQuotation && (() => {
+                const stockLimit = typeof product.stock === 'number' ? product.stock : null;
+                const clampQuantity = (nextQuantity: number) => {
+                  if (stockLimit === null) {
+                    return Math.max(1, nextQuantity);
+                  }
+                  return Math.max(1, Math.min(nextQuantity, stockLimit));
+                };
+                return (
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setQty(q => clampQuantity(q - 1))} disabled={qty <= 1}
+                      aria-label="Decrease quantity"
+                      className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                      <Minus size={14} />
+                    </button>
+                    <input type="number" min={1} value={qty}
+                      aria-label="Quantity"
+                      onChange={e => setQty(clampQuantity(parseInt(e.target.value) || 1))}
+                      className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />
+                    <button type="button" onClick={() => setQty(q => clampQuantity(q + 1))} disabled={stockLimit !== null && qty >= stockLimit}
+                      aria-label="Increase quantity"
+                      className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                      <Plus size={14} />
+                    </button>
+                    <span className="text-xs text-gray-400 ml-1">
+                      Total: <span className="font-bold text-gray-700"><SARSymbol className="inline" />{(price * qty).toFixed(2)}</span>
+                    </span>
+                  </div>
+                );
+              })()}
+              
 
               {/* CTA */}
               {isQuotation ? (

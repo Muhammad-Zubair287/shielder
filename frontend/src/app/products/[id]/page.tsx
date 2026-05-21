@@ -155,13 +155,15 @@ export default function ProductDetailPage() {
       router.push('/login');
       return;
     }
+    const normalizedQuantity = normalizeQuantity(quantity);
     addToQuotation({
       productId: product.id,
       name: product.name,
       sku: product.sku,
       price,
-      quantity,
+      quantity: normalizedQuantity,
       thumbnail: product.mainImage || null,
+      stock: product.stock,
     });
     toast.success(`${t('products.quoteRequestSubmittedFor')} "${product.name}"`);
   };

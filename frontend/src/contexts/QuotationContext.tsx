@@ -18,6 +18,7 @@ export interface QuotationBasketItem {
   price: number;
   quantity: number;
   thumbnail?: string | null;
+  stock?: number | null;
 }
 
 interface QuotationContextValue {
