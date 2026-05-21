@@ -83,7 +83,7 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors = validateContactForm(form, attachment);
+    const errors = validateContactForm(form, attachment, t as any);
     if (errors.length > 0) {
       const mapped: Record<string, string> = {};
       errors.forEach(err => { mapped[err.field] = err.message; });
@@ -109,7 +109,7 @@ export default function ContactPage() {
       setForm(initialFormValues);
       setTimeout(() => setSent(false), 4000);
     } catch (error: any) {
-      toast.error(error?.message || 'Unable to send your message right now. Please try again.');
+      toast.error(error?.message || t('contact.sendMessageFailed'));
     } finally {
       setSending(false);
     }

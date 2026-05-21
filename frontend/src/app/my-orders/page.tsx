@@ -155,7 +155,7 @@ export default function MyOrdersPage() {
       const items = response?.data?.orderItems || [];
 
       if (!items.length) {
-        toast.error('No items found for reorder');
+        toast.error(t('myOrders.noItemsForReorder'));
         return;
       }
 
@@ -188,14 +188,14 @@ export default function MyOrdersPage() {
         );
       }
 
-      toast.success('Items added to cart');
+      toast.success(t('myOrders.itemsAddedToCart'));
       router.push('/cart');
     } catch {
-      toast.error('Unable to reorder at this time');
+      toast.error(t('myOrders.reorderUnavailable'));
     } finally {
       setReorderingId(null);
     }
-  }, [router]);
+  }, [router, t]);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 

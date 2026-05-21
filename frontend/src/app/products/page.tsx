@@ -23,7 +23,7 @@ import {
   PRODUCTS_SORT_OPTIONS,
 } from './products.constants';
 import { ActiveFilters, Category, Product, ProductTab } from './products.types';
-import { PRODUCT_COMPARE, TOAST_MESSAGES } from '@/constants/ui.constants';
+import { PRODUCT_COMPARE } from '@/constants/ui.constants';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 
 export const dynamic = 'force-dynamic';
@@ -239,7 +239,7 @@ function ProductDetailModal({
       productId: product.id, name: product.name, sku: product.sku,
       price, quantity: qty, thumbnail: product.mainImage ?? product.images?.[0] ?? null,
     });
-    toast.success(`${product.name} ${TOAST_MESSAGES.ADDED_TO_QUOTATION}`);
+    toast.success(`${product.name} ${t('products.addedToQuotationBasket')}`);
     onClose();
   };
 
@@ -658,7 +658,7 @@ function ProductsContent() {
     if (currentlyCompared) {
       productComparisonService.remove(product.id);
       setComparedProducts(productComparisonService.getAll());
-      toast.success('Product removed from compare');
+      toast.success(t('products.compareRemoved'));
       return;
     }
 
@@ -674,12 +674,12 @@ function ProductsContent() {
     });
 
     if (!result.ok && result.reason === 'limit_reached') {
-      toast.error(`You can compare up to ${productComparisonService.maxItems} products only.`);
+      toast.error(`${t('products.compareLimitPrefix')} ${productComparisonService.maxItems} ${t('products.compareLimitSuffix')}`);
       return;
     }
 
     setComparedProducts(productComparisonService.getAll());
-    toast.success('Product added to compare');
+    toast.success(t('products.compareAdded'));
   };
 
   // ── URL sync ──────────────────────────────────────────────────────────────

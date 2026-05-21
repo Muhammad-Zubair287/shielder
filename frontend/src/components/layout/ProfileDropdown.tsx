@@ -81,11 +81,11 @@ export const ProfileDropdown = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Photo must be smaller than 2 MB');
+      toast.error(t('profile.photoTooLarge2Mb'));
       return;
     }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Only JPEG, PNG or WebP images are allowed');
+      toast.error(t('profile.photoTypeInvalid'));
       return;
     }
     setIsUploadingPhoto(true);
@@ -97,9 +97,9 @@ export const ProfileDropdown = () => {
         profile: { ...user!.profile, profileImage: data?.profileImage ?? data?.data?.profileImage ?? user!.profile?.profileImage },
       };
       setUser(updatedUser as any);
-      toast.success('Profile photo updated');
+      toast.success(t('profile.photoUpdated'));
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to upload photo');
+      toast.error(err?.response?.data?.message ?? t('profile.photoUploadFailed'));
     } finally {
       setIsUploadingPhoto(false);
       // Reset so same file can be re-selected

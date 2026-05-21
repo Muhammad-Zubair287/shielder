@@ -12,11 +12,13 @@ import authService from '@/services/auth.service';
 import type { LoginRequest, RegisterRequest } from '@/types';
 import { ROUTES, STORAGE_KEYS, SUCCESS_MESSAGES } from '@/utils/constants';
 import toast from 'react-hot-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const LOGIN_TOAST_DURATION_MS = 4000;
 
 export const useAuth = () => {
   const router = useRouter();
+  const { t } = useLanguage();
   const { user, isAuthenticated, setUser, setLoading, setError, logout: storeLogout } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,7 +82,7 @@ export const useAuth = () => {
         // Don't store user yet; they're pending 2FA verification.
         // Ensure no stale user remains in the store while waiting for OTP.
         setUser(null);
-        toast.success('Login successful. Check your email, then enter the 6-digit code on the verification page to continue.', { duration: LOGIN_TOAST_DURATION_MS });
+        toast.success(t('auth.login2faPrompt'), { duration: LOGIN_TOAST_DURATION_MS });
         
         // Store temporary session tokens for 2FA verification
         if (role === 'SUPER_ADMIN') {
@@ -92,7 +94,7 @@ export const useAuth = () => {
           sessionStorage.setItem('admin_otp_session_token', response.otpSessionToken);
           goToTwoFactorPage('/admin/admin-2fa');
         } else {
-          toast.error('Unable to continue to 2FA. Please try logging in again.', { duration: LOGIN_TOAST_DURATION_MS });
+          toast.error(t('auth.twoFactorContinueFailed'), { duration: LOGIN_TOAST_DURATION_MS });
         }
         return response;
       }
@@ -121,7 +123,7 @@ export const useAuth = () => {
 
       return response;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      const errorMessage = error instanceof Error ? error.message : t('loginError');
       setError(errorMessage);
       toast.error(errorMessage, { duration: LOGIN_TOAST_DURATION_MS });
       throw error;

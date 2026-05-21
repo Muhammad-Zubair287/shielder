@@ -10,6 +10,7 @@ import {
   localeFontClass,
   DEFAULT_LOCALE,
 } from '@/i18n/config';
+import initLocalizedToasts from '@/utils/localizeToasts';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { invalidateLocaleCache } from '@/services/api.service';
 
@@ -61,6 +62,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
     invalidateLocaleCache(); // keep axios interceptor cache in sync
+    // Ensure toast messages are localized when locale changes.
+    try { initLocalizedToasts(locale); } catch (e) { /* safe to ignore */ }
   }, [locale, mounted]);
 
   const setLocale = (newLocale: Locale) => setLocaleState(newLocale);

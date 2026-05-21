@@ -48,7 +48,7 @@ export default function QuotationDrawer() {
   const { items, itemCount, removeItem, updateQty, clearBasket, drawerOpen, closeDrawer } =
     useQuotation();
   const { isAuthenticated } = useAuthStore();
-  const { isRTL } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const router = useRouter();
 
   const [form, setForm]         = useState<FormState>({ companyName: '', vatNumber: '', address: '' });
@@ -81,7 +81,7 @@ export default function QuotationDrawer() {
     }
 
     if (items.length === 0) {
-      toast.error('Add at least one product to the quotation basket first.');
+      toast.error(t('quotationDrawer.addOneProductFirst'));
       return;
     }
 
@@ -106,11 +106,11 @@ export default function QuotationDrawer() {
 
       clearBasket();
       closeDrawer();
-      toast.success('Quotation generated!');
+      toast.success(t('quotationDrawer.generated'));
       router.push(`/my-quotation/${result.id}`);
     } catch (err: any) {
       const msg = err?.response?.data?.message;
-      toast.error(msg || 'Failed to generate quotation. Please try again.');
+      toast.error(msg || t('quotationDrawer.generateFailed'));
     } finally {
       setSubmitting(false);
     }

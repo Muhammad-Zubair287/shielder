@@ -244,7 +244,7 @@ const ProductManagement = () => {
     } catch (err) {
       const error = err as ApiErrorResponse;
       if (error.response?.status !== 401) {
-        toast.error(error.response?.data?.message || 'Failed to fetch products');
+        toast.error(error.response?.data?.message || t('superadminProducts.fetchFailed'));
       }
     } finally {
       setLoading(false);
@@ -371,12 +371,12 @@ const ProductManagement = () => {
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/jfif'].includes(file.type)) {
-      toast.error('Invalid image type. Use JPG, PNG, or WEBP.');
+      toast.error(t('superadminProducts.invalidImageType'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
+      toast.error(t('superadminProducts.imageTooLarge'));
       return;
     }
 
@@ -389,20 +389,20 @@ const ProductManagement = () => {
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.categoryId || !formData.subcategoryId || !formData.price || !formData.stock) {
-      return toast.error('Please fill all required fields');
+      return toast.error(t('superadminProducts.fillRequiredFields'));
     }
 
     // Validate Required Specs
     const missingSpecs = formData.specifications.filter(s => s.isRequired && !s.specValue.trim());
     if (missingSpecs.length > 0) {
-      return toast.error(`Please fill required specification: ${missingSpecs[0].specKey}`);
+      return toast.error(`${t('superadminProducts.fillRequiredSpecification')}: ${missingSpecs[0].specKey}`);
     }
 
     // Check for duplicate keys
     const keys = formData.specifications.map(s => s.specKey.toLowerCase().trim());
     const hasDuplicates = keys.some((k, idx) => keys.indexOf(k) !== idx);
     if (hasDuplicates) {
-      return toast.error('Duplicate specification keys are not allowed');
+      return toast.error(t('superadminProducts.duplicateSpecificationKeys'));
     }
 
     const payload: Record<string, any> = {
@@ -439,14 +439,14 @@ const ProductManagement = () => {
         await adminService.uploadProductImage(productId, imageFile);
       }
 
-      toast.success(isEditing ? 'Product updated successfully' : 'Product created successfully');
+      toast.success(isEditing ? t('superadminProducts.updated') : t('superadminProducts.created'));
       setShowAddEditModal(false);
       resetForm();
       fetchData();
     } catch (err) {
       const error = err as ApiErrorResponse;
       const firstValidationError = error.response?.data?.errors?.[0]?.message;
-      toast.error(firstValidationError || error.response?.data?.message || 'Failed to save product');
+      toast.error(firstValidationError || error.response?.data?.message || t('superadminProducts.saveFailed'));
     } finally {
       setFormLoading(false);
     }
@@ -457,12 +457,12 @@ const ProductManagement = () => {
     try {
       setFormLoading(true);
       await adminService.deleteProduct(selectedProduct.id);
-      toast.success('Product deleted successfully');
+      toast.success(t('superadminProducts.deleted'));
       setShowDeleteModal(false);
       fetchData();
     } catch (err) {
       const error = err as ApiErrorResponse;
-      toast.error(error.response?.data?.message || 'Failed to delete product');
+      toast.error(error.response?.data?.message || t('superadminProducts.deleteFailed'));
     } finally {
       setFormLoading(false);
     }
@@ -503,10 +503,10 @@ const ProductManagement = () => {
       const failedCount = result?.failed?.length || 0;
 
       if (deletedCount > 0) {
-        toast.success(`Deleted ${deletedCount} products`);
+        toast.success(`${t('superadminProducts.bulkDeletedPrefix')} ${deletedCount} ${t('superadminProducts.bulkDeletedSuffix')}`);
       }
       if (failedCount > 0) {
-        toast.error(`${failedCount} products could not be deleted`);
+        toast.error(`${failedCount} ${t('superadminProducts.bulkDeleteFailedCount')}`);
       }
 
       setShowBulkDeleteModal(false);
@@ -514,7 +514,7 @@ const ProductManagement = () => {
       fetchData();
     } catch (err) {
       const error = err as ApiErrorResponse;
-      toast.error(error.response?.data?.message || 'Failed to bulk delete products');
+      toast.error(error.response?.data?.message || t('superadminProducts.bulkDeleteFailed'));
     } finally {
       setFormLoading(false);
     }

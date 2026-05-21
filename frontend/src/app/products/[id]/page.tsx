@@ -121,7 +121,7 @@ export default function ProductDetailPage() {
       name: product.name,
       thumbnail: product.mainImage || null,
     }, price);
-    toast.success(`${normalizedQuantity} item(s) added to cart`);
+    toast.success(`${normalizedQuantity} ${t('products.itemsAddedToCart')}`);
   };
 
   const handleRequestQuote = () => {
@@ -141,7 +141,7 @@ export default function ProductDetailPage() {
       quantity,
       thumbnail: product.mainImage || null,
     });
-    toast.success(`Quote request for "${product.name}" submitted!`);
+    toast.success(`${t('products.quoteRequestSubmittedFor')} "${product.name}"`);
   };
 
   return (

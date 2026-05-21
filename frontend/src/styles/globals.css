@@ -85,6 +85,12 @@ html {
   right: 0 !important;
 }
 
+/* Ensure individual toast content is RTL-aligned when app is RTL */
+[dir="rtl"] .react-hot-toast-wrapper .react-hot-toast {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
 /* Utility Classes */
 @layer utilities {
   .text-balance {

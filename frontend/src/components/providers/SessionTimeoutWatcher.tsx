@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/auth.store';
 import settingsService from '@/services/settings.service';
 import { STORAGE_KEYS } from '@/utils/constants';
 import toast from 'react-hot-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const MIN_TIMEOUT_MINUTES = 5;
 const MAX_TIMEOUT_MINUTES = 10;
@@ -51,13 +52,14 @@ function clampTimeoutMinutes(value: number): number {
 
 export default function SessionTimeoutWatcher() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { isAuthenticated, user, logout } = useAuthStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeoutMsRef = useRef<number>(DEFAULT_TIMEOUT_MS);
 
   const expireSession = async () => {
     clearSessionExpiryState();
-    toast.error('Session expired. Please log in again.', { duration: 3000 });
+    toast.error(t('auth.sessionExpiredLoginAgain'), { duration: 3000 });
     await logout();
     router.replace('/login?expired=true');
   };

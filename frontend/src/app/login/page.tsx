@@ -74,12 +74,12 @@ function LoginPageContent() {
   // Show session expired alert
   useEffect(() => {
     if (expired) {
-      toast.error('Session Expired: Please log in again to continue.', {
+      toast.error(t('auth.sessionExpiredContinue'), {
         id: 'session-expired',
         duration: LOGIN_TOAST_DURATION_MS,
       });
     }
-  }, [expired]);
+  }, [expired, t]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -128,7 +128,7 @@ function LoginPageContent() {
         if (!isMounted) return;
 
         if (status.trusted) {
-          setTrustedDeviceMessage('This device is already trusted. Admin and superadmin logins will skip OTP after you sign in.');
+          setTrustedDeviceMessage(t('auth.deviceAlreadyTrusted'));
         } else {
           setTrustedDeviceMessage(null);
         }
@@ -143,7 +143,7 @@ function LoginPageContent() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const isUnverifiedEmailError = (message: string) => {
     const normalized = message.toLowerCase();
@@ -196,21 +196,21 @@ function LoginPageContent() {
   const handleResendVerification = async () => {
     const email = formData.email?.trim();
     if (!email) {
-      toast.error('Please enter your email first.', { duration: LOGIN_TOAST_DURATION_MS });
+      toast.error(t('auth.enterEmailFirst'), { duration: LOGIN_TOAST_DURATION_MS });
       return;
     }
 
     if (!VALIDATION_RULES.EMAIL_REGEX.test(email)) {
-      toast.error('Please enter a valid email address.', { duration: LOGIN_TOAST_DURATION_MS });
+      toast.error(t('invalidEmail'), { duration: LOGIN_TOAST_DURATION_MS });
       return;
     }
 
     try {
       setIsResendingVerification(true);
       await authService.resendVerificationEmail(email);
-      toast.success('If your account exists and is unverified, a new verification link has been sent.', { duration: LOGIN_TOAST_DURATION_MS });
+      toast.success(t('auth.verificationResentIfUnverified'), { duration: LOGIN_TOAST_DURATION_MS });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to resend verification email';
+      const message = error instanceof Error ? error.message : t('auth.resendVerificationFailed');
       toast.error(message, { duration: LOGIN_TOAST_DURATION_MS });
     } finally {
       setIsResendingVerification(false);

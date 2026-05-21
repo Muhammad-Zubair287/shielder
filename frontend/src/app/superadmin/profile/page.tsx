@@ -81,7 +81,7 @@ export default function ProfilePage() {
       });
       await refreshUser();
       setIsEditingProfile(false);
-      toast.success('Profile updated successfully');
+      toast.success(t('profile.profileUpdated'));
     } catch (err: any) {
       toast.error(handleApiError(err));
     }
@@ -106,7 +106,7 @@ export default function ProfilePage() {
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
+      setError(t('passwordMismatch'));
       return;
     }
 
@@ -116,7 +116,7 @@ export default function ProfilePage() {
         oldPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-      toast.success('Password updated successfully');
+      toast.success(t('profile.passwordUpdated'));
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setError(null);
     } catch (err: any) {
@@ -133,7 +133,7 @@ export default function ProfilePage() {
       : null;
   const liveConfirmError =
     passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword
-      ? 'New passwords do not match'
+      ? t('passwordMismatch')
       : null;
   const activePasswordError = error || livePasswordError || liveConfirmError;
 
@@ -143,13 +143,13 @@ export default function ProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('profile.selectImageFile'));
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should not exceed 5MB');
+      toast.error(t('profile.imageMax5Mb'));
       return;
     }
 
@@ -160,9 +160,9 @@ export default function ProfilePage() {
       // Refresh user data to update navbar
       await refreshUser();
       
-      toast.success('Profile image updated successfully');
+      toast.success(t('profile.imageUpdatedSuccessfully'));
     } catch (err: any) {
-      toast.error(err.message || 'Failed to upload image');
+      toast.error(err.message || t('profile.imageUploadFailed'));
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) {
