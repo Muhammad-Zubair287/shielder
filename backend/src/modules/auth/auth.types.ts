@@ -126,6 +126,7 @@ export interface AuthResponse {
     };
   };
   tokens: TokenPairResponse;
+  emailDeliveryStatus?: 'email_sent' | 'auto_verified';
   requiresTwoFactor?: boolean;
   otpSessionToken?: string;
   trustedDeviceToken?: string;

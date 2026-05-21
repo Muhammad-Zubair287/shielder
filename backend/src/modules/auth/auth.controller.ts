@@ -68,9 +68,13 @@ class AuthController {
 
     const result = await AuthService.register(data);
 
+    const isAutoVerified = result.emailDeliveryStatus === 'auto_verified';
+
     res.status(201).json({
       success: true,
-      message: 'Registration successful. Please verify your email.',
+      message: isAutoVerified
+        ? 'Registration successful. Your account has been auto-verified.'
+        : 'Registration successful. Please check your email to verify your account.',
       data: result,
     });
   });

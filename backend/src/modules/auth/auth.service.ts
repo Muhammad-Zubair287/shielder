@@ -150,6 +150,7 @@ export class AuthService {
   static async register(data: RegisterRequest): Promise<{
     user: SanitizedAuthUser;
     tokens: { accessToken: string; refreshToken: string };
+    emailDeliveryStatus: 'email_sent' | 'auto_verified';
   }> {
     try {
       const email = data.email.toLowerCase();
@@ -307,25 +308,28 @@ export class AuthService {
         // Send welcome and verification emails in the background so slow SMTP
         // does not delay or fail the registration HTTP response.
         const displayName = user.profile?.fullName || 'User';
-        void Promise.allSettled([
+        void Promise.all([
           emailService.sendWelcomeEmail(user.email, displayName),
           emailService.sendVerificationEmail(user.email, displayName, verificationToken as string),
-        ]).then((results) => {
-          results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              logger.error('Background registration email failed', {
-                email: user.email,
-                type: index === 0 ? 'welcome' : 'verification',
-                error: result.reason,
-              });
-            }
-          });
+        ]).then(([welcomeSent, verificationSent]) => {
+          if (!welcomeSent) {
+            logger.error('Background registration welcome email failed to deliver', {
+              email: user.email,
+            });
+          }
+
+          if (!verificationSent) {
+            logger.error('Background registration verification email failed to deliver', {
+              email: user.email,
+            });
+          }
         });
       }
 
       return {
         user: sanitizedUser,
         tokens,
+        emailDeliveryStatus: bypassEmailFlows ? 'auto_verified' : 'email_sent',
       };
     } catch (error) {
       logger.error('Registration error:', error);

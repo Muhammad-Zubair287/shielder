@@ -66,6 +66,7 @@ export interface AuthResponse {
     accessToken: string;
     refreshToken: string;
   };
+  emailDeliveryStatus?: 'email_sent' | 'auto_verified';
   requiresTwoFactor?: boolean;
   otpSessionToken?: string;
 }

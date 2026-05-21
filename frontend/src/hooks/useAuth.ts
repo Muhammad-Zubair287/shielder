@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const LOGIN_TOAST_DURATION_MS = 4000;
+const REGISTER_TOAST_DURATION_MS = 5000;
 
 export const useAuth = () => {
   const router = useRouter();
@@ -33,13 +34,19 @@ export const useAuth = () => {
       router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
 
       const response = await authService.register(data);
+      const authData = response.data!;
       setUser(null);
 
-      toast.success(SUCCESS_MESSAGES.REGISTER_SUCCESS);
+      const registerMessage =
+        authData.emailDeliveryStatus === 'auto_verified'
+          ? 'Registration successful. Your account has been auto-verified.'
+          : response.message || 'Registration successful. Please check your email to verify your account.';
+
+      toast.success(registerMessage, { duration: REGISTER_TOAST_DURATION_MS });
 
       router.replace(ROUTES.LOGIN);
 
-      return response;
+      return authData;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setError(errorMessage);

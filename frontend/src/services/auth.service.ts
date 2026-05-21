@@ -26,7 +26,7 @@ class AuthService {
   /**
    * Register a new user
    */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
+  async register(data: RegisterRequest): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await apiClient.post<ApiResponse<AuthResponse>>(
         API_ENDPOINTS.AUTH.REGISTER,
@@ -37,9 +37,7 @@ class AuthService {
         }
       );
 
-      const authData = response.data.data!;
-
-      return authData;
+      return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));
     }
