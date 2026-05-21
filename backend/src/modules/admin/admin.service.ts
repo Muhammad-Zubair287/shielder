@@ -153,15 +153,17 @@ export class AdminService {
   }, createdBy: string, adminRole: UserRole) {
     // Admin can only create USER
     const role = adminRole === UserRole.ADMIN ? UserRole.USER : (data.role || UserRole.USER);
+    const email = data.email.trim().toLowerCase();
 
     // Check if email exists
-      // Only check for active, non-deleted users
-      const existingUser = await prisma.user.findFirst({
-        where: { 
-          email: data.email,
-          deletedAt: null
-        },
-      });
+    // Only check for active, non-deleted users
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        email,
+        deletedAt: null
+      },
+      include: { profile: true },
+    });
 
     if (existingUser) {
       throw new ApiError('Email already exists', 400);
@@ -170,34 +172,87 @@ export class AdminService {
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, 12);
 
-    // Create user with profile
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash,
-        role,
-        status: UserStatus.ACTIVE,
-        isActive: true,
-        emailVerified: true, // Admin-created users are pre-verified
-        createdBy,
-        profile: data.fullName || data.phoneNumber || data.companyName ? {
-          create: {
-            fullName: data.fullName,
-            phoneNumber: data.phoneNumber,
-            companyName: data.companyName,
-          },
-        } : undefined,
+    const deletedUser = await prisma.user.findFirst({
+      where: { 
+        email,
+        deletedAt: { not: null }
       },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-        isActive: true,
-        createdAt: true,
-        profile: true,
-      },
+      include: { profile: true },
     });
+
+    // Restore deleted user rows instead of creating a duplicate.
+    const user = deletedUser
+      ? await prisma.user.update({
+          where: { id: deletedUser.id },
+          data: {
+            email,
+            passwordHash,
+            role,
+            status: UserStatus.ACTIVE,
+            isActive: true,
+            emailVerified: true, // Admin-created users are pre-verified
+            deletedAt: null,
+            createdBy,
+            updatedBy: createdBy,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            resetToken: null,
+            resetTokenExpiry: null,
+            profile: deletedUser.profile
+              ? {
+                  update: {
+                    fullName: data.fullName,
+                    phoneNumber: data.phoneNumber,
+                    companyName: data.companyName,
+                  },
+                }
+              : data.fullName || data.phoneNumber || data.companyName
+                ? {
+                    create: {
+                      fullName: data.fullName,
+                      phoneNumber: data.phoneNumber,
+                      companyName: data.companyName,
+                    },
+                  }
+                : undefined,
+          },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            status: true,
+            isActive: true,
+            createdAt: true,
+            profile: true,
+          },
+        })
+      : await prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            role,
+            status: UserStatus.ACTIVE,
+            isActive: true,
+            emailVerified: true, // Admin-created users are pre-verified
+            createdBy,
+            profile: data.fullName || data.phoneNumber || data.companyName ? {
+              create: {
+                fullName: data.fullName,
+                phoneNumber: data.phoneNumber,
+                companyName: data.companyName,
+              },
+            } : undefined,
+          },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            status: true,
+            isActive: true,
+            createdAt: true,
+            profile: true,
+          },
+        });
 
     return user;
   }

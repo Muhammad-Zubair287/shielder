@@ -52,9 +52,27 @@ export interface QuotationResult {
   items: QuotationItemResult[];
 }
 
+export interface QuotationListResponse {
+  data: QuotationResult[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 const customerQuotationService = {
+  /**
+   * Fetch the authenticated customer's quotations.
+   */
+  async getMyQuotations(params?: { page?: number; limit?: number; status?: string }): Promise<QuotationResult[]> {
+    const res = await apiClient.get(API_ENDPOINTS.CUSTOMER_QUOTATIONS.MY, { params });
+    return (res.data.data || []) as QuotationResult[];
+  },
+
   /**
    * Generate a quotation — sends form data + product list to backend.
    */

@@ -144,16 +144,15 @@ export class AuthService {
     tokens: { accessToken: string; refreshToken: string };
   }> {
     try {
-      // Validate email uniqueness
-        // Only check for active, non-deleted users
-        const existingUser = await prisma.user.findFirst({
-          where: { 
-            email: data.email.toLowerCase(),
-            deletedAt: null
-          },
-        });
+      const email = data.email.toLowerCase();
 
-      if (existingUser) {
+      // Check whether the email already belongs to an active account or a soft-deleted one.
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+        include: { profile: true },
+      });
+
+      if (existingUser && !existingUser.deletedAt) {
         throw new ConflictError('User with this email already exists');
       }
 
@@ -176,30 +175,74 @@ export class AuthService {
         );
       }
 
-      // Create user with profile (transaction)
-      const user = await prisma.user.create({
-        data: {
-          email: data.email.toLowerCase(),
-          passwordHash,
-          role: data.role || 'USER',
-          status: bypassEmailFlows ? 'ACTIVE' : 'PENDING',
-          emailVerified: bypassEmailFlows,
-          verificationToken,
-          verificationTokenExpiry,
-          profile: {
-            create: {
-              fullName: data.fullName || '',
-              phoneNumber: data.phoneNumber,
-              address: data.address,
-              companyName: data.companyName,
-              preferredLanguage: data.preferredLanguage || 'en',
+      let user;
+
+      // Restore deleted users instead of creating a duplicate row.
+      if (existingUser && existingUser.deletedAt) {
+        user = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            email,
+            passwordHash,
+            role: data.role || 'USER',
+            status: bypassEmailFlows ? 'ACTIVE' : 'PENDING',
+            isActive: true,
+            deletedAt: null,
+            emailVerified: bypassEmailFlows,
+            verificationToken,
+            verificationTokenExpiry,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            profile: existingUser.profile
+              ? {
+                  update: {
+                    fullName: data.fullName || existingUser.profile.fullName || '',
+                    phoneNumber: data.phoneNumber ?? existingUser.profile.phoneNumber,
+                    address: data.address ?? existingUser.profile.address,
+                    companyName: data.companyName ?? existingUser.profile.companyName,
+                    preferredLanguage: data.preferredLanguage || existingUser.profile.preferredLanguage || 'en',
+                  },
+                }
+              : {
+                  create: {
+                    fullName: data.fullName || '',
+                    phoneNumber: data.phoneNumber,
+                    address: data.address,
+                    companyName: data.companyName,
+                    preferredLanguage: data.preferredLanguage || 'en',
+                  },
+                },
+          },
+          include: {
+            profile: true,
+          },
+        });
+      } else {
+        // Create user with profile (transaction)
+        user = await prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            role: data.role || 'USER',
+            status: bypassEmailFlows ? 'ACTIVE' : 'PENDING',
+            emailVerified: bypassEmailFlows,
+            verificationToken,
+            verificationTokenExpiry,
+            profile: {
+              create: {
+                fullName: data.fullName || '',
+                phoneNumber: data.phoneNumber,
+                address: data.address,
+                companyName: data.companyName,
+                preferredLanguage: data.preferredLanguage || 'en',
+              },
             },
           },
-        },
-        include: {
-          profile: true,
-        },
-      });
+          include: {
+            profile: true,
+          },
+        });
+      }
 
       logger.info(`New user registered: ${user.email}`);
 

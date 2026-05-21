@@ -102,6 +102,7 @@ export const API_ENDPOINTS = {
   // Customer self-service quotations
   CUSTOMER_QUOTATIONS: {
     GENERATE: 'customer-quotations/generate',
+    MY:       'quotations/my',
     BY_ID:    (id: string) => `customer-quotations/${id}`,
     PDF:      (id: string) => `customer-quotations/${id}/pdf`,
     ACCEPT:   (id: string) => `customer-quotations/${id}/accept`,

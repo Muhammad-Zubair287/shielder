@@ -51,7 +51,15 @@ export default function CustomerDashboard() {
         customerQuotationService.getMyQuotations(),
       ]);
       setOrders(ordersData || []);
-      setQuotations(quotationsData || []);
+      setQuotations(
+        (quotationsData || []).map((quote) => ({
+          id: quote.id,
+          referenceNumber: quote.quotationNumber,
+          status: quote.status,
+          amount: Number(quote.total || 0),
+          createdAt: quote.quotationDate,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
