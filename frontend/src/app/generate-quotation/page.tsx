@@ -182,8 +182,8 @@ export default function GenerateQuotationPage() {
     if (products.length === 0) {
       toast.error(t('quot.productsRequired'), {
         duration: 3000,
-        // RTL positioning support
-        position: isRTL ? 'top-right' : 'top-left',
+        // Position: right for English (LTR), left for Arabic (RTL)
+        position: isRTL ? 'top-left' : 'top-right',
       });
       router.push('/products?tab=quotation');
     }
