@@ -316,12 +316,12 @@ function ProductDetailModal({
               {/* Price + Stock */}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-2xl font-extrabold text-[#0205A6] flex items-center gap-1">
-                <div className={`grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-3 ${isRTL ? 'sm:[direction:rtl]' : ''}`}>
+                  <SARSymbol />{price.toFixed(2)}
                 </span>
                 {product.stock !== undefined && product.stock !== null && (
                   <span className={`text-sm font-semibold ${product.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
                     {product.stock === 0 ? t('productsOutOfStock') : `${product.stock} ${t('productsInStock') || 'in stock'}`}
-                  <span className="hidden sm:flex items-center justify-center text-gray-400 text-sm shrink-0">—</span>
+                  </span>
                 )}
               </div>
 
@@ -544,16 +544,16 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
           {/* Price Range */}
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-3">{t('productsPriceRange')}</label>
-            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:items-center sm:gap-3">
               <input type="number" min={0} placeholder={t('productsMinPrice')} value={draft.minPrice}
                 aria-label={t('productsMinPrice')}
                 onChange={e => field('minPrice', e.target.value)}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
-              <span className="text-gray-400 text-sm shrink-0">—</span>
+                className="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
+              <span className="hidden sm:flex items-center justify-center text-gray-400 text-sm shrink-0">—</span>
               <input type="number" min={0} placeholder={t('productsMaxPrice')} value={draft.maxPrice}
                 aria-label={t('productsMaxPrice')}
                 onChange={e => field('maxPrice', e.target.value)}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
+                className="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
             </div>
           </div>
 
