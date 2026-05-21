@@ -23,6 +23,7 @@ interface SendEmailOptions {
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private isConfigured: boolean = false;
+  private useBrevoRestApi: boolean = false;
 
   constructor() {
     this.initializeTransporter();
@@ -35,14 +36,13 @@ class EmailService {
     try {
       const emailProvider = env.EMAIL_PROVIDER || 'smtp';
 
-      if (!env.SMTP_USER || !env.SMTP_PASSWORD) {
-        logger.warn('Email service not configured. SMTP_USER or SMTP_PASSWORD missing.');
-        this.isConfigured = false;
-        return;
-      }
-
       switch (emailProvider.toLowerCase()) {
         case 'smtp':
+          if (!env.SMTP_USER || !env.SMTP_PASSWORD) {
+            logger.warn('Email service not configured. SMTP_USER or SMTP_PASSWORD missing.');
+            this.isConfigured = false;
+            return;
+          }
           this.transporter = nodemailer.createTransport({
             host: env.SMTP_HOST,
             port: env.SMTP_PORT,
@@ -51,13 +51,17 @@ class EmailService {
               user: env.SMTP_USER,
               pass: env.SMTP_PASSWORD,
             },
-            // Add connection timeout (5 seconds) to prevent hanging
             connectionTimeout: 5000,
             socketTimeout: 5000,
           });
           break;
 
         case 'sendgrid':
+          if (!env.SENDGRID_API_KEY) {
+            logger.warn('Email service not configured. SENDGRID_API_KEY missing.');
+            this.isConfigured = false;
+            return;
+          }
           this.transporter = nodemailer.createTransport({
             host: 'smtp.sendgrid.net',
             port: 587,
@@ -66,13 +70,47 @@ class EmailService {
               user: 'apikey',
               pass: env.SENDGRID_API_KEY,
             },
-            // Add connection timeout (5 seconds) to prevent hanging
             connectionTimeout: 5000,
             socketTimeout: 5000,
           });
           break;
 
+        case 'brevo':
+          // Try REST API first if BREVO_API_KEY is available (works from any IP)
+          if (env.BREVO_API_KEY) {
+            logger.info('✅ Using Brevo REST API for email sending (no IP restrictions)');
+            this.useBrevoRestApi = true;
+            this.isConfigured = true;
+            return;
+          }
+          
+          // Fall back to SMTP if only SMTP credentials are available
+          if (!env.BREVO_SMTP_KEY || !env.BREVO_FROM_EMAIL) {
+            logger.warn('Email service not configured. BREVO_API_KEY or BREVO_SMTP_KEY missing.');
+            this.isConfigured = false;
+            return;
+          }
+          
+          this.transporter = nodemailer.createTransport({
+            host: 'smtp-relay.brevo.com',
+            port: 587,
+            secure: false,
+            auth: {
+              user: env.BREVO_FROM_EMAIL,
+              pass: env.BREVO_SMTP_KEY,
+            },
+            connectionTimeout: 5000,
+            socketTimeout: 5000,
+          });
+          this.useBrevoRestApi = false;
+          break;
+
         case 'ses':
+          if (!env.AWS_SES_ACCESS_KEY || !env.AWS_SES_SECRET_KEY) {
+            logger.warn('Email service not configured. AWS SES credentials missing.');
+            this.isConfigured = false;
+            return;
+          }
           this.transporter = nodemailer.createTransport({
             host: `email-smtp.${env.AWS_REGION}.amazonaws.com`,
             port: 587,
@@ -81,7 +119,6 @@ class EmailService {
               user: env.AWS_SES_ACCESS_KEY,
               pass: env.AWS_SES_SECRET_KEY,
             },
-            // Add connection timeout (5 seconds) to prevent hanging
             connectionTimeout: 5000,
             socketTimeout: 5000,
           });
@@ -104,6 +141,11 @@ class EmailService {
    * Verify email transporter connection
    */
   async verifyConnection(): Promise<boolean> {
+    // For Brevo REST API, verify by making a test API call
+    if (this.useBrevoRestApi) {
+      return this.verifyBrevoRestApi();
+    }
+
     if (!this.isConfigured || !this.transporter) {
       logger.warn('Email service not configured');
       return false;
@@ -120,9 +162,119 @@ class EmailService {
   }
 
   /**
+   * Verify Brevo REST API credentials
+   */
+  private async verifyBrevoRestApi(): Promise<boolean> {
+    if (!env.BREVO_API_KEY) {
+      logger.warn('BREVO_API_KEY not configured');
+      return false;
+    }
+
+    try {
+      const response = await fetch('https://api.brevo.com/v3/account', {
+        method: 'GET',
+        headers: {
+          'api-key': env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        logger.info('✅ Brevo REST API connection verified');
+        return true;
+      } else {
+        logger.error('❌ Brevo REST API verification failed:', {
+          status: response.status,
+          statusText: response.statusText,
+        });
+        return false;
+      }
+    } catch (error) {
+      logger.error('❌ Brevo REST API verification error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Send email via Brevo REST API
+   */
+  private async sendEmailViaBrevoApi(options: SendEmailOptions): Promise<boolean> {
+    if (!env.BREVO_API_KEY || !env.EMAIL_FROM_ADDRESS) {
+      logger.warn('Brevo REST API not configured');
+      return false;
+    }
+
+    try {
+      const payload = {
+        sender: {
+          name: env.EMAIL_FROM_NAME || 'Shielder Platform',
+          email: env.EMAIL_FROM_ADDRESS,
+        },
+        to: [
+          {
+            email: options.to,
+          },
+        ],
+        subject: options.subject,
+        htmlContent: options.html,
+        textContent: options.text || this.htmlToText(options.html),
+      };
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data: { messageId?: string } = (await response.json()) as { messageId?: string };
+        logger.info('✅ Email sent successfully via Brevo API:', {
+          messageId: data.messageId,
+          to: options.to,
+          subject: options.subject,
+        });
+        return true;
+      } else {
+        const text = await response.text();
+        let errorBody: any = text;
+        try {
+          errorBody = JSON.parse(text);
+        } catch (parseErr) {
+          // keep raw text if not JSON
+        }
+
+        logger.error('❌ Failed to send email via Brevo API:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorBody,
+          to: options.to,
+          subject: options.subject,
+        });
+
+        return false;
+      }
+    } catch (error) {
+      logger.error('❌ Failed to send email via Brevo API:', {
+        error,
+        to: options.to,
+        subject: options.subject,
+      });
+      return false;
+    }
+  }
+
+  /**
    * Send email
    */
   async sendEmail(options: SendEmailOptions): Promise<boolean> {
+    // Use Brevo REST API if configured
+    if (this.useBrevoRestApi) {
+      return this.sendEmailViaBrevoApi(options);
+    }
+
     if (!this.isConfigured || !this.transporter) {
       logger.warn('⚠️ Email service not configured. Email NOT sent:', {
         to: options.to,
@@ -314,7 +466,8 @@ class EmailService {
             
             <p style="font-size: 16px;">Thank you for registering with <strong>Shielder Digital Platform</strong>.</p>
             
-            <p style="font-size: 16px;">Please verify your email address by clicking the button below:</p>
+            <p style="font-size: 16px;">Please verify your email address by clicking the button below.</p>
+            <p style="font-size: 14px; color: #666;">After verification, you will be redirected to the login screen.</p>
             
             <div style="margin: 30px 0; text-align: center;">
               <a href="${verificationUrl}" style="background: #667eea; color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Verify Email Address</a>
@@ -490,6 +643,108 @@ class EmailService {
         </body>
       </html>
     `;
+  }
+
+  /**
+   * Send new device login notification email
+   */
+  async sendNewDeviceLoginNotification(
+    email: string,
+    name: string,
+    deviceInfo: string,
+    ipAddress: string,
+    loginTime: Date
+  ): Promise<boolean> {
+    const subject = '🔐 New Device Login to Your Account';
+    const html = this.getNewDeviceLoginTemplate(name, deviceInfo, ipAddress, loginTime);
+
+    return this.sendEmail({
+      to: email,
+      subject,
+      html,
+    });
+  }
+
+  private getNewDeviceLoginTemplate(
+    name: string,
+    deviceInfo: string,
+    ipAddress: string,
+    loginTime: Date
+  ): string {
+    const loginDateTime = loginTime.toLocaleString();
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Device Login</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
+          <div style="background: linear-gradient(135deg, #FF6B35 0%, #FF8A5B 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🔐 New Device Login Detected</h1>
+          </div>
+          
+          <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #FF6B35; margin-top: 0;">Hello ${name}!</h2>
+            
+            <p style="font-size: 16px;">A new device has successfully logged into your Shielder account.</p>
+            
+            <div style="background: #fff3cd; border-left: 4px solid #FF6B35; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0 0 10px 0; color: #333; font-size: 14px;">
+                <strong>📱 Device Information:</strong>
+              </p>
+              <p style="margin: 0 0 5px 0; color: #555; font-size: 13px;">
+                <strong>Device:</strong> ${this.escapeHtml(deviceInfo)}
+              </p>
+              <p style="margin: 0 0 5px 0; color: #555; font-size: 13px;">
+                <strong>IP Address:</strong> ${this.escapeHtml(ipAddress)}
+              </p>
+              <p style="margin: 0; color: #555; font-size: 13px;">
+                <strong>Time:</strong> ${loginDateTime}
+              </p>
+            </div>
+            
+            <p style="font-size: 16px;"><strong>What happens next?</strong></p>
+            <ul style="font-size: 14px; line-height: 1.8; color: #555;">
+              <li>This device has been saved and will not require 2FA verification on future logins</li>
+              <li>You can manage your trusted devices in your account settings</li>
+              <li>Trusted devices expire after 30 days of inactivity</li>
+            </ul>
+            
+            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #721c24; font-size: 14px;">
+                <strong>⚠️ Didn't recognize this login?</strong><br>
+                Please change your password immediately and contact our support team.
+              </p>
+            </div>
+            
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${env.FRONTEND_URL}/admin/settings" style="background: #FF6B35; color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Manage Devices</a>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+            <p>&copy; ${new Date().getFullYear()} Shielder Digital Platform. All rights reserved.</p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Escape HTML special characters to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;',
+    };
+    return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 }
 

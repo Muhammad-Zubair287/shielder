@@ -58,6 +58,17 @@ const validateEnv = (): void => {
     if (provider === 'sendgrid' && !process.env.SENDGRID_API_KEY) {
       throw new Error('Missing SENDGRID_API_KEY for production email provider configuration');
     }
+
+    if (provider === 'brevo') {
+      const missingBrevo = ['BREVO_SMTP_KEY', 'BREVO_FROM_EMAIL'].filter(
+        (key) => !process.env[key]
+      );
+      if (missingBrevo.length > 0) {
+        throw new Error(
+          `Missing required Brevo environment variables for production: ${missingBrevo.join(', ')}`
+        );
+      }
+    }
   }
 };
 
@@ -116,6 +127,11 @@ export const env = {
 
   // SendGrid Configuration
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
+
+  // Brevo (Sendinblue) Configuration
+  BREVO_SMTP_KEY: process.env.BREVO_SMTP_KEY || '',
+  BREVO_FROM_EMAIL: process.env.BREVO_FROM_EMAIL || '',
+  BREVO_API_KEY: process.env.BREVO_API_KEY || '',
 
   // Contact form CAPTCHA verification secret (reCAPTCHA or compatible provider)
   contactCaptchaSecret: process.env.CONTACT_CAPTCHA_SECRET || '',

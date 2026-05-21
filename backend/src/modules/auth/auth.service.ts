@@ -289,7 +289,18 @@ export class AuthService {
     data: LoginRequest,
     deviceInfo?: DeviceInfo
   ): Promise<AuthResponse> {
+    // 📊 Performance monitoring
+    const perfMetrics = {
+      startTime: Date.now(),
+      steps: {} as Record<string, number>,
+    };
+    const recordTiming = (stepName: string) => {
+      const elapsed = Date.now() - perfMetrics.startTime;
+      perfMetrics.steps[stepName] = elapsed;
+    };
+
     try {
+      recordTiming('start');
       logger.info(`Login attempt for: ${data.email.toLowerCase()}`);
       // Find user by email
       let user = await prisma.user.findUnique({
@@ -316,6 +327,7 @@ export class AuthService {
           },
         },
       });
+      recordTiming('dbUserLookup');
 
       if (!user) {
         logger.warn(`Login failed: User not found - ${data.email.toLowerCase()}`);
@@ -372,12 +384,65 @@ export class AuthService {
 
       // Verify password
       const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
+      recordTiming('passwordVerification');
 
       if (!isPasswordValid) {
         logger.warn(`Login failed: Invalid password - ${user.email}`);
         // Increment failed attempts
         await this.handleFailedLogin(user.id, user.failedLoginAttempts);
         throw new UnauthorizedError('Invalid credentials');
+      }
+
+      // If a trusted device token was provided, verify it and skip 2FA for admins
+      if (
+        (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') &&
+        deviceInfo?.trustedDeviceToken
+      ) {
+        try {
+          const { TrustedDeviceService } = await import('./trustedDevice.service');
+          const record = await TrustedDeviceService.verifyDeviceToken(deviceInfo.trustedDeviceToken!);
+          if (record && record.userId === user.id) {
+            logger.info(`Trusted device token valid - skipping 2FA for user ${user.email}`);
+
+            // Proceed to generate token pair and return normal auth response
+            const tokenPayload = {
+              userId: user.id,
+              email: user.email,
+              role: user.role as UserRole,
+              preferredLanguage: user.profile?.preferredLanguage || 'en',
+            };
+
+            const userUpdatePromise = prisma.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginAttempts: 0,
+                lockedUntil: null,
+                lastLoginAt: new Date(),
+                lastLoginIp: deviceInfo?.ipAddress,
+              },
+            });
+
+            const tokenPromise = TokenService.generateTokenPair(tokenPayload, deviceInfo);
+
+            const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise]);
+
+            AuditService.log({
+              userId: user.id,
+              action: 'USER_LOGIN_TRUSTED_DEVICE',
+              entityType: 'USER',
+              entityId: user.id,
+              ipAddress: deviceInfo?.ipAddress,
+            }).catch((err) => logger.error('Audit Log failed for trusted device login:', err));
+
+            return {
+              user: this.sanitizeUser(user),
+              tokens,
+            };
+          }
+        } catch (err) {
+          logger.error('Error verifying trusted device token during login:', err);
+          // Fall through to normal 2FA flow if verification fails
+        }
       }
 
       const tokenPayload = {
@@ -425,10 +490,39 @@ export class AuthService {
           WHERE id = ${user.id}
         `.catch((err: unknown) => logger.error('Failed to store OTP session token:', err));
 
-        // Deliver the OTP in the background so the login response is immediate.
-        void this.sendOTP(user.id, 'EMAIL').catch((err: unknown) =>
-          logger.error('Background OTP delivery failed:', err)
-        );
+        // ✅ PERFORMANCE FIX: Send OTP email asynchronously (fire-and-forget)
+        // Don't wait for email delivery - return response immediately so user can be redirected to 2FA screen
+        // Email delivery happens in the background; if it fails, user can resend OTP from 2FA page
+        void this.sendOTP(user.id, 'EMAIL')
+          .catch(err => {
+            logger.error('Failed to send OTP email (background, non-blocking)', {
+              userId: user.id,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            // User can retry from OTP page - this failure doesn't block login
+          });
+        recordTiming('otpEmailQueued');
+
+        // Send "new device login" notification email (fire-and-forget)
+        const { emailService } = await import('@/common/services/email.service');
+        const deviceName = deviceInfo?.userAgent?.substring(0, 100) || 'Unknown Device';
+        const ipAddr = deviceInfo?.ipAddress || 'Unknown';
+        emailService.sendNewDeviceLoginNotification(user.email, user.profile?.fullName || 'User', deviceName, ipAddr, new Date())
+          .catch((err) => logger.error('Failed to send new device login notification:', err));
+        
+        // 📊 Log performance metrics for 2FA flow
+        const totalTime = Date.now() - perfMetrics.startTime;
+        logger.info('🔍 LOGIN PERFORMANCE (2FA Required)', {
+          userId: user.id,
+          email: user.email,
+          totalMs: totalTime,
+          breakdown: {
+            'User DB Lookup': perfMetrics.steps['dbUserLookup'] || 0,
+            'Password Verification': perfMetrics.steps['passwordVerification'] || 0,
+            'OTP Email Queued': perfMetrics.steps['otpEmailQueued'] || 0,
+          },
+          status: totalTime > 1000 ? '⚠️ SLOW' : '✅ FAST',
+        });
 
         return {
           user: this.sanitizeUser(user),
@@ -444,6 +538,19 @@ export class AuthService {
       if ((user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && this.shouldBypassEmailFlows()) {
         logger.warn(`DEV MODE: bypassed mandatory 2FA because email delivery is unavailable - ${user.email}`);
       }
+
+      // 📊 Log performance metrics for normal (non-2FA) flow
+      const totalTime = Date.now() - perfMetrics.startTime;
+      logger.info('🔍 LOGIN PERFORMANCE (No 2FA)', {
+        userId: user.id,
+        email: user.email,
+        totalMs: totalTime,
+        breakdown: {
+          'User DB Lookup': perfMetrics.steps['dbUserLookup'] || 0,
+          'Password Verification': perfMetrics.steps['passwordVerification'] || 0,
+        },
+        status: totalTime > 1000 ? '⚠️ SLOW' : '✅ FAST',
+      });
 
       logger.info(`User logged in: ${user.email}`);
 
@@ -1253,11 +1360,24 @@ export class AuthService {
     code: string,
     otpSessionToken: string,
     deviceInfo?: DeviceInfo
+  , rememberDevice?: boolean
   ): Promise<{
     user: SanitizedAuthUser;
     tokens: { accessToken: string; refreshToken: string };
+    trustedDeviceToken?: string;
   }> {
+    // 📊 Performance monitoring
+    const perfMetrics = {
+      startTime: Date.now(),
+      steps: {} as Record<string, number>,
+    };
+    const recordTiming = (stepName: string) => {
+      const elapsed = Date.now() - perfMetrics.startTime;
+      perfMetrics.steps[stepName] = elapsed;
+    };
+
     try {
+      recordTiming('start');
       const { TwoFactorService } = await import('./twofa.service');
 
       const user = await prisma.user.findUnique({
@@ -1286,6 +1406,7 @@ export class AuthService {
           otpSessionToken: true,
         },
       });
+      recordTiming('userLookup');
 
       if (!user) {
         throw new NotFoundError('User not found');
@@ -1294,13 +1415,16 @@ export class AuthService {
       if (!otpSessionToken || user.otpSessionToken !== otpSessionToken) {
         throw new UnauthorizedError('Invalid or expired two-factor session');
       }
+      recordTiming('sessionValidation');
 
       await TwoFactorService.verifyOTP(userId, code);
+      recordTiming('otpVerification');
 
       await prisma.user.update({
         where: { id: userId },
         data: { otpSessionToken: null },
       });
+      recordTiming('sessionCleanup');
 
       const tokens = await TokenService.generateTokenPair(
         {
@@ -1311,6 +1435,25 @@ export class AuthService {
         },
         deviceInfo
       );
+      recordTiming('tokenGeneration');
+
+      let trustedDeviceToken: string | undefined;
+      if ((user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && rememberDevice) {
+        try {
+          const { TrustedDeviceService } = await import('./trustedDevice.service');
+          const name = deviceInfo?.userAgent ? deviceInfo.userAgent.substring(0, 200) : undefined;
+          trustedDeviceToken = await TrustedDeviceService.createTrustedDevice(
+            user.id,
+            name,
+            deviceInfo?.userAgent,
+            deviceInfo?.ipAddress
+          );
+          logger.info(`Trusted device created for user ${user.id}`);
+          recordTiming('trustedDeviceCreation');
+        } catch (err) {
+          logger.error('Failed to create trusted device token:', err);
+        }
+      }
 
       AuditService.log({
         userId: user.id,
@@ -1320,11 +1463,29 @@ export class AuthService {
         ipAddress: deviceInfo?.ipAddress,
       }).catch((err) => logger.error('Audit log failed for 2FA:', err));
 
+      // 📊 Log performance metrics for OTP verification
+      const totalTime = Date.now() - perfMetrics.startTime;
+      logger.info('🔍 OTP VERIFICATION PERFORMANCE', {
+        userId: user.id,
+        email: user.email,
+        totalMs: totalTime,
+        breakdown: {
+          'User Lookup': perfMetrics.steps['userLookup'] || 0,
+          'Session Validation': perfMetrics.steps['sessionValidation'] || 0,
+          'OTP Verification': perfMetrics.steps['otpVerification'] || 0,
+          'Session Cleanup': perfMetrics.steps['sessionCleanup'] || 0,
+          'Token Generation': perfMetrics.steps['tokenGeneration'] || 0,
+          'Trusted Device': perfMetrics.steps['trustedDeviceCreation'] || 0,
+        },
+        status: totalTime > 500 ? '⚠️ SLOW' : '✅ FAST',
+      });
+
       logger.info(`2FA verification successful for user ${userId}`);
 
       return {
         user: this.sanitizeUser(user),
         tokens,
+        trustedDeviceToken,
       };
     } catch (error) {
       logger.error('Error verifying OTP:', error);

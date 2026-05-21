@@ -5,7 +5,7 @@
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG, API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
-import type { ApiResponse, ApiError } from '@/types';
+import type { ApiError } from '@/types';
 import type { TokenRefreshPromise } from '@/types/api.types';
 
 // Cache locale so we don't hit localStorage on every request
@@ -91,6 +91,7 @@ const forceLogoutIfSessionExpired = () => {
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_CONFIG.BASE_URL.endsWith('/') ? API_CONFIG.BASE_URL : `${API_CONFIG.BASE_URL}/`,
   timeout: API_CONFIG.TIMEOUT,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -122,10 +123,16 @@ apiClient.interceptors.request.use(
     // Let Axios/browser set multipart boundaries automatically for FormData payloads.
     // Keeping a forced JSON content-type here causes multer to miss uploaded files.
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
-      if (typeof (config.headers as any).set === 'function') {
-        (config.headers as any).set('Content-Type', undefined);
+      const headers = config.headers as {
+        set?: (key: string, value: string | undefined) => void;
+        delete?: (key: string) => void;
+        [key: string]: unknown;
+      };
+
+      if (typeof headers.set === 'function') {
+        headers.set('Content-Type', undefined);
       } else {
-        delete (config.headers as Record<string, unknown>)['Content-Type'];
+        delete headers['Content-Type'];
       }
     }
 
@@ -154,7 +161,15 @@ apiClient.interceptors.response.use(
     const isAuthEndpoint = url.includes('auth/login') ||
       url.includes('auth/signup') ||
       url.includes('auth/refresh') ||
-      url.includes('auth/verify-email');
+      url.includes('auth/verify-email') ||
+      url.includes('auth/send-otp') ||
+      url.includes('auth/verify-otp') ||
+      url.includes('auth/forgot-password/send-otp') ||
+      url.includes('auth/forgot-password/resend-otp') ||
+      url.includes('auth/forgot-password/verify-otp') ||
+      url.includes('auth/forgot-password/reset') ||
+      url.includes('auth/resend-verification') ||
+      url.includes('auth/reset-password');
 
     // If error is 401 and we haven't retried yet and it's not an auth login/signup
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {

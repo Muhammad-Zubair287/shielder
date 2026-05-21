@@ -80,7 +80,7 @@ export const useAuth = () => {
         // Don't store user yet; they're pending 2FA verification.
         // Ensure no stale user remains in the store while waiting for OTP.
         setUser(null);
-        toast.success('Login successful. Please verify with 2FA.', { duration: LOGIN_TOAST_DURATION_MS });
+        toast.success('Login successful. Check your email, then enter the 6-digit code on the verification page to continue.', { duration: LOGIN_TOAST_DURATION_MS });
         
         // Store temporary session tokens for 2FA verification
         if (role === 'SUPER_ADMIN') {

@@ -7,6 +7,7 @@ import { createApp } from './app';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './common/logger/logger';
+import { emailService } from './common/services/email.service';
 import http from 'http';
 
 // Global error handlers - set these FIRST before anything else
@@ -33,7 +34,7 @@ const startServer = async (): Promise<void> => {
     const app = createApp();
 
     // Start listening
-    const server = app.listen(env.port, '0.0.0.0', () => {
+    const server = app.listen(env.port, '0.0.0.0', async () => {
       logger.info(`🚀 Shielder API Server started successfully`, {
         port: env.port,
         environment: env.nodeEnv,
@@ -41,7 +42,20 @@ const startServer = async (): Promise<void> => {
       });
       console.log(`\n✅ Server is running on http://localhost:${env.port}`);
       console.log(`✅ API Endpoint: http://localhost:${env.port}/api`);
-      console.log(`✅ Health Check: http://localhost:${env.port}/health\n`);
+      console.log(`✅ Health Check: http://localhost:${env.port}/health`);
+      console.log(`✅ Email Health: http://localhost:${env.port}/health/email\n`);
+
+      // Verify email provider connectivity on startup
+      try {
+        const emailOk = await emailService.verifyConnection();
+        if (emailOk) {
+          logger.info('✅ Email service verified and ready');
+        } else {
+          logger.warn('⚠️ Email service not configured or not reachable');
+        }
+      } catch (verifyErr) {
+        logger.warn('⚠️ Email service verification skipped or failed', verifyErr);
+      }
     });
     
     server.on('error', (err) => {

@@ -4,7 +4,7 @@
  * User login form with Arabic/English support
  */
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Lock, ChevronLeft, Eye, EyeOff } from 'lucide-react';
@@ -35,10 +35,13 @@ function LoginPageContent() {
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
       try {
-        const { useAuthStore } = require('@/store/auth.store');
-        useAuthStore.getState().setUser(null);
-        useAuthStore.getState().setError(null);
-        useAuthStore.getState().setLoading(false);
+        import('@/store/auth.store').then(({ useAuthStore }) => {
+          useAuthStore.getState().setUser(null);
+          useAuthStore.getState().setError(null);
+          useAuthStore.getState().setLoading(false);
+        }).catch(() => {
+          // no-op: best-effort cleanup only
+        });
       } catch {
         // no-op: best-effort cleanup only
       }
@@ -53,18 +56,18 @@ function LoginPageContent() {
 
   const prefetchedRoutes = useRef(new Set<string>());
 
-  const prefetchRoute = (href: string) => {
+  const prefetchRoute = useCallback((href: string) => {
     if (prefetchedRoutes.current.has(href)) return;
     prefetchedRoutes.current.add(href);
     router.prefetch(href);
-  };
+  }, [router]);
 
   // Warm only the most likely destinations after the form has mounted.
   useEffect(() => {
     const routes = ['/superadmin/dashboard', '/admin/dashboard', '/customer/dashboard'];
     const timer = window.setTimeout(() => routes.forEach(prefetchRoute), 500);
     return () => window.clearTimeout(timer);
-  }, [router]);
+  }, [prefetchRoute]);
 
   const expired = searchParams.get('expired');
 
@@ -108,12 +111,39 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showResendVerification, setShowResendVerification] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [trustedDeviceMessage, setTrustedDeviceMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (showResendVerification) {
       prefetchRoute('/forgot-password');
     }
-  }, [showResendVerification]);
+  }, [showResendVerification, prefetchRoute]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkTrustedDevice = async () => {
+      try {
+        const status = await authService.getTrustedDeviceStatus();
+        if (!isMounted) return;
+
+        if (status.trusted) {
+          setTrustedDeviceMessage('This device is already trusted. Admin and superadmin logins will skip OTP after you sign in.');
+        } else {
+          setTrustedDeviceMessage(null);
+        }
+      } catch {
+        if (!isMounted) return;
+        setTrustedDeviceMessage(null);
+      }
+    };
+
+    checkTrustedDevice();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const isUnverifiedEmailError = (message: string) => {
     const normalized = message.toLowerCase();
@@ -284,6 +314,12 @@ function LoginPageContent() {
             <p className="text-sm text-gray-600 mb-6">
               Secure sign in protected with encrypted sessions, account lockout, and role-based access controls.
             </p>
+
+            {trustedDeviceMessage && (
+              <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {trustedDeviceMessage}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email */}

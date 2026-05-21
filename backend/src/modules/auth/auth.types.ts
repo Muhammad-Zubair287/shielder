@@ -25,6 +25,7 @@ export interface RegisterRequest {
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberDevice?: boolean;
 }
 
 /**
@@ -93,6 +94,7 @@ export interface LogoutRequest {
 export interface DeviceInfo {
   userAgent?: string;
   ipAddress?: string;
+  trustedDeviceToken?: string;
 }
 
 /**
@@ -126,6 +128,7 @@ export interface AuthResponse {
   tokens: TokenPairResponse;
   requiresTwoFactor?: boolean;
   otpSessionToken?: string;
+  trustedDeviceToken?: string;
 }
 
 /**

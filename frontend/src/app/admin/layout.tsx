@@ -8,6 +8,7 @@ import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import { ProtectedRoute } from '@/components/providers/ProtectedRoute';
 import { twMerge } from 'tailwind-merge';
 import { Loader2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 function PageLoader() {
   return (
@@ -21,6 +22,12 @@ function PageLoader() {
 const AdminLayoutInner = ({ children }: { children: React.ReactNode }) => {
   const { sidebarCollapsed } = useDashboard();
   const { isRTL } = useLanguage();
+  const pathname = usePathname();
+  const isTwoFactorRoute = pathname === '/admin/admin-2fa';
+
+  if (isTwoFactorRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <div

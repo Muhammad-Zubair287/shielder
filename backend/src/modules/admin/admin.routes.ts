@@ -90,6 +90,13 @@ router.patch(
 router.delete('/users/:id', adminController.deleteUser.bind(adminController));
 
 /**
+ * POST /api/admin/test-email
+ * Send a test email to verify email provider (Brevo) connectivity
+ * Body: { to: "recipient@example.com" }
+ */
+router.post('/test-email', adminController.testEmailConnection.bind(adminController));
+
+/**
  * /api/admin/contacts
  * Admin/Super Admin contact management
  */

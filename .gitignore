@@ -80,6 +80,7 @@ _archive/
 # write_landing.py
 
 POSTMAN_GUIDE.md
+Shielder-Complete-API-Collection.postman_collection.json
 Shielder-API-Collection.postman_collection.json
 Shielder-Mobile-API-Collection.postman_collection.json
 mobile-api-test-results.json

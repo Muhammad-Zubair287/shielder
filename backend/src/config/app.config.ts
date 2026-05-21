@@ -54,7 +54,7 @@ export const appConfig = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Requested-With', 'X-Trusted-Device-Token'],
     exposedHeaders: ['Set-Cookie'],
     preflightContinue: false,
     optionsSuccessStatus: 204,

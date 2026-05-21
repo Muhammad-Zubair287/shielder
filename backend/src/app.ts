@@ -42,6 +42,7 @@ import publicWarehouseRoutes from './modules/warehouse/public-warehouse.routes';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
+import { emailService } from './common/services/email.service';
 
 const staticImageRoots = [
   path.resolve(process.cwd(), 'images'),
@@ -134,6 +135,41 @@ export const createApp = (): Application => {
       timestamp: new Date().toISOString(),
       environment: env.nodeEnv,
     });
+  });
+
+  // Development helper: set trusted device cookie for API origin
+  if (!env.isProduction) {
+    app.get('/set-trusted-cookie', (req, res) => {
+      const token = String(req.query.token || '');
+      if (!token) {
+        return res.status(400).send('Missing token query parameter. Use /set-trusted-cookie?token=...');
+      }
+
+      const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      res.cookie('trustedDeviceToken', token, {
+        httpOnly: true,
+        secure: env.isProduction,
+        sameSite: env.isProduction ? 'none' : 'lax',
+        maxAge,
+        path: '/',
+      });
+
+      return res.status(200).send(`Trusted device cookie set for token=${token.slice(0, 8)}...`);
+    });
+  }
+
+  // Email health check - verifies email provider connectivity (Brevo REST or SMTP)
+  app.get('/health/email', async (_req, res) => {
+    try {
+      const ok = await emailService.verifyConnection();
+      if (ok) {
+        return res.status(200).json({ success: true, message: 'Email service OK' });
+      }
+      return res.status(502).json({ success: false, message: 'Email service not configured or unreachable' });
+    } catch (err) {
+      logger.error('Email health check error', err);
+      return res.status(500).json({ success: false, message: 'Email health check failed', error: String(err) });
+    }
   });
 
   // Debug route to verify prefixes

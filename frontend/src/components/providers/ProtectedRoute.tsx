@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 
 interface ProtectedRouteProps {
@@ -12,8 +12,11 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
+  const isTwoFactorRoute = pathname === '/admin/admin-2fa' || pathname === '/superadmin/superadmin-2fa';
 
   useEffect(() => {
+    if (isTwoFactorRoute) return;
     if (isLoading) return;
 
     if (!isAuthenticated) {
@@ -34,9 +37,10 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
         }
       }
     }
-  }, [isAuthenticated, isLoading, user, router, requiredRole]);
+  }, [isAuthenticated, isLoading, user, router, requiredRole, isTwoFactorRoute]);
 
   const isAuthorized = () => {
+    if (isTwoFactorRoute) return true;
     if (isLoading) return false;
     if (!isAuthenticated) return false;
     if (!requiredRole) return true;
@@ -44,7 +48,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     return !!user && roles.includes(user.role);
   };
 
-  if (isLoading || !isAuthenticated || !isAuthorized()) {
+  if (!isTwoFactorRoute && (isLoading || !isAuthenticated || !isAuthorized())) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#0C1B33]">
         <div className="flex flex-col items-center gap-4">

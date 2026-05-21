@@ -9,6 +9,7 @@ import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Loader2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,6 +27,12 @@ function PageLoader() {
 function SuperAdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed } = useDashboard();
   const { isRTL } = useLanguage();
+  const pathname = usePathname();
+  const isTwoFactorRoute = pathname === '/superadmin/superadmin-2fa';
+
+  if (isTwoFactorRoute) {
+    return <>{children}</>;
+  }
   
   return (
     <div

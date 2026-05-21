@@ -6,6 +6,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { asyncHandler } from '@/common/utils/helpers';
+import { env } from '@/config/env';
 import type { AuthRequest } from '@/types/global';
 import type {
   RegisterRequest,
@@ -18,6 +19,20 @@ import type {
   ChangePasswordRequest,
   DeviceInfo,
 } from './auth.types';
+
+const getCookieValue = (cookieHeader: string | undefined, cookieName: string): string | undefined => {
+  if (!cookieHeader) return undefined;
+
+  const parts = cookieHeader.split(';');
+  for (const part of parts) {
+    const [name, ...valueParts] = part.trim().split('=');
+    if (name === cookieName) {
+      return valueParts.join('=');
+    }
+  }
+
+  return undefined;
+};
 
 /**
  * Auth Controller Class
@@ -82,9 +97,13 @@ class AuthController {
    */
   login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: LoginRequest = req.body;
+    // Accept trusted device token via header `x-trusted-device-token` or cookie `trustedDeviceToken` if present
+    const headerToken = (req.headers['x-trusted-device-token'] as string) || undefined;
+    const cookieToken = getCookieValue(req.headers.cookie, 'trustedDeviceToken');
     const deviceInfo: DeviceInfo = {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip || req.connection.remoteAddress,
+      trustedDeviceToken: headerToken || cookieToken,
     };
 
     const result = await AuthService.login(data, deviceInfo);
@@ -458,6 +477,76 @@ class AuthController {
   });
 
   /**
+   * GET /api/auth/trusted-devices
+   * List trusted devices for current user
+   */
+  getTrustedDevices = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user!.userId;
+    const { TrustedDeviceService } = await import('./trustedDevice.service');
+
+    const devices = await TrustedDeviceService.listDevices(userId);
+
+    res.status(200).json({ success: true, data: { devices } });
+  });
+
+  /**
+   * DELETE /api/auth/trusted-devices/:token
+   * Revoke a trusted device
+   */
+  revokeTrustedDevice = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user!.userId;
+    const { token } = req.params;
+    const { TrustedDeviceService } = await import('./trustedDevice.service');
+
+    await TrustedDeviceService.revokeDevice(userId, token as string);
+
+    res.status(200).json({ success: true, message: 'Trusted device revoked' });
+  });
+
+  /**
+   * GET /api/auth/trusted-device/status
+   * Check whether the current browser/device is trusted
+   */
+  getTrustedDeviceStatus = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const headerToken = (req.headers['x-trusted-device-token'] as string) || undefined;
+    const cookieToken = getCookieValue(req.headers.cookie, 'trustedDeviceToken');
+    const token = headerToken || cookieToken;
+
+    if (!token) {
+      res.status(200).json({
+        success: true,
+        data: {
+          trusted: false,
+          expiresAt: null,
+        },
+      });
+      return;
+    }
+
+    const { TrustedDeviceService } = await import('./trustedDevice.service');
+    const record = await TrustedDeviceService.verifyDeviceToken(token);
+
+    if (!record) {
+      res.status(200).json({
+        success: true,
+        data: {
+          trusted: false,
+          expiresAt: null,
+        },
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        trusted: true,
+        expiresAt: record.expiresAt,
+      },
+    });
+  });
+
+  /**
    * Send OTP for 2FA
    */
   sendOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -475,13 +564,29 @@ class AuthController {
    * Verify OTP for 2FA
    */
   verifyOTP = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId, code, otpSessionToken } = req.body;
+    const { userId, code, otpSessionToken, rememberDevice } = req.body;
     const deviceInfo: DeviceInfo = {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip || req.connection.remoteAddress,
     };
 
-    const result = await AuthService.verifyOTPAndGetTokens(userId, code, otpSessionToken, deviceInfo);
+    const result = await AuthService.verifyOTPAndGetTokens(
+      userId,
+      code,
+      otpSessionToken,
+      deviceInfo,
+      Boolean(rememberDevice)
+    );
+
+    if (result.trustedDeviceToken) {
+      res.cookie('trustedDeviceToken', result.trustedDeviceToken, {
+        httpOnly: true,
+        secure: env.isProduction,
+        sameSite: env.isProduction ? 'none' : 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+    }
 
     res.status(200).json({
       success: true,

@@ -217,4 +217,11 @@ router.get('/sessions', authenticate, authController.getSessions);
  */
 router.delete('/sessions/:sessionId', authenticate, authController.revokeSession);
 
+/**
+ * Trusted devices
+ */
+router.get('/trusted-devices', authenticate, authController.getTrustedDevices);
+router.delete('/trusted-devices/:token', authenticate, authController.revokeTrustedDevice);
+router.get('/trusted-device/status', authController.getTrustedDeviceStatus);
+
 export default router;

@@ -74,6 +74,28 @@ docker-compose up -d
 ### Health Check
 - `GET /health` - API health check
 
+### Email Provider Health
+- `GET /health/email` - Verifies configured email provider connectivity (Brevo REST or SMTP). Returns 200 when mail provider is reachable and configured, 502 when unreachable/not configured, and 500 on internal error.
+
+### Testing Brevo Delivery (manual)
+If you're troubleshooting Brevo delivery, you can run a quick curl-based test from the host you want to validate. A helper script is provided at `backend/scripts/test-brevo.sh`.
+
+Usage:
+```bash
+# From the `backend/` directory
+BREVO_API_KEY=your_brevo_rest_api_key ./scripts/test-brevo.sh recipient@example.com
+```
+
+Expected outcomes:
+- HTTP 2xx and a Brevo response body: request accepted (check email inbox/spam).
+- HTTP 401/403: authorization error (key invalid or IP-restricted).
+- HTTP 4xx/5xx with explanation: Brevo returned an error — check logs and Brevo dashboard for restrictions or sender verification.
+
+Troubleshooting tips:
+- Ensure `EMAIL_FROM_ADDRESS` and `BREVO_FROM_EMAIL` match a verified sender in your Brevo account.
+- If you see IP-restriction errors, create a REST API key in Brevo without IP restrictions, or add your host IP to Brevo's allowed IP list.
+- Use `/health/email` to programmatically verify connectivity from your server.
+
 ### Authentication
 - `POST /api/v1/auth/register` - Register new user
 - `POST /api/v1/auth/login` - Login user

@@ -10,6 +10,8 @@ import {
   getSearchFilters,
 } from '../../common/utils/pagination';
 import { UserRole } from '../../common/constants/roles';
+import { emailService } from '../../common/services/email.service';
+import { logger } from '../../common/logger/logger';
 
 export class AdminController {
   /**
@@ -254,6 +256,52 @@ export class AdminController {
         ...result,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/admin/test-email
+   * Send test email to verify email provider connectivity (Admin only)
+   * Body: { to: "recipient@example.com" }
+   */
+  async testEmailConnection(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { to } = req.body;
+      const adminId = req.user?.id!;
+
+      if (!to || typeof to !== 'string' || !to.includes('@')) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid email address provided. Body should contain: { to: "user@example.com" }',
+        });
+        return;
+      }
+
+      logger.info(`Admin ${adminId} initiated test email send to ${to}`);
+
+      const success = await emailService.sendEmail({
+        to,
+        subject: 'Shielder Email Provider Test',
+        html: `<p>This is a test email from Shielder Platform.</p><p>If you received this, the email provider (Brevo) is working correctly.</p><p>Timestamp: ${new Date().toISOString()}</p>`,
+        text: `Test email from Shielder Platform - ${new Date().toISOString()}`,
+      });
+
+      if (success) {
+        logger.info(`Test email sent successfully to ${to}`);
+        res.status(200).json({
+          success: true,
+          message: `Test email sent to ${to}. Please check your inbox and spam folder.`,
+        });
+      } else {
+        logger.warn(`Test email send failed for ${to}`);
+        res.status(502).json({
+          success: false,
+          message: `Failed to send test email to ${to}. Check server logs for email provider errors.`,
+        });
+      }
+    } catch (error) {
+      logger.error('Test email endpoint error', error);
       next(error);
     }
   }

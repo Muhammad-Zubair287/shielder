@@ -120,7 +120,7 @@ class AuthService {
   /**
    * Verify OTP and complete 2FA login flow
    */
-  async verifyOTP(data: { userId: string; code: string; otpSessionToken?: string }): Promise<AuthResponse> {
+  async verifyOTP(data: { userId: string; code: string; otpSessionToken?: string; rememberDevice?: boolean }): Promise<AuthResponse> {
     try {
       const response = await apiClient.post<ApiResponse<AuthResponse>>(
         API_ENDPOINTS.AUTH.VERIFY_OTP,
@@ -133,6 +133,21 @@ class AuthService {
       }
 
       return authData;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Check whether the current browser/device is already trusted
+   */
+  async getTrustedDeviceStatus(): Promise<{ trusted: boolean; expiresAt: string | null }> {
+    try {
+      const response = await apiClient.get<ApiResponse<{ trusted: boolean; expiresAt: string | null }>>(
+        API_ENDPOINTS.AUTH.TRUSTED_DEVICE_STATUS
+      );
+
+      return response.data.data || { trusted: false, expiresAt: null };
     } catch (error) {
       throw new Error(handleApiError(error));
     }

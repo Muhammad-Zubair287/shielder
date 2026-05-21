@@ -53,6 +53,7 @@ export const authValidation = {
       'string.empty': 'Password is required',
       'any.required': 'Password is required',
     }),
+    rememberDevice: Joi.boolean().optional(),
   }),
 
   /**
@@ -186,5 +187,6 @@ export const authValidation = {
         'string.pattern.base': 'OTP code must contain only numbers',
         'any.required': 'OTP code is required',
       }),
+    rememberDevice: Joi.boolean().optional(),
   }),
 };
