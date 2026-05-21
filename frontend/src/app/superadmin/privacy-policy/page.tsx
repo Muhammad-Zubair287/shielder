@@ -34,6 +34,15 @@ const QUILL_CSS = `
     font-size: 14px;
     color: #334155;
   }
+  /* When the wrapper has RTL direction, force the editor to use RTL and right-align text */
+  .quill-wrapper[dir="rtl"] .ql-editor {
+    direction: rtl !important;
+    text-align: right !important;
+  }
+  .quill-wrapper[dir="rtl"] .ql-editor p {
+    direction: rtl !important;
+    text-align: right !important;
+  }
   /* Hide any potential ghost toolbars or double borders from nested styles */
   .quill-wrapper .ql-toolbar + .ql-toolbar {
     display: none !important;

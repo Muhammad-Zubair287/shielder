@@ -9,6 +9,7 @@ import { prisma } from '@/config/database';
 import { stockAlertRepository } from './stock-alert.repository';
 import NotificationService from '@/modules/notification/notification.service';
 import { NotificationType, UserRole } from '@prisma/client';
+import redisCacheService from '@/common/services/redis-cache.service';
 
 class StockAlertService {
   private static normalizeTranslations(value: unknown): Array<{ name: string; locale: string }> {
@@ -126,15 +127,74 @@ class StockAlertService {
       throw new NotFoundError('Product not found');
     }
 
-    const updated = await prisma.product.update({
-      where: { id: productId },
-      data: { stock },
-    });
+
+     // Use transaction to ensure both product.stock and warehouse inventory are updated atomically
+     const updated = await prisma.$transaction(async (tx) => {
+       // 1. Update product aggregate stock
+       const updatedProduct = await tx.product.update({
+         where: { id: productId },
+         data: { stock },
+       });
+
+       // 2. Also update the main warehouse inventory to keep it in sync
+       try {
+         const inventoryService = require('@/modules/inventory/inventory.service').inventoryService;
+         const mainWarehouseId = await inventoryService.resolveMainWarehouseId();
+       
+         // Update or create inventory record with same quantity
+         await tx.inventory.upsert({
+           where: {
+             productId_warehouseId: {
+               productId,
+               warehouseId: mainWarehouseId,
+             },
+           },
+           update: {
+             quantity: Math.max(0, Math.trunc(stock)),
+             updated_at: new Date(),
+           },
+           create: {
+             productId,
+             warehouseId: mainWarehouseId,
+             quantity: Math.max(0, Math.trunc(stock)),
+             reservedQuantity: 0,
+           },
+         });
+       } catch (err) {
+         // Log but don't fail - warehouse update is secondary
+         logger.warn(`Failed to sync warehouse inventory for product ${productId} during stock update:`, err);
+       }
+
+       return updatedProduct;
+     });
+
+    // Invalidate product-related caches
+    await this.invalidateProductCaches(productId);
 
     // Check if we need to alert
     await this.checkAndNotify(productId);
 
     return updated;
+  }
+
+  /**
+   * Invalidate all product-related caches when stock changes
+   */
+  private static async invalidateProductCaches(productId: string) {
+    const cacheKeysToInvalidate = [
+      `product:${productId}`,
+      `product:${productId}:details`,
+      'products:list', // List views may be affected
+      'products:featured', // Featured products cache
+    ];
+
+    await Promise.all(
+      cacheKeysToInvalidate.map(key =>
+        redisCacheService.del(key).catch(err =>
+          logger.warn(`Failed to invalidate cache key ${key}:`, err)
+        )
+      )
+    );
   }
 
   /**

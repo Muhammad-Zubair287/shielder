@@ -136,6 +136,24 @@ export class OrderService {
       throw new BadRequestError('Invalid order quantity');
     }
 
+    // Ensure inventory record exists for this product-warehouse combination
+    // This prevents "no rows affected" errors when trying to reserve stock
+    await tx.inventory.upsert({
+      where: {
+        productId_warehouseId: {
+          productId,
+          warehouseId,
+        },
+      },
+      create: {
+        productId,
+        warehouseId,
+        quantity: 0,
+        reservedQuantity: 0,
+      },
+      update: {},
+    });
+
     await inventoryService.reserveStock(productId, warehouseId, quantityToReserve, tx);
   }
 

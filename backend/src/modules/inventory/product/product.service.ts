@@ -120,6 +120,43 @@ export class ProductService {
     return created.id;
   }
 
+  private async getAvailableStockMap(productIds: string[]): Promise<Map<string, number>> {
+    if (!productIds.length) {
+      return new Map<string, number>();
+    }
+
+    const mainWarehouseId = await this.getMainWarehouseId();
+    const inventories = await prisma.inventory.findMany({
+      where: {
+        warehouseId: mainWarehouseId,
+        productId: { in: productIds },
+      },
+      select: {
+        productId: true,
+        quantity: true,
+        reservedQuantity: true,
+      },
+    });
+
+    return new Map(
+      inventories.map((inv) => [
+        inv.productId,
+        Math.max(0, Number(inv.quantity) - Number(inv.reservedQuantity)),
+      ])
+    );
+  }
+
+  private async getInStockProductIds(mainWarehouseId: string): Promise<string[]> {
+    const rows = await prisma.$queryRaw<Array<{ productId: string }>>`
+      SELECT product_id AS "productId"
+      FROM "inventories"
+      WHERE warehouse_id = ${mainWarehouseId}::uuid
+        AND (quantity - reserved_quantity) > 0
+    `;
+
+    return rows.map((row) => row.productId);
+  }
+
   private async ensureMainWarehouseInventory(
     tx: Prisma.TransactionClient,
     productId: string,
@@ -438,10 +475,15 @@ export class ProductService {
     });
 
     if (!product) throw new ApiError('Product not found', 404);
+
+    const availableStockMap = await this.getAvailableStockMap([product.id]);
+    const availableStock = availableStockMap.get(product.id) ?? Number(product.stock);
     
     // Format for easier frontend usage
     return {
       ...product,
+      stock: availableStock,
+      availableStock,
       name: product.translations[0]?.name || 'Unnamed Product',
       description: product.translations[0]?.description || '',
     };
@@ -655,8 +697,16 @@ export class ProductService {
       where.price = { gte: minPrice, lte: maxPrice };
     }
 
-    if (inStock === true) where.stock = { gt: 0 };
-    else if (inStock === false) where.stock = 0;
+    if (inStock !== undefined) {
+      const mainWarehouseId = await this.getMainWarehouseId();
+      const inStockIds = await this.getInStockProductIds(mainWarehouseId);
+
+      if (inStock === true) {
+        where.id = { in: inStockIds.length ? inStockIds : ['__no_match__'] };
+      } else {
+        where.id = inStockIds.length ? { notIn: inStockIds } : undefined;
+      }
+    }
 
     // Sort mapping
     let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
@@ -680,13 +730,20 @@ export class ProductService {
       prisma.product.count({ where }),
     ]);
 
+    const availableStockMap = await this.getAvailableStockMap(products.map((p) => p.id));
+
     return {
-      products: products.map((p) => ({
-        ...p,
-        name: p.translations[0]?.name || '',
-        description: p.translations[0]?.description || '',
-        categoryName: p.category?.translations[0]?.name || '',
-      })),
+      products: products.map((p) => {
+        const availableStock = availableStockMap.get(p.id) ?? Number(p.stock);
+        return {
+          ...p,
+          stock: availableStock,
+          availableStock,
+          name: p.translations[0]?.name || '',
+          description: p.translations[0]?.description || '',
+          categoryName: p.category?.translations[0]?.name || '',
+        };
+      }),
       pagination: {
         total,
         page,

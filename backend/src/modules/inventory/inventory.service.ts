@@ -177,11 +177,7 @@ export class InventoryService {
       throw new BadRequestError('Quantity must be greater than 0');
     }
 
-    const inventory = await inventoryRepository.findByProductWarehouse(productId, warehouseId, db);
-    if (!inventory) {
-      throw new NotFoundError('Inventory record not found');
-    }
-
+    // Don't require inventory record to exist; increaseStock will create it if missing
     return inventoryRepository.increaseStock(productId, warehouseId, normalizedQuantity, db);
   }
 }

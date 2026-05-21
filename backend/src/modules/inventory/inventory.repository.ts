@@ -47,6 +47,7 @@ export class InventoryRepository {
       },
       update: {
         quantity: data.quantity,
+        updated_at: new Date(),
       },
       include: {
         product: {
@@ -205,19 +206,53 @@ export class InventoryRepository {
   }
 
   async increaseStock(productId: string, warehouseId: string, quantity: number, db: DB = prisma) {
-    return db.inventory.update({
-      where: {
-        productId_warehouseId: {
-          productId,
-          warehouseId,
+    // Use atomic increment to avoid race conditions
+    // Try update first; if not found, create new record
+    try {
+      return await db.inventory.update({
+        where: {
+          productId_warehouseId: {
+            productId,
+            warehouseId,
+          },
         },
-      },
-      data: {
-        quantity: {
-          increment: quantity,
+        data: {
+          quantity: {
+            increment: quantity,
+          },
+          updated_at: new Date(),
         },
-      },
-    });
+      });
+    } catch (err: any) {
+      // If record doesn't exist (P2025), create it
+      if (err.code === 'P2025') {
+        return db.inventory.create({
+          data: {
+            productId,
+            warehouseId,
+            quantity,
+            reservedQuantity: 0,
+          },
+        });
+      }
+      throw err;
+    }
+  }
+
+  async reduceStock(productId: string, warehouseId: string, quantity: number, db: DB = prisma) {
+    const rows = await db.$queryRaw<Array<{ id: string }>>`
+      UPDATE "inventories"
+      SET
+        "quantity" = "quantity" - ${quantity},
+        "updated_at" = NOW()
+      WHERE
+        "product_id" = ${productId}::text
+        AND "warehouse_id" = ${warehouseId}::uuid
+        AND "quantity" >= ${quantity}
+      RETURNING "id"
+    `;
+
+    return rows[0] ?? null;
   }
 }
 

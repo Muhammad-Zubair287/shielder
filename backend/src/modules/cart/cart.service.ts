@@ -4,6 +4,68 @@ import { logger } from '../../common/logger/logger';
 import { CartStatus } from '@prisma/client';
 
 export class CartService {
+  private static async resolveMainWarehouseId(): Promise<string | null> {
+    const warehouse = await prisma.warehouse.findFirst({
+      where: {
+        OR: [
+          { isMain: true },
+          { name: { equals: 'Main Warehouse', mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true },
+      orderBy: { isMain: 'desc' },
+    });
+
+    return warehouse?.id ?? null;
+  }
+
+  private static async getAvailableStock(productId: string, fallbackStock: number): Promise<number> {
+    const mainWarehouseId = await this.resolveMainWarehouseId();
+    if (!mainWarehouseId) return fallbackStock;
+
+    const inventory = await prisma.inventory.findUnique({
+      where: {
+        productId_warehouseId: {
+          productId,
+          warehouseId: mainWarehouseId,
+        },
+      },
+      select: {
+        quantity: true,
+        reservedQuantity: true,
+      },
+    });
+
+    if (!inventory) return fallbackStock;
+    return Math.max(0, Number(inventory.quantity) - Number(inventory.reservedQuantity));
+  }
+
+  private static async getAvailableStockMap(productIds: string[]): Promise<Map<string, number>> {
+    if (!productIds.length) return new Map<string, number>();
+
+    const mainWarehouseId = await this.resolveMainWarehouseId();
+    if (!mainWarehouseId) return new Map<string, number>();
+
+    const inventories = await prisma.inventory.findMany({
+      where: {
+        warehouseId: mainWarehouseId,
+        productId: { in: productIds },
+      },
+      select: {
+        productId: true,
+        quantity: true,
+        reservedQuantity: true,
+      },
+    });
+
+    return new Map(
+      inventories.map((inv) => [
+        inv.productId,
+        Math.max(0, Number(inv.quantity) - Number(inv.reservedQuantity)),
+      ])
+    );
+  }
+
   /**
    * Get or create an active cart for the user
    */
@@ -98,7 +160,20 @@ export class CartService {
    * Get user cart
    */
   static async getCart(userId: string) {
-    return this.getOrCreateActiveCart(userId);
+    const cart = await this.getOrCreateActiveCart(userId);
+    const productIds = (cart.items || []).map((item) => item.productId);
+    const availableStockMap = await this.getAvailableStockMap(productIds);
+
+    return {
+      ...cart,
+      items: (cart.items || []).map((item) => ({
+        ...item,
+        product: {
+          ...item.product,
+          stock: availableStockMap.get(item.productId) ?? item.product.stock,
+        },
+      })),
+    };
   }
 
   /**
@@ -122,9 +197,10 @@ export class CartService {
       throw new BadRequestError('Product is currently inactive');
     }
 
-    // 2. Check stock
-    if (product.stock < quantity) {
-      throw new BadRequestError(`Only ${product.stock} items in stock`);
+    // 2. Check available stock (quantity - reserved)
+    const availableStock = await this.getAvailableStock(productId, product.stock);
+    if (availableStock < quantity) {
+      throw new BadRequestError(`Only ${availableStock} items in stock`);
     }
 
     // 3. Get or create active cart
@@ -179,8 +255,9 @@ export class CartService {
       throw new BadRequestError('Product is unavailable');
     }
 
-    if (product.stock < quantity) {
-      throw new BadRequestError(`Only ${product.stock} items in stock`);
+    const availableStock = await this.getAvailableStock(productId, product.stock);
+    if (availableStock < quantity) {
+      throw new BadRequestError(`Only ${availableStock} items in stock`);
     }
 
     const updatedItem = await prisma.cartItem.update({
