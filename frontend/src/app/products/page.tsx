@@ -330,8 +330,8 @@ function ProductDetailModal({
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}
                     aria-label="Decrease quantity"
-              <div className={`rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-4 flex items-center justify-between gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div className={`min-w-0 flex-1 ${isRTL ? 'text-right' : ''}`}>
+                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                    <Minus size={14} />
                   </button>
                   <input type="number" min={1} value={qty}
                     aria-label="Quantity"
