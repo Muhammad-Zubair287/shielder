@@ -85,6 +85,14 @@ export class AuthService {
       return !!(env.AWS_SES_ACCESS_KEY || '').trim() && !!(env.AWS_SES_SECRET_KEY || '').trim();
     }
 
+    if (provider === 'brevo') {
+      const brevoApiKey = (env.BREVO_API_KEY || '').trim();
+      const brevoSmtpKey = (env.BREVO_SMTP_KEY || '').trim();
+      const brevoFromEmail = (env.BREVO_FROM_EMAIL || '').trim();
+
+      return !!brevoApiKey || (!!brevoSmtpKey && !!brevoFromEmail);
+    }
+
     return false;
   }
 

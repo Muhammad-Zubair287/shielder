@@ -60,12 +60,13 @@ const validateEnv = (): void => {
     }
 
     if (provider === 'brevo') {
-      const missingBrevo = ['BREVO_SMTP_KEY', 'BREVO_FROM_EMAIL'].filter(
-        (key) => !process.env[key]
-      );
-      if (missingBrevo.length > 0) {
+      const hasBrevoApiKey = !!(process.env.BREVO_API_KEY || '').trim();
+      const hasBrevoSmtpConfig =
+        !!(process.env.BREVO_SMTP_KEY || '').trim() && !!(process.env.BREVO_FROM_EMAIL || '').trim();
+
+      if (!hasBrevoApiKey && !hasBrevoSmtpConfig) {
         throw new Error(
-          `Missing required Brevo environment variables for production: ${missingBrevo.join(', ')}`
+          'Missing required Brevo environment variables for production: provide BREVO_API_KEY or both BREVO_SMTP_KEY and BREVO_FROM_EMAIL'
         );
       }
     }
