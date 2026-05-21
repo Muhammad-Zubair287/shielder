@@ -82,7 +82,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
           <div className={`flex items-center gap-3 mt-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <button
               onClick={handleIncrease}
-              disabled={loading || (stockLimit !== null && item.quantity >= stockLimit)}
+              disabled={stockLimit !== null && item.quantity >= stockLimit}
               aria-label="increase"
               className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-orange-50 hover:border-[#F97316] hover:text-[#F97316] transition-colors disabled:opacity-40"
             >
@@ -95,7 +95,6 @@ export default function CartItem({ item, isLast }: CartItemProps) {
 
             <button
               onClick={handleDecrease}
-              disabled={loading}
               aria-label="decrease"
               className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-orange-50 hover:border-[#F97316] hover:text-[#F97316] transition-colors disabled:opacity-40"
             >
