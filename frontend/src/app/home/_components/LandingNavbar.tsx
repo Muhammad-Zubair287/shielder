@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Menu, X, MessageCircle, User, LogOut, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +17,7 @@ import { getImageUrl } from '@/utils/helpers';
 export default function LandingNavbar() {
   const { t, isRTL } = useLanguage();
   const { user, logout } = useAuth();
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -55,6 +57,44 @@ export default function LandingNavbar() {
   const profileDisplayName = user?.profile?.fullName?.trim() || user?.email || t('profile.viewProfile');
   const profileFirstName = profileDisplayName.split(/\s+/)[0] || t('profile.viewProfile');
 
+  const isActiveLink = (href: string) => {
+    if (href === '/home') {
+      return pathname === '/home' || pathname === '/';
+    }
+
+    if (href === '/products') {
+      return pathname === '/products' || pathname.startsWith('/products/');
+    }
+
+    if (href === '/generate-quotation') {
+      return pathname === '/generate-quotation' || pathname.startsWith('/generate-quotation/');
+    }
+
+    if (href === '/my-quotations') {
+      return pathname === '/my-quotations' || pathname.startsWith('/my-quotation/');
+    }
+
+    return pathname === href;
+  };
+
+  const navLinkClassName = (href: string, mobile = false) => {
+    const active = isActiveLink(href);
+
+    if (mobile) {
+      return `block px-6 py-3.5 text-sm transition-colors border-b border-gray-50 ${isRTL ? 'text-right' : 'text-left'} ${
+        active
+          ? 'bg-orange-50 text-[#F97316] font-bold'
+          : 'text-gray-700 font-semibold hover:text-[#F97316] hover:bg-orange-50'
+      }`;
+    }
+
+    return `px-2 py-2 text-[13px] transition-colors rounded-lg whitespace-nowrap ${
+      active
+        ? 'bg-orange-50 text-[#F97316] font-extrabold'
+        : 'text-gray-700 font-semibold hover:text-[#F97316]'
+    }`;
+  };
+
   return (
     <>
     <header
@@ -76,7 +116,8 @@ export default function LandingNavbar() {
           <nav className={`hidden lg:flex items-center gap-0 ${isRTL ? 'mr-2' : 'ml-2'}`} dir={isRTL ? 'rtl' : 'ltr'}>
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
-                className="px-2 py-2 text-[13px] font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap">
+                aria-current={isActiveLink(link.href) ? 'page' : undefined}
+                className={navLinkClassName(link.href)}>
                 {link.label}
               </Link>
             ))}
@@ -84,7 +125,8 @@ export default function LandingNavbar() {
             {!user ? (
               <Link
                 href="/login"
-                className="px-2 py-2 text-[13px] font-semibold text-gray-700 hover:text-[#F97316] transition-colors rounded-lg whitespace-nowrap"
+                aria-current={isActiveLink('/login') ? 'page' : undefined}
+                className={navLinkClassName('/login')}
               >
                 {t('landingNavLogin')}
               </Link>
@@ -173,7 +215,8 @@ export default function LandingNavbar() {
         <div className="lg:hidden border-t border-gray-100 bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
           {navLinks.map(link => (
             <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
-              className={`block px-6 py-3.5 text-sm font-semibold text-gray-700 hover:text-[#F97316] hover:bg-orange-50 border-b border-gray-50 ${isRTL ? 'text-right' : 'text-left'}`}>
+              aria-current={isActiveLink(link.href) ? 'page' : undefined}
+              className={navLinkClassName(link.href, true)}>
               {link.label}
             </Link>
           ))}
@@ -181,7 +224,12 @@ export default function LandingNavbar() {
           <Link
             href={user ? '/profile' : '/login'}
             onClick={() => setMobileOpen(false)}
-            className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-gray-700 hover:text-[#F97316] hover:bg-orange-50 border-b border-gray-50 ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
+            aria-current={isActiveLink(user ? '/profile' : '/login') ? 'page' : undefined}
+            className={`flex items-center gap-3 px-6 py-3.5 text-sm border-b border-gray-50 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-left'} ${
+              isActiveLink(user ? '/profile' : '/login')
+                ? 'bg-orange-50 text-[#F97316] font-bold'
+                : 'text-gray-700 font-semibold hover:text-[#F97316] hover:bg-orange-50'
+            }`}
           >
             <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-gray-600">
               {user?.profile?.profileImage ? (

@@ -238,22 +238,6 @@ export class InventoryRepository {
       throw err;
     }
   }
-
-  async reduceStock(productId: string, warehouseId: string, quantity: number, db: DB = prisma) {
-    const rows = await db.$queryRaw<Array<{ id: string }>>`
-      UPDATE "inventories"
-      SET
-        "quantity" = "quantity" - ${quantity},
-        "updated_at" = NOW()
-      WHERE
-        "product_id" = ${productId}::text
-        AND "warehouse_id" = ${warehouseId}::uuid
-        AND "quantity" >= ${quantity}
-      RETURNING "id"
-    `;
-
-    return rows[0] ?? null;
-  }
 }
 
 export const inventoryRepository = new InventoryRepository();
