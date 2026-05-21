@@ -121,7 +121,7 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
   const openDrawer  = useCallback(() => setDrawerOpen(true),  []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
-  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  const itemCount = items.length;
 
   return (
     <QuotationContext.Provider

@@ -114,7 +114,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateItem = useCallback(
     async (productId: string, quantity: number) => {
-      // Optimistic update
+      // Optimistic update - DO NOT WAIT FOR API RESPONSE
       setCart((prev) => {
         const items = prev.items.map((item) =>
           item.productId === productId
@@ -128,10 +128,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      try {
-        const updated = await cartService.updateItem(productId, quantity);
-        setCart(updated);
-      } catch (err: any) {
+      // Fire-and-forget: API call in background WITHOUT awaiting
+      cartService.updateItem(productId, quantity).catch(async (err: any) => {
         const msg = err?.response?.data?.message || '';
         if (msg.toLowerCase().includes('stock')) {
           toast.error(t('cart.stockError'));
@@ -140,16 +138,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
           toast.error(t('cart.errorUpdating'));
         }
-        // Revert optimistic update
+        // Revert optimistic update on error
         await refreshCart();
-      }
+      });
     },
     [t, refreshCart],
   );
 
   const removeItem = useCallback(
     async (productId: string) => {
-      // Optimistic remove
+      // Optimistic remove - DO NOT WAIT FOR API RESPONSE
       setCart((prev) => {
         const items = prev.items.filter((i) => i.productId !== productId);
         return {
@@ -159,14 +157,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      try {
-        const updated = await cartService.removeItem(productId);
-        setCart(updated);
+      // Fire-and-forget: API call in background WITHOUT awaiting
+      cartService.removeItem(productId).then(() => {
         toast.success(t('cart.removedFromCart'));
-      } catch (err: any) {
+      }).catch(async (err: any) => {
         toast.error(t('cart.errorRemoving'));
+        // Revert optimistic remove on error
         await refreshCart();
-      }
+      });
     },
     [t, refreshCart],
   );

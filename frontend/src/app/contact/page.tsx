@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
@@ -76,6 +76,30 @@ export default function ContactPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>('');
+
+  // Check if form has been modified (unsaved changes)
+  const hasChanges = 
+    form.firstName !== '' || 
+    form.lastName !== '' || 
+    form.email !== '' || 
+    form.phone !== '' || 
+    form.message !== '' || 
+    attachment !== null;
+
+  // Warn user if they try to leave with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges && !sent && !sending) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasChanges, sent, sending]);
 
   const field = (key: keyof typeof form, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
