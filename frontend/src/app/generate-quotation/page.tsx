@@ -176,6 +176,7 @@ export default function GenerateQuotationPage() {
 
     if (products.length === 0) {
       toast.error(t('quot.productsRequired'));
+      router.push('/products?tab=quotation');
       return;
     }
 
@@ -330,10 +331,14 @@ export default function GenerateQuotationPage() {
                 <div className={`flex gap-3 pt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <button
                     type="submit"
-                    disabled={submitting || products.length === 0}
+                    disabled={submitting}
                     className="flex-1 bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold py-3.5 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    {submitting ? t('quot.generatingPDF') : t('quot.generatePDF')}
+                    {submitting
+                      ? t('quot.generatingPDF')
+                      : products.length === 0
+                        ? t('quot.getQuotationFirst')
+                        : t('quot.generatePDF')}
                   </button>
                   <Link
                     href="/products"

@@ -65,6 +65,12 @@ export default function QuotationDrawer() {
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
 
+  const goToQuotationTab = () => {
+    closeDrawer();
+    toast.error(t('quotationDrawer.addOneProductFirst'));
+    router.push('/products?tab=quotation');
+  };
+
   const setField = (key: keyof FormState) => (value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
@@ -81,7 +87,7 @@ export default function QuotationDrawer() {
     }
 
     if (items.length === 0) {
-      toast.error(t('quotationDrawer.addOneProductFirst'));
+      goToQuotationTab();
       return;
     }
 
@@ -162,8 +168,7 @@ export default function QuotationDrawer() {
             <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-400 px-6">
               <FileText size={40} className="opacity-30" />
               <p className="text-sm text-center">
-                Your quotation basket is empty.
-                <br />Go to the Products page and click <strong>Get Quotation</strong>.
+                {t('quotationDrawer.addOneProductFirst')}
               </p>
             </div>
           )}
@@ -345,10 +350,10 @@ export default function QuotationDrawer() {
           <div className="px-5 py-4 border-t border-gray-100 shrink-0">
             <button
               type="button"
-              onClick={closeDrawer}
+              onClick={goToQuotationTab}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-2xl transition-colors text-sm"
             >
-              Close
+              {t('quotationDrawer.goToProductsQuotation')}
             </button>
           </div>
         )}

@@ -15,7 +15,6 @@ export default function LandingFooter() {
     { label: t('landingFooterLinkHome'),    href: '/home'     },
     { label: t('landingFooterLinkProduct'), href: '/products' },
     { label: t('landingFooterLinkContact'), href: '#contact'  },
-    { label: t('landingFooterLinkAdmin'),   href: '/login'    },
   ];
   const categories = [
     { label: t('landingFooterCatAir'),    href: '/products?category=air'    },
