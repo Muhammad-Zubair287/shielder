@@ -110,6 +110,7 @@ export default function GenerateQuotationPage() {
   const [form, setForm] = useState<FormState>({ companyName: '', vatNumber: '', address: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [loadingCheckDone, setLoadingCheckDone] = useState(false);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
@@ -127,17 +128,27 @@ export default function GenerateQuotationPage() {
       const raw = sessionStorage.getItem(SESSION_KEY);
       if (raw) {
         const parsed: QuotationProduct[] = JSON.parse(raw);
-        if (parsed.length > 0) { setProducts(parsed); return; }
+        if (parsed.length > 0) {
+          setProducts(parsed);
+          setLoadingCheckDone(true);
+          return;
+        }
       }
     } catch { /* ignore */ }
 
     // Fallback: quotation basket from localStorage (used by Quotation Drawer flow)
     try {
       const basketRaw = localStorage.getItem(BASKET_KEY);
-      if (!basketRaw) return;
+      if (!basketRaw) {
+        setLoadingCheckDone(true);
+        return;
+      }
 
       const basketParsed = JSON.parse(basketRaw);
-      if (!Array.isArray(basketParsed) || basketParsed.length === 0) return;
+      if (!Array.isArray(basketParsed) || basketParsed.length === 0) {
+        setLoadingCheckDone(true);
+        return;
+      }
 
       const mapped: QuotationProduct[] = basketParsed
         .map((item: any) => ({
@@ -158,9 +169,25 @@ export default function GenerateQuotationPage() {
       if (mapped.length > 0) {
         setProducts(mapped);
       }
+      setLoadingCheckDone(true);
     } catch { /* ignore */ }
 
   }, [isAuthenticated, router]);
+
+  // ── Check for empty products and redirect ──────────────────────────────────
+
+  useEffect(() => {
+    if (!loadingCheckDone || !isAuthenticated) return;
+
+    if (products.length === 0) {
+      toast.error(t('quot.productsRequired'), {
+        duration: 3000,
+        // RTL positioning support
+        position: isRTL ? 'top-right' : 'top-left',
+      });
+      router.push('/products?tab=quotation');
+    }
+  }, [loadingCheckDone, isAuthenticated, products.length, t, isRTL, router]);
 
   // ── Field change ────────────────────────────────────────────────────────────
 

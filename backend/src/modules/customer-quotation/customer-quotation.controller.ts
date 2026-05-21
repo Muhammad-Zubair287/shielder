@@ -433,7 +433,7 @@ export class CustomerQuotationController {
 
       // ── Quotation meta ─────────────────────────────────────────────────────
 
-      const topY = 110;
+      const topY = 108;
       doc.fillColor('#374151').font('Helvetica').fontSize(9);
 
       // Left: company info
@@ -443,32 +443,34 @@ export class CustomerQuotationController {
 
       doc
         .font('Helvetica').fillColor('#6B7280').fontSize(9)
-        .text(`VAT: ${vatNumber}`, MARGIN, topY + 18, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
+        .text(`VAT: ${vatNumber}`, MARGIN, topY + 16, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
 
       doc
-        .text(quotation.customerAddress || '', MARGIN, topY + 32, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
+        .text(quotation.customerAddress || '', MARGIN, topY + 28, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
 
       doc
-        .text(quotation.customerEmail, MARGIN, topY + 46, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
+        .text(quotation.customerEmail, MARGIN, topY + 40, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
 
       // Right: quotation details
       doc
         .font('Helvetica-Bold').fillColor('#0D1637').fontSize(9)
         .text('Quotation No:', PAGE_WIDTH - MARGIN - 200, topY, { width: 200, align: 'right' })
         .font('Helvetica').fillColor('#374151')
-        .text(quotation.quotationNumber, PAGE_WIDTH - MARGIN - 200, topY + 14, { width: 200, align: 'right' })
+        .text(quotation.quotationNumber, PAGE_WIDTH - MARGIN - 200, topY + 12, { width: 200, align: 'right' })
         .font('Helvetica-Bold').fillColor('#0D1637')
-        .text('Date:', PAGE_WIDTH - MARGIN - 200, topY + 32, { width: 200, align: 'right' })
+        .text('Date:', PAGE_WIDTH - MARGIN - 200, topY + 28, { width: 200, align: 'right' })
         .font('Helvetica').fillColor('#374151')
-        .text(new Date(quotation.quotationDate).toLocaleDateString('en-GB'), PAGE_WIDTH - MARGIN - 200, topY + 46, { width: 200, align: 'right' })
-        .font('Helvetica-Bold').fillColor('#0D1637')
-        .text('Valid Until:', PAGE_WIDTH - MARGIN - 200, topY + 64, { width: 200, align: 'right' })
+        .text(new Date(quotation.quotationDate).toLocaleDateString('en-GB'), PAGE_WIDTH - MARGIN - 200, topY + 40, { width: 200, align: 'right' });
+
+      doc
+        .font('Helvetica-Bold').fillColor('#0D1637').fontSize(9)
+        .text('Valid Until:', PAGE_WIDTH - MARGIN - 200, topY + 56, { width: 200, align: 'right' })
         .font('Helvetica').fillColor('#374151')
-        .text(new Date(quotation.expiryDate).toLocaleDateString('en-GB'), PAGE_WIDTH - MARGIN - 200, topY + 78, { width: 200, align: 'right' });
+        .text(new Date(quotation.expiryDate).toLocaleDateString('en-GB'), PAGE_WIDTH - MARGIN - 200, topY + 68, { width: 200, align: 'right' });
 
       // ── Divider ────────────────────────────────────────────────────────────
 
-      const divY = topY + 100;
+      const divY = topY + 86;
       doc.strokeColor('#E5E7EB').lineWidth(1).moveTo(MARGIN, divY).lineTo(PAGE_WIDTH - MARGIN, divY).stroke();
 
       // ── Table header ───────────────────────────────────────────────────────
@@ -496,9 +498,8 @@ export class CustomerQuotationController {
       // ── Table rows ─────────────────────────────────────────────────────────
 
       let rowY = tableTop + 28;
+      const rowHeight = 24; // Reduced from 28 for better page fit
       for (const item of quotation.items) {
-        const rowHeight = 28;
-
         doc
           .fillColor('#F9FAFB')
           .rect(MARGIN, rowY - 4, COL_WIDTH, rowHeight)
@@ -514,59 +515,95 @@ export class CustomerQuotationController {
           .fillColor('#111827')
           .font('Helvetica-Bold')
           .fontSize(9)
-          .text(item.productName, colName + 4, rowY + 6, { width: PRODUCT_NAME_WIDTH, ellipsis: true, lineBreak: false });
+          .text(item.productName, colName + 4, rowY + 4, { width: PRODUCT_NAME_WIDTH, ellipsis: true, lineBreak: false });
 
         doc
           .fillColor('#374151')
           .font('Helvetica')
           .fontSize(9)
-          .text(String(item.quantity), colQty, rowY + 6, { width: 60, align: 'center' })
-          .text(`SAR ${Number(item.unitPrice).toFixed(2)}`, colPrice, rowY + 6, { width: 70, align: 'right' })
-          .text(`SAR ${Number(item.totalPrice).toFixed(2)}`, colTotal, rowY + 6, { width: 70, align: 'right' });
+          .text(String(item.quantity), colQty, rowY + 4, { width: 60, align: 'center' })
+          .text(`SAR ${Number(item.unitPrice).toFixed(2)}`, colPrice, rowY + 4, { width: 70, align: 'right' })
+          .text(`SAR ${Number(item.totalPrice).toFixed(2)}`, colTotal, rowY + 4, { width: 70, align: 'right' });
 
         rowY += rowHeight;
       }
 
       // ── Totals ─────────────────────────────────────────────────────────────
 
-      const totalsTop = rowY + 20;
+      const USABLE_HEIGHT = doc.page.height - MARGIN * 2; // Usable area with margins
+      const FOOTER_SPACE = 50; // Space reserved for footer
+      const TOTALS_BOX_HEIGHT = 75; // Reduced from 90
+      const totalsTop = rowY + 16;
 
-      // Draw totals box
-      doc
-        .fillColor('#F9FAFB')
-        .rect(PAGE_WIDTH - MARGIN - 220, totalsTop, 220, 90)
-        .fill();
+      // Check if totals box would overflow; if so, adjust spacing
+      const maxContentY = USABLE_HEIGHT - FOOTER_SPACE;
+      const totalsBoxEnd = totalsTop + TOTALS_BOX_HEIGHT;
 
-      const tL = PAGE_WIDTH - MARGIN - 215;
-      const tR = PAGE_WIDTH - MARGIN - 5;
-
-      const totRow = (label: string, value: string, bold = false, y = 0) => {
+      if (totalsBoxEnd > maxContentY) {
+        // Reduce spacing before totals if needed to keep on page
+        const adjustedTotalsTop = Math.max(rowY + 10, maxContentY - TOTALS_BOX_HEIGHT);
+        // Draw totals box
         doc
-          .fillColor('#374151')
-          .font(bold ? 'Helvetica-Bold' : 'Helvetica')
-          .fontSize(bold ? 10 : 9)
-          .text(label, tL, totalsTop + y)
-          .text(value, tL, totalsTop + y, { width: 210, align: 'right' });
-      };
+          .fillColor('#F9FAFB')
+          .rect(PAGE_WIDTH - MARGIN - 220, adjustedTotalsTop, 220, TOTALS_BOX_HEIGHT)
+          .fill();
 
-      totRow('Subtotal:', `SAR ${Number(quotation.subtotal).toFixed(2)}`, false, 10);
-      totRow('Shipping:', 'Free', false, 28);
-      doc.strokeColor('#E5E7EB').lineWidth(0.5)
-        .moveTo(tL, totalsTop + 50).lineTo(tR, totalsTop + 50).stroke();
-      totRow('TOTAL:', `SAR ${Number(quotation.total).toFixed(2)}`, true, 60);
+        const tL = PAGE_WIDTH - MARGIN - 215;
+        const tR = PAGE_WIDTH - MARGIN - 5;
+
+        const totRow = (label: string, value: string, bold = false, y = 0) => {
+          doc
+            .fillColor('#374151')
+            .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+            .fontSize(bold ? 10 : 9)
+            .text(label, tL, adjustedTotalsTop + y)
+            .text(value, tL, adjustedTotalsTop + y, { width: 210, align: 'right' });
+        };
+
+        totRow('Subtotal:', `SAR ${Number(quotation.subtotal).toFixed(2)}`, false, 8);
+        totRow('Shipping:', 'Free', false, 24);
+        doc.strokeColor('#E5E7EB').lineWidth(0.5)
+          .moveTo(tL, adjustedTotalsTop + 44).lineTo(tR, adjustedTotalsTop + 44).stroke();
+        totRow('TOTAL:', `SAR ${Number(quotation.total).toFixed(2)}`, true, 54);
+      } else {
+        // Normal layout - totals fit on page
+        doc
+          .fillColor('#F9FAFB')
+          .rect(PAGE_WIDTH - MARGIN - 220, totalsTop, 220, TOTALS_BOX_HEIGHT)
+          .fill();
+
+        const tL = PAGE_WIDTH - MARGIN - 215;
+        const tR = PAGE_WIDTH - MARGIN - 5;
+
+        const totRow = (label: string, value: string, bold = false, y = 0) => {
+          doc
+            .fillColor('#374151')
+            .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+            .fontSize(bold ? 10 : 9)
+            .text(label, tL, totalsTop + y)
+            .text(value, tL, totalsTop + y, { width: 210, align: 'right' });
+        };
+
+        totRow('Subtotal:', `SAR ${Number(quotation.subtotal).toFixed(2)}`, false, 8);
+        totRow('Shipping:', 'Free', false, 24);
+        doc.strokeColor('#E5E7EB').lineWidth(0.5)
+          .moveTo(tL, totalsTop + 44).lineTo(tR, totalsTop + 44).stroke();
+        totRow('TOTAL:', `SAR ${Number(quotation.total).toFixed(2)}`, true, 54);
+      }
 
       // ── Footer ─────────────────────────────────────────────────────────────
 
-      const footerY = doc.page.height - 70;
+      // Position footer at reserved space from bottom, with minimum position to avoid overlap
+      const footerY = Math.min(USABLE_HEIGHT - 40, doc.page.height - 65);
       doc
         .strokeColor('#E5E7EB').lineWidth(1)
         .moveTo(MARGIN, footerY).lineTo(PAGE_WIDTH - MARGIN, footerY).stroke();
 
       doc
         .fillColor('#9CA3AF').font('Helvetica').fontSize(8)
-        .text('This quotation is valid for 30 days from the date of issue.', MARGIN, footerY + 10)
-        .text('Shielder Industrial Filters | Saudi Arabia', MARGIN, footerY + 24)
-        .text(`Generated: ${new Date().toLocaleString()}`, PAGE_WIDTH - MARGIN - 200, footerY + 24, { width: 200, align: 'right' });
+        .text('This quotation is valid for 30 days from the date of issue.', MARGIN, footerY + 8)
+        .text('Shielder Industrial Filters | Saudi Arabia', MARGIN, footerY + 20)
+        .text(`Generated: ${new Date().toLocaleString()}`, PAGE_WIDTH - MARGIN - 200, footerY + 20, { width: 200, align: 'right' });
 
       doc.end();
     } catch (err) {
