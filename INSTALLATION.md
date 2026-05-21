@@ -175,7 +175,8 @@ This opens a browser interface at **http://localhost:5555**
    - Go to https://vercel.com
    - Click "New Project"
    - Import your GitHub repository
-   - Select the `frontend` directory as root
+   - Set the **Root Directory** to `frontend`
+   - Make sure the project is using the Next.js framework preset
 
 3. **Set Environment Variables:**
    ```

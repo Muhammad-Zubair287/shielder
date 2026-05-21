@@ -48,9 +48,9 @@ https://inventory-management-system-production-30b1.up.railway.app
 ### 1. Vercel Project Settings
 1. Go to [Vercel.com](https://vercel.com)
 2. Import your GitHub repository
-3. **IMPORTANT**: Set **Root Directory** to `FrontEnd`
-4. **Framework Preset**: Other (static HTML)
-5. **Build Command**: Leave empty (no build needed)
+3. **IMPORTANT**: Set **Root Directory** to `frontend`
+4. **Framework Preset**: Next.js
+5. **Build Command**: Leave as the default `next build`
 6. **Output Directory**: Leave as default
 
 ### 2. Environment Configuration
