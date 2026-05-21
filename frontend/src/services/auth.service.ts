@@ -88,6 +88,58 @@ class AuthService {
   }
 
   /**
+   * Send OTP for forgot-password flow (email)
+   */
+  async sendForgotPasswordOtp(email: string): Promise<void> {
+    try {
+      await apiClient.post(`${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}/send-otp`, { email }, { timeout: 120000 });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Resend forgot-password OTP
+   */
+  async resendForgotPasswordOtp(email: string): Promise<void> {
+    try {
+      await apiClient.post(`${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}/resend-otp`, { email }, { timeout: 120000 });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Verify forgot-password OTP and receive a short-lived reset session token
+   */
+  async verifyForgotPasswordOtp(data: { email: string; code: string }): Promise<{ resetSessionToken: string; expiresInMinutes: number }> {
+    try {
+      const response = await apiClient.post<ApiResponse<{ resetSessionToken: string; expiresInMinutes: number }>>(
+        `${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}/verify-otp`,
+        data
+      );
+
+      return response.data.data!;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Reset password using forgot-password OTP reset session token
+   */
+  async resetPasswordWithForgotOtp(resetSessionToken: string, newPassword: string): Promise<void> {
+    try {
+      await apiClient.post(`${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}/reset`, {
+        resetSessionToken,
+        newPassword,
+      });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
    * Resend email verification link
    */
   async resendVerificationEmail(email: string): Promise<void> {

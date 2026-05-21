@@ -1,4 +1,5 @@
 import { VALIDATION_MESSAGES } from '@/constants/ui.constants';
+import { validatePassword } from '@/utils/password';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,7 +14,8 @@ export const validateResetPassword = (
   confirmPassword: string
 ): string | null => {
   if (!password || !confirmPassword) return VALIDATION_MESSAGES.REQUIRED_FIELD;
-  if (password.length < 8) return VALIDATION_MESSAGES.PASSWORD_TOO_SHORT;
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.isValid) return passwordValidation.errors[0];
   if (password !== confirmPassword) return VALIDATION_MESSAGES.PASSWORDS_DO_NOT_MATCH;
   return null;
 };

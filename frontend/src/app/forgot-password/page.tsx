@@ -13,7 +13,6 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +26,8 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      await authService.forgotPassword(email);
-      setSuccess(true);
+      await authService.sendForgotPasswordOtp(email);
+      router.push(`/forgot-password/verify?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
       const message =
         typeof err === 'object' &&
@@ -44,74 +43,57 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('checkEmail')}</h2>
-          <p className="text-slate-600 mb-6">
-            {t('reset Link Sent')} <span className="font-semibold">{email}</span>
-          </p>
-          <Link
-            href="/login"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            {t('back To Login')}
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('forgot Password')}</h1>
-        <p className="text-slate-600 mb-6">{t('enter Email To Reset')}</p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-            {error}
+    <div className="min-h-screen bg-gradient-to-b from-white via-orange-50/30 to-white px-4 py-8 flex items-start justify-center">
+      <div className="w-full max-w-sm pt-2">
+        <div className="mb-6 text-left">
+          <div className="inline-flex items-center gap-2 text-slate-900 font-extrabold tracking-[0.18em] text-xs">
+            <span className="w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-[10px]">S</span>
+            <span>SHIELDER</span>
           </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-              {t('email')}
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('Enter your email')}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">{t('forgot Password')}</h1>
+          <p className="text-sm text-slate-600 mb-6">{t('enter Email To Reset')}</p>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                {t('email')}
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t('Enter your email')}
+                className="w-full h-11 px-4 border border-slate-300 rounded-full focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none text-sm"
+                disabled={loading}
+              />
+            </div>
+
+            <button
+              type="submit"
               disabled={loading}
-            />
+              className="w-full h-11 bg-[#FF7A1A] text-white rounded-full font-semibold hover:bg-[#f06d08] disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {loading ? t('sending') : 'Submit'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-slate-600">{t('remember Password')}</span>{' '}
+            <Link href="/login" className="text-[#FF7A1A] hover:underline font-semibold">
+              {t('back To Login')}
+            </Link>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {loading ? t('sending') : t('send Reset Link')}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm">
-          <span className="text-slate-600">{t('remember Password')}</span>{' '}
-          <Link href="/login" className="text-blue-600 hover:underline font-semibold">
-            {t('back To Login')}
-          </Link>
         </div>
       </div>
     </div>
