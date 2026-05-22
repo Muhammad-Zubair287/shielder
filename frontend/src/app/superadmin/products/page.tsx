@@ -788,7 +788,16 @@ const ProductManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {products.length > 0 ? products.map((prod) => (
+              {products.length > 0 ? products.map((prod) => {
+                const resolvedImage = getImageUrl(prod.mainImage) ?? null;
+                if (prod.mainImage && !resolvedImage) {
+                  // Helpful debug: warn when DB mainImage exists but helper failed to resolve it
+                  // Inspect in browser console to find malformed paths for troubleshooting
+                  // eslint-disable-next-line no-console
+                  console.warn('[Product Image] unresolved mainImage for product', prod.id, prod.mainImage);
+                }
+
+                return (
                 <tr key={prod.id} className="hover:bg-gray-50/80 transition-colors group">
                   <td className="px-6 py-4 text-center align-top">
                     <input
@@ -803,7 +812,7 @@ const ProductManagement = () => {
                       <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center shadow-sm relative">
                         {prod.mainImage ? (
                           <Image 
-                            src={getImageUrl(prod.mainImage) || ''}
+                            src={resolvedImage || '/images/landing/factory-1.png'}
                             alt={prod.name} 
                             className="object-cover"
                             fill

@@ -8,28 +8,32 @@
 export const getImageUrl = (imagePath: string | null | undefined): string | null => {
   if (!imagePath) return null;
 
-  // If it's already a full URL (http, https, blob, data), return as is
-  if (
-    imagePath.startsWith('http://') ||
-    imagePath.startsWith('https://') ||
-    imagePath.startsWith('blob:') ||
-    imagePath.startsWith('data:')
-  ) {
-    return imagePath;
+  // Trim whitespace and normalize backslashes
+  let path = imagePath.trim().replace(/\\+/g, '/');
+
+  // Protocol-relative URLs (//cdn.example.com/...) - preserve by adding current protocol
+  if (path.startsWith('//') && typeof window !== 'undefined') {
+    return `${window.location.protocol}${path}`;
   }
 
-  // Seed/demo images stored under images/products-images/... or images/userend-images/...
-  // are served directly from the Next.js public folder (works on Vercel without a backend).
-  const normalized = (imagePath.startsWith('/') ? imagePath.slice(1) : imagePath)
-    // Normalize legacy folder names that had spaces
+  // If it's already a full URL (http, https, blob, data), return as is
+  if (
+    path.startsWith('http://') ||
+    path.startsWith('https://') ||
+    path.startsWith('blob:') ||
+    path.startsWith('data:')
+  ) {
+    return path;
+  }
+
+  // Normalize common legacy/public folder names and accidental nested upload paths
+  const normalized = (path.startsWith('/') ? path.slice(1) : path)
     .replace('images/products images/', 'images/products-images/')
     .replace('images/UserEnd images/', 'images/userend-images/')
     .replace('images/userend images/', 'images/userend-images/')
-    // Normalize accidental nested upload path produced by old scripts
     .replace(/^uploads\/products\/products\//, 'uploads/products/');
 
   if (normalized.startsWith('images/')) {
-    // Preserve the exact filename/path from DB and only URL-encode each path segment.
     const encoded = normalized
       .split('/')
       .map((segment) => encodeURIComponent(segment))
@@ -41,9 +45,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-  // Resolve backend origin safely.
-  // Important: when running the frontend locally, always prefer local backend
-  // even if NEXT_PUBLIC_UPLOADS_BASE_URL points to a production host.
+  // Resolve backend origin safely. Prefer local host when developing.
   let backendOrigin = '';
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
@@ -54,11 +56,11 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
       host === '::1';
 
     if (isLocalHost) {
-      backendOrigin = `http://${host}:5001`;
+      // Prefer explicit uploads base if provided, else fallback to common local backend
+      backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:4000`;
     }
   }
 
-  // Non-local environments: prefer explicit uploads base, then absolute API URL.
   if (!backendOrigin && uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
     backendOrigin = uploadsBase.replace(/\/$/, '');
   } else if (!backendOrigin && /^https?:\/\//i.test(apiUrl)) {
@@ -66,13 +68,11 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   } else if (!backendOrigin && typeof window !== 'undefined') {
     backendOrigin = window.location.origin;
   } else {
-    backendOrigin = 'http://localhost:5001';
+    backendOrigin = 'http://localhost:4000';
   }
 
-  // Ensure image path starts with /
   const uploadPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
 
-  // URL-encode each path segment while preserving slashes.
   const encodedPath = uploadPath
     .split('/')
     .map((segment) => encodeURIComponent(segment))
