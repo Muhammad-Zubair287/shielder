@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api.service';
 import { PRODUCTS_ITEMS_PER_PAGE } from '@/app/products/products.constants';
-import { resolveProductDescription, resolveProductImage, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
+import { resolveProductDescription, resolveProductImage, resolveProductImages, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
 
 export interface ProductsCatalogFilters {
   search: string;
