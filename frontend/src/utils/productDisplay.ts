@@ -22,8 +22,21 @@ export interface ProductDisplayLike {
   descriptionAr?: string;
   translations?: ProductTranslationLike[];
   mainImage?: string | null;
+  main_image?: string | null;
+  image?: string | null;
+  imageUrl?: string | null;
+  thumbnail?: string | null;
   images?: Array<string | null | undefined>;
   attachments?: Array<ProductAttachmentLike | null | undefined>;
+}
+
+function firstImageCandidate(values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
 }
 
 function findTranslation(product: ProductDisplayLike, locale: string): ProductTranslationLike | undefined {
@@ -84,14 +97,18 @@ export function resolveProductImage(product: ProductDisplayLike): string | null 
     return typeof attachment.mimeType === 'string' && attachment.mimeType.startsWith('image/');
   });
 
-  return (
-    product.mainImage ||
-    product.images?.[0] ||
-    imageAttachment?.fileUrl ||
-    product.attachments?.[0]?.fileUrl ||
-    product.attachments?.[0]?.url ||
-    null
-  );
+  return firstImageCandidate([
+    product.mainImage,
+    product.main_image,
+    product.image,
+    product.imageUrl,
+    product.thumbnail,
+    ...(product.images || []),
+    imageAttachment?.fileUrl,
+    imageAttachment?.url,
+    product.attachments?.[0]?.fileUrl,
+    product.attachments?.[0]?.url,
+  ]);
 }
 
 export function resolveProductImages(product: ProductDisplayLike): string[] {
@@ -107,6 +124,10 @@ export function resolveProductImages(product: ProductDisplayLike): string[] {
   return Array.from(
     new Set([
       product.mainImage,
+      product.main_image,
+      product.image,
+      product.imageUrl,
+      product.thumbnail,
       ...(product.images || []),
       ...attachmentImages,
     ].filter((imageUrl): imageUrl is string => Boolean(imageUrl)))

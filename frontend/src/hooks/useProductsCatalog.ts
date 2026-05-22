@@ -109,6 +109,7 @@ export function useProductsCatalog({ filters, page, locale }: UseProductsCatalog
             name: resolveProductName(item as ProductDisplayLike, locale),
             description: resolveProductDescription(item as ProductDisplayLike, locale),
             mainImage: resolveProductImage(item as ProductDisplayLike) ?? item.mainImage,
+            images: resolveProductImages(item as ProductDisplayLike),
           })),
           total: data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length,
         };

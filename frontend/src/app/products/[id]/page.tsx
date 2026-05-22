@@ -12,6 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { useQuotation } from '@/contexts/QuotationContext';
 import { getImageUrl } from '@/utils/helpers';
+import { resolveProductImage, resolveProductImages, resolveProductDescription, resolveProductName } from '@/utils/productDisplay';
 import SARSymbol from '@/components/SARSymbol';
 import { useAuthStore } from '@/store/auth.store';
 import { useProduct } from '@/hooks/useProduct';
@@ -83,7 +84,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const images = [product.mainImage, ...(product.images || [])].filter(Boolean);
+  const images = resolveProductImages(product);
   const currentImage = images[selectedImageIndex] ? getImageUrl(images[selectedImageIndex]) : null;
   const price = Number(product.price);
   const originalPrice = Number(product.originalPrice ?? price * 1.2);
@@ -631,9 +632,9 @@ export default function ProductDetailPage() {
                   <Link key={p.id} href={`/products/${p.id}`} passHref>
                     <div className={`bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg transition-all cursor-pointer animate-fade-in`} style={{animationDelay: `${idx * 100}ms`}}>
                       <div className="relative h-48 bg-gray-100 overflow-hidden">
-                        {p.mainImage ? (
+                        {resolveProductImage(p) ? (
                           <img
-                            src={getImageUrl(p.mainImage) || ''}
+                            src={getImageUrl(resolveProductImage(p)) || ''}
                             alt={p.name}
                             className="w-full h-full object-cover hover:scale-110 transition-transform"
                           />
