@@ -790,12 +790,6 @@ const ProductManagement = () => {
             <tbody className="divide-y divide-gray-50">
               {products.length > 0 ? products.map((prod) => {
                 const resolvedImage = getImageUrl(prod.mainImage) ?? null;
-                if (prod.mainImage && !resolvedImage) {
-                  // Helpful debug: warn when DB mainImage exists but helper failed to resolve it
-                  // Inspect in browser console to find malformed paths for troubleshooting
-                  // eslint-disable-next-line no-console
-                  console.warn('[Product Image] unresolved mainImage for product', prod.id, prod.mainImage);
-                }
 
                 return (
                 <tr key={prod.id} className="hover:bg-gray-50/80 transition-colors group">
@@ -907,6 +901,7 @@ const ProductManagement = () => {
                     </div>
                   </td>
                 </tr>
+              );
               }) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-20 text-center">
