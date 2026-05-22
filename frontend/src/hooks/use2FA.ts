@@ -38,7 +38,7 @@ export const use2FA = (): Use2FAResult => {
         userId,
         code,
         otpSessionToken: sessionToken,
-        rememberDevice: rememberDevice || false,
+        rememberDevice: rememberDevice !== false, // Default to true if undefined or true
       });
 
       // Keep zustand auth state in sync immediately after OTP login.

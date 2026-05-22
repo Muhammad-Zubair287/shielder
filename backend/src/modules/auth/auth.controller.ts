@@ -586,9 +586,11 @@ class AuthController {
       res.cookie('trustedDeviceToken', result.trustedDeviceToken, {
         httpOnly: true,
         secure: env.isProduction,
-        sameSite: env.isProduction ? 'none' : 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: env.isProduction ? 'none' : 'strict', // Use 'strict' in development for same-site requests
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: '/',
+        // In development, let browser use request's exact domain
+        // In production, this may need to be explicitly set to your domain
       });
     }
 

@@ -458,10 +458,11 @@ export class AuthService {
         deviceInfo?.trustedDeviceToken
       ) {
         try {
+          logger.info(`Checking trusted device token for user ${user.email}`);
           const { TrustedDeviceService } = await import('./trustedDevice.service');
           const record = await TrustedDeviceService.verifyDeviceToken(deviceInfo.trustedDeviceToken!);
           if (record && record.userId === user.id) {
-            logger.info(`Trusted device token valid - skipping 2FA for user ${user.email}`);
+            logger.info(`✅ Trusted device token VALID - skipping 2FA for user ${user.email}`);
 
             // Proceed to generate token pair and return normal auth response
             const tokenPayload = {
@@ -497,11 +498,15 @@ export class AuthService {
               user: this.sanitizeUser(user),
               tokens,
             };
+          } else {
+            logger.warn(`⚠️ Trusted device token invalid or doesn't match user ${user.email}`);
           }
         } catch (err) {
-          logger.error('Error verifying trusted device token during login:', err);
+          logger.warn(`⚠️ Error verifying trusted device token during login: ${err instanceof Error ? err.message : String(err)}`);
           // Fall through to normal 2FA flow if verification fails
         }
+      } else if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        logger.info(`ℹ️ No trusted device token found for ${user.email} - will require 2FA`);
       }
 
       const tokenPayload = {
