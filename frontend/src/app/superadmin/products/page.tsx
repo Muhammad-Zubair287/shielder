@@ -907,7 +907,7 @@ const ProductManagement = () => {
                     </div>
                   </td>
                 </tr>
-              )) : (
+              }) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 text-gray-400 italic">
