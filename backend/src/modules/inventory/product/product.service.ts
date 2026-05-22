@@ -727,6 +727,7 @@ export class ProductService {
         where,
         include: {
           translations: true,
+          attachments: true,
           category: { include: { translations: { where: { locale } } } },
           subcategory: { include: { translations: { where: { locale } } } },
           brand: { include: { brand_translations: { where: { locale } } } },
