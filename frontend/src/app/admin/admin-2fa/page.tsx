@@ -34,7 +34,7 @@ const parseOtpError = (message: string) => {
 export default function AdminTwoFactorPage() {
   const router = useRouter();
   const [otpCode, setOtpCode] = useState('');
-  const [rememberDevice, setRememberDevice] = useState(false);
+  const [rememberDevice, setRememberDevice] = useState(true);
   const { verifyOTP, loading, error } = use2FA();
   const [localError, setLocalError] = useState('');
   const [userId, setUserId] = useState('');

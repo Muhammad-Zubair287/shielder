@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/auth.store';
 import type { AuthResponse } from '@/types';
 
 interface Use2FAResult {
@@ -21,6 +22,7 @@ interface Use2FAResult {
 export const use2FA = (): Use2FAResult => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const verifyOTP = async (
     userId: string,
@@ -38,6 +40,12 @@ export const use2FA = (): Use2FAResult => {
         otpSessionToken: sessionToken,
         rememberDevice: rememberDevice || false,
       });
+
+      // Keep zustand auth state in sync immediately after OTP login.
+      // Without this, protected routes can briefly treat the user as unauthenticated.
+      if (data.user) {
+        setUser(data.user);
+      }
 
       return {
         success: true,

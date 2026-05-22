@@ -458,7 +458,7 @@ export class ProductService {
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
-        translations: locale ? { where: { locale } } : true,
+        translations: true,
         category: { include: { translations: locale ? { where: { locale } } : true } },
         subcategory: { include: { translations: locale ? { where: { locale } } : true } },
         brand: { include: { brand_translations: locale ? { where: { locale } } : true } },
@@ -480,12 +480,20 @@ export class ProductService {
     const availableStock = availableStockMap.get(product.id) ?? Number(product.stock);
     
     // Format for easier frontend usage
+    const localeTranslation = locale ? product.translations.find((translation) => translation.locale === locale || translation.language === locale) : undefined;
+    const englishTranslation = product.translations.find((translation) => translation.locale === 'en' || translation.language === 'en');
+    const arabicTranslation = product.translations.find((translation) => translation.locale === 'ar' || translation.language === 'ar');
+
     return {
       ...product,
       stock: availableStock,
       availableStock,
-      name: product.translations[0]?.name || 'Unnamed Product',
-      description: product.translations[0]?.description || '',
+      name: localeTranslation?.name || englishTranslation?.name || arabicTranslation?.name || 'Unnamed Product',
+      description: localeTranslation?.description || englishTranslation?.description || arabicTranslation?.description || '',
+      nameEn: englishTranslation?.name || '',
+      descriptionEn: englishTranslation?.description || '',
+      nameAr: arabicTranslation?.name || '',
+      descriptionAr: arabicTranslation?.description || '',
     };
   }
 
@@ -718,7 +726,7 @@ export class ProductService {
       prisma.product.findMany({
         where,
         include: {
-          translations: { where: { locale } },
+          translations: true,
           category: { include: { translations: { where: { locale } } } },
           subcategory: { include: { translations: { where: { locale } } } },
           brand: { include: { brand_translations: { where: { locale } } } },
@@ -735,12 +743,20 @@ export class ProductService {
     return {
       products: products.map((p) => {
         const availableStock = availableStockMap.get(p.id) ?? Number(p.stock);
+        const localeTranslation = p.translations.find((translation) => translation.locale === locale || translation.language === locale);
+        const englishTranslation = p.translations.find((translation) => translation.locale === 'en' || translation.language === 'en');
+        const arabicTranslation = p.translations.find((translation) => translation.locale === 'ar' || translation.language === 'ar');
+
         return {
           ...p,
           stock: availableStock,
           availableStock,
-          name: p.translations[0]?.name || '',
-          description: p.translations[0]?.description || '',
+          name: localeTranslation?.name || englishTranslation?.name || arabicTranslation?.name || '',
+          description: localeTranslation?.description || englishTranslation?.description || arabicTranslation?.description || '',
+          nameEn: englishTranslation?.name || '',
+          descriptionEn: englishTranslation?.description || '',
+          nameAr: arabicTranslation?.name || '',
+          descriptionAr: arabicTranslation?.description || '',
           categoryName: p.category?.translations[0]?.name || '',
         };
       }),

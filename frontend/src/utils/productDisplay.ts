@@ -38,6 +38,7 @@ function resolveLocalizedText(
   const translation = findTranslation(product, locale);
   const englishTranslation = findTranslation(product, 'en');
   const arabicTranslation = findTranslation(product, 'ar');
+  const anyTranslation = product.translations?.find((item) => Boolean(item?.[field]));
 
   const localeValue = translation?.[field];
   const englishValue = englishTranslation?.[field];
@@ -51,6 +52,7 @@ function resolveLocalizedText(
       product[field] ||
       (field === 'name' ? product.nameEn : product.descriptionEn) ||
       englishValue ||
+      anyTranslation?.[field] ||
       ''
     );
   }
@@ -62,6 +64,7 @@ function resolveLocalizedText(
     product[field] ||
     (field === 'name' ? product.nameAr : product.descriptionAr) ||
     arabicValue ||
+    anyTranslation?.[field] ||
     ''
   );
 }
