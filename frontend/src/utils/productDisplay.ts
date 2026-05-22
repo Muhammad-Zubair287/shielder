@@ -93,3 +93,22 @@ export function resolveProductImage(product: ProductDisplayLike): string | null 
     null
   );
 }
+
+export function resolveProductImages(product: ProductDisplayLike): string[] {
+  const attachmentImages = (product.attachments || [])
+    .filter((attachment) => {
+      if (!attachment) return false;
+      if (attachment.type === 'IMAGE') return true;
+      return typeof attachment.mimeType === 'string' && attachment.mimeType.startsWith('image/');
+    })
+    .flatMap((attachment) => [attachment?.fileUrl, attachment?.url])
+    .filter((imageUrl): imageUrl is string => Boolean(imageUrl));
+
+  return Array.from(
+    new Set([
+      product.mainImage,
+      ...(product.images || []),
+      ...attachmentImages,
+    ].filter((imageUrl): imageUrl is string => Boolean(imageUrl)))
+  );
+}

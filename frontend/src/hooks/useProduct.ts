@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import apiClient from '@/services/api.service';
-import { resolveProductDescription, resolveProductImage, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
+import { resolveProductDescription, resolveProductImage, resolveProductImages, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
 
 export interface Product {
   id: string;
@@ -20,7 +20,6 @@ export interface Product {
   originalPrice?: number | string;
   mainImage?: string;
   images?: string[];
-  attachments?: Array<ProductAttachmentLike>;
   category?: { id?: string; name: string };
   categoryId?: string;
   categoryName?: string;
@@ -77,6 +76,7 @@ export const useProduct = (productId: string, locale = 'en'): UseProductResult =
           name: resolveProductName(productData as ProductDisplayLike, locale),
           description: resolveProductDescription(productData as ProductDisplayLike, locale),
           mainImage: resolveProductImage(productData as ProductDisplayLike) ?? productData.mainImage,
+          images: resolveProductImages(productData as ProductDisplayLike),
         };
         setProduct(normalizedProduct);
 
@@ -101,6 +101,7 @@ export const useProduct = (productId: string, locale = 'en'): UseProductResult =
                 name: resolveProductName(item as ProductDisplayLike, locale),
                 description: resolveProductDescription(item as ProductDisplayLike, locale),
                 mainImage: resolveProductImage(item as ProductDisplayLike) ?? item.mainImage,
+                images: resolveProductImages(item as ProductDisplayLike),
               }))
           );
         } else {
