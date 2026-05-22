@@ -480,9 +480,9 @@ export class ProductService {
     const availableStock = availableStockMap.get(product.id) ?? Number(product.stock);
     
     // Format for easier frontend usage
-    const localeTranslation = locale ? product.translations.find((translation) => translation.locale === locale || translation.language === locale) : undefined;
-    const englishTranslation = product.translations.find((translation) => translation.locale === 'en' || translation.language === 'en');
-    const arabicTranslation = product.translations.find((translation) => translation.locale === 'ar' || translation.language === 'ar');
+    const localeTranslation = locale ? product.translations.find((translation) => translation.locale === locale) : undefined;
+    const englishTranslation = product.translations.find((translation) => translation.locale === 'en');
+    const arabicTranslation = product.translations.find((translation) => translation.locale === 'ar');
 
     return {
       ...product,
@@ -743,9 +743,9 @@ export class ProductService {
     return {
       products: products.map((p) => {
         const availableStock = availableStockMap.get(p.id) ?? Number(p.stock);
-        const localeTranslation = p.translations.find((translation) => translation.locale === locale || translation.language === locale);
-        const englishTranslation = p.translations.find((translation) => translation.locale === 'en' || translation.language === 'en');
-        const arabicTranslation = p.translations.find((translation) => translation.locale === 'ar' || translation.language === 'ar');
+        const localeTranslation = p.translations.find((translation) => translation.locale === locale);
+        const englishTranslation = p.translations.find((translation) => translation.locale === 'en');
+        const arabicTranslation = p.translations.find((translation) => translation.locale === 'ar');
 
         return {
           ...p,
