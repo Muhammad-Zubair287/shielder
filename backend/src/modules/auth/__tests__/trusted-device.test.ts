@@ -3,11 +3,34 @@ import bcrypt from 'bcryptjs';
 import { AuthService } from '../auth.service';
 import { TrustedDeviceService } from '../trustedDevice.service';
 import { TwoFactorService } from '../twofa.service';
+import { TokenService } from '../token.service';
 
 describe('Trusted device login flow', () => {
   let userId: string;
   let email = 'trusted-test-' + Date.now() + '@example.com';
   const password = 'P@ssw0rd!';
+  let realUserUpdate: any;
+
+  beforeAll(() => {
+    realUserUpdate = prisma.user.update.bind(prisma.user);
+    jest.spyOn(TokenService, 'generateTokenPair').mockResolvedValue({
+      accessToken: 'test-access-token',
+      refreshToken: 'test-refresh-token',
+    });
+    jest.spyOn(prisma.refreshToken, 'create').mockResolvedValue({} as never);
+    jest.spyOn(prisma.trustedDevice, 'update').mockImplementation(async (args: any) => {
+      const record = await prisma.trustedDevice.findUnique({ where: args.where });
+      return (record || {}) as never;
+    });
+    jest.spyOn(prisma.user, 'update').mockImplementation(async (args: any) => {
+      if (args?.data && Object.prototype.hasOwnProperty.call(args.data, 'otpSessionToken')) {
+        return realUserUpdate(args);
+      }
+
+      const record = await prisma.user.findUnique({ where: args.where });
+      return (record || {}) as never;
+    });
+  });
 
   beforeAll(async () => {
     // Create test user (ADMIN)
@@ -28,7 +51,9 @@ describe('Trusted device login flow', () => {
 
   afterAll(async () => {
     await prisma.trustedDevice.deleteMany({ where: { userId } });
+    await prisma.twoFactorOTP.deleteMany({ where: { userId } });
     await prisma.user.deleteMany({ where: { email } });
+    jest.restoreAllMocks();
   }, 30000);
 
   test('login with valid trusted device token skips 2FA', async () => {
@@ -57,7 +82,8 @@ describe('Trusted device login flow', () => {
       userId,
       otp,
       otpSessionToken,
-      { userAgent: 'jest-agent', ipAddress: '127.0.0.1' }
+      { userAgent: 'jest-agent', ipAddress: '127.0.0.1' },
+      true
     );
 
     expect(result.trustedDeviceToken).toBeDefined();

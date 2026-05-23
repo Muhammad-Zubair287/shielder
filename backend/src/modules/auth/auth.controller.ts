@@ -586,7 +586,7 @@ class AuthController {
       res.cookie('trustedDeviceToken', result.trustedDeviceToken, {
         httpOnly: true,
         secure: env.isProduction,
-        sameSite: env.isProduction ? 'none' : 'strict', // Use 'strict' in development for same-site requests
+        sameSite: env.isProduction ? 'none' : 'lax', // Use 'lax' in development so frontend can send cookie across localhost origins
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: '/',
         // In development, let browser use request's exact domain
