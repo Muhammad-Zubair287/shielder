@@ -11,6 +11,18 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   // Trim whitespace and normalize backslashes
   let path = imagePath.trim().replace(/\\+/g, '/');
 
+  const splitQuery = (value: string) => {
+    const queryIndex = value.indexOf('?');
+    if (queryIndex === -1) {
+      return { pathname: value, query: '' };
+    }
+
+    return {
+      pathname: value.slice(0, queryIndex),
+      query: value.slice(queryIndex),
+    };
+  };
+
   // Protocol-relative URLs (//cdn.example.com/...) - preserve by adding current protocol
   if (path.startsWith('//') && typeof window !== 'undefined') {
     return `${window.location.protocol}${path}`;
@@ -27,18 +39,57 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   }
 
   // Normalize common legacy/public folder names and accidental nested upload paths
-  const normalized = (path.startsWith('/') ? path.slice(1) : path)
+  const { pathname: rawPath, query } = splitQuery(path);
+
+  const normalized = (rawPath.startsWith('/') ? rawPath.slice(1) : rawPath)
     .replace('images/products images/', 'images/products-images/')
     .replace('images/UserEnd images/', 'images/userend-images/')
     .replace('images/userend images/', 'images/userend-images/')
     .replace(/^uploads\/products\/products\//, 'uploads/products/');
+
+  if (normalized.startsWith('images/products-images/')) {
+    const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+    let backendOrigin = '';
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      const isLocalHost =
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '0.0.0.0' ||
+        host === '::1';
+
+      if (isLocalHost) {
+        backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:4000`;
+      }
+    }
+
+    if (!backendOrigin && uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
+      backendOrigin = uploadsBase.replace(/\/$/, '');
+    } else if (!backendOrigin && /^https?:\/\//i.test(apiUrl)) {
+      backendOrigin = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
+    } else if (!backendOrigin && typeof window !== 'undefined') {
+      backendOrigin = window.location.origin;
+    } else {
+      backendOrigin = 'http://localhost:4000';
+    }
+
+    const encodedProductPath = normalized
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')
+      .replace(/%3A/g, ':');
+
+    return `${backendOrigin}/${encodedProductPath}${query}`;
+  }
 
   if (normalized.startsWith('images/')) {
     const encoded = normalized
       .split('/')
       .map((segment) => encodeURIComponent(segment))
       .join('/');
-    return `/${encoded}`;
+    return `/${encoded}${query}`;
   }
 
   // User-uploaded files (uploads/...) are served by the backend.
@@ -79,7 +130,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     .join('/')
     .replace(/%3A/g, ':');
 
-  return `${backendOrigin}${encodedPath}`;
+  return `${backendOrigin}${encodedPath}${query}`;
 };
 
 /**

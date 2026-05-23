@@ -1,50 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { productService } from './product.service';
 import { ProductStatus } from '@prisma/client';
-
-const getRequestOrigin = (req: Request): string => {
-  const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
-  const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
-  const isProduction = process.env.NODE_ENV === 'production';
-  const protocol = isProduction ? 'https' : (forwardedProto || req.protocol);
-  const host = forwardedHost || req.get('host');
-
-  return host ? `${protocol}://${host}` : '';
-};
-
-const resolvePublicImageUrl = (req: Request, imagePath?: string | null): string | null => {
-  if (!imagePath) return null;
-
-  if (/^(https?:\/\/|data:|blob:)/i.test(imagePath)) {
-    return imagePath;
-  }
-
-  const normalized = imagePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
-  const pathPart = normalized.startsWith('/') ? normalized : `/${normalized}`;
-
-  if (
-    normalized.startsWith('images/') ||
-    normalized.startsWith('uploads/') ||
-    pathPart.startsWith('/images/') ||
-    pathPart.startsWith('/uploads/')
-  ) {
-    const origin = getRequestOrigin(req);
-    return origin ? `${origin}${pathPart}` : pathPart;
-  }
-
-  return imagePath;
-};
+import { resolvePublicProductImageUrl } from '@/common/services/product-image.service';
 
 const normalizeProductResponse = (req: Request, product: any) => {
   if (!product) return product;
 
+  const updatedAt = product.updatedAt || product.updated_at || product.createdAt || product.created_at;
+
   return {
     ...product,
-    mainImage: resolvePublicImageUrl(req, product.mainImage),
+    mainImage: resolvePublicProductImageUrl(req, product.mainImage, updatedAt),
     attachments: Array.isArray(product.attachments)
       ? product.attachments.map((attachment: any) => ({
           ...attachment,
-          fileUrl: resolvePublicImageUrl(req, attachment.fileUrl),
+          fileUrl: resolvePublicProductImageUrl(req, attachment.fileUrl, attachment.updatedAt || updatedAt),
         }))
       : product.attachments,
   };
@@ -348,12 +318,12 @@ export class ProductController {
         res.status(400).json({ success: false, message: 'No image file provided' });
         return;
       }
-      const imageUrl = `/uploads/products/${req.file.filename}`;
+      const imageUrl = `images/products-images/${req.file.filename}`;
       const product = await productService.update(String(req.params.id), { mainImage: imageUrl });
       res.json({
         success: true,
         data: {
-          mainImage: resolvePublicImageUrl(req, imageUrl),
+          mainImage: resolvePublicProductImageUrl(req, imageUrl, product.updatedAt),
           product: normalizeProductResponse(req, product),
         },
       });

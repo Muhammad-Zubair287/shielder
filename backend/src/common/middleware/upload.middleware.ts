@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { ApiError } from '../errors/api.error';
+import { ensureProductImageDir } from '../services/product-image.service';
 
 // Ensure upload directory exists
 const uploadDir = 'uploads';
@@ -17,7 +18,7 @@ const storage = multer.diskStorage({
     } else if (file.fieldname === 'profileImage') {
       folder = path.join(uploadDir, 'profile');
     } else if (file.fieldname === 'productImage') {
-      folder = path.join(uploadDir, 'products');
+      folder = ensureProductImageDir();
     }
     
     if (!fs.existsSync(folder)) {
@@ -25,8 +26,14 @@ const storage = multer.diskStorage({
     }
     cb(null, folder);
   },
-  filename: (_req, file, cb) => {
+  filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    if (file.fieldname === 'productImage') {
+      const productId = typeof req.params?.id === 'string' && req.params.id ? req.params.id : 'product';
+      cb(null, `${productId}-${uniqueSuffix}${path.extname(file.originalname)}`);
+      return;
+    }
+
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   },
 });
