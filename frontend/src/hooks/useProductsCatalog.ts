@@ -118,7 +118,15 @@ export function useProductsCatalog({ filters, page, locale }: UseProductsCatalog
         return { products: [], total: 0 };
       }
     },
-    placeholderData: (previousData) => previousData,
+    // Shorter staleTime = more frequent refetches = fresher image URLs
+    // 10 seconds to catch newly uploaded images
+    staleTime: 10 * 1000,
+    // Still cache for 5 mins to reduce API load
+    gcTime: 5 * 60 * 1000,
+    // IMPORTANT: Don't use old cached data as placeholder for images
+    // When stale, show loading state instead of old images
+    // This prevents showing "No Image" when the image was actually uploaded
+    placeholderData: undefined,
   });
 
   const categoriesQuery = useQuery({

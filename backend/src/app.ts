@@ -120,6 +120,19 @@ export const createApp = (): Application => {
     }));
   }
 
+  // Images with version query string (?v=...) should never be cached
+  // because the version changes on update, and we want the browser to always
+  // fetch the latest version
+  app.use('/images', (req, res, next) => {
+    // If URL has ?v= query parameter, disable browser cache entirely
+    if (req.url.includes('?v=')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    next();
+  });
+
   // Serve root-level images folder (used by seed data / demo images)
   for (const root of staticImageRoots) {
     app.use('/images', express.static(root, {
