@@ -145,6 +145,29 @@ class AuthService {
   }
 
   /**
+   * Get list of trusted devices for current user
+   */
+  async getTrustedDevices(): Promise<any[]> {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.AUTH.TRUSTED_DEVICES);
+      return response.data.data?.devices || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Revoke a trusted device by token
+   */
+  async revokeTrustedDevice(token: string): Promise<void> {
+    try {
+      await apiClient.delete(API_ENDPOINTS.AUTH.TRUSTED_DEVICE_REVOKE(token));
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
    * Reset password using forgot-password OTP reset session token
    */
   async resetPasswordWithForgotOtp(resetSessionToken: string, newPassword: string): Promise<void> {

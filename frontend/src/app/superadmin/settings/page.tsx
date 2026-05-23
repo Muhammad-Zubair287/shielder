@@ -61,6 +61,8 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [trustedDevices, setTrustedDevices] = useState<any[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -84,6 +86,36 @@ export default function SettingsPage() {
        }
     }
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'security') {
+      fetchTrustedDevices();
+    }
+  }, [activeTab]);
+
+  const fetchTrustedDevices = async () => {
+    setDevicesLoading(true);
+    try {
+      const devices = await authService.getTrustedDevices();
+      setTrustedDevices(Array.isArray(devices) ? devices : []);
+    } catch (err) {
+      console.error('Failed to fetch trusted devices', err);
+      toast.error('Failed to load trusted devices');
+      setTrustedDevices([]);
+    } finally {
+      setDevicesLoading(false);
+    }
+  };
+
+  const handleRevokeDevice = async (token: string) => {
+    try {
+      await authService.revokeTrustedDevice(token);
+      toast.success('Trusted device revoked');
+      fetchTrustedDevices();
+    } catch (err) {
+      toast.error('Failed to revoke trusted device');
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'logs') {
@@ -266,7 +298,7 @@ export default function SettingsPage() {
           {activeTab === 'order' && renderOrderTab(formData, handleInputChange, t)}
           {activeTab === 'payment' && renderPaymentTab(formData, handleInputChange, t, showSecret, setShowSecret)}
           {activeTab === 'notification' && renderNotificationTab(formData, handleInputChange, t)}
-          {activeTab === 'security' && renderSecurityTab(formData, handleInputChange, t)}
+          {activeTab === 'security' && renderSecurityTab(formData, handleInputChange, t, trustedDevices, devicesLoading, handleRevokeDevice)}
           {activeTab === 'backup' && renderBackupTab(formData, handleInputChange, () => setShowConfirmModal(true), () => setPendingAction(() => () => triggerBackup()), t)}
           {activeTab === 'logs' && <LogsTab logs={logs} loading={logsLoading} t={t} />}
 
@@ -817,7 +849,14 @@ function renderNotificationTab(data: SystemSettings, onChange: OnChangeType, t: 
   );
 }
 
-function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key: string) => string) {
+function renderSecurityTab(
+  data: SystemSettings,
+  onChange: OnChangeType,
+  t: (key: string) => string,
+  trustedDevices: any[],
+  devicesLoading: boolean,
+  onRevoke: (token: string) => void
+) {
   const getRangeStyle = (value: number, min: number, max: number): React.CSSProperties => {
    const percent = ((value - min) / (max - min)) * 100;
    return {
@@ -834,7 +873,7 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
 
   return (
     <div className="space-y-10">
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
        <div className="bg-gray-50/60 p-6 rounded-3xl border border-gray-200 shadow-sm">
          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">{t('settingPasswordComplexity')}</label>
              <div className="flex items-center justify-between mb-2">
@@ -980,6 +1019,37 @@ function renderBackupTab(data: SystemSettings, onChange: OnChangeType, onVerify:
                </div>
             </div>
          </div>
+      </div>
+      {/* Trusted Devices List */}
+      <div className="mt-6">
+        <h3 className="text-sm font-black text-gray-800 uppercase mb-3">Trusted Devices</h3>
+        <p className="text-xs text-gray-500 mb-4">Manage devices you have chosen to remember. Revoking a device will require 2FA on next login from that device.</p>
+        <div className="space-y-3">
+          {devicesLoading ? (
+            <div className="text-sm text-gray-500">Loading devices...</div>
+          ) : trustedDevices.length === 0 ? (
+            <div className="text-sm text-gray-500">No trusted devices remembered.</div>
+          ) : (
+            trustedDevices.map((d) => (
+              <div key={d.id || d.token} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl p-3">
+                <div>
+                  <div className="text-sm font-bold text-shielder-dark">{d.name || d.deviceInfo || 'Unnamed device'}</div>
+                  <div className="text-xs text-gray-500">{d.ipAddress ? `${d.ipAddress} · ` : ''}{d.deviceInfo}</div>
+                  <div className="text-xs text-gray-400">Added {d.createdAt ? new Date(d.createdAt).toLocaleString() : '—'}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-gray-400 mr-3">Expires {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString() : '—'}</div>
+                  <button
+                    onClick={() => onRevoke(d.token)}
+                    className="px-3 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold border border-red-100 hover:bg-red-100"
+                  >
+                    Revoke
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

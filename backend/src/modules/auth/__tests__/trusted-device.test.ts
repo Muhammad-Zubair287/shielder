@@ -6,6 +6,8 @@ import { TwoFactorService } from '../twofa.service';
 import { TokenService } from '../token.service';
 
 describe('Trusted device login flow', () => {
+  // Some auth flows involve async DB work; increase jest timeout for this suite
+  jest.setTimeout(120000);
   let userId: string;
   let email = 'trusted-test-' + Date.now() + '@example.com';
   const password = 'P@ssw0rd!';

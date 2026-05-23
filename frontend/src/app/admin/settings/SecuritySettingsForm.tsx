@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import TrustedDeviceList from './TrustedDeviceList';
 import { ShieldAlert } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import authService from '@/services/auth.service';
@@ -163,6 +164,10 @@ export default function SecuritySettingsForm({ settings, onSaved }: Props) {
         >
           Clear remembered device
         </button>
+      </FormSection>
+
+      <FormSection title="Trusted Devices" description="Manage devices remembered by this account.">
+        <TrustedDeviceList />
       </FormSection>
 
       <SaveBar
