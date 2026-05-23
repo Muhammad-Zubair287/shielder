@@ -62,10 +62,10 @@ function resolveLocalizedText(
       localeValue ||
       (field === 'name' ? product.nameAr : product.descriptionAr) ||
       arabicValue ||
-      product[field] ||
       (field === 'name' ? product.nameEn : product.descriptionEn) ||
       englishValue ||
       anyTranslation?.[field] ||
+      product[field] ||
       ''
     );
   }
@@ -74,10 +74,10 @@ function resolveLocalizedText(
     localeValue ||
     (field === 'name' ? product.nameEn : product.descriptionEn) ||
     englishValue ||
-    product[field] ||
     (field === 'name' ? product.nameAr : product.descriptionAr) ||
     arabicValue ||
     anyTranslation?.[field] ||
+    product[field] ||
     ''
   );
 }
