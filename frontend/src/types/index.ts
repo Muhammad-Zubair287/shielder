@@ -70,6 +70,7 @@ export interface AuthResponse {
   emailDeliveryStatus?: 'email_sent' | 'auto_verified';
   requiresTwoFactor?: boolean;
   otpSessionToken?: string;
+  trustedDeviceToken?: string;
 }
 
 export interface RefreshTokenRequest {

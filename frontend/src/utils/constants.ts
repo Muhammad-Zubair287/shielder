@@ -139,6 +139,7 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'shielder_access_token',
   REFRESH_TOKEN: 'shielder_refresh_token',
   USER: 'shielder_user',
+  TRUSTED_DEVICE_TOKEN: 'shielder_trusted_device_token',
   LOCALE: 'shielder_locale',
   CART: 'shielder_cart',
   LAST_ACTIVITY_AT: 'shielder_last_activity_at',

@@ -587,11 +587,8 @@ class AuthController {
         httpOnly: true,
         secure: env.isProduction,
         sameSite: env.isProduction ? 'none' : 'lax', // Use 'lax' in development so frontend can send cookie across localhost origins
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            domain: env.isProduction ? undefined : 'localhost',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
         path: '/',
-        // In development, let browser use request's exact domain
-        // In production, this may need to be explicitly set to your domain
       });
     }
 

@@ -28,6 +28,7 @@ import {
   Globe
 } from 'lucide-react';
 import settingsService, { SystemSettings } from '@/services/settings.service';
+import authService from '@/services/auth.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
 import { format } from 'date-fns';
@@ -932,6 +933,23 @@ function renderSecurityTab(data: SystemSettings, onChange: OnChangeType, t: (key
               </button>
           </div>
        </div>
+
+           <div className="bg-gray-50/70 rounded-3xl border border-gray-200 p-6 flex items-center justify-between gap-4">
+             <div>
+               <h4 className="text-sm font-black text-shielder-dark uppercase tracking-tight">Trusted Device</h4>
+               <p className="text-[10px] text-gray-500 font-medium mt-1">Clear the remembered device token stored in this browser.</p>
+             </div>
+             <button
+               type="button"
+               onClick={() => {
+                authService.clearTrustedDeviceToken();
+                toast.success('Remembered device cleared');
+               }}
+               className="shrink-0 inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-700 hover:bg-white transition-colors"
+             >
+               Clear remembered device
+             </button>
+           </div>
     </div>
   );
 }

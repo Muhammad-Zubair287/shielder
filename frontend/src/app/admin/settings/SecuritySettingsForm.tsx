@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { ShieldAlert } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import authService from '@/services/auth.service';
 import settingsService from '@/services/settings.service';
 import {
   FormSection, FormRow, NumberInput, ToggleSwitch, SaveBar,
@@ -79,6 +80,11 @@ export default function SecuritySettingsForm({ settings, onSaved }: Props) {
     }
   };
 
+  const handleClearTrustedDevice = () => {
+    authService.clearTrustedDeviceToken();
+    toast.success('Remembered device cleared');
+  };
+
   return (
     <div className="space-y-6">
       {/* Warning banner */}
@@ -147,6 +153,16 @@ export default function SecuritySettingsForm({ settings, onSaved }: Props) {
           label={t('settingsEnable2FA')}
           description={t('settingsEnable2FADesc')}
         />
+      </FormSection>
+
+      <FormSection title="Trusted Device" description="Clear the remembered device token stored in this browser.">
+        <button
+          type="button"
+          onClick={handleClearTrustedDevice}
+          className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Clear remembered device
+        </button>
       </FormSection>
 
       <SaveBar

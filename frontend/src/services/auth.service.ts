@@ -23,6 +23,25 @@ type StorableAuthData = Partial<AuthResponse> & {
  * Auth Service Class
  */
 class AuthService {
+  private getTrustedDeviceToken(): string | null {
+    if (typeof window === 'undefined') return null;
+
+    return localStorage.getItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN);
+  }
+
+  private setTrustedDeviceToken(token: string): void {
+    if (typeof window === 'undefined') return;
+
+    localStorage.setItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN, token);
+  }
+
+  clearTrustedDeviceToken(): void {
+    if (typeof window === 'undefined') return;
+
+    localStorage.removeItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN);
+  }
+
   /**
    * Register a new user
    */
@@ -178,6 +197,9 @@ class AuthService {
       );
 
       const authData = response.data.data!;
+      if (authData.trustedDeviceToken) {
+        this.setTrustedDeviceToken(authData.trustedDeviceToken);
+      }
       if (authData.tokens?.accessToken && authData.tokens?.refreshToken) {
         this.storeAuthData(authData);
       }
@@ -319,6 +341,7 @@ class AuthService {
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.USER);
+    this.clearTrustedDeviceToken();
     // Also clear any legacy localStorage tokens from before this change
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);

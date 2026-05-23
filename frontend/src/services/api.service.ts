@@ -117,6 +117,16 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    if (typeof window !== 'undefined' && requestPath.includes('auth/login')) {
+      const trustedDeviceToken =
+        localStorage.getItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN);
+
+      if (trustedDeviceToken) {
+        config.headers['X-Trusted-Device-Token'] = trustedDeviceToken;
+      }
+    }
+
     // Add locale to headers (cached — avoids localStorage read on every request)
     config.headers['Accept-Language'] = getCachedLocale();
 
