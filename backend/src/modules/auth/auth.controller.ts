@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { env } from '@/config/env';
+import { logger } from '@/common/logger/logger';
 import type { AuthRequest } from '@/types/global';
 import type {
   RegisterRequest,
