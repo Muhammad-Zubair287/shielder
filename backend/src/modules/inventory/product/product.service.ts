@@ -70,6 +70,7 @@ type ProductUpsertPayload = {
   isActive?: boolean;
   status?: ProductStatus;
   mainImage?: string;
+  updatedAt?: Date;
   filterNumber?: string;
   alternateNumbers?: string;
   filterType?: string;
