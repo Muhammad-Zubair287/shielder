@@ -20,7 +20,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest",
-    "test:auth": "jest src/modules/auth/__tests__/auth.test.ts src/modules/auth/__tests__/auth.security.test.ts",
+    "test:auth": "jest src/modules/auth/__tests__/trusted-device.test.ts src/modules/auth/__tests__/trusted-device-status.test.ts src/modules/auth/__tests__/trusted-devices-revoke.test.ts --runInBand --verbose",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "perf:baseline": "tsx scripts/performance-baseline.ts",

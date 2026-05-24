@@ -50,12 +50,36 @@ export class TrustedDeviceService {
 
   static async verifyDeviceToken(token: string) {
     try {
+      if (!token) {
+        logger.info('No token provided for device verification');
+        return null;
+      }
+
       const record = await trustedDeviceClient.trustedDevice.findUnique({ where: { token } });
-      if (!record || record.isRevoked) return null;
-      if (record.expiresAt && new Date() > record.expiresAt) return null;
+      
+      if (!record) {
+        logger.warn(`Device token not found: ${token.slice(0, 8)}...`);
+        return null;
+      }
+
+      if (record.isRevoked) {
+        logger.warn(`Device token revoked: ${token.slice(0, 8)}...`);
+        return null;
+      }
+
+      const now = new Date();
+      if (record.expiresAt && now > record.expiresAt) {
+        logger.warn(`Device token expired: ${token.slice(0, 8)}...`);
+        return null;
+      }
+
+      logger.info(`✅ Device token valid: ${token.slice(0, 8)}...`);
 
       // Update lastUsedAt
-      await trustedDeviceClient.trustedDevice.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } });
+      await trustedDeviceClient.trustedDevice.update({ 
+        where: { id: record.id }, 
+        data: { lastUsedAt: new Date() } 
+      });
 
       return record;
     } catch (error) {

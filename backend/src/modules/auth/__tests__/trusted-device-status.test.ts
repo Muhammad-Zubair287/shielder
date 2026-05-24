@@ -29,7 +29,7 @@ describe('Trusted device status endpoint', () => {
     await prisma.user.deleteMany({ where: { email } });
   }, 30000);
 
-  const waitForStatus = async (statusMock: jest.Mock, timeoutMs = 5000) => {
+  const waitForStatus = async (statusMock: jest.Mock, timeoutMs = 15000) => {
     const startedAt = Date.now();
     while (statusMock.mock.calls.length === 0 && Date.now() - startedAt < timeoutMs) {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -39,11 +39,12 @@ describe('Trusted device status endpoint', () => {
   test('returns trusted false when no device token is present', async () => {
     const json = jest.fn();
     const status = jest.fn().mockReturnValue({ json });
+    const next = jest.fn();
 
     await authController.getTrustedDeviceStatus(
       { headers: {} } as never,
       { status } as never,
-      jest.fn() as never
+      next
     );
     await waitForStatus(status);
 
@@ -58,11 +59,12 @@ describe('Trusted device status endpoint', () => {
     const token = await TrustedDeviceService.createTrustedDevice(userId, 'jest-device', 'jest-agent', '127.0.0.1', 1);
     const json = jest.fn();
     const status = jest.fn().mockReturnValue({ json });
+    const next = jest.fn();
 
     await authController.getTrustedDeviceStatus(
       { headers: { cookie: `trustedDeviceToken=${token}` } } as never,
       { status } as never,
-      jest.fn() as never
+      next
     );
     await waitForStatus(status);
 

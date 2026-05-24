@@ -123,7 +123,11 @@ apiClient.interceptors.request.use(
         sessionStorage.getItem(STORAGE_KEYS.TRUSTED_DEVICE_TOKEN);
 
       if (trustedDeviceToken) {
-        config.headers['X-Trusted-Device-Token'] = trustedDeviceToken;
+        // Use lowercase header name for consistency
+        config.headers['x-trusted-device-token'] = trustedDeviceToken;
+        console.log(`[API] Sending trusted device token on login: ${trustedDeviceToken.slice(0, 8)}...`);
+      } else {
+        console.log('[API] No trusted device token found in storage');
       }
     }
 

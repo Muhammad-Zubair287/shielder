@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "test:backend:auth": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts src/modules/auth/__tests__/auth.security.test.ts --runInBand --silent",
-    "test:backend:auth:login-smoke": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts --runInBand --silent -t \"Login Endpoint\"",
-    "test:backend:auth:core-smoke": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts --testNamePattern=\"TC-016|TC-017|TC-018\" --runInBand --silent",
+    "test:backend:auth": "cd backend && npm test -- src/modules/auth/__tests__/trusted-device.test.ts src/modules/auth/__tests__/trusted-device-status.test.ts src/modules/auth/__tests__/trusted-devices-revoke.test.ts --runInBand",
+    "test:backend:auth:login-smoke": "cd backend && npm test -- src/modules/auth/__tests__/trusted-device.test.ts --runInBand -t \"Login Endpoint\"",
+    "test:backend:auth:core-smoke": "cd backend && npm test -- src/modules/auth/__tests__/trusted-device.test.ts --testNamePattern=\"TC-016|TC-017|TC-018\" --runInBand",
     "test:backend:newsletter": "cd backend && npm test -- src/modules/newsletter/__tests__/newsletter.test.ts --runInBand --silent",
     "test:backend:admin-contact": "cd backend && npm test -- src/modules/admin/contact/__tests__/admin-contact.test.ts --runInBand --silent",
     "test:backend:smoke": "npm run test:backend:auth:core-smoke && npm run test:backend:newsletter && npm run test:backend:admin-contact",

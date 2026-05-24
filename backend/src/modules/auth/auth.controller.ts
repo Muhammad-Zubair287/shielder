@@ -110,6 +110,13 @@ class AuthController {
       trustedDeviceToken: headerToken || cookieToken,
     };
 
+    if (headerToken) {
+      logger.info(`📱 Login: Trusted device header found: ${headerToken.slice(0, 8)}...`);
+    }
+    if (cookieToken) {
+      logger.info(`🍪 Login: Trusted device cookie found: ${cookieToken.slice(0, 8)}...`);
+    }
+
     const result = await AuthService.login(data, deviceInfo);
 
     res.status(200).json({
