@@ -8,6 +8,12 @@ export interface CategoryFilters {
 }
 
 export class CategoryService {
+  private localeMatches(translationLocale?: string | null, requestedLocale?: string | null) {
+    if (!translationLocale || !requestedLocale) return false;
+    const a = String(translationLocale).toLowerCase();
+    const b = String(requestedLocale).toLowerCase();
+    return a === b || a.startsWith(b) || b.startsWith(a);
+  }
   /**
    * Create a new category with translations.
    * Accepts either:
@@ -106,9 +112,9 @@ export class CategoryService {
 
     // Flatten translations for the frontend — expose locale name + bilingual fields
     const formattedCategories = categories.map((cat) => {
-      const locTrans = cat.translations.find(t => t.locale === locale) || cat.translations[0];
-      const enTrans = cat.translations.find(t => t.locale === 'en');
-      const arTrans = cat.translations.find(t => t.locale === 'ar');
+      const locTrans = cat.translations.find(t => this.localeMatches(t.locale, locale)) || cat.translations[0];
+      const enTrans = cat.translations.find(t => this.localeMatches(t.locale, 'en'));
+      const arTrans = cat.translations.find(t => this.localeMatches(t.locale, 'ar'));
       return {
         ...cat,
         name: locTrans?.name || '',
@@ -173,18 +179,18 @@ export class CategoryService {
       throw new ApiError('Category not found', 404);
     }
 
-    const localeTranslation = category.translations.find(t => t.locale === locale);
-    const enTranslation = category.translations.find(t => t.locale === 'en');
-    const arTranslation = category.translations.find(t => t.locale === 'ar');
+    const localeTranslation = category.translations.find(t => this.localeMatches(t.locale, locale));
+    const enTranslation = category.translations.find(t => this.localeMatches(t.locale, 'en'));
+    const arTranslation = category.translations.find(t => this.localeMatches(t.locale, 'ar'));
     const formattedSubcategories = category.subcategories.map((sub) => {
-      const subLocaleTranslation = sub.translations.find(t => t.locale === locale) || sub.translations[0];
-      const subEnTranslation = sub.translations.find(t => t.locale === 'en');
-      const subArTranslation = sub.translations.find(t => t.locale === 'ar');
+      const subLocaleTranslation = sub.translations.find(t => this.localeMatches(t.locale, locale)) || sub.translations[0];
+      const subEnTranslation = sub.translations.find(t => this.localeMatches(t.locale, 'en'));
+      const subArTranslation = sub.translations.find(t => this.localeMatches(t.locale, 'ar'));
 
       const formattedProducts = sub.products.map((product) => {
-        const productLocaleTranslation = product.translations.find(t => t.locale === locale) || product.translations[0];
-        const productEnTranslation = product.translations.find(t => t.locale === 'en');
-        const productArTranslation = product.translations.find(t => t.locale === 'ar');
+        const productLocaleTranslation = product.translations.find(t => this.localeMatches(t.locale, locale)) || product.translations[0];
+        const productEnTranslation = product.translations.find(t => this.localeMatches(t.locale, 'en'));
+        const productArTranslation = product.translations.find(t => this.localeMatches(t.locale, 'ar'));
 
         return {
           ...product,

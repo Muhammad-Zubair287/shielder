@@ -40,7 +40,13 @@ function firstImageCandidate(values: Array<string | null | undefined>): string |
 }
 
 function findTranslation(product: ProductDisplayLike, locale: string): ProductTranslationLike | undefined {
-  return product.translations?.find((translation) => translation.locale === locale || translation.language === locale);
+  if (!product.translations || !locale) return undefined;
+  const requested = locale.toLowerCase();
+  return product.translations.find((translation) => {
+    const tLocale = (translation.locale || translation.language || '').toLowerCase();
+    if (!tLocale) return false;
+    return tLocale === requested || tLocale.startsWith(requested) || requested.startsWith(tLocale);
+  });
 }
 
 function resolveLocalizedText(

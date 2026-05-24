@@ -9,6 +9,12 @@ export interface SubcategoryFilters {
 }
 
 export class SubcategoryService {
+  private localeMatches(translationLocale?: string | null, requestedLocale?: string | null) {
+    if (!translationLocale || !requestedLocale) return false;
+    const a = String(translationLocale).toLowerCase();
+    const b = String(requestedLocale).toLowerCase();
+    return a === b || a.startsWith(b) || b.startsWith(a);
+  }
   /**
    * Create a new subcategory with translations.
    * Accepts either single-locale { name, locale } or bilingual { nameEn, nameAr }.
@@ -127,10 +133,10 @@ export class SubcategoryService {
 
     // Flatten translations — expose locale name + bilingual fields
     const formattedSubcategories = subcategories.map((sub) => {
-      const locTrans = sub.translations.find(t => t.locale === locale) || sub.translations[0];
-      const enTrans = sub.translations.find(t => t.locale === 'en');
-      const arTrans = sub.translations.find(t => t.locale === 'ar');
-      const catLocTrans = sub.category.translations.find(t => t.locale === locale) || sub.category.translations[0];
+      const locTrans = sub.translations.find(t => this.localeMatches(t.locale, locale)) || sub.translations[0];
+      const enTrans = sub.translations.find(t => this.localeMatches(t.locale, 'en'));
+      const arTrans = sub.translations.find(t => this.localeMatches(t.locale, 'ar'));
+      const catLocTrans = sub.category.translations.find(t => this.localeMatches(t.locale, locale)) || sub.category.translations[0];
       return {
         ...sub,
         name: locTrans?.name || '',
@@ -186,10 +192,10 @@ export class SubcategoryService {
       throw new ApiError('Subcategory not found', 404);
     }
 
-    const locTrans = subcategory.translations.find(t => t.locale === locale) || subcategory.translations[0];
-    const enTrans = subcategory.translations.find(t => t.locale === 'en');
-    const arTrans = subcategory.translations.find(t => t.locale === 'ar');
-    const catEnTrans = subcategory.category.translations.find(t => t.locale === locale) || subcategory.category.translations[0];
+    const locTrans = subcategory.translations.find(t => this.localeMatches(t.locale, locale)) || subcategory.translations[0];
+    const enTrans = subcategory.translations.find(t => this.localeMatches(t.locale, 'en'));
+    const arTrans = subcategory.translations.find(t => this.localeMatches(t.locale, 'ar'));
+    const catEnTrans = subcategory.category.translations.find(t => this.localeMatches(t.locale, locale)) || subcategory.category.translations[0];
 
     return {
       ...subcategory,
