@@ -44,6 +44,54 @@ type ProductTranslationInput = {
   description?: string;
 };
 
+const localeMatches = (translationLocale?: string | null, requestedLocale?: string | null) => {
+  if (!translationLocale || !requestedLocale) return false;
+  const a = String(translationLocale).toLowerCase();
+  const b = String(requestedLocale).toLowerCase();
+  return a === b || a.startsWith(b) || b.startsWith(a);
+};
+
+async function ensureArabicTranslationSet(
+  translations: ProductTranslationInput[],
+  existingTranslations: ProductTranslationInput[] = [],
+): Promise<ProductTranslationInput[]> {
+  const normalized = translations.map((translation) => ({
+    locale: translation.locale,
+    name: translation.name?.trim(),
+    description: translation.description?.trim(),
+  })) as ProductTranslationInput[];
+
+  const english = normalized.find((translation) => localeMatches(translation.locale, 'en')) || normalized[0];
+  const existingArabic = normalized.find((translation) => localeMatches(translation.locale, 'ar'))
+    || existingTranslations.find((translation) => localeMatches(translation.locale, 'ar'));
+
+  if (!english) {
+    return normalized;
+  }
+
+  const translatedName = await toArabic(english.name);
+  const translatedDescription = english.description ? await toArabic(english.description) : undefined;
+
+  if (!existingArabic) {
+    normalized.push({
+      locale: 'ar',
+      name: translatedName || english.name,
+      description: translatedDescription || english.description,
+    });
+    return normalized;
+  }
+
+  if (!existingArabic.name) {
+    existingArabic.name = translatedName || english.name;
+  }
+
+  if (!existingArabic.description && english.description) {
+    existingArabic.description = translatedDescription || english.description;
+  }
+
+  return normalized;
+}
+
 type ProductSpecificationInput = {
   specKey: string;
   specValue: string;
@@ -87,12 +135,6 @@ export class ProductService {
    * Accepts exact, case-insensitive, and prefix matches so values like
    * "ar", "ar-SA" or "AR" will match each other.
    */
-  private localeMatches(translationLocale?: string | null, requestedLocale?: string | null) {
-    if (!translationLocale || !requestedLocale) return false;
-    const a = String(translationLocale).toLowerCase();
-    const b = String(requestedLocale).toLowerCase();
-    return a === b || a.startsWith(b) || b.startsWith(a);
-  }
   private async getMainWarehouseId(): Promise<string> {
     const flaggedMain = await prisma.warehouse.findFirst({
       where: { isMain: true },
@@ -204,6 +246,8 @@ export class ProductService {
     const stockQuantity = Number.isFinite(data.stock) ? data.stock : 0;
 
     const product = await prisma.$transaction(async (tx) => {
+      const translations = await ensureArabicTranslationSet(data.translations);
+
       const createdProduct = await tx.product.create({
         data: {
           sku: data.sku,
@@ -223,7 +267,7 @@ export class ProductService {
           dimensions: data.dimensions,
           status: ProductStatus.PENDING,
           translations: {
-            create: data.translations,
+            create: translations,
           },
           specifications: data.specifications ? {
             create: data.specifications.map(s => ({
@@ -511,7 +555,7 @@ export class ProductService {
   }
 
   async update(id: string, data: Partial<ProductUpsertPayload>) {
-    await this.getById(id);
+    const existingProduct = await this.getById(id);
 
     // Build data object dynamically - only include fields that are actually provided
     const updateData: any = {};
@@ -536,9 +580,17 @@ export class ProductService {
     if (data.dimensions !== undefined) updateData.dimensions = data.dimensions;
     
     if (data.translations) {
+      const existingTranslations = Array.isArray((existingProduct as any)?.translations)
+        ? (existingProduct as any).translations.map((translation: any) => ({
+            locale: translation.locale,
+            name: translation.name,
+            description: translation.description,
+          }))
+        : [];
+      const translations = await ensureArabicTranslationSet(data.translations, existingTranslations);
       updateData.translations = {
         deleteMany: { productId: id },
-        create: data.translations,
+        create: translations,
       };
     }
     

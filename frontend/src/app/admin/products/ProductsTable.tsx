@@ -5,6 +5,7 @@ import { Edit2, Trash2, PackageSearch, Package, MoreVertical } from 'lucide-reac
 import { useLanguage } from '@/contexts/LanguageContext';
 import StockStatusBadge from './StockStatusBadge';
 import { getImageUrl } from '@/utils/helpers';
+import { resolveProductDescription, resolveProductName } from '@/utils/productDisplay';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import type { Product } from './types';
 
@@ -54,7 +55,10 @@ export default function ProductsTable({
 
   // ── Locale-aware display helpers ───────────────────────────────────────────
   const productName = (p: Product) =>
-    locale === 'ar' && p.nameAr ? p.nameAr : p.nameEn || p.name || '—';
+    resolveProductName(p, locale) || '—';
+
+  const productDescription = (p: Product) =>
+    resolveProductDescription(p, locale) || '—';
 
   const categoryName = (p: Product): string => {
     if (!p.category) return '—';
@@ -174,6 +178,9 @@ export default function ProductsTable({
                   <td className={`px-4 py-3.5 align-top ${cellAlign}`}>
                     <p className="max-w-[220px] truncate text-sm font-bold text-gray-900" title={productName(p)}>
                       {productName(p)}
+                    </p>
+                    <p className="mt-1 max-w-[220px] truncate text-[11px] text-gray-500" title={productDescription(p)}>
+                      {productDescription(p)}
                     </p>
                     {p.sku && (
                       <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-gray-500">

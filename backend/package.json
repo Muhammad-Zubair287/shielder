@@ -14,6 +14,7 @@
     "prisma:push": "prisma db push --schema=./src/database/prisma/schema.prisma",
     "seed:super-admin": "npx tsx src/scripts/seed-super-admin.ts",
     "seed:test-data": "npx tsx src/scripts/seed-test-data.ts",
+    "backfill:product-arabic": "npx tsx src/scripts/backfill-product-arabic-translations.ts",
     "migrate:product-images": "npx tsx src/scripts/migrate-product-image-paths.ts",
     "migrate:product-images:dry-run": "npx tsx src/scripts/migrate-product-image-paths.ts -- --dry-run",
     "lint": "eslint . --ext .ts",

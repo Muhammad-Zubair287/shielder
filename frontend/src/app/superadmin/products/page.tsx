@@ -30,6 +30,7 @@ import adminService from '@/services/admin.service';
 import settingsService from '@/services/settings.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
+import { resolveProductDescription, resolveProductName } from '@/utils/productDisplay';
 import { ApiErrorResponse } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
@@ -40,6 +41,11 @@ interface Product {
   sku: string;
   name: string;
   description: string;
+  nameEn?: string;
+  nameAr?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  translations?: { locale: string; name: string; description?: string }[];
   price: string;
   stock: number;
   minimumStockThreshold: number;
@@ -180,6 +186,14 @@ const ProductManagement = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  const productName = useCallback((product: Product) => {
+    return resolveProductName(product, isRTL ? 'ar' : 'en') || product.name || '—';
+  }, [isRTL]);
+
+  const productDescription = useCallback((product: Product) => {
+    return resolveProductDescription(product, isRTL ? 'ar' : 'en') || product.description || '—';
+  }, [isRTL]);
+
   // Load global low-stock threshold from system settings for product form defaults
   useEffect(() => {
     let mounted = true;
@@ -228,9 +242,9 @@ const ProductManagement = () => {
       
       // Map Categories
       const catData = catsRes.data.data?.data || catsRes.data.data || [];
-      setCategories(catData.map((c: { id: string, name?: string, translations?: { name: string }[] }) => ({
+      setCategories(catData.map((c: { id: string, name?: string, translations?: { name: string; locale?: string }[] }) => ({
         id: c.id,
-        name: c.name || (c.translations && c.translations[0]?.name) || 'Unnamed'
+        name: c.name || c.translations?.find((tr) => tr.locale === (isRTL ? 'ar' : 'en'))?.name || c.translations?.[0]?.name || 'Unnamed'
       })));
 
       // Map Suppliers
@@ -277,9 +291,9 @@ const ProductManagement = () => {
         try {
           const res = await adminService.getSubcategories({ categoryId: categoryFilter, limit: 100 });
           const subData = res.data.data || [];
-          setSubcategories(subData.map((s: { id: string, name?: string, translations?: { name: string }[], categoryId: string }) => ({
+          setSubcategories(subData.map((s: { id: string, name?: string, translations?: { name: string; locale?: string }[], categoryId: string }) => ({
             id: s.id,
-            name: s.name || (s.translations && s.translations[0]?.name) || 'Unnamed',
+            name: s.name || s.translations?.find((tr) => tr.locale === (isRTL ? 'ar' : 'en'))?.name || s.translations?.[0]?.name || 'Unnamed',
             categoryId: s.categoryId
           })));
         } catch (error) {
@@ -299,9 +313,9 @@ const ProductManagement = () => {
         try {
           const res = await adminService.getSubcategories({ categoryId: formData.categoryId, limit: 100 });
           const subData = res.data.data || [];
-          setSubcategories(subData.map((s: { id: string, name?: string, translations?: { name: string }[], categoryId: string }) => ({
+          setSubcategories(subData.map((s: { id: string, name?: string, translations?: { name: string; locale?: string }[], categoryId: string }) => ({
             id: s.id,
-            name: s.name || (s.translations && s.translations[0]?.name) || 'Unnamed',
+            name: s.name || s.translations?.find((tr) => tr.locale === (isRTL ? 'ar' : 'en'))?.name || s.translations?.[0]?.name || 'Unnamed',
             categoryId: s.categoryId
           })));
         } catch (error) {
@@ -790,6 +804,8 @@ const ProductManagement = () => {
             <tbody className="divide-y divide-gray-50">
               {products.length > 0 ? products.map((prod) => {
                 const resolvedImage = getImageUrl(prod.mainImage) ?? null;
+                const displayName = productName(prod);
+                const displayDescription = productDescription(prod);
 
                 return (
                 <tr key={prod.id} className="hover:bg-gray-50/80 transition-colors group">
@@ -807,14 +823,15 @@ const ProductManagement = () => {
                         {prod.mainImage ? (
                           <Image 
                             src={resolvedImage || '/images/landing/factory-1.png'}
-                            alt={prod.name} 
+                            alt={displayName}
                             className="object-cover"
                             fill
                           />
                         ) : <ImageIcon className="text-gray-300" size={24} />}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-[#0A1E36] line-clamp-2 leading-snug">{prod.name}</span>
+                        <span className="font-bold text-[#0A1E36] line-clamp-2 leading-snug">{displayName}</span>
+                        <span className="text-[11px] text-gray-500 line-clamp-2 leading-snug">{displayDescription}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                           {prod.sku && <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">SKU: {prod.sku}</span>}
                           <span className="text-[10px] text-gray-400 font-medium">ID: {prod.id.slice(0, 8)}</span>
@@ -1451,7 +1468,7 @@ const ProductManagement = () => {
                   {selectedProduct.mainImage ? (
                     <Image 
                       src={getImageUrl(selectedProduct.mainImage) || ''}
-                      alt={selectedProduct.name}
+                      alt={productName(selectedProduct)}
                       className="object-cover" 
                       fill
                     />
@@ -1470,7 +1487,7 @@ const ProductManagement = () => {
               <div className="md:w-1/2 p-12 flex flex-col overflow-y-auto bg-white">
                 <div className="flex justify-between items-start mb-8">
                    <div>
-                      <h2 className="text-3xl font-black text-[#0A1E36] tracking-tighter mb-2 leading-none uppercase italic">{selectedProduct.name}</h2>
+                      <h2 className="text-3xl font-black text-[#0A1E36] tracking-tighter mb-2 leading-none uppercase italic">{productName(selectedProduct)}</h2>
                       <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                          <Layers size={12} />
                          <span>{selectedProduct.categoryName} / {selectedProduct.subcategoryName}</span>
@@ -1496,7 +1513,7 @@ const ProductManagement = () => {
                   <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Product Description</h4>
                     <p className="text-sm text-[#0A1E36] font-medium leading-relaxed italic">
-                       {selectedProduct.description || "No industrial specification data provided by the engine."}
+                       {productDescription(selectedProduct)}
                     </p>
                   </div>
 
@@ -1566,7 +1583,7 @@ const ProductManagement = () => {
                  <CheckCircle2 size={40} />
               </div>
               <h3 className="text-2xl font-black text-[#0A1E36] tracking-tighter mb-2 italic uppercase">Approve Product?</h3>
-              <p className="text-gray-500 font-medium mb-8">Make <span className="text-[#0205A6] font-bold">&quot;{selectedProduct.name}&quot;</span> live in the marketplace.</p>
+              <p className="text-gray-500 font-medium mb-8">Make <span className="text-[#0205A6] font-bold">&quot;{productName(selectedProduct)}&quot;</span> live in the marketplace.</p>
               <div className="flex gap-4">
                  <button onClick={() => setShowApproveModal(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest transition-all">Cancel</button>
                  <button onClick={handleApprove} className="flex-1 py-4 bg-[#16A34A] text-white rounded-2xl font-black uppercase tracking-widest transition-all">Approve</button>
