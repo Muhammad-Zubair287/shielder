@@ -27,17 +27,17 @@ const CATEGORY_IMAGES = [
 ];
 
 const PRODUCT_IMAGES = [
-  'images/products-images/aluminium-grear.jpeg',
-  'images/products-images/exaavator-spare-parts.jpeg',
-  'images/products-images/exaavator.jpeg',
-  'images/products-images/haky-parts.jpeg',
-  'images/products-images/umgs-parts.jpeg',
-  'images/products-images/filter-category-demoy-images.jpg',
-  'images/products-images/filter-category-deomy-image-3.jpg',
-  'images/products-images/filter-category-deomy-image.jpg',
-  'images/products-images/filter-catogory-deomy-image-2.jpg',
-  'images/products-images/saprepartss.jpeg',
-  'images/products-images/spare-parts.jpeg',
+  'uploads/products/aluminium-grear.jpeg',
+  'uploads/products/exaavator-spare-parts.jpeg',
+  'uploads/products/exaavator.jpeg',
+  'uploads/products/haky-parts.jpeg',
+  'uploads/products/umgs-parts.jpeg',
+  'uploads/products/filter-category-demoy-images.jpg',
+  'uploads/products/filter-category-deomy-image-3.jpg',
+  'uploads/products/filter-category-deomy-image.jpg',
+  'uploads/products/filter-catogory-deomy-image-2.jpg',
+  'uploads/products/saprepartss.jpeg',
+  'uploads/products/spare-parts.jpeg',
 ];
 
 const USER_IMAGES = [

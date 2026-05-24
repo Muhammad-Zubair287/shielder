@@ -11,7 +11,7 @@ async function main() {
         in: ['2c4d1bf4-d859-41bd-8476-f5ae8fa9b629', '5a67faa0-b9cd-4198-bfd8-a9b61f2b036f']
       }
     },
-    select: { id: true, name: true, mainImage: true }
+    select: { id: true, mainImage: true }
   });
 
   console.log('Migrated products:');
@@ -21,7 +21,7 @@ async function main() {
 
   // Check how many products have canonical paths
   const canonical = await prisma.product.count({
-    where: { mainImage: { startsWith: 'images/products-images/' } }
+    where: { mainImage: { startsWith: 'uploads/products/' } }
   });
 
   console.log(`\nTotal products with canonical paths: ${canonical}`);

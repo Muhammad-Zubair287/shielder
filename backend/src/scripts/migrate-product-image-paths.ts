@@ -6,8 +6,8 @@ import { PrismaClient, AttachmentType } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const projectRoot = process.cwd();
-const sourceUploadDir = path.join(projectRoot, 'uploads', 'products');
-const canonicalImageDir = path.join(projectRoot, 'images', 'products-images');
+const sourceUploadDir = path.join(projectRoot, 'images', 'products-images');
+const canonicalImageDir = path.join(projectRoot, 'uploads', 'products');
 
 function ensureDir(dirPath: string) {
   if (!fs.existsSync(dirPath)) {
@@ -30,7 +30,7 @@ function toCanonicalRelativePath(productId: string, sourceRelativePath: string):
     .replace(/-+/g, '-');
 
   const canonicalFileName = `${productId}-${baseName || 'product'}${ext || '.jpg'}`;
-  return `images/products-images/${canonicalFileName}`;
+  return `uploads/products/${canonicalFileName}`;
 }
 
 function resolveSourceCandidates(storedPath: string): string[] {
@@ -49,7 +49,7 @@ async function moveIfPresent(productId: string, storedPath: string): Promise<str
     return null;
   }
 
-  if (normalized.startsWith('images/products-images/')) {
+  if (normalized.startsWith('uploads/products/')) {
     return normalized;
   }
 
@@ -81,6 +81,7 @@ async function main() {
       OR: [
         { mainImage: { startsWith: 'uploads/' } },
         { mainImage: { startsWith: '/uploads/' } },
+          { mainImage: { startsWith: 'images/products-images/' } },
         { mainImage: { startsWith: 'images/products images/' } },
       ],
     },
@@ -94,6 +95,7 @@ async function main() {
       OR: [
         { fileUrl: { startsWith: 'uploads/' } },
         { fileUrl: { startsWith: '/uploads/' } },
+          { fileUrl: { startsWith: 'images/products-images/' } },
         { fileUrl: { startsWith: 'images/products images/' } },
       ],
     },

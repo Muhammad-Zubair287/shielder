@@ -7,14 +7,7 @@ const prisma = new PrismaClient();
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 const sourceDir = path.join(projectRoot, 'shileder products images');
-const targetRootImagesDir = path.join(projectRoot, 'images', 'products-images');
-const targetFrontendImagesDir = path.join(
-  projectRoot,
-  'frontend',
-  'public',
-  'images',
-  'products-images'
-);
+const targetRootImagesDir = path.join(projectRoot, 'uploads', 'products');
 
 function normalizeFileName(fileName: string): string {
   return fileName
@@ -44,7 +37,6 @@ async function main() {
   }
 
   fs.mkdirSync(targetRootImagesDir, { recursive: true });
-  fs.mkdirSync(targetFrontendImagesDir, { recursive: true });
 
   const sourceFiles = getImageFiles(sourceDir);
   if (sourceFiles.length === 0) {
@@ -57,10 +49,8 @@ async function main() {
     const src = path.join(sourceDir, file);
     const normalized = normalizeFileName(file);
     const dstRoot = path.join(targetRootImagesDir, normalized);
-    const dstFrontend = path.join(targetFrontendImagesDir, normalized);
 
     fs.copyFileSync(src, dstRoot);
-    fs.copyFileSync(src, dstFrontend);
     normalizedFiles.push(normalized);
   }
 
@@ -88,7 +78,7 @@ async function main() {
   for (let i = 0; i < products.length; i += 1) {
     const product = products[i];
     const file = normalizedFiles[i % normalizedFiles.length];
-    const newImage = `images/products-images/${file}`;
+    const newImage = `uploads/products/${file}`;
 
     await prisma.product.update({
       where: { id: product.id },

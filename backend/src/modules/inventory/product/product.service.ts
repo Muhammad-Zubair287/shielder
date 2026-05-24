@@ -4,6 +4,7 @@ import { AttachmentType, Prisma, ProductStatus } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
 import { translate } from '@vitalets/google-translate-api';
+import { copyExistingImageToUploads, saveDataUrlToUploads } from '@/common/services/product-image.service';
 
 /** Translate a string to Arabic. Returns the original text if translation fails. */
 async function toArabic(text: string): Promise<string> {
@@ -811,7 +812,7 @@ export class ProductService {
         'Filter Type': 'Air Filter',
         'Material': 'Synthetic',
         'Dimensions': '250mm x 150mm x 50mm',
-        'Image': 'images/products-images/aluminium-grear.jpeg',
+        'Image': 'uploads/products/aluminium-grear.jpeg',
         'spec_Color': 'White',
         'spec_Size': 'Standard'
       }
@@ -997,7 +998,7 @@ export class ProductService {
           } else {
             // Preserve original filename casing/spaces; frontend encodes URL segments safely.
             const justFile = normalizedRaw.split('/').pop()!;
-            mainImage = `images/products-images/${justFile}`;
+              mainImage = `uploads/products/${justFile}`;
           }
         }
 
@@ -1100,6 +1101,25 @@ export class ProductService {
               } : undefined
             }
           });
+
+          // If mainImage is an embedded data URL, persist it into uploads and update the product
+          if (mainImage && typeof mainImage === 'string') {
+            try {
+              let migrated: string | null = null;
+              if (mainImage.startsWith('data:')) {
+                migrated = saveDataUrlToUploads(mainImage, createdProduct.id);
+              } else if (mainImage.startsWith('images/') || mainImage.startsWith('images/products-images/') || !/^(https?:\/\/|uploads\/)/i.test(mainImage)) {
+                migrated = copyExistingImageToUploads(mainImage, createdProduct.id);
+              }
+
+              if (migrated) {
+                await tx.product.update({ where: { id: createdProduct.id }, data: { mainImage: migrated } });
+              }
+            } catch (err) {
+              // Ignore copy/save errors for bulk import but record a warning
+              results.warnings.push(`Row ${rowNum}: failed to persist image for product ${sku || name}`);
+            }
+          }
 
           await this.ensureMainWarehouseInventory(tx, createdProduct.id, stock, defaultWarehouseId);
         });

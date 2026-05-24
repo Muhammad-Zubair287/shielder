@@ -319,7 +319,7 @@ export class ProductController {
         return;
       }
 
-      const imageUrl = `images/products-images/${req.file.filename}`;
+      const imageUrl = `uploads/products/${req.file.filename}`;
       const productId = String(req.params.id);
 
       console.log(`[ImageUpload] Starting upload for product ${productId}`);
