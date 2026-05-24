@@ -8,6 +8,7 @@ import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './common/logger/logger';
 import { emailService } from './common/services/email.service';
+import { checkProductImageStorage } from './common/services/product-image.service';
 import http from 'http';
 
 // Global error handlers - set these FIRST before anything else
@@ -32,6 +33,13 @@ const startServer = async (): Promise<void> => {
 
     // Create Express app
     const app = createApp();
+
+    const productImageStorage = checkProductImageStorage();
+    if (productImageStorage.writable) {
+      logger.info('✅ Product image storage verified', productImageStorage);
+    } else {
+      logger.error('❌ Product image storage is not writable', productImageStorage);
+    }
 
     // Start listening
     const server = app.listen(env.port, '0.0.0.0', async () => {

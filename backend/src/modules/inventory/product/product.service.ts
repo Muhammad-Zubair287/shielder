@@ -451,7 +451,6 @@ export class ProductService {
           translations: {
             some: {
               name: { contains: search, mode: 'insensitive' },
-              locale,
             },
           },
         },
@@ -469,7 +468,7 @@ export class ProductService {
       prisma.product.findMany({
         where,
         include: {
-          translations: { where: { locale } },
+          translations: true,
           category: { 
             include: { translations: { where: { locale } } } 
           },
@@ -502,14 +501,24 @@ export class ProductService {
     ]);
 
     return {
-      products: products.map((p) => ({
-        ...p,
-        name: p.translations[0]?.name || 'Unnamed Product',
-        description: p.translations[0]?.description || '',
-        categoryName: p.category?.translations[0]?.name || 'Unknown Category',
-        subcategoryName: p.subcategory?.translations[0]?.name || 'Unknown Subcategory',
-        supplierName: p.supplier?.profile?.fullName || p.supplier?.email || 'System'
-      })),
+      products: products.map((p) => {
+        const localeTranslation = p.translations.find((translation) => this.localeMatches(translation.locale, locale));
+        const englishTranslation = p.translations.find((translation) => this.localeMatches(translation.locale, 'en'));
+        const arabicTranslation = p.translations.find((translation) => this.localeMatches(translation.locale, 'ar'));
+
+        return {
+          ...p,
+          name: localeTranslation?.name || englishTranslation?.name || arabicTranslation?.name || 'Unnamed Product',
+          description: localeTranslation?.description || englishTranslation?.description || arabicTranslation?.description || '',
+          nameEn: englishTranslation?.name || localeTranslation?.name || '',
+          nameAr: arabicTranslation?.name || '',
+          descriptionEn: englishTranslation?.description || localeTranslation?.description || '',
+          descriptionAr: arabicTranslation?.description || '',
+          categoryName: p.category?.translations[0]?.name || 'Unknown Category',
+          subcategoryName: p.subcategory?.translations[0]?.name || 'Unknown Subcategory',
+          supplierName: p.supplier?.profile?.fullName || p.supplier?.email || 'System'
+        };
+      }),
       pagination: {
         total,
         page,
@@ -594,10 +603,34 @@ export class ProductService {
             description: translation.description,
           }))
         : [];
-      const translations = await ensureArabicTranslationSet(data.translations, existingTranslations);
+
+      const incomingTranslations = await ensureArabicTranslationSet(data.translations, existingTranslations);
+
+      // Merge incoming locales with existing locales to avoid destructive replacement
+      // when frontend sends a partial translation set.
+      const mergedByLocale = new Map<string, ProductTranslationInput>();
+
+      for (const translation of existingTranslations) {
+        mergedByLocale.set(translation.locale.toLowerCase(), {
+          locale: translation.locale,
+          name: translation.name,
+          description: translation.description,
+        });
+      }
+
+      for (const translation of incomingTranslations) {
+        mergedByLocale.set(translation.locale.toLowerCase(), {
+          locale: translation.locale,
+          name: translation.name,
+          description: translation.description,
+        });
+      }
+
+      const mergedTranslations = await ensureArabicTranslationSet(Array.from(mergedByLocale.values()), existingTranslations);
+
       updateData.translations = {
         deleteMany: { productId: id },
-        create: translations,
+        create: mergedTranslations,
       };
     }
     

@@ -161,6 +161,17 @@ export const env = {
     uploadPath: process.env.UPLOAD_PATH || './uploads',
   },
 
+  // Product image storage (local by default; S3-compatible when explicitly configured)
+  productImageStorage: {
+    provider: (process.env.PRODUCT_IMAGE_STORAGE || 'local') as 'local' | 's3',
+    bucket: process.env.PRODUCT_IMAGE_S3_BUCKET || process.env.S3_BUCKET || '',
+    region: process.env.PRODUCT_IMAGE_S3_REGION || process.env.S3_REGION || 'us-east-1',
+    endpoint: process.env.PRODUCT_IMAGE_S3_ENDPOINT || process.env.S3_ENDPOINT || '',
+    accessKeyId: process.env.PRODUCT_IMAGE_S3_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.PRODUCT_IMAGE_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY || '',
+    publicBaseUrl: process.env.PRODUCT_IMAGE_PUBLIC_BASE_URL || process.env.UPLOADS_BASE_URL || '',
+  },
+
   // Logging
   logging: {
     level: process.env.LOG_LEVEL || 'info',

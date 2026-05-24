@@ -43,6 +43,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
 import { emailService } from './common/services/email.service';
+import { checkProductImageStorage } from './common/services/product-image.service';
 
 const staticImageRoots = [
   path.resolve(process.cwd(), 'images'),
@@ -142,11 +143,14 @@ export const createApp = (): Application => {
 
   // Health check endpoint
   app.get('/health', (_req, res) => {
+    const uploadsHealth = checkProductImageStorage();
+
     res.status(200).json({
       success: true,
       message: 'Shielder API is running',
       timestamp: new Date().toISOString(),
       environment: env.nodeEnv,
+      uploads: uploadsHealth,
     });
   });
 

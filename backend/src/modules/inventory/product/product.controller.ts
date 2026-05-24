@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { productService } from './product.service';
 import { ProductStatus } from '@prisma/client';
-import { resolvePublicProductImageUrl } from '@/common/services/product-image.service';
+import {
+  deleteProductImageTempFile,
+  resolvePublicProductImageUrl,
+  storeProductImageFile,
+} from '@/common/services/product-image.service';
 
 const normalizeProductResponse = (req: Request, product: any) => {
   if (!product) return product;
@@ -319,11 +323,14 @@ export class ProductController {
         return;
       }
 
-      const imageUrl = `uploads/products/${req.file.filename}`;
       const productId = String(req.params.id);
+      const storedImage = await storeProductImageFile(req.file, productId);
+      const storageProvider = storedImage.provider;
+      const imageUrl = storedImage.path;
 
       console.log(`[ImageUpload] Starting upload for product ${productId}`);
       console.log(`[ImageUpload] File: ${req.file.filename}, Size: ${req.file.size} bytes`);
+      console.log(`[ImageUpload] Storage provider: ${storageProvider}`);
 
       // Update database with new mainImage path AND refresh updatedAt timestamp
       // CRITICAL: updatedAt must change so cache-busting ?v= parameter updates
@@ -359,9 +366,15 @@ export class ProductController {
         data: {
           mainImage: versionedUrl,
           product: normalizeProductResponse(req, product),
+          storageProvider,
         },
       });
+
+      if (storageProvider === 's3') {
+        deleteProductImageTempFile(req.file);
+      }
     } catch (error) {
+      deleteProductImageTempFile(req.file);
       console.error(`[ImageUpload] Exception:`, error);
       next(error);
     }
