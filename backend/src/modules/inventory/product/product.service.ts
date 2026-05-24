@@ -135,6 +135,13 @@ export class ProductService {
    * Accepts exact, case-insensitive, and prefix matches so values like
    * "ar", "ar-SA" or "AR" will match each other.
    */
+  private localeMatches(translationLocale?: string | null, requestedLocale?: string | null) {
+    if (!translationLocale || !requestedLocale) return false;
+    const a = String(translationLocale).toLowerCase();
+    const b = String(requestedLocale).toLowerCase();
+    return a === b || a.startsWith(b) || b.startsWith(a);
+  }
+
   private async getMainWarehouseId(): Promise<string> {
     const flaggedMain = await prisma.warehouse.findFirst({
       where: { isMain: true },
