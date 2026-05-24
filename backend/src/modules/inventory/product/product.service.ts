@@ -515,6 +515,7 @@ export class ProductService {
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.mainImage !== undefined) updateData.mainImage = data.mainImage;
+      if (data.updatedAt !== undefined) updateData.updatedAt = data.updatedAt;
     if (data.filterNumber !== undefined) updateData.filterNumber = data.filterNumber;
     if (data.alternateNumbers !== undefined) updateData.alternateNumbers = data.alternateNumbers;
     if (data.filterType !== undefined) updateData.filterType = data.filterType;

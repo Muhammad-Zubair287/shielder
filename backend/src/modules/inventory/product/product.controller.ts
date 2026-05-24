@@ -318,16 +318,51 @@ export class ProductController {
         res.status(400).json({ success: false, message: 'No image file provided' });
         return;
       }
+
       const imageUrl = `images/products-images/${req.file.filename}`;
-      const product = await productService.update(String(req.params.id), { mainImage: imageUrl });
+      const productId = String(req.params.id);
+
+      console.log(`[ImageUpload] Starting upload for product ${productId}`);
+      console.log(`[ImageUpload] File: ${req.file.filename}, Size: ${req.file.size} bytes`);
+
+      // Update database with new mainImage path AND refresh updatedAt timestamp
+      // CRITICAL: updatedAt must change so cache-busting ?v= parameter updates
+      const product = await productService.update(productId, { 
+        mainImage: imageUrl,
+        // Force Prisma to set a NEW timestamp for cache-busting
+        updatedAt: new Date(),
+      });
+
+      console.log(`[ImageUpload] Database updated for product ${productId}`);
+      console.log(`[ImageUpload] Stored path: ${product.mainImage}`);
+      console.log(`[ImageUpload] Updated timestamp: ${product.updatedAt?.toISOString()}`);
+
+      // Verify the update actually persisted
+      if (!product.mainImage) {
+        console.error(`[ImageUpload] CRITICAL ERROR: mainImage is null after DB update for ${productId}`);
+        res.status(500).json({ 
+          success: false, 
+          message: 'Database update failed - image path not saved to database' 
+        });
+        return;
+      }
+
+      if (product.mainImage !== imageUrl) {
+        console.warn(`[ImageUpload] Path mismatch for ${productId}. Expected: ${imageUrl}, Got: ${product.mainImage}`);
+      }
+
+      const versionedUrl = resolvePublicProductImageUrl(req, imageUrl, product.updatedAt);
+      console.log(`[ImageUpload] Response URL: ${versionedUrl}`);
+
       res.json({
         success: true,
         data: {
-          mainImage: resolvePublicProductImageUrl(req, imageUrl, product.updatedAt),
+          mainImage: versionedUrl,
           product: normalizeProductResponse(req, product),
         },
       });
     } catch (error) {
+      console.error(`[ImageUpload] Exception:`, error);
       next(error);
     }
   }
