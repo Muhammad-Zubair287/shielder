@@ -808,7 +808,17 @@ export class ProductService {
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = { gte: minPrice, lte: maxPrice };
+      const priceFilter: Prisma.DecimalFilter = {};
+
+      if (minPrice !== undefined) {
+        priceFilter.gte = minPrice;
+      }
+
+      if (maxPrice !== undefined) {
+        priceFilter.lte = maxPrice;
+      }
+
+      where.price = priceFilter;
     }
 
     if (inStock !== undefined) {

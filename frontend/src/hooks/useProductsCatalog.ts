@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api.service';
 import { PRODUCTS_ITEMS_PER_PAGE } from '@/app/products/products.constants';
+import { appendPriceRangeParams } from '@/app/products/price-filter';
 import { resolveProductDescription, resolveProductImage, resolveProductImages, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
 
 export interface ProductsCatalogFilters {
@@ -59,8 +60,7 @@ function buildCatalogQuery(filters: ProductsCatalogFilters, page: number, locale
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
   if (filters.categoryId) params.set('categoryId', filters.categoryId);
-  if (filters.minPrice) params.set('minPrice', filters.minPrice);
-  if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+  appendPriceRangeParams(params, { minPrice: filters.minPrice, maxPrice: filters.maxPrice });
   if (filters.inStock) params.set('inStock', 'true');
   if (filters.sort) params.set('sort', filters.sort);
   params.set('page', String(page));

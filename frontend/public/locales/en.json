@@ -1274,6 +1274,8 @@
   "productsPriceRange": "Price Range",
   "productsMinPrice": "Min",
   "productsMaxPrice": "Max",
+  "productsPriceValidationInvalid": "Please enter a valid non-negative price.",
+  "productsPriceValidationRange": "Maximum price must be greater than or equal to minimum price.",
   "productsInStockOnly": "In Stock Only",
   "productsInStockDesc": "Show only available products",
   "productsSortBy": "Sort By",

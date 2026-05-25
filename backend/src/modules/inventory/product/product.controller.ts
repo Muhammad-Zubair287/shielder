@@ -7,6 +7,12 @@ import {
   storeProductImageFile,
 } from '@/common/services/product-image.service';
 
+const parseOptionalNumberQuery = (value: unknown): number | undefined => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const normalizeProductResponse = (req: Request, product: any) => {
   if (!product) return product;
 
@@ -139,8 +145,8 @@ export class ProductController {
         categoryId: categoryId as string,
         subcategoryId: subcategoryId as string,
         brandId: brandId as string,
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        minPrice: parseOptionalNumberQuery(minPrice),
+        maxPrice: parseOptionalNumberQuery(maxPrice),
         inStock: inStock === 'true' ? true : inStock === 'false' ? false : undefined,
         search: search as string,
         specs,

@@ -74,6 +74,18 @@ export const productValidation = {
     page: Joi.number().integer().min(1).optional(),
     limit: Joi.number().integer().min(1).max(100).optional(),
     locale: Joi.string().length(2).optional(),
+  }).custom((value, helpers) => {
+    if (
+      value.minPrice !== undefined &&
+      value.maxPrice !== undefined &&
+      value.maxPrice < value.minPrice
+    ) {
+      return helpers.error('any.invalid');
+    }
+
+    return value;
+  }, 'price range validation').messages({
+    'any.invalid': 'Maximum price must be greater than or equal to minimum price',
   }).unknown(true), // allow spec_... keys
   filters: Joi.object({
     locale: Joi.string().length(2).optional(),

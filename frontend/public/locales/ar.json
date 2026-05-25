@@ -1261,6 +1261,8 @@
   "productsPriceRange": "نطاق السعر",
   "productsMinPrice": "الحد الأدنى",
   "productsMaxPrice": "الحد الأقصى",
+  "productsPriceValidationInvalid": "يرجى إدخال سعر صالح غير سالب.",
+  "productsPriceValidationRange": "يجب أن يكون الحد الأقصى أكبر من أو يساوي الحد الأدنى.",
   "productsInStockOnly": "المتاح فقط",
   "productsInStockDesc": "عرض المنتجات المتوفرة فقط",
   "productsSortBy": "ترتيب حسب",

@@ -14,6 +14,7 @@ import { resolveProductDescription, resolveProductImage, resolveProductName } fr
 import SARSymbol from '@/components/SARSymbol';
 import { useAuthStore } from '@/store/auth.store';
 import { useProductsCatalog } from '@/hooks/useProductsCatalog';
+import { appendPriceRangeParams, getPriceRangeValidationKey, hasPriceFilterValue } from './price-filter';
 import {
   productComparisonService,
   type ComparedProductItem,
@@ -414,8 +415,8 @@ function ActiveFilterBadges({ filters, categories, onRemove, t, isRTL }: {
     const cat = categories.find(c => c.id === filters.categoryId);
     if (cat) badges.push({ key: 'categoryId', label: `${t('productsCategory')}: ${cat.name}` });
   }
-  if (filters.minPrice || filters.maxPrice)
-    badges.push({ key: 'minPrice', label: `${t('productsPriceRange')}: ${filters.minPrice || '0'} – ${filters.maxPrice || '∞'}` });
+  if (hasPriceFilterValue(filters.minPrice) || hasPriceFilterValue(filters.maxPrice))
+    badges.push({ key: 'minPrice', label: `${t('productsPriceRange')}: ${hasPriceFilterValue(filters.minPrice) ? filters.minPrice : '0'} – ${hasPriceFilterValue(filters.maxPrice) ? filters.maxPrice : '∞'}` });
   if (filters.inStock)    badges.push({ key: 'inStock',    label: t('productsInStockOnly') });
   if (filters.sort) {
     const opt = PRODUCTS_SORT_OPTIONS.find(o => o.value === filters.sort);
@@ -439,10 +440,11 @@ function ActiveFilterBadges({ filters, categories, onRemove, t, isRTL }: {
 }
 
 // ── Filter Panel ──────────────────────────────────────────────────────────────
-function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onClear, t, isRTL }: {
+function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onClear, validationError, t, isRTL }: {
   open: boolean; onClose: () => void; categories: Category[];
   draft: ActiveFilters; setDraft: React.Dispatch<React.SetStateAction<ActiveFilters>>;
   onApply: () => void; onClear: () => void;
+  validationError: string | null;
   t: (k: string) => string; isRTL: boolean;
 }) {
   useEffect(() => {
@@ -565,6 +567,11 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
                 onChange={e => field('maxPrice', e.target.value)}
                 className="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6]" />
             </div>
+            {validationError && (
+              <p className={`mt-2 text-xs font-medium text-red-600 ${isRTL ? 'text-right' : 'text-left'}`} role="alert" aria-live="polite">
+                {validationError}
+              </p>
+            )}
           </div>
 
           {/* In Stock Toggle */}
@@ -592,8 +599,9 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
             className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
             {t('productsClearFilters')}
           </button>
-          <button onClick={onApply}
-            className="flex-1 py-3 rounded-xl bg-[#0205A6] text-white text-sm font-semibold hover:bg-[#0103d4] transition-colors">
+          <button onClick={onApply} disabled={Boolean(validationError)}
+            aria-disabled={Boolean(validationError)}
+            className="flex-1 py-3 rounded-xl bg-[#0205A6] text-white text-sm font-semibold hover:bg-[#0103d4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {t('productsApplyFilters')}
           </button>
         </div>
@@ -663,6 +671,11 @@ function ProductsContent() {
   const { isAuthenticated } = useAuthStore();
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const priceRangeValidationKey = getPriceRangeValidationKey({
+    minPrice: draftFilters.minPrice,
+    maxPrice: draftFilters.maxPrice,
+  });
+  const priceRangeValidationError = priceRangeValidationKey ? t(priceRangeValidationKey) : null;
 
   useEffect(() => {
     setComparedProducts(productComparisonService.getAll());
@@ -703,8 +716,8 @@ function ProductsContent() {
     const params = new URLSearchParams();
     if (filters.search)     params.set('search',     filters.search);
     if (filters.categoryId) params.set('categoryId', filters.categoryId);
-    if (filters.minPrice)   params.set('minPrice',   filters.minPrice);
-    if (filters.maxPrice)   params.set('maxPrice',   filters.maxPrice);
+    const priceParams = appendPriceRangeParams(filters.minPrice, filters.maxPrice);
+    priceParams.forEach((value, key) => params.set(key, value));
     if (filters.inStock)    params.set('inStock',    'true');
     if (filters.sort)       params.set('sort',       filters.sort);
     if (tab === 'quotation') params.set('type', 'quotation');
@@ -737,6 +750,7 @@ function ProductsContent() {
   };
 
   const handleApplyFilters = () => {
+    if (priceRangeValidationError) return;
     setAppliedFilters(draftFilters);
     setSearchInput(draftFilters.search);
     setPage(1); setFilterOpen(false);
@@ -771,7 +785,7 @@ function ProductsContent() {
 
   const activeFilterCount = [
     appliedFilters.categoryId,
-    appliedFilters.minPrice || appliedFilters.maxPrice,
+    hasPriceFilterValue(appliedFilters.minPrice) || hasPriceFilterValue(appliedFilters.maxPrice),
     appliedFilters.inStock,
     appliedFilters.sort,
   ].filter(Boolean).length;
@@ -1026,6 +1040,7 @@ function ProductsContent() {
       <FilterPanel open={filterOpen} onClose={() => setFilterOpen(false)} categories={categories}
         draft={draftFilters} setDraft={setDraftFilters}
         onApply={handleApplyFilters} onClear={handleClearFilters}
+        validationError={priceRangeValidationError}
         t={t} isRTL={isRTL} />
     </div>
   );
