@@ -67,7 +67,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
         </div>
 
         {/* Name + quantity control */}
-        <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+        <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-start'}`}>
           <p className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</p>
 
           {typeof item.product.stock === 'number' && (

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, ShoppingCart, Download, Heart, Share2, ImageOff, Star, Loader } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, Download, Heart, Share2, ImageOff, Star, Loader } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -169,6 +169,8 @@ export default function ProductDetailPage() {
     toast.success(`${t('products.quoteRequestSubmittedFor')} "${product.name}"`);
   };
 
+  const BackIcon = isRTL ? ChevronRight : ChevronLeft;
+
   return (
     <>
       <LandingNavbar />
@@ -178,9 +180,9 @@ export default function ProductDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
             href="/products"
-            className="flex items-center gap-2 text-[#0205A6] hover:underline font-semibold text-sm"
+            className={`flex items-center gap-2 text-[#0205A6] hover:underline font-semibold text-sm ${isRTL ? 'flex-row-reverse' : ''}`}
           >
-            <ChevronLeft size={16} />
+            <BackIcon size={16} />
             {t('productsBackToList') || 'Back to products'}
           </Link>
         </div>
@@ -254,7 +256,7 @@ export default function ProductDetailPage() {
               )}
 
               {/* Title & Meta */}
-              <div className={`space-y-2 ${isRTL ? 'text-right' : ''}`}>
+              <div className={`space-y-2 ${isRTL ? 'text-right' : 'text-start'}`}>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">{product.name}</h1>
                 {(product.filterNumber || product.sku) && (
                   <p className="text-gray-500 text-sm">
@@ -264,8 +266,8 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Rating */}
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
+              <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
@@ -294,7 +296,7 @@ export default function ProductDetailPage() {
 
               {/* Description */}
               {product.description && (
-                <p className="text-gray-600 text-base leading-relaxed">{product.description}</p>
+                <p className={`text-gray-600 text-base leading-relaxed ${isRTL ? 'text-right' : 'text-start'}`}>{product.description}</p>
               )}
 
               {/* Specifications Preview */}
@@ -334,7 +336,7 @@ export default function ProductDetailPage() {
               {/* Quantity & Actions */}
               <div className="space-y-3">
                 {/* Quantity Selector */}
-                <div className="flex items-center gap-4">
+                <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
                     <span className="text-sm font-semibold text-gray-700">{detailLabels.qty}</span>
                   <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                     <button
@@ -351,7 +353,7 @@ export default function ProductDetailPage() {
                       value={quantity}
                       aria-label="Quantity"
                       onChange={e => setQuantity(normalizeQuantity(parseInt(e.target.value) || 1))}
-                      className="w-12 text-center border-l border-r border-gray-300 py-2 focus:outline-none font-semibold"
+                      className="w-12 text-center border-x border-gray-300 py-2 focus:outline-none font-semibold"
                     />
                     <button
                       onClick={() => setQuantity(q => normalizeQuantity(q + 1))}
@@ -370,7 +372,7 @@ export default function ProductDetailPage() {
                     onClick={handleAddToCart}
                     disabled={cartLoading || product.stock === 0}
                     aria-label={`Add ${product.name} to cart`}
-                    className="w-full bg-gradient-to-r from-[#F97316] to-orange-500 hover:from-orange-500 hover:to-[#F97316] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                    className={`w-full bg-gradient-to-r from-[#F97316] to-orange-500 hover:from-orange-500 hover:to-[#F97316] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}
                   >
                     <ShoppingCart size={20} />
                     {t('productsAddToCart') || 'Add to Cart'}
@@ -379,7 +381,7 @@ export default function ProductDetailPage() {
                   <button
                     onClick={handleRequestQuote}
                     aria-label={`Request quotation for ${product.name}`}
-                    className="w-full bg-[#0205A6] hover:bg-[#0307c4] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                    className={`w-full bg-[#0205A6] hover:bg-[#0307c4] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}
                   >
                     <Download size={20} />
                     {t('productsGetQuote') || 'Request Quote'}
@@ -403,10 +405,10 @@ export default function ProductDetailPage() {
               <div className={`space-y-2 p-4 bg-blue-50 border border-blue-100 rounded-lg ${isRTL ? 'text-right' : ''}`}>
                 <h4 className="font-bold text-gray-900 text-sm">{detailLabels.whyChoose}</h4>
                 <ul className="text-xs text-gray-600 space-y-1">
-                  <li>✓ Premium quality industrial filter</li>
-                  <li>✓ Fast delivery available</li>
-                  <li>✓ Bulk order discounts</li>
-                  <li>✓ Extended warranty options</li>
+                  <li className={isRTL ? 'text-right' : 'text-start'}>✓ Premium quality industrial filter</li>
+                  <li className={isRTL ? 'text-right' : 'text-start'}>✓ Fast delivery available</li>
+                  <li className={isRTL ? 'text-right' : 'text-start'}>✓ Bulk order discounts</li>
+                  <li className={isRTL ? 'text-right' : 'text-start'}>✓ Extended warranty options</li>
                 </ul>
               </div>
 
@@ -445,7 +447,7 @@ export default function ProductDetailPage() {
                         href={getImageUrl(datasheet.fileUrl) || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-[#0205A6] hover:underline font-medium flex items-center gap-1"
+                        className={`text-sm text-[#0205A6] hover:underline font-medium flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
                       >
                         <Download size={14} />
                         {detailLabels.download} {datasheet.fileName}
@@ -479,7 +481,7 @@ export default function ProductDetailPage() {
 
           {/* ── Details Tabs ── */}
           <div className="mt-16 border-t border-gray-200 pt-8">
-            <div className={`flex gap-6 border-b border-gray-200 mb-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex gap-6 border-b border-gray-200 mb-8 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
               <button
                 onClick={() => setActiveTab('specs')}
                 className={`pb-3 font-semibold text-sm transition-colors ${
@@ -503,7 +505,7 @@ export default function ProductDetailPage() {
             </div>
 
             {activeTab === 'specs' && (
-              <div className="space-y-4">
+              <div className={`space-y-4 ${isRTL ? 'text-right' : 'text-start'}`}>
                 {product.filterType && (
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -545,10 +547,10 @@ export default function ProductDetailPage() {
                   <div className="space-y-4">
                     {/* Average Rating */}
                     <div className="bg-gray-50 p-6 rounded-lg">
-                      <div className="flex items-center gap-4">
+                      <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <div className="flex-shrink-0">
                           <div className="text-4xl font-bold text-[#0205A6]">{(averageRating || 0).toFixed(1)}</div>
-                          <div className="flex gap-1 mt-1">
+                          <div className={`flex gap-1 mt-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
@@ -564,7 +566,7 @@ export default function ProductDetailPage() {
                             const count = reviews.filter((r) => r.rating === rating).length;
                             const width = reviewCount > 0 ? `${Math.round((count / reviewCount) * 100)}%` : '0%';
                             return (
-                              <div key={rating} className="flex items-center gap-2">
+                              <div key={rating} className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <span className="text-xs text-gray-600 w-2">{rating}</span>
                                 <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                                   <div className="h-full bg-yellow-400" style={{ width }} />
@@ -580,10 +582,10 @@ export default function ProductDetailPage() {
                     <div className={`space-y-4 ${isRTL ? 'text-right' : ''}`}>
                       {reviews.map((review) => (
                         <div key={review.id} className="p-4 border border-gray-200 rounded-lg">
-                          <div className="flex justify-between items-start mb-2">
+                          <div className={`flex justify-between items-start mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <div>
                               <h4 className="font-semibold text-gray-900">{review.authorName || detailLabels.anonymous}</h4>
-                              <div className="flex gap-1 mt-1">
+                              <div className={`flex gap-1 mt-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 {[...Array(5)].map((_, i) => (
                                   <Star
                                     key={i}
@@ -626,7 +628,7 @@ export default function ProductDetailPage() {
           {/* ── Related Products ── */}
           {relatedProducts.length > 0 && (
             <div className="mt-16 pt-8 border-t border-gray-200">
-              <h2 className={`text-2xl font-bold text-gray-900 mb-8 ${isRTL ? 'text-right' : ''}`}>{t('productsRelated') || 'Related Products'}</h2>
+              <h2 className={`text-2xl font-bold text-gray-900 mb-8 ${isRTL ? 'text-right' : 'text-start'}`}>{t('productsRelated') || 'Related Products'}</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {relatedProducts.map((p, idx) => (
                   <Link key={p.id} href={`/products/${p.id}`} passHref>
@@ -644,9 +646,9 @@ export default function ProductDetailPage() {
                           </div>
                         )}
                       </div>
-                      <div className="p-4">
+                      <div className={`p-4 ${isRTL ? 'text-right' : 'text-start'}`}>
                         <h4 className="font-bold text-gray-900 text-sm mb-2 line-clamp-2">{p.name}</h4>
-                        <p className="text-[#0205A6] font-bold text-base flex items-center gap-1">
+                        <p className={`text-[#0205A6] font-bold text-base flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
                           <SARSymbol /> {Number(p.price).toFixed(2)}
                         </p>
                       </div>

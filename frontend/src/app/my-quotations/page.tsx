@@ -160,7 +160,7 @@ export default function MyQuotationsPage() {
           <div className="flex items-center mb-8 relative">
             <Link
               href="/products"
-              className={`p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ${isRTL ? 'ml-auto' : 'mr-auto'}`}
+              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ms-auto"
               aria-label="back"
             >
               <BackArrow size={22} />
@@ -171,7 +171,7 @@ export default function MyQuotationsPage() {
             <button
               onClick={() => fetchQuotations(pagination.page)}
               disabled={refreshing}
-              className={`ml-auto text-gray-400 hover:text-[#F97316] transition-colors disabled:opacity-40 ${isRTL ? 'mr-auto ml-0' : ''}`}
+              className="ms-auto text-gray-400 hover:text-[#F97316] transition-colors disabled:opacity-40"
               aria-label="refresh"
             >
               <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
@@ -231,7 +231,7 @@ export default function MyQuotationsPage() {
                     >
                       {/* Top row */}
                       <div className={`flex items-center justify-between px-5 py-4 border-b border-gray-50 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <div className={isRTL ? 'text-right' : 'text-left'}>
+                        <div className={isRTL ? 'text-right' : 'text-start'}>
                           <p className="text-xs text-gray-500">
                             {t('myQuotations.quotationNumber') || 'Quotation'}
                           </p>

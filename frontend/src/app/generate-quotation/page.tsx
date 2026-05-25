@@ -63,11 +63,11 @@ function Field({
   const base = `w-full border rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400
     focus:outline-none focus:ring-2 transition-colors
     ${error ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-gray-200 focus:ring-[#0D1637]/20 focus:border-[#0D1637] bg-white'}
-    ${isRTL ? 'text-right' : 'text-left'}`;
+    ${isRTL ? 'text-right' : 'text-start'}`;
 
   return (
     <div>
-      <label className={`block text-sm font-semibold text-gray-800 mb-1.5 ${isRTL ? 'text-right' : ''}`}>
+      <label className={`block text-sm font-semibold text-gray-800 mb-1.5 ${isRTL ? 'text-right' : 'text-start'}`}>
         {label} <span className="text-red-500">*</span>
       </label>
       {rows ? (
@@ -268,7 +268,7 @@ export default function GenerateQuotationPage() {
                 </div>
                 <h1 className="text-xl font-bold text-white">{t('quot.pageTitle')}</h1>
               </div>
-              <p className={`text-sm text-gray-300 leading-relaxed ${isRTL ? 'text-right' : ''}`}>
+              <p className={`text-sm text-gray-300 leading-relaxed ${isRTL ? 'text-right' : 'text-start'}`}>
                 {t('quot.subtitle')}
               </p>
             </div>
@@ -279,7 +279,7 @@ export default function GenerateQuotationPage() {
               {/* Selected products summary */}
               {products.length > 0 && (
                 <div className="mb-7">
-                  <p className={`text-sm font-bold text-gray-800 mb-3 ${isRTL ? 'text-right' : ''}`}>
+                  <p className={`text-sm font-bold text-gray-800 mb-3 ${isRTL ? 'text-right' : 'text-start'}`}>
                     {t('quot.selectedProducts')}
                   </p>
                   <div className="border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-50">
@@ -295,16 +295,16 @@ export default function GenerateQuotationPage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-semibold text-gray-900 truncate ${isRTL ? 'text-right' : ''}`}>
+                          <p className={`text-sm font-semibold text-gray-900 truncate ${isRTL ? 'text-right' : 'text-start'}`}>
                             {p.name}
                           </p>
                           {p.sku && (
-                            <p className={`text-xs text-gray-400 ${isRTL ? 'text-right' : ''}`}>
+                            <p className={`text-xs text-gray-400 ${isRTL ? 'text-right' : 'text-start'}`}>
                               {t('quot.sku')}: {p.sku}
                             </p>
                           )}
                         </div>
-                        <div className={`shrink-0 text-right ${isRTL ? 'text-left' : ''}`}>
+                        <div className={`shrink-0 text-right ${isRTL ? 'text-start' : ''}`}>
                           <p className="text-sm font-bold text-[#0D1637] flex items-center gap-0.5">
                             <SARSymbol />{(Number(p.price) * p.quantity).toFixed(2)}
                           </p>

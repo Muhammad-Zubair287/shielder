@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
         <section className="bg-[#0A1E36] text-white py-16 md:py-24 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-1/3 h-full bg-[#F97216]/10 skew-x-12 translate-x-1/2" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className={`max-w-3xl ${isRTL ? 'text-right' : 'text-left'}`}>
+            <div className={`max-w-3xl ${isRTL ? 'ms-auto text-right' : 'me-auto text-start'}`}>
               <div className={`inline-flex items-center gap-2 px-3 py-1 bg-[#F97216]/20 text-[#F97216] rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-[#F97216]/30`}>
                 <Shield size={14} />
                 {t('privacyPolicy')}
@@ -84,13 +84,13 @@ export default function PrivacyPolicyPage() {
                 )}
                 
                 <div 
-                  className={`prose prose-lg max-w-none text-gray-600 leading-relaxed prose-headings:text-[#0A1E36] prose-headings:font-bold prose-p:mb-6 prose-strong:text-[#0A1E36] prose-a:text-[#F97216] prose-ul:list-disc prose-ol:list-decimal ${isRTL ? 'text-right' : 'text-left'}`}
+                  className={`rtl-prose prose prose-lg max-w-none text-gray-600 leading-relaxed prose-headings:text-[#0A1E36] prose-headings:font-bold prose-p:mb-6 prose-strong:text-[#0A1E36] prose-a:text-[#F97216] prose-ul:list-disc prose-ol:list-decimal ${isRTL ? 'text-right' : 'text-start'}`}
                   dir={isRTL ? 'rtl' : 'ltr'}
                   dangerouslySetInnerHTML={{ __html: content }}
                 />
 
                 {/* Contact Footer in Content */}
-                <div className="mt-16 pt-16 border-t border-gray-100 flex flex-col items-center text-center">
+                <div className={`mt-16 pt-16 border-t border-gray-100 flex flex-col items-center ${isRTL ? 'text-right' : 'text-center'}`}>
                   <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
                     <Shield size={32} />
                   </div>

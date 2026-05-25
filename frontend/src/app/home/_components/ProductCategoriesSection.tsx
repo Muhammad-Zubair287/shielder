@@ -65,7 +65,7 @@ export default function ProductCategoriesSection() {
                 />
               </div>
               {/* Body */}
-              <div className={`p-6 flex flex-col gap-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+              <div className={`p-6 flex flex-col gap-2 ${isRTL ? 'text-right' : 'text-start'}`}>
                 {/* Count badge */}
                 <span className="text-[#F97316] text-xs font-semibold">{countLabel(i)}</span>
                 <h3 className="text-gray-900 font-bold text-xl">{t(cat.nameKey)}</h3>

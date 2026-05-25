@@ -15,10 +15,10 @@ export interface ProductsCatalogFilters {
 
 export interface ProductsCatalogProduct {
   id: string;
-  name?: string;
+  name: string;
   nameEn?: string;
   nameAr?: string;
-  description?: string;
+  description: string;
   descriptionEn?: string;
   descriptionAr?: string;
   price: number | string;

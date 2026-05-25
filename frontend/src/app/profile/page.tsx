@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
       <main className="pt-28 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className={`mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
+          <div className={`mb-8 ${isRTL ? 'text-right' : 'text-start'}`}>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">
               {t('profile.title')}
             </h1>

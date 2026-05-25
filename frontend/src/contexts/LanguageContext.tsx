@@ -7,7 +7,6 @@ import {
   createT,
   isRTLLocale,
   localeDir,
-  localeFontClass,
   DEFAULT_LOCALE,
 } from '@/i18n/config';
 import initLocalizedToasts from '@/utils/localizeToasts';
@@ -42,23 +41,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
 
-    // Sync <html> direction, lang and Cairo font class
+    // Keep document attributes fully synchronized for CSS logical direction.
     const dir = localeDir(locale);
-    const fontClass = localeFontClass(locale);
     const html = document.documentElement;
 
-    html.dir  = dir;
+    html.dir = dir;
     html.lang = locale;
+    html.setAttribute('data-locale', locale);
 
-    // Apply / remove Cairo font on <body> for Arabic
-    if (locale === 'ar') {
-      document.body.classList.add(fontClass);
-    } else {
-      // Remove any previously added font class
-      document.body.classList.forEach(cls => {
-        if (cls.includes('font-')) document.body.classList.remove(cls);
-      });
-    }
+    document.body.setAttribute('dir', dir);
+    document.body.setAttribute('lang', locale);
 
     localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
     invalidateLocaleCache(); // keep axios interceptor cache in sync

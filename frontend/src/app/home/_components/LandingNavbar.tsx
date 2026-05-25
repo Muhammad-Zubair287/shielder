@@ -81,7 +81,7 @@ export default function LandingNavbar() {
     const active = isActiveLink(href);
 
     if (mobile) {
-      return `block px-6 py-3.5 text-sm transition-colors border-b border-gray-50 ${isRTL ? 'text-right' : 'text-left'} ${
+      return `block px-6 py-3.5 text-sm transition-colors border-b border-gray-50 ${isRTL ? 'text-right' : 'text-start'} ${
         active
           ? 'bg-orange-50 text-[#F97316] font-bold'
           : 'text-gray-700 font-semibold hover:text-[#F97316] hover:bg-orange-50'
@@ -108,12 +108,12 @@ export default function LandingNavbar() {
           {/* Logo */}
           <Link href="/home" className="flex-shrink-0 flex items-center">
             <div className="relative h-12 w-36 sm:w-40 lg:w-44">
-              <Image src="/images/shielder-logo.png" alt="Shielder" fill className="object-contain object-left" sizes="200px" priority />
+              <Image src="/images/shielder-logo.png" alt="Shielder" fill className={`object-contain ${isRTL ? 'object-right' : 'object-left'}`} sizes="200px" priority />
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className={`hidden lg:flex items-center gap-0 ${isRTL ? 'mr-2' : 'ml-2'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+          <nav className="hidden lg:flex items-center gap-0 ms-2" dir={isRTL ? 'rtl' : 'ltr'}>
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
                 aria-current={isActiveLink(link.href) ? 'page' : undefined}
@@ -136,7 +136,7 @@ export default function LandingNavbar() {
           <div className="flex-1" />
 
           {/* Actions */}
-          <div className={`flex items-center gap-0.5 ${isRTL ? 'flex-row-reverse' : ''} ml-1`}>
+          <div className={`flex items-center gap-0.5 ${isRTL ? 'flex-row-reverse' : ''} ms-1`}>
             <div className="scale-90 origin-right">
               <LanguageSwitcher variant="pills" />
             </div>
@@ -225,7 +225,7 @@ export default function LandingNavbar() {
             href={user ? '/profile' : '/login'}
             onClick={() => setMobileOpen(false)}
             aria-current={isActiveLink(user ? '/profile' : '/login') ? 'page' : undefined}
-            className={`flex items-center gap-3 px-6 py-3.5 text-sm border-b border-gray-50 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-left'} ${
+            className={`flex items-center gap-3 px-6 py-3.5 text-sm border-b border-gray-50 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-start'} ${
               isActiveLink(user ? '/profile' : '/login')
                 ? 'bg-orange-50 text-[#F97316] font-bold'
                 : 'text-gray-700 font-semibold hover:text-[#F97316] hover:bg-orange-50'
@@ -255,7 +255,7 @@ export default function LandingNavbar() {
                 logout();
                 setMobileOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-red-600 hover:bg-red-50 border-b border-gray-50 ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
+              className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-red-600 hover:bg-red-50 border-b border-gray-50 ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
             >
               <LogOut size={20} className={isRTL ? 'rotate-180' : ''} />
               <span>{t('auth.logout')}</span>

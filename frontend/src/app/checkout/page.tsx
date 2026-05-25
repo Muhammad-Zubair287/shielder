@@ -83,7 +83,7 @@ function MethodCard({
         ${selected
           ? 'border-[#F97316] bg-orange-50'
           : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
-        ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
+        ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
     >
       <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center
         ${selected ? 'bg-[#F97316] text-white' : 'bg-gray-100 text-gray-500'}`}>
@@ -362,7 +362,7 @@ function CheckoutPageInner() {
           <div className="flex items-center mb-8 relative">
             <Link
               href="/cart"
-              className={`p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ${isRTL ? 'ml-auto' : 'mr-auto'}`}
+              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ms-auto"
               aria-label="back"
             >
               <BackArrow size={22} />
@@ -439,7 +439,7 @@ function CheckoutPageInner() {
                     {/* Warehouse Selector (only show when PICKUP selected) */}
                     {deliveryType === 'PICKUP' && (
                       <div className="mt-4">
-                        <label htmlFor="warehouse-select" className={`block text-sm font-medium text-gray-700 mb-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <label htmlFor="warehouse-select" className={`block text-sm font-medium text-gray-700 mb-2 ${isRTL ? 'text-right' : 'text-start'}`}>
                           {t('checkout.selectWarehouse')} <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
@@ -451,7 +451,7 @@ function CheckoutPageInner() {
                             className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
                               bg-white focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
                               disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400
-                              ${isRTL ? 'text-right' : 'text-left'}`}
+                              ${isRTL ? 'text-right' : 'text-start'}`}
                           >
                             <option value="">
                               {warehousesLoading
@@ -469,7 +469,7 @@ function CheckoutPageInner() {
                           {!warehouseId && deliveryType === 'PICKUP' && (
                             <div className={`flex items-start gap-2 mt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                               <AlertCircle size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
-                              <p className={`text-xs text-orange-600 ${isRTL ? 'text-right' : 'text-left'}`}>
+                              <p className={`text-xs text-orange-600 ${isRTL ? 'text-right' : 'text-start'}`}>
                                 {t('checkout.warehouseRequired')}
                               </p>
                             </div>
@@ -477,7 +477,7 @@ function CheckoutPageInner() {
                         </div>
 
                         {selectedWarehouse && warehouseAddressLines.length > 0 && (
-                          <div className={`mt-3 rounded-xl border border-blue-100 bg-blue-50 p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <div className={`mt-3 rounded-xl border border-blue-100 bg-blue-50 p-4 ${isRTL ? 'text-right' : 'text-start'}`}>
                             <p className="text-xs font-semibold tracking-wide text-blue-800 uppercase mb-2">
                               {locale === 'ar' ? 'عنوان المستودع للاستلام' : 'Pickup Warehouse Address'}
                             </p>
@@ -505,11 +505,11 @@ function CheckoutPageInner() {
                   <div className="space-y-4">
                     {/* Full Name */}
                     <div>
-                      <label htmlFor="checkout-customer-name" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <label htmlFor="checkout-customer-name" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-start'}`}>
                         {t('checkout.fullName')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <UserIcon size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                        <UserIcon size={16} className="absolute top-1/2 -translate-y-1/2 text-gray-400 start-3" />
                         <input
                           id="checkout-customer-name"
                           type="text"
@@ -520,18 +520,18 @@ function CheckoutPageInner() {
                           required
                           className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
                             placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
-                            ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'}`}
+                            ${isRTL ? 'pe-9 ps-3 text-right' : 'ps-9 pe-3 text-start'}`}
                         />
                       </div>
                     </div>
 
                     {/* Phone */}
                     <div>
-                      <label htmlFor="checkout-phone-number" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <label htmlFor="checkout-phone-number" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-start'}`}>
                         {t('checkout.phone')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <Phone size={16} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                        <Phone size={16} className="absolute top-1/2 -translate-y-1/2 text-gray-400 start-3" />
                         <input
                           id="checkout-phone-number"
                           type="tel"
@@ -542,7 +542,7 @@ function CheckoutPageInner() {
                           required
                           className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
                             placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
-                            ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'}`}
+                            ${isRTL ? 'pe-9 ps-3 text-right' : 'ps-9 pe-3 text-start'}`}
                         />
                       </div>
                     </div>
@@ -551,7 +551,7 @@ function CheckoutPageInner() {
                       <>
                         {/* Shipping Address */}
                         <div>
-                          <label htmlFor="checkout-shipping-address" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <label htmlFor="checkout-shipping-address" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-start'}`}>
                             {t('checkout.shippingAddress')} <span className="text-red-500">*</span>
                           </label>
                           <textarea
@@ -564,13 +564,13 @@ function CheckoutPageInner() {
                             required
                             className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
                               placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent resize-none
-                              ${isRTL ? 'text-right' : 'text-left'}`}
+                              ${isRTL ? 'text-right' : 'text-start'}`}
                           />
                         </div>
 
                         {/* Notes (optional) */}
                         <div>
-                          <label htmlFor="checkout-notes" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <label htmlFor="checkout-notes" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-start'}`}>
                             {t('checkout.notes')}
                           </label>
                           <input
@@ -582,12 +582,12 @@ function CheckoutPageInner() {
                             placeholder={t('checkout.notesPlaceholder')}
                             className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
                               placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
-                              ${isRTL ? 'text-right' : 'text-left'}`}
+                              ${isRTL ? 'text-right' : 'text-start'}`}
                           />
                         </div>
                       </>
                     ) : (
-                      <div className={`rounded-xl border border-amber-100 bg-amber-50 p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <div className={`rounded-xl border border-amber-100 bg-amber-50 p-4 ${isRTL ? 'text-right' : 'text-start'}`}>
                         <p className="text-sm font-semibold text-amber-900 leading-tight">
                           {pickupNoAddressText}
                         </p>
@@ -640,7 +640,7 @@ function CheckoutPageInner() {
                   {paymentMethod === 'CREDIT_CARD' && (
                     <div className={`mt-4 flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <AlertCircle size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                      <p className={`text-xs text-blue-700 leading-relaxed ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <p className={`text-xs text-blue-700 leading-relaxed ${isRTL ? 'text-right' : 'text-start'}`}>
                         {t('checkout.epgSecurityNote')}
                       </p>
                     </div>
@@ -658,7 +658,7 @@ function CheckoutPageInner() {
                   </h2>
 
                   {/* Cart items */}
-                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1 mb-4">
+                  <div className="space-y-3 max-h-64 overflow-y-auto pe-1 mb-4">
                     {cart.items.map(item => {
                       const img = getImageUrl(item.product.thumbnail) ?? PLACEHOLDER;
                       return (
@@ -669,7 +669,7 @@ function CheckoutPageInner() {
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                             <Image src={img} alt={item.product.name} fill className="object-cover" sizes="48px" />
                           </div>
-                          <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-start'}`}>
                             <p className="text-sm font-medium text-gray-800 truncate">{item.product.name}</p>
                             <p className="text-xs text-gray-500">×{item.quantity}</p>
                           </div>

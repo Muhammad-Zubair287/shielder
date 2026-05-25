@@ -9,10 +9,10 @@ import { resolveProductDescription, resolveProductImage, resolveProductImages, r
 
 export interface Product {
   id: string;
-  name?: string;
+  name: string;
   nameEn?: string;
   nameAr?: string;
-  description?: string;
+  description: string;
   descriptionEn?: string;
   descriptionAr?: string;
   translations?: ProductTranslationLike[];

@@ -64,7 +64,7 @@ function AnimatedStat({ rawValue, label, isRTL, active, index }: AnimatedStatPro
 
   return (
     <div
-      className={`flex items-center gap-3 px-6 first:pl-0 last:pr-0 ${isRTL ? 'text-right' : 'text-left'}`}
+      className={`flex items-center gap-3 px-6 first:ps-0 last:pe-0 ${isRTL ? 'text-right' : 'text-start'}`}
       data-aos="zoom-in"
       data-aos-delay={120 + index * 120}
     >

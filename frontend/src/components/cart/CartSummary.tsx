@@ -48,7 +48,7 @@ export default function CartSummary({ onCheckout }: CartSummaryProps) {
   };
 
   return (
-    <div className={`mt-6 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={`mt-6 ${isRTL ? 'text-right' : 'text-start'}`} dir={isRTL ? 'rtl' : 'ltr'}>
 
       {/* Subtotal row */}
       <div className={`flex items-center justify-between py-2 ${isRTL ? 'flex-row-reverse' : ''}`}>

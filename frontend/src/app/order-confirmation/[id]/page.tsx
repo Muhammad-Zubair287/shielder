@@ -209,7 +209,7 @@ function OrderConfirmationPageInner() {
 
             {/* Order Number + Statuses */}
             <div className={`p-5 border-b border-gray-100 flex items-center justify-between gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <div className={isRTL ? 'text-right' : 'text-left'}>
+              <div className={isRTL ? 'text-right' : 'text-start'}>
                 <p className="text-xs text-gray-500">{t('orderConfirmation.orderNumber')}</p>
                 <p className="text-base font-bold text-gray-900 tracking-wide">#{order.orderNumber}</p>
               </div>
@@ -226,7 +226,7 @@ function OrderConfirmationPageInner() {
             </div>
 
             {/* Shipping Info */}
-            <div className={`p-5 border-b border-gray-100 ${isRTL ? 'text-right' : 'text-left'}`}>
+            <div className={`p-5 border-b border-gray-100 ${isRTL ? 'text-right' : 'text-start'}`}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('orderConfirmation.shippingTo')}</p>
               <p className="text-sm font-semibold text-gray-900">{order.customerName}</p>
               <p className="text-sm text-gray-600 mt-0.5">{order.phoneNumber}</p>
@@ -246,7 +246,7 @@ function OrderConfirmationPageInner() {
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                         <Image src={img} alt={productName(item)} fill className="object-cover" sizes="48px" />
                       </div>
-                      <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+                      <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-start'}`}>
                         <p className="text-sm font-medium text-gray-800 truncate">{productName(item)}</p>
                         <p className="text-xs text-gray-500">
                           ×{item.quantity} &nbsp;×&nbsp; <SARSymbol />{Number(item.unitPrice).toFixed(2)}
@@ -263,7 +263,7 @@ function OrderConfirmationPageInner() {
 
             {/* Totals */}
             <div className="p-5">
-              <div className={`space-y-2 text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+              <div className={`space-y-2 text-sm ${isRTL ? 'text-right' : 'text-start'}`}>
                 <div className={`flex justify-between text-gray-500 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <span>{t('cart.subtotal')}</span>
                   <span className="flex items-center gap-0.5"><SARSymbol />{Number(order.subtotal).toFixed(2)}</span>

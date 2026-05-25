@@ -38,7 +38,7 @@ export default function TrustSection() {
           </div>
 
           {/* Content */}
-          <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`} data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="220" data-aos-duration="1100">
+          <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-start'}`} data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="220" data-aos-duration="1100">
             <div>
               <span className="inline-block bg-[#FFF3E8] text-[#F97316] text-[11px] font-bold px-5 py-2 rounded-full uppercase tracking-[0.15em]">
                 {t('landingTrustBadge')}
@@ -69,7 +69,7 @@ export default function TrustSection() {
             {/* Mini stats */}
             <div className="flex items-center gap-8 pt-4 border-t border-gray-200">
               {stats.map((s, i) => (
-                <div key={i} className={isRTL ? 'text-right' : 'text-left'}>
+                <div key={i} className={isRTL ? 'text-right' : 'text-start'}>
                   <p className="text-2xl font-extrabold text-gray-900 leading-none">{s.v}</p>
                   <p className="text-gray-500 text-xs font-medium mt-1">{s.l}</p>
                 </div>

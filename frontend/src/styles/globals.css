@@ -4,21 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Arabic Font Support */
-[lang="ar"], [dir="rtl"] {
+/* Arabic typography */
+[lang='ar'],
+[dir='rtl'] {
   font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
 }
 
-/* RTL Support */
-[dir="rtl"] {
+/* Global direction */
+[dir='rtl'] {
   direction: rtl;
 }
 
-[dir="rtl"] .text-left {
+[dir='ltr'] {
+  direction: ltr;
+}
+
+/* Keep legacy classes readable when older components still use LTR alignment */
+[dir='rtl'] .text-left {
   text-align: right;
 }
 
-[dir="rtl"] .text-right {
+[dir='rtl'] .text-start {
+  text-align: right;
+}
+
+[dir='ltr'] .text-start {
   text-align: left;
 }
 
@@ -36,15 +46,31 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* RTL Support */
-[dir='rtl'] {
-  direction: rtl;
+/* Arabic form ergonomics */
+[dir='rtl'] input:not([type='number']):not([type='email']):not([type='url']),
+[dir='rtl'] textarea,
+[dir='rtl'] select {
   text-align: right;
 }
 
-[dir='ltr'] {
-  direction: ltr;
-  text-align: left;
+[dir='rtl'] input::placeholder,
+[dir='rtl'] textarea::placeholder {
+  text-align: right;
+}
+
+/* Better rich-text rendering for Arabic policy/content pages */
+[dir='rtl'] .rtl-prose,
+[dir='rtl'] .rtl-prose :where(h1, h2, h3, h4, h5, h6, p, li, blockquote) {
+  text-align: right;
+}
+
+[dir='rtl'] .rtl-prose :where(ul, ol) {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+[dir='rtl'] .rtl-prose :where(li::marker) {
+  font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
 }
 
 /* Custom Scrollbar */
@@ -71,12 +97,6 @@ body {
 /* Smooth direction transitions */
 html {
   transition: direction 0s;
-}
-
-/* Input placeholders in RTL */
-[dir="rtl"] input::placeholder,
-[dir="rtl"] textarea::placeholder {
-  text-align: right;
 }
 
 /* Fix Toaster positioning in RTL */

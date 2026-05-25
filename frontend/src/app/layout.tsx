@@ -52,7 +52,7 @@ const API_ORIGIN = (() => {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {/* Warm up Google Fonts CDN connection before any CSS/JS requests */}

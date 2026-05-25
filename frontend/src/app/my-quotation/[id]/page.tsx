@@ -237,13 +237,13 @@ export default function MyQuotationPage() {
               {(quotation.userMessage || quotation.adminReply) && (
                 <div className="px-8 py-4 border-b border-gray-100 space-y-3">
                   {quotation.userMessage && (
-                    <div className={`rounded-xl border border-gray-100 bg-gray-50 p-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    <div className={`rounded-xl border border-gray-100 bg-gray-50 p-3 ${isRTL ? 'text-right' : 'text-start'}`}>
                       <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Your Message</p>
                       <p className="mt-1 text-sm text-gray-700">{quotation.userMessage}</p>
                     </div>
                   )}
                   {quotation.adminReply && (
-                    <div className={`rounded-xl border border-emerald-100 bg-emerald-50 p-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    <div className={`rounded-xl border border-emerald-100 bg-emerald-50 p-3 ${isRTL ? 'text-right' : 'text-start'}`}>
                       <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Admin Reply</p>
                       <p className="mt-1 text-sm text-emerald-800">{quotation.adminReply}</p>
                     </div>
@@ -280,8 +280,8 @@ export default function MyQuotationPage() {
                 <div className={`hidden sm:grid grid-cols-12 gap-2 text-xs font-bold text-gray-500 uppercase tracking-wide mb-3 ${isRTL ? 'text-right' : ''}`}>
                   <span className="col-span-5">{t('quot.product')}</span>
                   <span className="col-span-2 text-center">{t('quot.qty')}</span>
-                  <span className={`col-span-2 ${isRTL ? 'text-left' : 'text-right'}`}>{t('quot.unitPrice')}</span>
-                  <span className={`col-span-3 ${isRTL ? 'text-left' : 'text-right'}`}>{t('quot.lineTotal')}</span>
+                  <span className={`col-span-2 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.unitPrice')}</span>
+                  <span className={`col-span-3 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.lineTotal')}</span>
                 </div>
                 <hr className="hidden sm:block border-gray-100 mb-4" />
 
@@ -314,12 +314,12 @@ export default function MyQuotationPage() {
                       </div>
 
                       {/* Unit price */}
-                      <div className={`col-span-4 sm:col-span-2 text-sm text-gray-700 font-medium ${isRTL ? 'text-left' : 'text-right'}`}>
+                      <div className={`col-span-4 sm:col-span-2 text-sm text-gray-700 font-medium ${isRTL ? 'text-start' : 'text-right'}`}>
                         {fmt(item.unitPrice)}
                       </div>
 
                       {/* Line total */}
-                      <div className={`col-span-4 sm:col-span-3 text-sm font-bold text-[#0D1637] ${isRTL ? 'text-left' : 'text-right'}`}>
+                      <div className={`col-span-4 sm:col-span-3 text-sm font-bold text-[#0D1637] ${isRTL ? 'text-start' : 'text-right'}`}>
                         {fmt(item.totalPrice)}
                       </div>
                     </div>
@@ -332,13 +332,13 @@ export default function MyQuotationPage() {
 
                     {/* Subtotal */}
                     <div className={`flex gap-16 text-sm text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="w-28 text-right">{t('quot.subtotal')}</span>
+                      <span className={`w-28 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.subtotal')}</span>
                       <span className="font-semibold text-gray-900">{fmt(quotation.subtotal)}</span>
                     </div>
 
                     {/* Shipping */}
                     <div className={`flex gap-16 text-sm text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="w-28 text-right">{t('quot.shipping')}</span>
+                      <span className={`w-28 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.shipping')}</span>
                       <span className="font-semibold text-gray-900">{t('quot.free')}</span>
                     </div>
 
@@ -347,7 +347,7 @@ export default function MyQuotationPage() {
 
                     {/* Total */}
                     <div className={`flex gap-16 text-base ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <span className="w-28 text-right font-bold text-gray-900">{t('quot.total')}</span>
+                      <span className={`w-28 font-bold text-gray-900 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.total')}</span>
                       <span className="font-bold text-[#0D1637] text-lg">{fmt(quotation.total)}</span>
                     </div>
                   </div>

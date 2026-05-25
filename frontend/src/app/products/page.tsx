@@ -112,10 +112,10 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
       </div>
 
       {/* Body */}
-      <div className={`p-4 flex flex-col gap-1.5 flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+      <div className={`p-4 flex flex-col gap-1.5 flex-1 ${isRTL ? 'text-right' : 'text-start'}`}>
         {/* Category badge */}
         {badgeLabel && (
-          <span className="inline-flex self-start border border-gray-300 text-gray-500 text-xs font-semibold px-2.5 py-0.5 rounded-full tracking-wider">
+          <span className={`inline-flex border border-gray-300 text-gray-500 text-xs font-semibold px-2.5 py-0.5 rounded-full tracking-wider ${isRTL ? 'self-end' : 'self-start'}`}>
             {badgeLabel}
           </span>
         )}
@@ -135,7 +135,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
 
         {/* Price */}
         {isQuotation ? (
-          <p className="text-[#0205A6] font-bold text-base mt-1 flex items-center gap-1">
+          <p className={`text-[#0205A6] font-bold text-base mt-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <SARSymbol />{price.toFixed(2)}
           </p>
         ) : (
@@ -150,7 +150,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
           <button
             onClick={e => { e.stopPropagation(); onProductClick(); }}
             aria-label={`Get quotation for ${product.name}`}
-            className="mt-3 w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3 rounded-xl transition-colors">
+            className={`mt-3 w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3 rounded-xl transition-colors inline-flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
             {t('productsGetQuotation')}
           </button>
         ) : (
@@ -158,7 +158,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
             onClick={handleAddToCart}
             disabled={cartLoading || product.stock === 0}
             aria-label={`Add ${product.name} to cart`}
-            className="mt-3 w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            className={`mt-3 w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isRTL ? 'flex-row-reverse' : ''}`}>
             <ShoppingCart size={15} />
             {t('productsAddToCart')}
           </button>
@@ -350,7 +350,7 @@ function ProductDetailModal({
                       className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
                       <Plus size={14} />
                     </button>
-                    <span className="text-xs text-gray-400 ml-1">
+                    <span className="text-xs text-gray-400 ms-1">
                       Total: <span className="font-bold text-gray-700"><SARSymbol className="inline" />{(price * qty).toFixed(2)}</span>
                     </span>
                   </div>
@@ -514,7 +514,7 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
           {categories.length > 0 && (
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-3">{t('productsCategory')}</label>
-              <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+              <div className={`space-y-1 max-h-60 overflow-y-auto ${isRTL ? 'ps-1' : 'pe-1'}`}>
 
                 {/* All Filters option */}
                 <label className="flex items-center gap-3 px-2 py-2 cursor-pointer group">
@@ -581,7 +581,7 @@ function FilterPanel({ open, onClose, categories, draft, setDraft, onApply, onCl
               onClick={() => field('inStock', !draft.inStock)}
               className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border border-transparent transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-[#0205A6]/20 ${draft.inStock ? 'bg-[#0205A6]' : 'bg-gray-300'}`}
             >
-              <span className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ${draft.inStock ? 'translate-x-7' : 'translate-x-1'}`} />
+              <span className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ${draft.inStock ? (isRTL ? '-translate-x-7' : 'translate-x-7') : (isRTL ? '-translate-x-1' : 'translate-x-1')}`} />
             </button>
           </div>
         </div>
@@ -802,7 +802,7 @@ function ProductsContent() {
                 placeholder={t('productsSearchPlaceholder')}
                 className={`w-full h-[50px] bg-white border border-[#D4D7DE] rounded-full py-2.5 text-sm text-gray-900 placeholder-gray-400
                   focus:outline-none focus:ring-2 focus:ring-[#0205A6]/30 focus:border-[#0205A6] transition-colors
-                  ${isRTL ? 'pr-12 pl-10 text-right' : 'pl-12 pr-10'}`} />
+                  ${isRTL ? 'pe-12 ps-10 text-right' : 'ps-12 pe-10 text-start'}`} />
               {searchInput && (
                 <button onClick={() => handleSearchChange('')}
                   aria-label="Clear search"
@@ -825,7 +825,7 @@ function ProductsContent() {
                 aria-haspopup="dialog"
                 aria-expanded={filterOpen}
                 aria-label={t('productsFilterAll')}
-                className={`flex items-center gap-1.5 h-[38px] rounded-full px-4 text-sm font-semibold border transition-colors whitespace-nowrap ml-auto
+                className={`flex items-center gap-1.5 h-[38px] rounded-full px-4 text-sm font-semibold border transition-colors whitespace-nowrap ms-auto
                   ${activeFilterCount > 0 ? 'bg-[#0205A6] text-white border-[#0205A6]' : 'bg-[#F8FAFC] text-gray-700 border-[#E2E8F0] hover:bg-gray-100'}`}>
                 {t('productsFilterAll')}
                 <Filter size={14} className={activeFilterCount > 0 ? 'text-white' : 'text-gray-500'} />
@@ -844,14 +844,14 @@ function ProductsContent() {
 
           {/* Results count */}
           {!loading && (
-            <p className={`text-sm text-gray-500 mb-5 ${isRTL ? 'text-right' : ''}`}>
+            <p className={`text-sm text-gray-500 mb-5 ${isRTL ? 'text-right' : 'text-start'}`}>
               {total} {t('productsResults')}
             </p>
           )}
 
           {/* Grid */}
           {comparedProducts.length > 0 && (
-            <div className="mb-4 bg-white border border-gray-200 rounded-2xl p-4 flex flex-wrap items-center gap-2">
+            <div className={`mb-4 bg-white border border-gray-200 rounded-2xl p-4 flex flex-wrap items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span className="text-sm font-semibold text-gray-700">{t('productsCompareLabel')}</span>
               {comparedProducts.map((item) => (
                 <span key={item.id} className="inline-flex items-center gap-2 text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
@@ -873,7 +873,7 @@ function ProductsContent() {
                   </button>
                 </span>
               ))}
-              <div className="ml-auto flex items-center gap-3">
+              <div className={`ms-auto flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <button
                   type="button"
                   onClick={() => setShowCompareTable((v) => !v)}
@@ -906,9 +906,9 @@ function ProductsContent() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className={`px-4 py-3 font-semibold text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>{t('productsComparisonField')}</th>
+                      <th className={`px-4 py-3 font-semibold text-gray-700 ${isRTL ? 'text-right' : 'text-start'}`}>{t('productsComparisonField')}</th>
                       {comparedProducts.map((item) => (
-                        <th key={item.id} className={`px-4 py-3 font-semibold text-gray-900 min-w-[220px] ${isRTL ? 'text-right' : 'text-left'}`}>{item.name}</th>
+                        <th key={item.id} className={`px-4 py-3 font-semibold text-gray-900 min-w-[220px] ${isRTL ? 'text-right' : 'text-start'}`}>{item.name}</th>
                       ))}
                     </tr>
                   </thead>

@@ -41,17 +41,17 @@ export default function LandingFooter() {
               </div>
               <span className="font-extrabold text-white text-base uppercase tracking-widest">Shielder</span>
             </Link>
-            <p className={`text-sm leading-relaxed ${isRTL ? 'text-right' : 'text-left'}`}>{t('landingFooterAbout')}</p>
+            <p className={`text-sm leading-relaxed ${isRTL ? 'text-right' : 'text-start'}`}>{t('landingFooterAbout')}</p>
           </div>
 
           {/* Quick Links */}
           <div data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="160" data-aos-duration="1000">
-            <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-left'}`}>
+            <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-start'}`}>
               {t('landingFooterQuickLinks')}
             </h4>
             <ul className="space-y-3">
               {quickLinks.map((l, index) => (
-                <li key={l.href} className={isRTL ? 'text-right' : 'text-left'} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay={240 + index * 100} data-aos-duration="900">
+                <li key={l.href} className={isRTL ? 'text-right' : 'text-start'} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay={240 + index * 100} data-aos-duration="900">
                   <Link href={l.href} className="text-sm hover:text-[#F97316] transition-colors">{l.label}</Link>
                 </li>
               ))}
@@ -60,12 +60,12 @@ export default function LandingFooter() {
 
           {/* Categories */}
           <div data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="240" data-aos-duration="1000">
-            <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-left'}`}>
+            <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-start'}`}>
               {t('landingFooterCategories')}
             </h4>
             <ul className="space-y-3">
               {categories.map((c, index) => (
-                <li key={c.href} className={isRTL ? 'text-right' : 'text-left'} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay={300 + index * 100} data-aos-duration="900">
+                <li key={c.href} className={isRTL ? 'text-right' : 'text-start'} data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay={300 + index * 100} data-aos-duration="900">
                   <Link href={c.href} className="text-sm hover:text-[#F97316] transition-colors">{c.label}</Link>
                 </li>
               ))}
@@ -74,7 +74,7 @@ export default function LandingFooter() {
 
           {/* Contact */}
           <div data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="320" data-aos-duration="1000">
-            <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-left'}`}>
+            <h4 className={`text-white font-bold text-sm uppercase tracking-widest mb-5 ${isRTL ? 'text-right' : 'text-start'}`}>
               {t('landingFooterContact')}
             </h4>
             <ul className="space-y-4">

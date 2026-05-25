@@ -57,9 +57,7 @@ function CartSkeleton() {
 function EmptyCart({ t, isRTL }: { t: (k: string) => string; isRTL: boolean }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center py-20 gap-5 text-center ${
-        isRTL ? 'text-right' : 'text-left'
-      }`}
+      className="flex flex-col items-center justify-center py-20 gap-5 text-center"
     >
       <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center">
         <ShoppingBag size={36} className="text-[#F97316]" />
@@ -99,9 +97,7 @@ export default function CartPage() {
           <div className={`flex items-center mb-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Link
               href="/products"
-              className={`p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ${
-                isRTL ? 'ml-auto' : 'mr-auto'
-              }`}
+              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors me-auto"
               aria-label="back"
             >
               <BackArrow size={22} />

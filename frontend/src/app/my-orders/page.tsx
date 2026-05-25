@@ -218,7 +218,7 @@ export default function MyOrdersPage() {
           <div className="flex items-center mb-8 relative">
             <Link
               href="/products"
-              className={`p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ${isRTL ? 'ml-auto' : 'mr-auto'}`}
+              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ms-auto"
               aria-label="back"
             >
               <BackArrow size={22} />
@@ -229,7 +229,7 @@ export default function MyOrdersPage() {
             <button
               onClick={() => fetchOrders(pagination.page)}
               disabled={refreshing}
-              className={`ml-auto text-gray-400 hover:text-[#F97316] transition-colors disabled:opacity-40 ${isRTL ? 'mr-auto ml-0' : ''}`}
+              className="ms-auto text-gray-400 hover:text-[#F97316] transition-colors disabled:opacity-40"
               aria-label="refresh"
             >
               <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
@@ -285,7 +285,7 @@ export default function MyOrdersPage() {
                     >
                       {/* Top row */}
                       <div className={`flex items-center justify-between px-5 py-4 border-b border-gray-50 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <div className={isRTL ? 'text-right' : 'text-left'}>
+                        <div className={isRTL ? 'text-right' : 'text-start'}>
                           <p className="text-xs text-gray-500">{t('myOrders.orderNumber')}</p>
                           <p className="text-sm font-bold text-gray-900 tracking-wide">#{order.orderNumber}</p>
                         </div>
@@ -327,7 +327,7 @@ export default function MyOrdersPage() {
                       {/* Delivery / Pickup info */}
                       <div className="px-5 pb-3 space-y-2">
                         {!!productSummary && (
-                          <div className={`text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <div className={`text-sm ${isRTL ? 'text-right' : 'text-start'}`}>
                             <span className="text-gray-500">{t('myOrders.productsSummary') || 'Products'}: </span>
                             <span className="font-medium text-gray-700">
                               {productSummary}
@@ -336,7 +336,7 @@ export default function MyOrdersPage() {
                           </div>
                         )}
 
-                        <div className={`text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <div className={`text-sm ${isRTL ? 'text-right' : 'text-start'}`}>
                           <span className="text-gray-500">{t('myOrders.deliveryType')}: </span>
                           <span className="font-semibold text-gray-800">
                             {isPickupOrder ? t('myOrders.deliveryPickup') : t('myOrders.deliveryHome')}
@@ -344,7 +344,7 @@ export default function MyOrdersPage() {
                         </div>
 
                         {isPickupOrder && (
-                          <div className={`bg-amber-50 border border-amber-100 rounded-xl p-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <div className={`bg-amber-50 border border-amber-100 rounded-xl p-3 ${isRTL ? 'text-right' : 'text-start'}`}>
                             <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-1">
                               {t('myOrders.pickupDetails')}
                             </p>
