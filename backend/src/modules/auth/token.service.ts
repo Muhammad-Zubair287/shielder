@@ -246,6 +246,20 @@ export class TokenService {
    */
   static async revokeToken(tokenHash: string, reason: string): Promise<void> {
     try {
+      // Check if token exists and if already revoked
+      const existingToken = await prisma.refreshToken.findUnique({
+        where: { tokenHash },
+      });
+
+      if (!existingToken) {
+        throw new UnauthorizedError('Token not found');
+      }
+
+      if (existingToken.isRevoked) {
+        logger.warn(`Attempted to revoke already-revoked token: ${tokenHash.slice(0, 8)}...`);
+        throw new UnauthorizedError('Token has already been revoked');
+      }
+
       await prisma.refreshToken.update({
         where: { tokenHash },
         data: {

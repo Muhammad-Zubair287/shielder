@@ -482,6 +482,11 @@ export class AuthService {
               preferredLanguage: user.profile?.preferredLanguage || 'en',
             };
 
+            // ⚠️ SECURITY: Revoke all previous tokens to prevent token reuse
+            const revokeOldPromise = TokenService.revokeAllUserTokens(user.id, 'login_with_trusted_device').catch(err =>
+              logger.warn('Failed to revoke old tokens on trusted device login:', err)
+            );
+
             const userUpdatePromise = prisma.user.update({
               where: { id: user.id },
               data: {
@@ -494,7 +499,7 @@ export class AuthService {
 
             const tokenPromise = TokenService.generateTokenPair(tokenPayload, deviceInfo);
 
-            const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise]);
+            const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise, revokeOldPromise]);
 
             AuditService.log({
               userId: user.id,
@@ -526,6 +531,12 @@ export class AuthService {
         preferredLanguage: user.profile?.preferredLanguage || 'en',
       };
 
+      // ⚠️ SECURITY: Revoke all previous tokens from older logins to prevent token reuse
+      // This ensures that once a user logs in again, old tokens become invalid
+      const revokeOldPromise = TokenService.revokeAllUserTokens(user.id, 'new_login').catch(err =>
+        logger.warn('Failed to revoke old tokens on login:', err)
+      );
+
       // Reset failed attempts and update last login in parallel with token generation.
       const userUpdatePromise = prisma.user.update({
         where: { id: user.id },
@@ -539,7 +550,7 @@ export class AuthService {
 
       const tokenPromise = TokenService.generateTokenPair(tokenPayload, deviceInfo);
 
-      const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise]);
+      const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise, revokeOldPromise]);
 
       // Fire-and-forget audit log — do not await; keeps login response fast
       AuditService.log({
@@ -1504,6 +1515,11 @@ export class AuthService {
       });
       recordTiming('sessionCleanup');
 
+      // ⚠️ SECURITY: Revoke all old refresh tokens from previous logins to prevent token reuse
+      // This ensures old tokens cannot be used after 2FA verification
+      await TokenService.revokeAllUserTokens(userId, '2fa_verified_revoke_old_tokens');
+      recordTiming('revokeOldTokens');
+
       const tokens = await TokenService.generateTokenPair(
         {
           userId: user.id,
@@ -1552,6 +1568,7 @@ export class AuthService {
           'Session Validation': perfMetrics.steps['sessionValidation'] || 0,
           'OTP Verification': perfMetrics.steps['otpVerification'] || 0,
           'Session Cleanup': perfMetrics.steps['sessionCleanup'] || 0,
+          'Revoke Old Tokens': perfMetrics.steps['revokeOldTokens'] || 0,
           'Token Generation': perfMetrics.steps['tokenGeneration'] || 0,
           'Trusted Device': perfMetrics.steps['trustedDeviceCreation'] || 0,
         },
