@@ -52,6 +52,41 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
   return result as T;
 }
 
+/**
+ * Sanitize HTML content but allow a safe subset of tags/attributes suitable for CMS-like fields
+ */
+export function sanitizeHtmlAllowlist(input: string | undefined | null): string {
+  if (!input) return '';
+  // Allow a conservative set of tags and attributes for policy/terms content
+  const cleaned = sanitizeHtml(String(input), {
+    allowedTags: [
+      'a', 'b', 'i', 'em', 'strong', 'u', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'name', 'target', 'rel'],
+      img: [],
+    },
+    allowedSchemesByTag: {
+      a: ['http', 'https', 'mailto']
+    },
+    // Remove any javascript: URIs
+    transformTags: {
+      'a': (tagName, attribs) => {
+        const href = attribs.href || '';
+        if (/^javascript:/i.test(href)) {
+          delete attribs.href;
+        }
+        // enforce rel and target
+        attribs.rel = 'nofollow noopener noreferrer';
+        attribs.target = '_blank';
+        return { tagName, attribs };
+      }
+    }
+  });
+
+  return cleaned.trim();
+}
+
 export default {
   sanitizeString,
   sanitizeObject,
