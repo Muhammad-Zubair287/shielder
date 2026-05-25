@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { BadRequestError, UnauthorizedError, ForbiddenError } from '../errors/api.error';
-import { sanitizeObject } from '@/common/security/sanitizer';
-import type { AuthRequest } from '@/types/global';
+import { BadRequestError } from '../errors/api.error';
+import { sanitizeObject, sanitizeHtmlAllowlist } from '@/common/security/sanitizer';
 
 const HTML_TAG_RE = /<[^>]+>/; // detects any HTML tags
 const JS_PROTOCOL_RE = /javascript:\s*/i;
@@ -36,10 +35,11 @@ function scanObjectForMalicious(obj: any): { found: boolean; example?: string } 
 /**
  * Sanitization middleware
  * - Rejects requests that contain obvious HTML/JS in text inputs
- * - Allows safe HTML for CMS/policy fields if user is admin-role (SUPER_ADMIN, ADMIN)
+ * - Allows safe HTML for CMS/policy fields
+ * - Authorization is enforced at route level (authenticate + role middleware)
  * - Otherwise sanitizes strings by stripping tags
  */
-export const sanitizationMiddleware = (req: Request | AuthRequest, _res: Response, next: NextFunction): void => {
+export const sanitizationMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   // Only sanitize request body (we rely on Joi for query/params validation)
   const body = req.body;
   if (!body || typeof body !== 'object') {
@@ -48,32 +48,14 @@ export const sanitizationMiddleware = (req: Request | AuthRequest, _res: Respons
   }
 
   // Special-case: allow safe HTML for CMS-like fields (privacy policy / terms)
-  // If body contains `contentEn` or `contentAr` we check admin auth first
+  // Authorization is handled by route middleware; this layer only sanitizes content.
   if ('contentEn' in body || 'contentAr' in body) {
-    // Require authentication and admin role
-    const authReq = req as AuthRequest;
-    if (!authReq.user) {
-      next(new UnauthorizedError('Authentication required to edit policy content'));
-      return;
-    }
-    
-    const isAdmin = authReq.user.role === 'SUPER_ADMIN' || authReq.user.role === 'ADMIN';
-    if (!isAdmin) {
-      next(new ForbiddenError('Only admins can edit policy content'));
-      return;
-    }
-
-    // Admin authenticated: apply allowlist sanitizer to content fields
+    // Apply allowlist sanitizer to policy content fields
     try {
-      // Only sanitize the content fields with allowlist sanitizer
       if (typeof body.contentEn === 'string') {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { sanitizeHtmlAllowlist } = require('@/common/security/sanitizer');
         body.contentEn = sanitizeHtmlAllowlist(body.contentEn);
       }
       if (typeof body.contentAr === 'string') {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { sanitizeHtmlAllowlist } = require('@/common/security/sanitizer');
         body.contentAr = sanitizeHtmlAllowlist(body.contentAr);
       }
       req.body = body;
