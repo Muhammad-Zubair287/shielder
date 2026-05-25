@@ -22,6 +22,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest",
     "test:auth": "jest src/modules/auth/__tests__/trusted-device.test.ts src/modules/auth/__tests__/trusted-device-status.test.ts src/modules/auth/__tests__/trusted-devices-revoke.test.ts --runInBand --verbose",
+    "test:email-reverification": "jest src/modules/auth/__tests__/email-reverification.test.ts --runInBand --verbose",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "perf:baseline": "tsx scripts/performance-baseline.ts",

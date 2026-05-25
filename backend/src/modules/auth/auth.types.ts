@@ -60,6 +60,29 @@ export interface ForgotPasswordResetWithOtpRequest {
 }
 
 /**
+ * Email verification OTP verify request (forced verification flow)
+ */
+export interface VerifyEmailOtpRequest {
+  verificationSessionToken: string;
+  code: string;
+}
+
+/**
+ * Resend email verification OTP request (forced verification flow)
+ */
+export interface ResendEmailVerificationOtpRequest {
+  verificationSessionToken: string;
+}
+
+/**
+ * Change email while pending verification
+ */
+export interface ChangeVerificationEmailRequest {
+  verificationSessionToken: string;
+  newEmail: string;
+}
+
+/**
  * Reset Password Request
  */
 export interface ResetPasswordRequest {
@@ -110,7 +133,7 @@ export interface TokenPairResponse {
  * Auth Response
  */
 export interface AuthResponse {
-  user: {
+  user?: {
     id: string;
     email: string;
     role: string;
@@ -127,9 +150,13 @@ export interface AuthResponse {
       locale?: string;
     };
   };
-  tokens: TokenPairResponse;
+  tokens?: TokenPairResponse;
   emailDeliveryStatus?: 'email_sent' | 'auto_verified';
   requiresTwoFactor?: boolean;
+  requiresEmailVerification?: boolean;
+  verificationSessionToken?: string;
+  verificationExpiresInMinutes?: number;
+  verificationEmail?: string;
   otpSessionToken?: string;
   trustedDeviceToken?: string;
 }

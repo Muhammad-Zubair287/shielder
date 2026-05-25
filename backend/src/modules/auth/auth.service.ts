@@ -14,6 +14,7 @@ import {
   UnauthorizedError,
   NotFoundError,
   ConflictError,
+  TooManyRequestsError,
 } from '@/common/errors/api.error';
 import { AuditService } from '@/common/services/audit.service';
 import { sanitizeString } from '@/common/security/sanitizer';
@@ -27,6 +28,9 @@ import type {
   ForgotPasswordSendOtpRequest,
   ForgotPasswordVerifyOtpRequest,
   ForgotPasswordResetWithOtpRequest,
+  VerifyEmailOtpRequest,
+  ResendEmailVerificationOtpRequest,
+  ChangeVerificationEmailRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
 } from './auth.types';
@@ -38,6 +42,9 @@ type SanitizedAuthUser = {
   status: string;
   isActive: boolean;
   emailVerified: boolean;
+  emailVerifiedAt?: Date | null;
+  verificationStatus?: string;
+  requiresEmailReverification?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   lastLoginAt?: Date | null;
@@ -67,6 +74,8 @@ export class AuthService {
   private static readonly RESET_TOKEN_EXPIRY_MINUTES = 15;
   private static readonly RESET_OTP_SESSION_EXPIRY_MINUTES = 10;
   private static readonly VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
+  private static readonly EMAIL_VERIFICATION_SESSION_EXPIRY_MINUTES = 15;
+  private static readonly EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
 
   private static hasUsableEmailConfig(): boolean {
     const provider = (env.EMAIL_PROVIDER || 'smtp').toLowerCase();
@@ -209,8 +218,14 @@ export class AuthService {
             isActive: true,
             deletedAt: null,
             emailVerified: bypassEmailFlows,
+            emailVerifiedAt: bypassEmailFlows ? new Date() : null,
+            verificationStatus: bypassEmailFlows ? 'VERIFIED' : 'PENDING',
+            requiresEmailReverification: false,
             verificationToken,
             verificationTokenExpiry,
+            emailVerificationSessionToken: null,
+            emailVerificationSessionExpiry: null,
+            verificationOtpSentAt: null,
             failedLoginAttempts: 0,
             lockedUntil: null,
             profile: existingUser.profile
@@ -248,8 +263,14 @@ export class AuthService {
             role: data.role || 'USER',
             status: bypassEmailFlows ? 'ACTIVE' : 'PENDING',
             emailVerified: bypassEmailFlows,
+            emailVerifiedAt: bypassEmailFlows ? new Date() : null,
+            verificationStatus: bypassEmailFlows ? 'VERIFIED' : 'PENDING',
+            requiresEmailReverification: false,
             verificationToken,
             verificationTokenExpiry,
+            emailVerificationSessionToken: null,
+            emailVerificationSessionExpiry: null,
+            verificationOtpSentAt: null,
             profile: {
               create: {
                 fullName: data.fullName || '',
@@ -376,10 +397,14 @@ export class AuthService {
         select: {
           id: true,
           email: true,
+          createdAt: true,
           role: true,
           status: true,
           isActive: true,
           emailVerified: true,
+          emailVerifiedAt: true,
+          verificationStatus: true,
+          requiresEmailReverification: true,
           lockedUntil: true,
           failedLoginAttempts: true,
           passwordHash: true,
@@ -432,25 +457,6 @@ export class AuthService {
         throw new UnauthorizedError('Account has been deactivated');
       }
 
-      if (user.role === 'USER' && !user.emailVerified) {
-        if (this.shouldBypassEmailFlows()) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              emailVerified: true,
-              status: 'ACTIVE',
-              verificationToken: null,
-              verificationTokenExpiry: null,
-            },
-          });
-          user = { ...user, emailVerified: true, status: 'ACTIVE' };
-          logger.warn(`DEV MODE: auto-verified user at login because email delivery is unavailable - ${user.email}`);
-        } else {
-          logger.warn(`Login failed: Email not verified - ${user.email}`);
-          throw new UnauthorizedError('Please verify your email before logging in');
-        }
-      }
-
       // Verify password
       const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
       recordTiming('passwordVerification');
@@ -460,6 +466,47 @@ export class AuthService {
         // Increment failed attempts
         await this.handleFailedLogin(user.id, user.failedLoginAttempts);
         throw new UnauthorizedError('Invalid credentials');
+      }
+
+      // Force customer verification checks only after credentials are validated.
+      if (user.role === 'USER' && this.shouldRequireEmailVerification(user)) {
+        if (this.shouldBypassEmailFlows()) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              emailVerified: true,
+              emailVerifiedAt: new Date(),
+              verificationStatus: 'VERIFIED',
+              requiresEmailReverification: false,
+              status: 'ACTIVE',
+              verificationToken: null,
+              verificationTokenExpiry: null,
+              emailVerificationSessionToken: null,
+              emailVerificationSessionExpiry: null,
+              verificationOtpSentAt: null,
+            },
+          });
+          user = {
+            ...user,
+            emailVerified: true,
+            emailVerifiedAt: new Date(),
+            verificationStatus: 'VERIFIED',
+            requiresEmailReverification: false,
+            status: 'ACTIVE',
+          };
+          logger.warn(`DEV MODE: auto-verified user at login because email delivery is unavailable - ${user.email}`);
+        } else {
+          const verificationState = await this.startEmailVerificationChallenge(user.id, user.email, user.profile?.fullName || 'User');
+          logger.warn(`Login blocked pending email verification: ${user.email}`);
+
+          return {
+            user: this.sanitizeUser(user),
+            requiresEmailVerification: true,
+            verificationSessionToken: verificationState.verificationSessionToken,
+            verificationExpiresInMinutes: verificationState.expiresInMinutes,
+            verificationEmail: user.email,
+          };
+        }
       }
 
       // If a trusted device token was provided, verify it and skip 2FA for admins
@@ -967,9 +1014,15 @@ export class AuthService {
           where: { id: user.id },
           data: {
             emailVerified: true,
+            emailVerifiedAt: new Date(),
+            verificationStatus: 'VERIFIED',
+            requiresEmailReverification: false,
             status: 'ACTIVE',
             verificationToken: null,
             verificationTokenExpiry: null,
+            emailVerificationSessionToken: null,
+            emailVerificationSessionExpiry: null,
+            verificationOtpSentAt: null,
           },
         });
         logger.warn(`DEV MODE: auto-verified via resend endpoint because email delivery is unavailable: ${user.email}`);
@@ -987,6 +1040,9 @@ export class AuthService {
         data: {
           verificationToken,
           verificationTokenExpiry,
+          verificationStatus: 'PENDING',
+          emailVerifiedAt: null,
+          requiresEmailReverification: true,
         },
       });
 
@@ -1142,6 +1198,9 @@ export class AuthService {
           status: true,
           isActive: true,
           emailVerified: true,
+          emailVerifiedAt: true,
+          verificationStatus: true,
+          requiresEmailReverification: true,
           createdAt: true,
           updatedAt: true,
           profile: {
@@ -1195,9 +1254,15 @@ export class AuthService {
         where: { id: user.id },
         data: {
           emailVerified: true,
+          emailVerifiedAt: new Date(),
+          verificationStatus: 'VERIFIED',
+          requiresEmailReverification: false,
           status: 'ACTIVE',
           verificationToken: null,
           verificationTokenExpiry: null,
+          emailVerificationSessionToken: null,
+          emailVerificationSessionExpiry: null,
+          verificationOtpSentAt: null,
         },
       });
 
@@ -1208,6 +1273,196 @@ export class AuthService {
       logger.error('Email verification error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Start forced email verification challenge for login-blocked users.
+   */
+  static async startEmailVerificationChallenge(
+    userId: string,
+    email: string,
+    fullName: string
+  ): Promise<{ verificationSessionToken: string; expiresInMinutes: number }> {
+    const verificationSessionToken = crypto.randomBytes(32).toString('hex');
+    const verificationSessionTokenHash = crypto
+      .createHash('sha256')
+      .update(verificationSessionToken)
+      .digest('hex');
+
+    const expiresAt = new Date();
+    expiresAt.setMinutes(
+      expiresAt.getMinutes() + this.EMAIL_VERIFICATION_SESSION_EXPIRY_MINUTES
+    );
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerificationSessionToken: verificationSessionTokenHash,
+        emailVerificationSessionExpiry: expiresAt,
+        status: 'PENDING',
+        verificationStatus: 'REVERIFY_REQUIRED',
+        requiresEmailReverification: true,
+      },
+    });
+
+    await this.issueEmailVerificationOtp(userId, email, fullName, false);
+
+    await this.createAuditLog(
+      userId,
+      'EMAIL_REVERIFICATION_REQUIRED',
+      'Forced email re-verification challenge started at login'
+    );
+
+    return {
+      verificationSessionToken,
+      expiresInMinutes: this.EMAIL_VERIFICATION_SESSION_EXPIRY_MINUTES,
+    };
+  }
+
+  /**
+   * Verify OTP for forced email verification flow.
+   */
+  static async verifyEmailVerificationOtp(data: VerifyEmailOtpRequest): Promise<void> {
+    const user = await this.findUserByVerificationSessionToken(data.verificationSessionToken);
+    if (!user) {
+      throw new UnauthorizedError('Verification session expired. Please login again.');
+    }
+
+    const { TwoFactorService } = await import('./twofa.service');
+    await TwoFactorService.verifyOTP(user.id, data.code);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        verificationStatus: 'VERIFIED',
+        requiresEmailReverification: false,
+        status: 'ACTIVE',
+        verificationToken: null,
+        verificationTokenExpiry: null,
+        emailVerificationSessionToken: null,
+        emailVerificationSessionExpiry: null,
+        verificationOtpSentAt: null,
+      },
+    });
+
+    await this.createAuditLog(
+      user.id,
+      'EMAIL_REVERIFICATION_COMPLETED',
+      'Forced email verification completed with OTP'
+    );
+  }
+
+  /**
+   * Resend OTP for forced email verification flow.
+   */
+  static async resendEmailVerificationOtp(
+    data: ResendEmailVerificationOtpRequest
+  ): Promise<{ expiresInMinutes: number; resendCooldownSeconds: number }> {
+    const user = await this.findUserByVerificationSessionToken(data.verificationSessionToken);
+    if (!user) {
+      throw new UnauthorizedError('Verification session expired. Please login again.');
+    }
+
+    const otpResult = await this.issueEmailVerificationOtp(
+      user.id,
+      user.email,
+      user.profile?.fullName || 'User',
+      true
+    );
+
+    if (!otpResult.sent) {
+      throw new TooManyRequestsError(
+        `Please wait ${otpResult.cooldownSeconds} seconds before requesting a new code.`
+      );
+    }
+
+    await this.createAuditLog(
+      user.id,
+      'EMAIL_REVERIFICATION_OTP_RESENT',
+      'Forced email verification OTP resent'
+    );
+
+    return {
+      expiresInMinutes: 5,
+      resendCooldownSeconds: this.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
+    };
+  }
+
+  /**
+   * Change email while pending forced verification, then send OTP to new email.
+   */
+  static async changeVerificationEmail(
+    data: ChangeVerificationEmailRequest
+  ): Promise<{ verificationSessionToken: string; verificationEmail: string; expiresInMinutes: number }> {
+    const user = await this.findUserByVerificationSessionToken(data.verificationSessionToken);
+    if (!user) {
+      throw new UnauthorizedError('Verification session expired. Please login again.');
+    }
+
+    const newEmail = data.newEmail.toLowerCase().trim();
+    if (!newEmail) {
+      throw new BadRequestError('New email is required');
+    }
+
+    if (newEmail === user.email.toLowerCase()) {
+      throw new BadRequestError('New email must be different from current email');
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { email: newEmail },
+      select: {
+        id: true,
+        deletedAt: true,
+      },
+    });
+
+    if (existing && existing.id !== user.id && !existing.deletedAt) {
+      throw new ConflictError('User with this email already exists');
+    }
+
+    const verificationSessionToken = crypto.randomBytes(32).toString('hex');
+    const verificationSessionTokenHash = crypto
+      .createHash('sha256')
+      .update(verificationSessionToken)
+      .digest('hex');
+    const expiresAt = new Date();
+    expiresAt.setMinutes(
+      expiresAt.getMinutes() + this.EMAIL_VERIFICATION_SESSION_EXPIRY_MINUTES
+    );
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: newEmail,
+        emailVerified: false,
+        emailVerifiedAt: null,
+        verificationStatus: 'PENDING',
+        requiresEmailReverification: true,
+        status: 'PENDING',
+        verificationToken: null,
+        verificationTokenExpiry: null,
+        emailVerificationSessionToken: verificationSessionTokenHash,
+        emailVerificationSessionExpiry: expiresAt,
+        verificationOtpSentAt: null,
+      },
+    });
+
+    await this.issueEmailVerificationOtp(user.id, newEmail, user.profile?.fullName || 'User', false);
+
+    await this.createAuditLog(
+      user.id,
+      'EMAIL_UPDATED_DURING_REVERIFICATION',
+      'Email updated during forced verification flow',
+      { previousEmail: user.email, newEmail }
+    );
+
+    return {
+      verificationSessionToken,
+      verificationEmail: newEmail,
+      expiresInMinutes: this.EMAIL_VERIFICATION_SESSION_EXPIRY_MINUTES,
+    };
   }
 
   /**
@@ -1254,6 +1509,119 @@ export class AuthService {
   }
 
   // ==================== HELPER METHODS ====================
+
+  private static shouldRequireEmailVerification(user: {
+    role: string;
+    emailVerified: boolean;
+    emailVerifiedAt: Date | null;
+    verificationStatus: string;
+    requiresEmailReverification: boolean;
+  }): boolean {
+    if (user.role !== 'USER') {
+      return false;
+    }
+
+    if (user.requiresEmailReverification) {
+      return true;
+    }
+
+    if (!user.emailVerified) {
+      return true;
+    }
+
+    if (!user.emailVerifiedAt) {
+      return true;
+    }
+
+    return user.verificationStatus !== 'VERIFIED';
+  }
+
+  private static async findUserByVerificationSessionToken(verificationSessionToken: string) {
+    const verificationSessionTokenHash = crypto
+      .createHash('sha256')
+      .update(verificationSessionToken)
+      .digest('hex');
+
+    return prisma.user.findFirst({
+      where: {
+        emailVerificationSessionToken: verificationSessionTokenHash,
+        emailVerificationSessionExpiry: { gt: new Date() },
+        deletedAt: null,
+        role: 'USER',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        verificationOtpSentAt: true,
+        profile: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    });
+  }
+
+  private static async issueEmailVerificationOtp(
+    userId: string,
+    email: string,
+    fullName: string,
+    enforceCooldown: boolean
+  ): Promise<{ sent: boolean; cooldownSeconds: number }> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        verificationOtpSentAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (enforceCooldown && user.verificationOtpSentAt) {
+      const elapsedSeconds = Math.floor((Date.now() - user.verificationOtpSentAt.getTime()) / 1000);
+      if (elapsedSeconds < this.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS) {
+        return {
+          sent: false,
+          cooldownSeconds: this.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS - elapsedSeconds,
+        };
+      }
+    }
+
+    const { TwoFactorService } = await import('./twofa.service');
+    const { otp } = await TwoFactorService.createOTP(userId, 'EMAIL');
+
+    const sent = await emailService.sendEmail({
+      to: email,
+      subject: 'Verify your email to continue',
+      html: `
+        <h2>Email verification required</h2>
+        <p>Hello ${fullName || 'User'},</p>
+        <p>Your verification code is: <strong style="font-size: 20px; letter-spacing: 2px;">${otp}</strong></p>
+        <p>This code expires in 5 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      `,
+      text: `Your email verification code is ${otp}. This code expires in 5 minutes.`,
+    });
+
+    if (!sent) {
+      throw new BadRequestError('Unable to deliver verification email. Please try again later.');
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        verificationOtpSentAt: new Date(),
+      },
+    });
+
+    return {
+      sent: true,
+      cooldownSeconds: this.EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
+    };
+  }
 
   /**
    * Validate Password Strength (async — reads settings from DB)
@@ -1349,6 +1717,9 @@ export class AuthService {
       status?: string;
       isActive?: boolean;
       emailVerified?: boolean;
+      emailVerifiedAt?: Date | null;
+      verificationStatus?: string;
+      requiresEmailReverification?: boolean;
       profile?: {
         fullName?: string;
         phoneNumber?: string | null;
@@ -1370,6 +1741,9 @@ export class AuthService {
       status: sanitized.status || 'ACTIVE',
       isActive: sanitized.isActive ?? true,
       emailVerified: sanitized.emailVerified ?? false,
+      emailVerifiedAt: sanitized.emailVerifiedAt ?? null,
+      verificationStatus: sanitized.verificationStatus || 'PENDING',
+      requiresEmailReverification: sanitized.requiresEmailReverification ?? false,
       profile: sanitized.profile
         ? {
             fullName: sanitized.profile.fullName || undefined,

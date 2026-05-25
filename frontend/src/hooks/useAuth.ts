@@ -80,6 +80,24 @@ export const useAuth = () => {
       const response = await authService.login(data);
       const role = String(response.user?.role ?? '').toUpperCase();
 
+      if (
+        response.requiresVerification &&
+        response.verificationSessionToken &&
+        response.verificationEmail
+      ) {
+        setUser(null);
+        toast.error(t('auth.emailVerificationRequired'), { duration: LOGIN_TOAST_DURATION_MS });
+
+        const params = new URLSearchParams({
+          mode: 'otp',
+          email: response.verificationEmail,
+          session: response.verificationSessionToken,
+        });
+
+        router.replace(`/verify-email?${params.toString()}`);
+        return response;
+      }
+
       const goToTwoFactorPage = (targetPath: string) => {
         router.replace(targetPath);
       };
@@ -107,6 +125,10 @@ export const useAuth = () => {
       }
 
       // Normal login flow (no 2FA needed)
+      if (!response.user) {
+        throw new Error(t('loginError'));
+      }
+
       setUser(response.user);
       toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS, { duration: LOGIN_TOAST_DURATION_MS });
 

@@ -168,6 +168,42 @@ router.post(
   authController.verifyOTP
 );
 
+/**
+ * POST /api/auth/verification/verify-otp
+ * Verify OTP for forced email re-verification flow
+ * Rate limit: 5 requests per 15 minutes
+ */
+router.post(
+  '/verification/verify-otp',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 15 }),
+  validate(authValidation.verifyEmailOtp),
+  authController.verifyEmailOtp
+);
+
+/**
+ * POST /api/auth/verification/resend-otp
+ * Resend OTP for forced email re-verification flow
+ * Rate limit: 5 requests per 15 minutes
+ */
+router.post(
+  '/verification/resend-otp',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 15 }),
+  validate(authValidation.resendEmailVerificationOtp),
+  authController.resendEmailVerificationOtp
+);
+
+/**
+ * POST /api/auth/verification/change-email
+ * Change email while user is pending forced verification
+ * Rate limit: 3 requests per 15 minutes
+ */
+router.post(
+  '/verification/change-email',
+  rateLimitAuth({ maxRequests: 3, windowMinutes: 15 }),
+  validate(authValidation.changeVerificationEmail),
+  authController.changeVerificationEmail
+);
+
 // ==================== PROTECTED ROUTES ====================
 // All routes below require authentication
 

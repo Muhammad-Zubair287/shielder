@@ -62,13 +62,17 @@ export interface ChangePasswordRequest {
 }
 
 export interface AuthResponse {
-  user: User;
+  user?: User;
   tokens?: {
     accessToken: string;
     refreshToken: string;
   };
   emailDeliveryStatus?: 'email_sent' | 'auto_verified';
   requiresTwoFactor?: boolean;
+  requiresVerification?: boolean;
+  verificationSessionToken?: string;
+  verificationExpiresInMinutes?: number;
+  verificationEmail?: string;
   otpSessionToken?: string;
   trustedDeviceToken?: string;
 }

@@ -195,4 +195,45 @@ export const authValidation = {
       }),
     rememberDevice: Joi.boolean().optional(),
   }),
+
+  /**
+   * Verify forced email-verification OTP
+   */
+  verifyEmailOtp: Joi.object({
+    verificationSessionToken: Joi.string().required().messages({
+      'string.empty': 'Verification session token is required',
+      'any.required': 'Verification session token is required',
+    }),
+    code: Joi.string()
+      .length(6)
+      .pattern(/^\d+$/)
+      .required()
+      .messages({
+        'string.empty': 'OTP code is required',
+        'string.length': 'OTP code must be 6 digits',
+        'string.pattern.base': 'OTP code must contain only numbers',
+        'any.required': 'OTP code is required',
+      }),
+  }),
+
+  /**
+   * Resend forced email-verification OTP
+   */
+  resendEmailVerificationOtp: Joi.object({
+    verificationSessionToken: Joi.string().required().messages({
+      'string.empty': 'Verification session token is required',
+      'any.required': 'Verification session token is required',
+    }),
+  }),
+
+  /**
+   * Change email during forced verification
+   */
+  changeVerificationEmail: Joi.object({
+    verificationSessionToken: Joi.string().required().messages({
+      'string.empty': 'Verification session token is required',
+      'any.required': 'Verification session token is required',
+    }),
+    newEmail: emailSchema,
+  }),
 };

@@ -16,6 +16,9 @@ import type {
   ForgotPasswordSendOtpRequest,
   ForgotPasswordVerifyOtpRequest,
   ForgotPasswordResetWithOtpRequest,
+  VerifyEmailOtpRequest,
+  ResendEmailVerificationOtpRequest,
+  ChangeVerificationEmailRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
   DeviceInfo,
@@ -119,6 +122,19 @@ class AuthController {
     }
 
     const result = await AuthService.login(data, deviceInfo);
+
+    if (result.requiresEmailVerification) {
+      res.status(403).json({
+        success: false,
+        requiresVerification: true,
+        message: 'Please verify your email before continuing.',
+        verificationSessionToken: result.verificationSessionToken,
+        verificationExpiresInMinutes: result.verificationExpiresInMinutes,
+        verificationEmail: result.verificationEmail,
+        user: result.user,
+      });
+      return;
+    }
 
     res.status(200).json({
       success: true,
@@ -603,6 +619,50 @@ class AuthController {
     res.status(200).json({
       success: true,
       message: '2FA verification successful',
+      data: result,
+    });
+  });
+
+  /**
+   * Verify OTP for forced email verification flow
+   */
+  verifyEmailOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: VerifyEmailOtpRequest = req.body;
+
+    await AuthService.verifyEmailVerificationOtp(data);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully. Please login to continue.',
+    });
+  });
+
+  /**
+   * Resend OTP for forced email verification flow
+   */
+  resendEmailVerificationOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: ResendEmailVerificationOtpRequest = req.body;
+
+    const result = await AuthService.resendEmailVerificationOtp(data);
+
+    res.status(200).json({
+      success: true,
+      message: 'A new verification code has been sent to your email.',
+      data: result,
+    });
+  });
+
+  /**
+   * Change email while pending verification and send new OTP
+   */
+  changeVerificationEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data: ChangeVerificationEmailRequest = req.body;
+
+    const result = await AuthService.changeVerificationEmail(data);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email updated successfully. A verification code was sent to your new address.',
       data: result,
     });
   });

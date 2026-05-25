@@ -4,6 +4,7 @@
  */
 
 import apiClient, { handleApiError } from './api.service';
+import axios from 'axios';
 import { API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
 import type {
   LoginRequest,
@@ -88,6 +89,27 @@ class AuthService {
 
       return authData;
     } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const payload = error.response?.data as {
+          requiresVerification?: boolean;
+          verificationSessionToken?: string;
+          verificationExpiresInMinutes?: number;
+          verificationEmail?: string;
+          user?: AuthResponse['user'];
+          message?: string;
+        } | undefined;
+
+        if (error.response?.status === 403 && payload?.requiresVerification) {
+          return {
+            user: payload.user,
+            requiresVerification: true,
+            verificationSessionToken: payload.verificationSessionToken,
+            verificationExpiresInMinutes: payload.verificationExpiresInMinutes,
+            verificationEmail: payload.verificationEmail,
+          };
+        }
+      }
+
       throw new Error(handleApiError(error));
     }
   }
@@ -323,6 +345,54 @@ class AuthService {
   async verifyEmail(token: string): Promise<void> {
     try {
       await apiClient.get(`${API_ENDPOINTS.AUTH.VERIFY_EMAIL}/${token}`);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Verify OTP for forced email re-verification
+   */
+  async verifyEmailOtp(verificationSessionToken: string, code: string): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL_OTP, {
+        verificationSessionToken,
+        code,
+      });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Resend OTP for forced email re-verification
+   */
+  async resendEmailOtp(verificationSessionToken: string): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.AUTH.RESEND_EMAIL_OTP, {
+        verificationSessionToken,
+      });
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  }
+
+  /**
+   * Change email while in forced verification flow
+   */
+  async changeVerificationEmail(
+    verificationSessionToken: string,
+    newEmail: string
+  ): Promise<{ verificationSessionToken: string; verificationEmail: string; expiresInMinutes: number }> {
+    try {
+      const response = await apiClient.post<
+        ApiResponse<{ verificationSessionToken: string; verificationEmail: string; expiresInMinutes: number }>
+      >(API_ENDPOINTS.AUTH.CHANGE_VERIFICATION_EMAIL, {
+        verificationSessionToken,
+        newEmail,
+      });
+
+      return response.data.data!;
     } catch (error) {
       throw new Error(handleApiError(error));
     }
