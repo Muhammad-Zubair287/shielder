@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../errors/api.error';
-import { sanitizeObject, sanitizeString } from '@/common/security/sanitizer';
+import { sanitizeObject } from '@/common/security/sanitizer';
 
 const HTML_TAG_RE = /<[^>]+>/; // detects any HTML tags
 const JS_PROTOCOL_RE = /javascript:\s*/i;

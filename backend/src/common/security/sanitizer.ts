@@ -1,5 +1,9 @@
 import sanitizeHtml from 'sanitize-html';
 
+type SanitizerFrame = {
+  attribs?: Record<string, string | undefined>;
+};
+
 /**
  * Sanitize a single string by stripping all HTML tags and dangerous attributes.
  * Keeps plain text only. Also trims whitespace.
@@ -10,7 +14,7 @@ export function sanitizeString(input: string | undefined | null): string {
     allowedTags: [],
     allowedAttributes: {},
     // Transform href/src javascript: usages to empty string
-    exclusiveFilter: (frame) => {
+    exclusiveFilter: (frame: SanitizerFrame) => {
       if (frame.attribs) {
         for (const k of Object.keys(frame.attribs)) {
           const v = String(frame.attribs[k] || '');
