@@ -53,22 +53,65 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
 }
 
 /**
- * Sanitize HTML content but allow a safe subset of tags/attributes suitable for CMS-like fields
+ * Sanitize HTML content but allow a safe subset of tags/attributes suitable for Quill rich-text editor
+ * Conservative allowlist matching Quill's standard formats
  */
 export function sanitizeHtmlAllowlist(input: string | undefined | null): string {
   if (!input) return '';
-  // Allow a conservative set of tags and attributes for policy/terms content
+  // Quill-compatible: text formatting, lists, headers, code, links, images, tables
   const cleaned = sanitizeHtml(String(input), {
     allowedTags: [
-      'a', 'b', 'i', 'em', 'strong', 'u', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td'
+      // Text formatting
+      'b', 'i', 'em', 'strong', 'u', 's', 'del', 'ins', 'sub', 'sup',
+      // Headings
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      // Lists & structure
+      'p', 'br', 'ul', 'ol', 'li', 'blockquote', 'hr',
+      // Code
+      'code', 'pre',
+      // Tables
+      'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col',
+      // Links & media
+      'a', 'img', 'video', 'source',
+      // Semantic
+      'span', 'div',
     ],
     allowedAttributes: {
-      a: ['href', 'name', 'target', 'rel'],
-      img: [],
+      a: ['href', 'name', 'target', 'rel', 'title'],
+      img: ['src', 'alt', 'title', 'width', 'height', 'style'],
+      video: ['src', 'controls', 'width', 'height'],
+      source: ['src', 'type'],
+      span: ['style', 'class'],
+      div: ['style', 'class'],
+      table: ['border', 'cellpadding', 'cellspacing'],
+      td: ['colspan', 'rowspan', 'style'],
+      th: ['colspan', 'rowspan', 'style'],
+      col: ['width'],
     },
     allowedSchemesByTag: {
-      a: ['http', 'https', 'mailto']
+      a: ['http', 'https', 'mailto', 'ftp'],
+      img: ['http', 'https', 'data'],
+      video: ['http', 'https'],
+      source: ['http', 'https'],
     },
+    // Strip dangerous style properties
+    allowedStyles: {
+      '*': {
+        'color': [/^#(0x)?[0-9A-F]{6}$/i, /^rgb/, /^inherit/, /^currentColor/, /^transparent/],
+        'background-color': [/^#(0x)?[0-9A-F]{6}$/i, /^rgb/, /^inherit/],
+        'text-align': [/^left$/, /^center$/, /^right$/, /^justify$/],
+        'font-weight': [/^bold$/, /^normal$/, /^[1-9]00$/],
+        'font-style': [/^italic$/, /^normal$/],
+        'text-decoration': [/^underline$/, /^line-through$/, /^none$/],
+        'margin': [/^\d+(%|px|em|rem)$/],
+        'padding': [/^\d+(%|px|em|rem)$/],
+        'width': [/^\d+(%|px|em|rem)$/],
+        'height': [/^\d+(%|px|em|rem)$/],
+      },
+    },
+    // Strictest iframe handling: remove completely
+    disallowedTagsMode: 'discard',
+    nonBooleanAttributes: ['class', 'style'],
     // Remove any javascript: URIs
     transformTags: {
       'a': (tagName, attribs) => {
@@ -76,9 +119,8 @@ export function sanitizeHtmlAllowlist(input: string | undefined | null): string 
         if (/^javascript:/i.test(href)) {
           delete attribs.href;
         }
-        // enforce rel and target
-        attribs.rel = 'nofollow noopener noreferrer';
-        attribs.target = '_blank';
+        // enforce security attributes on external links
+        attribs.rel = attribs.rel ? `${attribs.rel} nofollow noopener noreferrer` : 'nofollow noopener noreferrer';
         return { tagName, attribs };
       }
     }

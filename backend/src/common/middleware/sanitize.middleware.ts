@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { BadRequestError } from '../errors/api.error';
+import { BadRequestError, UnauthorizedError, ForbiddenError } from '../errors/api.error';
 import { sanitizeObject } from '@/common/security/sanitizer';
+import type { AuthRequest } from '@/types/global';
 
 const HTML_TAG_RE = /<[^>]+>/; // detects any HTML tags
 const JS_PROTOCOL_RE = /javascript:\s*/i;
@@ -35,9 +36,10 @@ function scanObjectForMalicious(obj: any): { found: boolean; example?: string } 
 /**
  * Sanitization middleware
  * - Rejects requests that contain obvious HTML/JS in text inputs
+ * - Allows safe HTML for CMS/policy fields if user is admin-role (SUPER_ADMIN, ADMIN)
  * - Otherwise sanitizes strings by stripping tags
  */
-export const sanitizationMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+export const sanitizationMiddleware = (req: Request | AuthRequest, _res: Response, next: NextFunction): void => {
   // Only sanitize request body (we rely on Joi for query/params validation)
   const body = req.body;
   if (!body || typeof body !== 'object') {
@@ -46,12 +48,25 @@ export const sanitizationMiddleware = (req: Request, _res: Response, next: NextF
   }
 
   // Special-case: allow safe HTML for CMS-like fields (privacy policy / terms)
-  // If body contains `contentEn` or `contentAr` we will whitelist-safe sanitize
+  // If body contains `contentEn` or `contentAr` we check admin auth first
   if ('contentEn' in body || 'contentAr' in body) {
+    // Require authentication and admin role
+    const authReq = req as AuthRequest;
+    if (!authReq.user) {
+      next(new UnauthorizedError('Authentication required to edit policy content'));
+      return;
+    }
+    
+    const isAdmin = authReq.user.role === 'SUPER_ADMIN' || authReq.user.role === 'ADMIN';
+    if (!isAdmin) {
+      next(new ForbiddenError('Only admins can edit policy content'));
+      return;
+    }
+
+    // Admin authenticated: apply allowlist sanitizer to content fields
     try {
       // Only sanitize the content fields with allowlist sanitizer
       if (typeof body.contentEn === 'string') {
-        // import here to avoid circular imports at module load
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { sanitizeHtmlAllowlist } = require('@/common/security/sanitizer');
         body.contentEn = sanitizeHtmlAllowlist(body.contentEn);
@@ -88,5 +103,6 @@ export const sanitizationMiddleware = (req: Request, _res: Response, next: NextF
 
   next();
 };
+
 
 export default sanitizationMiddleware;
