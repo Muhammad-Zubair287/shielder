@@ -222,7 +222,7 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
             {/* Question */}
             <div className={isRTL ? 'text-right' : 'text-center'}>
               <p className="text-sm font-bold text-gray-900">
-                {isRTL ? `${t('captchaQuestionPrefix') || 'ما هو'} ${challenge.num1} + ${challenge.num2} ?` : `What is ${challenge.num1} + ${challenge.num2}?`}
+                {isRTL ? `${t('captchaQuestionPrefix') || 'ما هو'} ${challenge.num1} + ${challenge.num2} ؟` : `What is ${challenge.num1} + ${challenge.num2}?`}
               </p>
             </div>
 
