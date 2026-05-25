@@ -26,9 +26,14 @@ export const authValidation = {
   register: Joi.object({
     email: emailSchema,
     password: passwordSchema,
-    fullName: Joi.string().trim().max(100).required().messages({
-      'any.required': 'Full name is required',
-    }),
+    fullName: sharedValidationSchemas.textNoHtml
+      .max(100)
+      .pattern(/^[\p{L}\s.'\-]{2,100}$/u)
+      .required()
+      .messages({
+        'any.required': 'Full name is required',
+        'string.pattern.base': 'Invalid full name format',
+      }),
     phoneNumber: Joi.string()
       .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
       .required()
@@ -36,11 +41,11 @@ export const authValidation = {
         'any.required': 'Phone number is required',
         'string.pattern.base': 'Please provide a valid phone number (e.g. 05XXXXXXXX or +966 5X XXX XXXX)',
       }),
-    address: Joi.string().trim().max(255).required().messages({
+    address: sharedValidationSchemas.textNoHtml.max(255).required().messages({
       'any.required': 'Address is required',
     }),
-    location: Joi.string().trim().max(255).optional(),
-    companyName: Joi.string().trim().max(100).optional(),
+    location: sharedValidationSchemas.textNoHtml.max(255).optional(),
+    companyName: sharedValidationSchemas.textNoHtml.max(100).optional(),
     role: Joi.string().valid('ADMIN', 'USER').default('USER'),
     preferredLanguage: Joi.string().valid('en', 'ar').default('en'),
   }).unknown(false), // STRICT: Blocks old fields like firstName, lastName, locale

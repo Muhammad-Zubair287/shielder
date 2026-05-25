@@ -8,6 +8,7 @@
 
 import { Router } from 'express';
 import Joi from 'joi';
+import { sharedValidationSchemas } from '../../common/validation/shared.schemas';
 import { epgController } from './epg.controller';
 import { authenticate } from '../auth/auth.middleware';
 import { validate } from '../../common/middleware/validation.middleware';
@@ -24,10 +25,10 @@ const initializeSchema = Joi.object({
     )
     .min(1)
     .required(),
-  customerName:    Joi.string().trim().min(2).required(),
+  customerName:    sharedValidationSchemas.textNoHtml.min(2).required(),
   phoneNumber:     Joi.string().trim().min(7).required(),
-  shippingAddress: Joi.string().trim().min(5).required(),
-  notes:           Joi.string().allow('', null).optional(),
+  shippingAddress: sharedValidationSchemas.textNoHtml.min(5).required(),
+  notes:           sharedValidationSchemas.textNoHtml.allow('', null).optional(),
   deliveryType:    Joi.string().valid('DELIVERY', 'PICKUP').default('DELIVERY'),
   warehouseId:     Joi.when('deliveryType', {
     is: 'PICKUP',

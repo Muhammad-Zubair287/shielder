@@ -10,7 +10,7 @@ export const superAdminValidation = {
   createAdmin: Joi.object({
     email: Joi.string().email().required(),
     password: sharedValidationSchemas.password,
-    fullName: Joi.string().optional(),
+    fullName: sharedValidationSchemas.textNoHtml.optional(),
     phoneNumber: Joi.string().optional(),
     role: Joi.string().valid(...Object.values(UserRole)).required(),
   }),
@@ -23,17 +23,17 @@ export const superAdminValidation = {
 
   updateStatus: Joi.object({
     isActive: Joi.boolean().required(),
-    suspensionReason: Joi.string().trim().max(500).allow('').optional(),
+    suspensionReason: sharedValidationSchemas.textNoHtml.max(500).allow('').optional(),
     suspensionUntil: Joi.date().iso().optional(),
   }),
 
   deleteAdmin: Joi.object({
-    reason: Joi.string().trim().min(3).max(500).allow('').optional(),
+    reason: sharedValidationSchemas.textNoHtml.min(3).max(500).allow('').optional(),
     mode: Joi.string().valid('ARCHIVE', 'PERMANENT').default('ARCHIVE'),
   }),
 
   updateAdmin: Joi.object({
-    fullName: Joi.string().optional().allow(''),
+    fullName: sharedValidationSchemas.textNoHtml.optional().allow(''),
     phoneNumber: Joi.string().optional().allow(''),
     role: Joi.string().valid(...Object.values(UserRole)).optional(),
     isActive: Joi.boolean().optional(),

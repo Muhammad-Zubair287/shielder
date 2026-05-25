@@ -28,6 +28,20 @@ export const sharedValidationSchemas = {
 
   uuid: Joi.string().uuid().required(),
 
+  // Generic text field without HTML/JS content
+  textNoHtml: Joi.string()
+    .trim()
+    .max(1024)
+    .custom((value, helpers) => {
+      if (/<[^>]+>/.test(value)) return helpers.error('string.invalid', { message: 'HTML tags are not allowed' });
+      if (/javascript:\s*/i.test(value)) return helpers.error('string.invalid', { message: 'JavaScript URIs are not allowed' });
+      if (/on\w+\s*=/.test(value)) return helpers.error('string.invalid', { message: 'Event handlers are not allowed' });
+      return value;
+    }, 'No HTML/JS')
+    .messages({
+      'string.invalid': 'Input contains disallowed HTML or script content',
+    }),
+
   pagination: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20),

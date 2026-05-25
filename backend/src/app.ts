@@ -13,6 +13,7 @@ import { appConfig } from './config/app.config';
 import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './common/middleware/error.middleware';
 import { languageMiddleware } from './common/middleware/language.middleware';
+import { sanitizationMiddleware } from './common/middleware/sanitize.middleware';
 import { logger } from './common/logger/logger';
 
 // Import routes
@@ -105,6 +106,9 @@ export const createApp = (): Application => {
   // Body parsing middleware
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Sanitization middleware: reject obvious HTML/JS and normalize strings
+  app.use(sanitizationMiddleware);
 
   // Language middleware
   app.use(languageMiddleware);

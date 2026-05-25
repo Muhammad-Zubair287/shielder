@@ -1,19 +1,20 @@
 import Joi from 'joi';
+import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
 const productTranslationSchema = Joi.object({
   locale: Joi.string().required().length(2),
-  name: Joi.string().required().trim().max(200),
-  description: Joi.string().optional().trim().max(5000),
+  name: sharedValidationSchemas.textNoHtml.required().trim().max(200),
+  description: sharedValidationSchemas.textNoHtml.optional().trim().max(5000),
 });
 
 const productSpecificationSchema = Joi.object({
-  specKey: Joi.string().required().trim(),
-  specValue: Joi.string().required().trim(),
+  specKey: sharedValidationSchemas.textNoHtml.required().trim(),
+  specValue: sharedValidationSchemas.textNoHtml.required().trim(),
 });
 
 const attachmentSchema = Joi.object({
   type: Joi.string().valid('IMAGE', 'DATASHEET', 'MANUAL', 'CERTIFICATE').required(),
-  fileName: Joi.string().required(),
+  fileName: sharedValidationSchemas.textNoHtml.required(),
   fileUrl: Joi.string().uri().required(),
   mimeType: Joi.string().required(),
   size: Joi.number().integer().min(0).required(),

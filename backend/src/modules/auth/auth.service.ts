@@ -16,6 +16,7 @@ import {
   ConflictError,
 } from '@/common/errors/api.error';
 import { AuditService } from '@/common/services/audit.service';
+import { sanitizeString } from '@/common/security/sanitizer';
 import { logger } from '@/common/logger/logger';
 import { UserRole } from '@/types/rbac.types';
 import type {
@@ -154,6 +155,15 @@ export class AuthService {
     emailDeliveryStatus: 'email_sent' | 'auto_verified';
   }> {
     try {
+      // Sanitize incoming free-text fields to ensure database never stores HTML/JS
+      data.fullName = sanitizeString(data.fullName as string);
+      data.address = sanitizeString(data.address as string);
+      data.companyName = sanitizeString(data.companyName as string);
+      data.location = sanitizeString(data.location as string);
+      if (typeof data.phoneNumber === 'string') {
+        data.phoneNumber = sanitizeString(data.phoneNumber as string);
+      }
+
       const email = data.email.toLowerCase();
 
       // Check whether the email already belongs to an active account or a soft-deleted one.
