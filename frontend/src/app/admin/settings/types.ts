@@ -68,7 +68,15 @@ export type GeneralFormState = Pick<
 
 export type CompanyFormState = Pick<
   SystemSettings,
-  'companyName' | 'companyEmail' | 'companyPhone' | 'companyAddress' | 'companyLogo'
+  | 'companyName'
+  | 'companyNameEn'
+  | 'companyNameAr'
+  | 'companyEmail'
+  | 'companyPhone'
+  | 'companyAddress'
+  | 'companyLocationEn'
+  | 'companyLocationAr'
+  | 'companyLogo'
 >;
 
 export type NotificationFormState = Pick<

@@ -325,7 +325,7 @@ describe('Trusted Devices E2E', () => {
       // Mock login endpoint to verify header is sent
       cy.intercept('POST', '/api/auth/login', (req) => {
         // Verify X-Trusted-Device-Token header is present
-        expect(req.request.headers['x-trusted-device-token']).to.equal('stored-device-token');
+        expect(req.headers['x-trusted-device-token']).to.equal('stored-device-token');
 
         req.reply({
           statusCode: 200,

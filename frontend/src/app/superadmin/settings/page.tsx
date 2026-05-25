@@ -37,6 +37,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 type TabType = 'general' | 'order' | 'payment' | 'notification' | 'security' | 'backup' | 'logs';
 
+interface TrustedDevice {
+  id?: string;
+  token: string;
+  name?: string;
+  deviceInfo?: string;
+  ipAddress?: string;
+  createdAt?: string;
+  expiresAt?: string;
+}
+
 export default function SettingsPage() {
     const { t, isRTL } = useLanguage();
     // Logo upload state and ref (for general tab)
@@ -61,7 +71,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [trustedDevices, setTrustedDevices] = useState<any[]>([]);
+  const [trustedDevices, setTrustedDevices] = useState<TrustedDevice[]>([]);
   const [devicesLoading, setDevicesLoading] = useState(false);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -132,9 +142,13 @@ export default function SettingsPage() {
       const normalized: SystemSettings = {
         ...raw,
         companyLogo: raw.companyLogo ?? null,
+        companyNameEn: raw.companyNameEn ?? raw.companyName ?? '',
+        companyNameAr: raw.companyNameAr ?? '',
         companyEmail: raw.companyEmail ?? '',
         companyPhone: raw.companyPhone ?? '',
         companyAddress: raw.companyAddress ?? '',
+        companyLocationEn: raw.companyLocationEn ?? raw.companyAddress ?? '',
+        companyLocationAr: raw.companyLocationAr ?? '',
         paymentMethodsEnabled: Array.isArray(raw.paymentMethodsEnabled) ? raw.paymentMethodsEnabled : [],
         paymentGatewayApiKey: raw.paymentGatewayApiKey ?? '',
         paymentGatewaySecretKey: raw.paymentGatewaySecretKey ?? '',
@@ -203,7 +217,15 @@ export default function SettingsPage() {
   const performSave = async (section: TabType) => {
     setSaving(true);
     try {
-      await settingsService.updateSettings(section, formData as SystemSettings);
+      const payload = section === 'general'
+        ? {
+            ...(formData as SystemSettings),
+            companyName: (formData as SystemSettings)?.companyNameEn || (formData as SystemSettings)?.companyName || '',
+            companyAddress: (formData as SystemSettings)?.companyLocationEn || (formData as SystemSettings)?.companyAddress || '',
+          }
+        : (formData as SystemSettings);
+
+      await settingsService.updateSettings(section, payload);
       toast.success(t('settingsSaved'));
       fetchSettings(); // Refresh to get masked values/audit updates
     } catch (err) {
@@ -299,7 +321,7 @@ export default function SettingsPage() {
           {activeTab === 'payment' && renderPaymentTab(formData, handleInputChange, t, showSecret, setShowSecret)}
           {activeTab === 'notification' && renderNotificationTab(formData, handleInputChange, t)}
           {activeTab === 'security' && renderSecurityTab(formData, handleInputChange, t, trustedDevices, devicesLoading, handleRevokeDevice)}
-          {activeTab === 'backup' && renderBackupTab(formData, handleInputChange, () => setShowConfirmModal(true), () => setPendingAction(() => () => triggerBackup()), t)}
+          {activeTab === 'backup' && renderBackupTab(formData, handleInputChange, () => setShowConfirmModal(true), () => setPendingAction(() => () => triggerBackup()), t, trustedDevices, devicesLoading, handleRevokeDevice)}
           {activeTab === 'logs' && <LogsTab logs={logs} loading={logsLoading} t={t} />}
 
           {/* Save Changes button */}
@@ -414,6 +436,26 @@ function renderGeneralTab(
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Company Name (English)</label>
+            <input
+              type="text"
+              value={data.companyNameEn || ''}
+              onChange={(e) => onChange('companyNameEn', e.target.value)}
+              dir="ltr"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Company Name (Arabic)</label>
+            <input
+              type="text"
+              value={data.companyNameAr || ''}
+              onChange={(e) => onChange('companyNameAr', e.target.value)}
+              dir="rtl"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settingCompanyEmail')}</label>
             <input
               type="email"
@@ -475,6 +517,26 @@ function renderGeneralTab(
               rows={4}
               value={data.companyAddress}
               onChange={(e) => onChange('companyAddress', e.target.value)}
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Company Location (English)</label>
+            <textarea
+              rows={3}
+              value={data.companyLocationEn || ''}
+              onChange={(e) => onChange('companyLocationEn', e.target.value)}
+              dir="ltr"
+              className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Company Location (Arabic)</label>
+            <textarea
+              rows={3}
+              value={data.companyLocationAr || ''}
+              onChange={(e) => onChange('companyLocationAr', e.target.value)}
+              dir="rtl"
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent resize-none"
             />
           </div>
@@ -993,7 +1055,16 @@ function renderSecurityTab(
   );
 }
 
-function renderBackupTab(data: SystemSettings, onChange: OnChangeType, onVerify: () => void, onProceed: () => void, t: (key: string) => string) {
+function renderBackupTab(
+  data: SystemSettings,
+  onChange: OnChangeType,
+  onVerify: () => void,
+  onProceed: () => void,
+  t: (key: string) => string,
+  trustedDevices: TrustedDevice[],
+  devicesLoading: boolean,
+  onRevoke: (token: string) => void
+) {
   return (
     <div className="space-y-12">
       <div className="bg-indigo-600 rounded-[40px] p-10 text-white relative overflow-hidden">
@@ -1030,7 +1101,7 @@ function renderBackupTab(data: SystemSettings, onChange: OnChangeType, onVerify:
           ) : trustedDevices.length === 0 ? (
             <div className="text-sm text-gray-500">No trusted devices remembered.</div>
           ) : (
-            trustedDevices.map((d) => (
+            trustedDevices.map((d: TrustedDevice) => (
               <div key={d.id || d.token} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl p-3">
                 <div>
                   <div className="text-sm font-bold text-shielder-dark">{d.name || d.deviceInfo || 'Unnamed device'}</div>

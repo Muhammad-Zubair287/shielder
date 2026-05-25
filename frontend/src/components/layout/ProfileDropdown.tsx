@@ -33,6 +33,15 @@ export const ProfileDropdown = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  const popupPositionClasses = (isRTL: boolean) => {
+    // For RTL we align the popup to the right and use top-left origin
+    if (isRTL) {
+      return 'absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-left animate-in fade-in slide-in-from-top-1 right-4 left-4 md:left-0 md:right-auto';
+    }
+    // Default LTR alignment (right-aligned on md+)
+    return 'absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 left-4 right-4 md:right-0 md:left-auto';
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -153,7 +162,7 @@ export const ProfileDropdown = () => {
       />
 
       {isOpen && (
-        <div className={`absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 left-4 right-4 md:right-0 md:left-auto`}>
+        <div className={popupPositionClasses(isRTL)}>
           {/* Header with avatar + change photo */}
           <div className="p-4 bg-secondary/5 dark:bg-slate-900/70 border-b border-secondary/10 dark:border-slate-800">
             <div className="flex items-center gap-3 mb-2">

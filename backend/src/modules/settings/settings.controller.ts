@@ -66,6 +66,29 @@ class SettingsController {
   });
 
   /**
+   * Public settings endpoint for customer-facing pages.
+   * Returns a minimal, non-sensitive subset of settings suitable for public consumption.
+   */
+  getPublicSettings = asyncHandler(async (_req: Request, res: Response) => {
+    const s = await SettingsService.getSettings();
+
+    // Map to a stable public shape. If localized fields are not present
+    // we fall back to existing companyName / companyAddress values.
+    const publicPayload = {
+      company_name_en: (s as any).companyNameEn || (s as any).companyName || null,
+      company_name_ar: (s as any).companyNameAr || (s as any).companyName || null,
+      company_email: (s as any).companyEmail || null,
+      company_phone: (s as any).companyPhone || null,
+      company_location_en: (s as any).companyLocationEn || (s as any).companyAddress || null,
+      company_location_ar: (s as any).companyLocationAr || (s as any).companyAddress || null,
+      mapEmbedUrl: (s as any).mapEmbedUrl || null,
+      whatsAppHref: (s as any).whatsAppHref || null,
+    };
+
+    res.json({ success: true, data: publicPayload });
+  });
+
+  /**
    * @swagger
    * /api/settings/general:
    *   put:

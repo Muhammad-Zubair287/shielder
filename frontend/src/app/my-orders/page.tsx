@@ -378,7 +378,7 @@ export default function MyOrdersPage() {
                           Reorder
                         </button>
 
-                        {canRequestCancel && (
+                        {false && canRequestCancel && (
                           <Link
                             href={`/contact?topic=cancel-order&order=${encodeURIComponent(order.orderNumber)}`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors"

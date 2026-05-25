@@ -14,9 +14,13 @@ interface Props { settings: any; onSaved: () => void; }
 
 const EMPTY: CompanyFormState = {
   companyName: '',
+  companyNameEn: '',
+  companyNameAr: '',
   companyEmail: '',
   companyPhone: '',
   companyAddress: '',
+  companyLocationEn: '',
+  companyLocationAr: '',
   companyLogo: null,
 };
 
@@ -36,9 +40,13 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
     if (!settings) return;
     const v: CompanyFormState = {
       companyName: settings.companyName ?? '',
+      companyNameEn: settings.companyNameEn ?? settings.companyName ?? '',
+      companyNameAr: settings.companyNameAr ?? '',
       companyEmail: settings.companyEmail ?? '',
       companyPhone: settings.companyPhone ?? '',
       companyAddress: settings.companyAddress ?? '',
+      companyLocationEn: settings.companyLocationEn ?? settings.companyAddress ?? '',
+      companyLocationAr: settings.companyLocationAr ?? '',
       companyLogo: settings.companyLogo ?? null,
     };
     setForm(v);
@@ -77,7 +85,7 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.companyName.trim()) e.companyName = t('settingsErrorRequired');
+    if (!form.companyNameEn?.trim() && !form.companyName.trim()) e.companyNameEn = t('settingsErrorRequired');
     if (form.companyEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.companyEmail)) {
       e.companyEmail = t('invalidEmail');
     }
@@ -107,6 +115,9 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
         timezone: settings?.timezone || 'UTC',
         dateFormat: settings?.dateFormat || 'MM/DD/YYYY',
         ...form,
+        // Keep legacy fields populated for backward compatibility.
+        companyName: form.companyNameEn || form.companyName || '',
+        companyAddress: form.companyLocationEn || form.companyAddress || '',
         // Use the actual server path (not blob:// preview URL)
         companyLogo: uploadedLogoPath ?? form.companyLogo,
       });
@@ -164,7 +175,26 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
 
       {/* Company details */}
       <FormSection title={t('settingsCompanyDetails')} description={t('settingsCompanyDetailsDesc')}>
-        <FormRow label={t('settingsCompanyName')} required error={errors.companyName}>
+        <FormRow label={t('settingsCompanyNameEn') || 'Company Name (English)'} required error={errors.companyNameEn}>
+          <TextInput
+            value={form.companyNameEn || ''}
+            onChange={set('companyNameEn')}
+            placeholder={t('settingsCompanyNameEnPh') || 'Enter company name in English'}
+            error={!!errors.companyNameEn}
+            dir="ltr"
+          />
+        </FormRow>
+
+        <FormRow label={t('settingsCompanyNameAr') || 'Company Name (Arabic)'}>
+          <TextInput
+            value={form.companyNameAr || ''}
+            onChange={set('companyNameAr')}
+            placeholder={t('settingsCompanyNameArPh') || 'ادخل اسم الشركة بالعربية'}
+            dir="rtl"
+          />
+        </FormRow>
+
+        <FormRow label={t('settingsCompanyName')} error={errors.companyName}>
           <TextInput
             value={form.companyName}
             onChange={set('companyName')}
@@ -193,6 +223,24 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
             />
           </FormRow>
         </div>
+
+        <FormRow label={t('settingsCompanyLocationEn') || 'Company Location (English)'}>
+          <TextInput
+            value={form.companyLocationEn || ''}
+            onChange={set('companyLocationEn')}
+            placeholder={t('settingsCompanyLocationEnPh') || 'Enter company location in English'}
+            dir="ltr"
+          />
+        </FormRow>
+
+        <FormRow label={t('settingsCompanyLocationAr') || 'Company Location (Arabic)'}>
+          <TextInput
+            value={form.companyLocationAr || ''}
+            onChange={set('companyLocationAr')}
+            placeholder={t('settingsCompanyLocationArPh') || 'ادخل عنوان الشركة بالعربية'}
+            dir="rtl"
+          />
+        </FormRow>
 
         <FormRow label={t('settingsCompanyAddress')}>
           <TextInput

@@ -7,6 +7,7 @@ import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import CaptchaChallenge from '@/components/CaptchaChallenge';
+import settingsService from '@/services/settings.service';
 import {
   CONTACT_ALLOWED_FILE_TYPES,
   CONTACT_INFO,
@@ -76,6 +77,7 @@ export default function ContactPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>('');
+  const [contactInfo, setContactInfo] = useState<Record<string, string> | null>(null);
 
   // Check if form has been modified (unsaved changes)
   const hasChanges = 
@@ -100,6 +102,20 @@ export default function ContactPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [hasChanges, sent, sending]);
+
+  // Fetch public settings for Contact info (company name, address, phone, email)
+  useEffect(() => {
+    let mounted = true;
+    settingsService.getPublicSettings()
+      .then(res => {
+        if (!mounted) return;
+        if (res?.data?.success) setContactInfo(res.data.data || null);
+      })
+      .catch(() => {
+        // ignore — fall back to CONTACT_INFO constants
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const field = (key: keyof typeof form, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -167,24 +183,27 @@ export default function ContactPage() {
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                     <Phone size={15} className="text-white" />
                   </div>
-                  <a href={CONTACT_INFO.phoneHref} className="text-sm text-gray-200 hover:text-white transition-colors">
-                    {CONTACT_INFO.phoneDisplay}
+                  <a href={contactInfo?.company_phone ? `tel:${contactInfo.company_phone}` : CONTACT_INFO.phoneHref}
+                     className="text-sm text-gray-200 hover:text-white transition-colors"
+                     style={{ direction: 'ltr', unicodeBidi: 'embed' }}>
+                    {contactInfo?.company_phone || CONTACT_INFO.phoneDisplay}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                     <Mail size={15} className="text-white" />
                   </div>
-                  <a href={CONTACT_INFO.emailHref} className="text-sm text-gray-200 hover:text-white transition-colors">
-                    {CONTACT_INFO.emailDisplay}
+                  <a href={contactInfo?.company_email ? `mailto:${contactInfo.company_email}` : CONTACT_INFO.emailHref}
+                     className="text-sm text-gray-200 hover:text-white transition-colors">
+                    {contactInfo?.company_email || CONTACT_INFO.emailDisplay}
                   </a>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
                     <MapPin size={15} className="text-white" />
                   </div>
-                  <span className="text-sm text-gray-200 leading-relaxed">
-                    {CONTACT_INFO.address}
+                  <span className="text-sm text-gray-200 leading-relaxed" style={isRTL ? { textAlign: 'right' } : undefined}>
+                    {isRTL ? (contactInfo?.company_location_ar || CONTACT_INFO.address) : (contactInfo?.company_location_en || CONTACT_INFO.address)}
                   </span>
                 </div>
                 <div>
@@ -374,7 +393,7 @@ export default function ContactPage() {
           <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
             <iframe
               title="Company location map"
-              src={CONTACT_INFO.mapEmbedUrl}
+              src={contactInfo?.mapEmbedUrl || CONTACT_INFO.mapEmbedUrl}
               className="w-full h-80"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"

@@ -8,7 +8,11 @@ import { UserRole } from '@/common/constants/roles';
 
 const router = Router();
 
-// All settings routes require authentication
+// Public settings (no auth) - used by customer-facing pages to read
+// only non-sensitive configuration such as company contact info.
+router.get('/public', SettingsController.getPublicSettings);
+
+// All further settings routes require authentication
 router.use(authenticate);
 
 /**

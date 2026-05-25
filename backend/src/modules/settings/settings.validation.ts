@@ -8,10 +8,14 @@ export const settingsValidation = {
   updateGeneral: Joi.object({
     systemName: Joi.string().optional(),          // optional — CompanySettingsForm doesn't own this field
     companyName: Joi.string().optional(),
+    companyNameEn: Joi.string().allow(null, '').optional(),
+    companyNameAr: Joi.string().allow(null, '').optional(),
     companyLogo: Joi.string().allow(null, ''),
     companyEmail: Joi.string().email().allow(null, '').optional(),
     companyPhone: Joi.string().allow(null, '').optional(),
     companyAddress: Joi.string().allow(null, '').optional(),
+    companyLocationEn: Joi.string().allow(null, '').optional(),
+    companyLocationAr: Joi.string().allow(null, '').optional(),
     currency: Joi.string().optional(),            // optional — GeneralSettingsForm owns this
     timezone: Joi.string().optional(),            // optional — GeneralSettingsForm owns this
     dateFormat: Joi.string().optional(),          // optional — GeneralSettingsForm owns this

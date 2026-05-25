@@ -6,10 +6,14 @@ import api from './api.service';
 export interface SystemSettings {
   systemName: string;
   companyName: string;
+  companyNameEn?: string | null;
+  companyNameAr?: string | null;
   companyLogo: string | null;
   companyEmail: string;
   companyPhone: string;
   companyAddress: string;
+  companyLocationEn?: string | null;
+  companyLocationAr?: string | null;
   currency: string;
   timezone: string;
   dateFormat: string;
@@ -54,7 +58,8 @@ export interface SystemSettings {
 const SECTION_FIELDS: Record<string, string[]> = {
   general: [
     'systemName', 'companyName', 'companyLogo', 'companyEmail',
-    'companyPhone', 'companyAddress', 'currency', 'timezone', 'dateFormat', 'language',
+    'companyPhone', 'companyAddress', 'companyNameEn', 'companyNameAr',
+    'companyLocationEn', 'companyLocationAr', 'currency', 'timezone', 'dateFormat', 'language',
   ],
   order: [
     'defaultOrderStatus', 'autoCompleteOrderAfterPayment', 'allowPartialPayment',
@@ -77,6 +82,11 @@ const SECTION_FIELDS: Record<string, string[]> = {
 const settingsService = {
   getSettings: () => {
     return api.get('settings');
+  },
+
+  /** Public settings for customer-facing pages (no auth required) */
+  getPublicSettings: () => {
+    return api.get('settings/public');
   },
 
   updateSettings: (section: string, data: any) => {
