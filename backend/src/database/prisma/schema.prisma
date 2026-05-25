@@ -41,6 +41,7 @@ model User {
   payments                Payment[]
   products                Product[]
   quotationsCreated       Quotation[]             @relation("QuotationCreator")
+  quotationBasket         QuotationBasket?        @relation("QuotationBasket")
   refreshTokens           RefreshToken[]
   twoFactorOTP            TwoFactorOTP?
   reviews                 ProductReview[]         @relation(name: "UserReviews")
@@ -214,6 +215,7 @@ model Product {
   warehouse             Warehouse?             @relation(fields: [warehouseId], references: [id])
   inventories           Inventory[]
   quotationItems        QuotationItem[]
+  basketItems           QuotationBasketItem[]  @relation("BasketItems")
   stockHistory          stock_history[]
 
   @@index([categoryId])
@@ -694,6 +696,36 @@ model QuotationActivity {
 
   @@index([quotationId])
   @@map("quotation_activities")
+}
+
+model QuotationBasket {
+  id        String                    @id @default(uuid())
+  userId    String                    @unique @map("user_id")
+  items     QuotationBasketItem[]
+  createdAt DateTime                  @default(now())      @map("created_at")
+  updatedAt DateTime                  @updatedAt           @map("updated_at")
+  
+  user      User                      @relation("QuotationBasket", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("quotation_baskets")
+}
+
+model QuotationBasketItem {
+  id        String           @id @default(uuid())
+  basketId  String           @map("basket_id")
+  productId String           @map("product_id")
+  quantity  Int
+  createdAt DateTime         @default(now())  @map("created_at")
+  updatedAt DateTime         @updatedAt       @map("updated_at")
+  
+  basket    QuotationBasket  @relation(fields: [basketId], references: [id], onDelete: Cascade)
+  product   Product          @relation("BasketItems", fields: [productId], references: [id])
+  
+  @@unique([basketId, productId])
+  @@index([basketId])
+  @@index([productId])
+  @@map("quotation_basket_items")
 }
 
 enum UserRole {

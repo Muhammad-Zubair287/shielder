@@ -110,6 +110,12 @@ export const API_ENDPOINTS = {
     ACCEPT:   (id: string) => `customer-quotations/${id}/accept`,
     REJECT:   (id: string) => `customer-quotations/${id}/reject`,
   },
+  // Customer quotation basket
+  QUOTATION_BASKET: {
+    BASE:   'customer/quotation-basket',
+    ITEMS:  'customer/quotation-basket/items',
+    ITEM:   (productId: string) => `customer/quotation-basket/items/${productId}`,
+  },
   // Orders
   ORDERS: {
     BASE:          'orders',

@@ -1,124 +1,190 @@
 'use client';
 
 /**
- * QuotationContext
- * Manages a client-side "quotation basket" stored in localStorage.
- * Users can add products here, then open the QuotationDrawer to fill in
- * company details and generate a PDF.
+ * QuotationContext - REFACTORED for Backend Synchronization
+ * Manages persistent quotation basket synced with backend.
+ * Mirrors Cart architecture for consistency and multi-device support.
+ * 
+ * BEFORE: localStorage only (session-specific, no sync)
+ * AFTER:  Backend API (persistent, synced across devices)
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { useAuthStore } from '@/store/auth.store';
+import quotationBasketService, { QuotationBasketItem } from '@/services/quotationBasket.service';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-export interface QuotationBasketItem {
-  productId: string;
-  name: string;
-  sku?: string;
-  price: number;
-  quantity: number;
-  thumbnail?: string | null;
-  stock?: number | null;
-}
+// ── Context shape ────────────────────────────────────────────────────────────
 
 interface QuotationContextValue {
   items: QuotationBasketItem[];
   itemCount: number;
+  loading: boolean;
+  
   addItem: (
     item: Omit<QuotationBasketItem, 'quantity'> & { quantity?: number },
-  ) => void;
-  removeItem: (productId: string) => void;
-  updateQty: (productId: string, quantity: number) => void;
-  clearBasket: () => void;
-  /** Whether the drawer is open */
+  ) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQty: (productId: string, quantity: number) => Promise<void>;
+  clearBasket: () => Promise<void>;
+  refreshBasket: () => Promise<void>;
+  
   drawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
 }
 
-// ── Context ───────────────────────────────────────────────────────────────────
+const QuotationContext = createContext<QuotationContextValue | undefined>(undefined);
 
-const QuotationContext = createContext<QuotationContextValue>({
-  items: [],
-  itemCount: 0,
-  addItem: () => {},
-  removeItem: () => {},
-  updateQty: () => {},
-  clearBasket: () => {},
-  drawerOpen: false,
-  openDrawer: () => {},
-  closeDrawer: () => {},
-});
-
-const STORAGE_KEY = 'quotation_basket';
-
-// ── Provider ──────────────────────────────────────────────────────────────────
+// ── Provider ──────────────────────────────────────────────────────────
 
 export function QuotationProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems]           = useState<QuotationBasketItem[]>([]);
+  const { t } = useLanguage();
+  const { isAuthenticated } = useAuthStore();
+  const [items, setItems] = useState<QuotationBasketItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch { /* ignore */ }
-  }, []);
+  /**
+   * Load basket from backend
+   * Source of truth: Backend database, not localStorage
+   */
+  const refreshBasket = useCallback(async () => {
+    if (!isAuthenticated) {
+      setItems([]);
+      return;
+    }
 
-  // Persist helper — updates state and localStorage together
-  const persist = useCallback((updated: QuotationBasketItem[]) => {
-    setItems(updated);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-  }, []);
+    setLoading(true);
+    try {
+      const basket = await quotationBasketService.getBasket();
+      setItems(basket.items);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        // Token expired - interceptor will handle logout
+      } else if (status === 403) {
+        toast.error(t('quotation.accessDenied') || 'Access denied');
+      } else if (status && status >= 500) {
+        toast.error(t('quotation.serverError') || 'Server error');
+      }
+      // Keep existing items on error (graceful fallback)
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, t]);
+
+  /**
+   * Reload basket whenever auth state changes (login/logout)
+   * This ensures multi-device sync: Profile A and Profile B both fetch from same backend
+   */
+  useEffect(() => {
+    refreshBasket();
+  }, [isAuthenticated, refreshBasket]);
+
+  // ── Actions ──────────────────────────────────────────────────────────────
 
   const addItem = useCallback(
-    (item: Omit<QuotationBasketItem, 'quantity'> & { quantity?: number }) => {
+    async (item: Omit<QuotationBasketItem, 'quantity'> & { quantity?: number }) => {
+      const qty = item.quantity ?? 1;
+
+      // Optimistic update - immediate UI feedback
       setItems(prev => {
-        const qty      = item.quantity ?? 1;
         const existing = prev.find(i => i.productId === item.productId);
-        const updated  = existing
+        return existing
           ? prev.map(i =>
               i.productId === item.productId
                 ? { ...i, quantity: i.quantity + qty }
                 : i,
             )
           : [...prev, { ...item, quantity: qty }];
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-        return updated;
+      });
+
+      // Fire-and-forget: API call in background WITHOUT awaiting
+      quotationBasketService.addItem(item.productId, qty).catch(async (err: any) => {
+        const msg = err?.response?.data?.message || '';
+        console.error('Failed to add quotation item:', err);
+        
+        if (msg.toLowerCase().includes('stock')) {
+          toast.error(t('quotation.stockError') || 'Insufficient stock');
+        } else if (err?.response?.status === 401) {
+          // handled by interceptor
+        } else if (err?.response?.status >= 500) {
+          toast.error(t('quotation.serverError') || 'Server error');
+        } else {
+          toast.error(t('quotation.errorAdding') || 'Failed to add item');
+        }
+        
+        // Revert optimistic update on error
+        await refreshBasket();
       });
     },
-    [],
+    [t, refreshBasket]
   );
 
-  const removeItem = useCallback((productId: string) => {
-    setItems(prev => {
-      const updated = prev.filter(i => i.productId !== productId);
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-      return updated;
-    });
-  }, []);
+  const removeItem = useCallback(
+    async (productId: string) => {
+      // Optimistic remove - immediate UI feedback
+      setItems(prev => prev.filter(i => i.productId !== productId));
 
-  const updateQty = useCallback((productId: string, quantity: number) => {
-    if (quantity < 1) {
-      removeItem(productId);
-      return;
-    }
-    setItems(prev => {
-      const updated = prev.map(i =>
-        i.productId === productId ? { ...i, quantity } : i,
+      // Fire-and-forget: API call
+      quotationBasketService.removeItem(productId).catch(async (err: any) => {
+        console.error('Failed to remove quotation item:', err);
+        toast.error(t('quotation.errorRemoving') || 'Failed to remove item');
+        // Revert optimistic update on error
+        await refreshBasket();
+      });
+    },
+    [t, refreshBasket]
+  );
+
+  const updateQty = useCallback(
+    async (productId: string, quantity: number) => {
+      if (quantity < 1) {
+        await removeItem(productId);
+        return;
+      }
+
+      // Optimistic update - immediate UI feedback
+      setItems(prev =>
+        prev.map(i => (i.productId === productId ? { ...i, quantity } : i))
       );
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-      return updated;
-    });
-  }, []);
 
-  const clearBasket = useCallback(() => {
+      // Fire-and-forget: API call
+      quotationBasketService.updateItem(productId, quantity).catch(async (err: any) => {
+        console.error('Failed to update quotation quantity:', err);
+        
+        const msg = err?.response?.data?.message || '';
+        if (msg.toLowerCase().includes('stock')) {
+          toast.error(t('quotation.stockError') || 'Insufficient stock');
+        } else if (err?.response?.status >= 500) {
+          toast.error(t('quotation.serverError') || 'Server error');
+        } else {
+          toast.error(t('quotation.errorUpdating') || 'Failed to update quantity');
+        }
+        
+        // Revert optimistic update on error
+        await refreshBasket();
+      });
+    },
+    [removeItem, t, refreshBasket]
+  );
+
+  const clearBasket = useCallback(async () => {
+    // Optimistic clear
     setItems([]);
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-  }, []);
 
-  const openDrawer  = useCallback(() => setDrawerOpen(true),  []);
+    // Fire-and-forget: API call
+    quotationBasketService.clearBasket().catch(async (err: any) => {
+      console.error('Failed to clear quotation basket:', err);
+      toast.error(t('quotation.errorClearing') || 'Failed to clear basket');
+      // Revert optimistic update on error
+      await refreshBasket();
+    });
+  }, [t, refreshBasket]);
+
+  const openDrawer = useCallback(() => setDrawerOpen(true), []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
   const itemCount = items.length;
@@ -128,10 +194,12 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
       value={{
         items,
         itemCount,
+        loading,
         addItem,
         removeItem,
         updateQty,
         clearBasket,
+        refreshBasket,
         drawerOpen,
         openDrawer,
         closeDrawer,
@@ -145,5 +213,9 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useQuotation() {
-  return useContext(QuotationContext);
+  const context = useContext(QuotationContext);
+  if (!context) {
+    throw new Error('useQuotation must be used within QuotationProvider');
+  }
+  return context;
 }

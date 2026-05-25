@@ -13,6 +13,7 @@ import { QuotationStatus, QuotationActivityType, NotificationType, UserRole } fr
 import PDFDocument from 'pdfkit';
 import { customerQuotationRepository } from './customer-quotation.repository';
 import NotificationService from '../notification/notification.service';
+import { CustomerQuotationBasketService } from '../customer-quotation-basket/customer-quotation-basket.service';
 
 type RequestedQuotationItem = {
   productId: string;
@@ -123,10 +124,22 @@ export class CustomerQuotationController {
       const lang   = req.user!.preferredLanguage || req.locale || 'en';
 
       const { companyName, vatNumber, address, products, items, notes } = req.body;
-      const requestedItems =
+      
+      // Try to load from request body first, then from DB basket
+      let requestedItems =
         Array.isArray(products) && products.length > 0
           ? products
-          : (Array.isArray(items) ? items : []);
+          : (Array.isArray(items) && items.length > 0 ? items : null);
+
+      // If no items in request body, try to fetch from database basket
+      if (!requestedItems || requestedItems.length === 0) {
+        try {
+          requestedItems = await CustomerQuotationBasketService.getBasketItemsForQuotation(userId);
+        } catch (err) {
+          throw new BadRequestError('No products provided and quotation basket is empty');
+        }
+      }
+
       const normalizedAddress =
         typeof address === 'string' && address.trim()
           ? address.trim()
@@ -242,6 +255,14 @@ export class CustomerQuotationController {
           },
         },
       });
+
+      // ── Clear quotation basket after successful generation ──────────────────
+      try {
+        await CustomerQuotationBasketService.clearBasket(userId);
+      } catch (err) {
+        // Silently ignore basket clearing errors - quotation was created successfully
+        console.warn('[CustomerQuotation] Failed to clear basket after generation:', err);
+      }
 
       // Notify admins so customer self-service quotations are visible operationally.
       void NotificationService.notify({

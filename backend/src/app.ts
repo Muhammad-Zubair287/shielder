@@ -35,6 +35,7 @@ import settingsRoutes from './modules/settings/settings.routes';
 import privacyPolicyRoutes from './modules/privacy-policy/privacy-policy.routes';
 import quotationRoutes from './modules/quotation/quotation.routes';
 import customerQuotationRoutes from './modules/customer-quotation/customer-quotation.routes';
+import customerQuotationBasketRoutes from './modules/customer-quotation-basket/customer-quotation-basket.routes';
 import contactRoutes from './modules/contact/contact.routes';
 import newsletterRoutes from './modules/newsletter/newsletter.routes';
 import productReviewRoutes from './modules/product-review/product-review.routes';
@@ -229,6 +230,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/privacy-policy`, privacyPolicyRoutes);
     app.use(`${prefix}/quotations`, quotationRoutes);
     app.use(`${prefix}/customer-quotations`, customerQuotationRoutes);
+    app.use(`${prefix}/customer/quotation-basket`, customerQuotationBasketRoutes);
     app.use(`${prefix}/contact`, contactRoutes);
     app.use(`${prefix}/newsletter`, newsletterRoutes);
     app.use(`${prefix}/reviews`, productReviewRoutes);
