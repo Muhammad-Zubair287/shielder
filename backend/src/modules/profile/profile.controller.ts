@@ -53,7 +53,7 @@ export class ProfileController {
   static async updateMyProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;
-      const profile = await ProfileService.updateProfile(userId, req.body);
+      const profile = await ProfileService.updateProfile(userId, req.body, req.user!.role);
       
       res.status(200).json({
         success: true,
@@ -203,7 +203,7 @@ export class ProfileController {
       // Update profile with new image URL
       const profile = await ProfileService.updateProfile(userId, {
         profileImage: profileImageUrl,
-      });
+      }, req.user!.role);
 
       res.status(200).json({
         success: true,

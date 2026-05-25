@@ -34,12 +34,10 @@ export const ProfileDropdown = () => {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const popupPositionClasses = (isRTL: boolean) => {
-    // For RTL we align the popup to the right and use top-left origin
     if (isRTL) {
-      return 'absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-left animate-in fade-in slide-in-from-top-1 right-4 left-4 md:left-0 md:right-auto';
+      return 'fixed inset-x-4 top-20 w-[calc(100vw-2rem)] max-w-[18rem] md:absolute md:inset-x-auto md:top-full md:mt-3 md:w-72 md:max-w-none bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain transform origin-top-left animate-in fade-in slide-in-from-top-1 rtl:md:left-0 rtl:md:right-auto';
     }
-    // Default LTR alignment (right-aligned on md+)
-    return 'absolute mt-3 w-72 md:w-64 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right animate-in fade-in slide-in-from-top-1 left-4 right-4 md:right-0 md:left-auto';
+    return 'fixed inset-x-4 top-20 w-[calc(100vw-2rem)] max-w-[18rem] md:absolute md:inset-x-auto md:top-full md:mt-3 md:w-72 md:max-w-none bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain transform origin-top-right animate-in fade-in slide-in-from-top-1 ltr:md:right-0 ltr:md:left-auto';
   };
 
   useEffect(() => {

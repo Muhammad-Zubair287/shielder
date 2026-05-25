@@ -30,7 +30,7 @@ import { toast } from 'react-hot-toast';
  * Profile form data interface
  * @interface ProfileFormData
  * @property {string} fullName - User's full name
- * @property {string} email - User's email address
+ * @property {string} email - User's email address (display only)
  * @property {string} [phone] - User's phone number (optional)
  * @property {string} [location] - User's location (optional)
  * @property {string} [address] - User's address (optional)
@@ -79,7 +79,6 @@ export const ProfileForm = () => {
     const loadProfile = async () => {
       try {
         setLoading(true);
-        // Use user data from auth context if available
         if (user && user.profile) {
           const userData: ProfileFormData = {
             fullName: user.profile.fullName || '',
@@ -155,7 +154,6 @@ export const ProfileForm = () => {
     try {
       const updateData = {
         fullName: formData.fullName,
-        email: formData.email,
         phoneNumber: formData.phone,
         location: formData.location,
         address: formData.address,
@@ -171,7 +169,6 @@ export const ProfileForm = () => {
             ...user.profile,
             ...updateData,
           },
-          email: formData.email,
         };
         setUser(updatedUser as any);
       }
@@ -251,9 +248,9 @@ export const ProfileForm = () => {
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleChange}
+              readOnly
               placeholder={t('profile.emailPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
+              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed focus:ring-0 focus:border-gray-300 dark:bg-slate-800/60 dark:text-slate-300 transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
                 errors.email ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />

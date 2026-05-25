@@ -1,7 +1,8 @@
 import { prisma } from '../../config/database';
 import { Prisma } from '@prisma/client';
-import { ConflictError, NotFoundError } from '../../common/errors/api.error';
+import { ConflictError, ForbiddenError, NotFoundError } from '../../common/errors/api.error';
 import { logger } from '../../common/logger/logger';
+import { UserRole } from '../../types/rbac.types';
 
 type UpdateProfileInput = {
   email?: string;
@@ -44,29 +45,46 @@ export class ProfileService {
   /**
    * Update user profile
    */
-  static async updateProfile(userId: string, data: UpdateProfileInput) {
+  static async updateProfile(userId: string, data: UpdateProfileInput, currentUserRole: UserRole) {
     try {
       const normalizedEmail = data.email?.trim().toLowerCase();
       const { email: _email, ...profileData } = data;
 
       const profile = await prisma.$transaction(async (tx) => {
         if (normalizedEmail) {
-          const existingUser = await tx.user.findFirst({
-            where: {
-              email: normalizedEmail,
-              NOT: { id: userId },
-            },
-            select: { id: true },
+          const currentUser = await tx.user.findUnique({
+            where: { id: userId },
+            select: { email: true },
           });
 
-          if (existingUser) {
-            throw new ConflictError('Email is already in use');
+          if (!currentUser) {
+            throw new NotFoundError('Profile not found');
           }
 
-          await tx.user.update({
-            where: { id: userId },
-            data: { email: normalizedEmail },
-          });
+          const currentEmail = currentUser.email.trim().toLowerCase();
+
+          if (currentUserRole === UserRole.USER && normalizedEmail !== currentEmail) {
+            throw new ForbiddenError('Customers cannot change their email address');
+          }
+
+          if (normalizedEmail !== currentEmail) {
+            const existingUser = await tx.user.findFirst({
+              where: {
+                email: normalizedEmail,
+                NOT: { id: userId },
+              },
+              select: { id: true },
+            });
+
+            if (existingUser) {
+              throw new ConflictError('Email is already in use');
+            }
+
+            await tx.user.update({
+              where: { id: userId },
+              data: { email: normalizedEmail },
+            });
+          }
         }
 
         await tx.userProfile.update({
