@@ -3,7 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/api.service';
 import { PRODUCTS_ITEMS_PER_PAGE } from '@/app/products/products.constants';
 import { appendPriceRangeParams } from '@/app/products/price-filter';
-import { resolveProductDescription, resolveProductImage, resolveProductImages, resolveProductName, type ProductAttachmentLike, type ProductDisplayLike, type ProductTranslationLike } from '@/utils/productDisplay';
+import {
+  resolveProductDescription,
+  resolveProductImage,
+  resolveProductImages,
+  resolveProductName,
+  type ProductAttachmentLike,
+  type ProductDisplayLike,
+  type ProductTranslationLike,
+} from '@/utils/productDisplay';
 
 export interface ProductsCatalogFilters {
   search: string;
@@ -60,7 +68,9 @@ function buildCatalogQuery(filters: ProductsCatalogFilters, page: number, locale
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
   if (filters.categoryId) params.set('categoryId', filters.categoryId);
-  appendPriceRangeParams(params, { minPrice: filters.minPrice, maxPrice: filters.maxPrice });
+  // appendPriceRangeParams returns a URLSearchParams for the min/max price
+  const priceParams = appendPriceRangeParams(filters.minPrice, filters.maxPrice);
+  priceParams.forEach((value, key) => params.set(key, value));
   if (filters.inStock) params.set('inStock', 'true');
   if (filters.sort) params.set('sort', filters.sort);
   params.set('page', String(page));
@@ -114,7 +124,21 @@ export function useProductsCatalog({ filters, page, locale }: UseProductsCatalog
           total: data?.pagination?.total ?? data?.total ?? data?.meta?.total ?? items.length,
         };
       } catch (error) {
-        console.error('[Products] API error:', error);
+        // Extra debug logging to help track down empty results / network errors
+        // Print axios response body if available, plus message/stack
+        try {
+          // eslint-disable-next-line no-console
+          console.error('[Products] API error:', {
+            message: (error as any)?.message,
+            responseData: (error as any)?.response?.data,
+            responseStatus: (error as any)?.response?.status,
+            stack: (error as any)?.stack,
+          });
+        } catch (_) {
+          // Fallback
+          console.error('[Products] API error (logging failed):', error);
+        }
+
         return { products: [], total: 0 };
       }
     },
