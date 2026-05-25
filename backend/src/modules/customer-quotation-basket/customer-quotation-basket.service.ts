@@ -7,7 +7,6 @@
 import { prisma } from '../../config/database';
 import { NotFoundError, BadRequestError } from '../../common/errors/api.error';
 import { logger } from '../../common/logger/logger';
-import { Prisma } from '@prisma/client';
 
 export class CustomerQuotationBasketService {
   /**
@@ -125,16 +124,15 @@ export class CustomerQuotationBasketService {
       },
     });
 
-    let item;
     if (existingItem) {
       // Update quantity
-      item = await prisma.quotationBasketItem.update({
+      await prisma.quotationBasketItem.update({
         where: { id: existingItem.id },
         data: { quantity },
       });
     } else {
       // Create new item
-      item = await prisma.quotationBasketItem.create({
+      await prisma.quotationBasketItem.create({
         data: {
           basketId: basket.id,
           productId,

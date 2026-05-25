@@ -129,7 +129,7 @@ export class CustomerQuotationBasketController {
   static async updateItemQuantity(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;
-      const { productId } = req.params;
+      const { productId } = req.params as { productId: string };
       const { error, value } = validateUpdateQuantity(req.body);
 
       if (error) {
@@ -175,7 +175,7 @@ export class CustomerQuotationBasketController {
   static async removeItem(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;
-      const { productId } = req.params;
+      const { productId } = req.params as { productId: string };
 
       const basket = await CustomerQuotationBasketService.removeItem(userId, productId);
 
