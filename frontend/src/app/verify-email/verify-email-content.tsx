@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { VALIDATION_RULES } from '@/utils/constants';
@@ -87,9 +88,13 @@ export function VerifyEmailContent() {
       setIsSubmittingOtp(true);
       await authService.verifyEmailOtp(verificationSessionToken, otpCode);
       setSuccess(true);
+      toast.success(t('auth.emailVerificationSuccess') || 'Email verified successfully');
       setTimeout(() => router.replace('/login'), 2500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('errors.verificationFailed'));
+      const errorMessage = err instanceof Error ? err.message : t('errors.verificationFailed');
+      setError(errorMessage);
+      setOtpCode(''); // Clear the OTP input on error
+      toast.error(errorMessage);
     } finally {
       setIsSubmittingOtp(false);
     }
@@ -105,8 +110,11 @@ export function VerifyEmailContent() {
       setError('');
       setIsResendingOtp(true);
       await authService.resendEmailOtp(verificationSessionToken);
+      toast.success(t('auth.otpResendSuccess') || 'OTP sent successfully to your email');
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.resendVerificationFailed'));
+      const errorMessage = err instanceof Error ? err.message : t('auth.resendVerificationFailed');
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsResendingOtp(false);
     }
@@ -137,8 +145,11 @@ export function VerifyEmailContent() {
       setVerificationEmail(result.verificationEmail);
       setShowEmailChange(false);
       setNewEmail('');
+      toast.success(t('auth.emailChangedSuccess') || 'Email updated successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.changeEmailFailed'));
+      const errorMessage = err instanceof Error ? err.message : t('auth.changeEmailFailed');
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsChangingEmail(false);
     }
