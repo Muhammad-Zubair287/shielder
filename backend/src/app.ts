@@ -189,8 +189,10 @@ export const createApp = (): Application => {
       }
       return res.status(502).json({ success: false, message: 'Email service not configured or unreachable' });
     } catch (err) {
-      logger.error('Email health check error', err);
-      return res.status(500).json({ success: false, message: 'Email health check failed', error: String(err) });
+      // Generate errorId for correlation without exposing internals to clients
+      const errorId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+      logger.error(`Email health check error - ${errorId}`, err, { errorId });
+      return res.status(500).json({ success: false, message: 'Email health check failed', errorId });
     }
   });
 

@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Product Review Controller
  * Handles HTTP requests for review operations
  */

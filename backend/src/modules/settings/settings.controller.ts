@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * System Settings Controller
  */
 

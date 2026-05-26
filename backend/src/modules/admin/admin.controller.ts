@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Admin Controller
  * Handles HTTP requests for admin operations
  */

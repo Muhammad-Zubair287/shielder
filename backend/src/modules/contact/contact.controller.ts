@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/utils/helpers';
 import contactService from './contact.service';

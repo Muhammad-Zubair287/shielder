@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Notification Controller
  * Handles HTTP requests for system notifications
  */

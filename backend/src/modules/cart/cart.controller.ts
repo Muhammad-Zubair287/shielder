@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { CartService } from './cart.service';
 import { AuthRequest } from '../../types/global';

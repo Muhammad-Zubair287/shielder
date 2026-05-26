@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Analytics Controller
  * Handles dashboard data requests for Super Admin
  */

@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { specTemplateService } from './spec-template.service';
 

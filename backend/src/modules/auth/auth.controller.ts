@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Enhanced Authentication Controller
  * Production-ready HTTP handlers for all auth endpoints
  */

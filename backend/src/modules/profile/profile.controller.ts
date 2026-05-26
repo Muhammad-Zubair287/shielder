@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
 import { Response, NextFunction } from 'express';
 import { ProfileService } from './profile.service';
 import { AuthRequest } from '../../types/global';

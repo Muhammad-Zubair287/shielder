@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Customer Quotation Controller
  * Self-service, instant quotation generation by authenticated customers.
  * No admin approval required.

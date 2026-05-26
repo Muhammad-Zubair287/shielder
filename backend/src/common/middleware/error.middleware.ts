@@ -64,6 +64,9 @@ export const errorHandler = (
   }
 
   // Prepare error response
+  // Generate short error id for correlation (returned to client)
+  const errorId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+
   const response: ErrorResponse = {
     success: false,
     message,
@@ -74,8 +77,21 @@ export const errorHandler = (
     response.errors = errors;
   }
 
-  // Include stack trace in development
-  if (env.isDevelopment) {
+  // Log the full error server-side with the errorId so developers can correlate
+  logger.error(`Error ID: ${errorId} - ${message}`, err, {
+    statusCode,
+    path: req.path,
+    method: req.method,
+    errorId,
+  });
+
+  // By default do NOT expose stack traces to clients. If a developer explicitly
+  // needs the stack in responses for local debugging, set the environment
+  // variable `EXPOSE_STACK_IN_RESPONSE=true` in a non-production environment.
+  // This must be explicit; production never exposes stack traces.
+  const exposeStack = env.isDevelopment && process.env.EXPOSE_STACK_IN_RESPONSE === 'true';
+  if (exposeStack) {
+    // attach stack only when explicitly allowed in development
     response.stack = err.stack;
   }
 

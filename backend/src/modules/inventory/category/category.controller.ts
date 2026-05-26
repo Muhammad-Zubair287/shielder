@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { categoryService } from './category.service';
 import { getPaginationParams } from '@/common/utils/pagination';

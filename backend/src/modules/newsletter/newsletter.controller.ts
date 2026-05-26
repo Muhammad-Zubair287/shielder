@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { newsletterService } from './newsletter.service';

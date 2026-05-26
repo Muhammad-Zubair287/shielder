@@ -1,0 +1,34 @@
+name: Scan for Stack Trace Exposures
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run stack-exposure scan
+        run: |
+          set -euo pipefail
+          echo "Scanning repository for stack-exposure patterns..."
+
+          # Patterns to look for (err.stack, error.stack, response.stack, res.json(...err|error))
+          PATTERN="err\.stack|error\.stack|response\.stack|res\.json\([^)]*(err|error)"
+
+          # Search working tree (tracked files). Exclude known allowed files.
+          matches=$(git grep -nE -- "${PATTERN}" -- ':!backend/src/common/middleware/error.middleware.ts' ':!backend/src/common/logger/logger.ts' ':!backend/src/server.ts' || true)
+
+          if [ -n "$matches" ]; then
+            echo "Found potential stack exposure occurrences:" >&2
+            echo "$matches" >&2
+            echo "Failing CI: remove stack exposure patterns or whitelist intentionally allowed locations." >&2
+            exit 1
+          fi
+
+          echo "No stack-exposure patterns found."

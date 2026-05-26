@@ -1,4 +1,11 @@
 /**
+ * @openapi
+ * responses:
+ *   InternalError:
+ *     $ref: '#/components/responses/InternalError'
+ */
+
+/**
  * Customer Quotation Basket Controller
  * REST endpoints for managing customer's quotation basket
  */
