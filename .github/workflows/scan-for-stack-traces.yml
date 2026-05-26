@@ -21,8 +21,8 @@ jobs:
           # Patterns to look for (err.stack, error.stack, response.stack, res.json(...err|error))
           PATTERN="err\.stack|error\.stack|response\.stack|res\.json\([^)]*(err|error)"
 
-          # Search working tree (tracked files). Exclude known allowed files.
-          matches=$(git grep -nE -- "${PATTERN}" -- ':!backend/src/common/middleware/error.middleware.ts' ':!backend/src/common/logger/logger.ts' ':!backend/src/server.ts' || true)
+          # Search working tree (tracked files). Exclude known allowed files and .github workflow comments.
+          matches=$(git grep -nE -- "${PATTERN}" -- ':!backend/src/common/middleware/error.middleware.ts' ':!backend/src/common/logger/logger.ts' ':!backend/src/server.ts' ':!.github' || true)
 
           if [ -n "$matches" ]; then
             echo "Found potential stack exposure occurrences:" >&2
