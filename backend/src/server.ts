@@ -13,13 +13,14 @@ import http from 'http';
 
 // Global error handlers - set these FIRST before anything else
 process.on('uncaughtException', (error: Error) => {
-  console.error('[GLOBAL] Uncaught Exception:', error.message);
-  console.error('[GLOBAL] Stack:', error.stack);
+  const errorId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+  logger.error('[GLOBAL] Uncaught Exception', error, { errorId });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason: any) => {
-  console.error('[GLOBAL] Unhandled Rejection:', reason);
+  const errorId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+  logger.error('[GLOBAL] Unhandled Rejection', reason instanceof Error ? reason : new Error(String(reason)), { errorId });
   process.exit(1);
 });
 
