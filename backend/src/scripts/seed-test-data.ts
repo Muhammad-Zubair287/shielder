@@ -716,7 +716,7 @@ const TEST_USERS: UserDef[] = [
   { email: 'admin1@shielder.test', password: 'Admin@Shielder1', role: UserRole.ADMIN, status: UserStatus.ACTIVE, fullName: 'Ali Hassan Admin', phone: '+966571234567' },
   { email: 'admin2@shielder.test', password: 'Admin@Shielder2', role: UserRole.ADMIN, status: UserStatus.ACTIVE, fullName: 'Nora Al-Zahrani Admin', phone: '+966579876543' },
   // Super Admin (skip if exists)
-  { email: 'superadmin@shielder.com', password: 'SuperAdmin@2026', role: UserRole.SUPER_ADMIN, status: UserStatus.ACTIVE, fullName: 'Super Admin', phone: '+0000000000' },
+  { email: 'zubair.m1815@gmail.com', password: 'SuperAdmin@2026', role: UserRole.SUPER_ADMIN, status: UserStatus.ACTIVE, fullName: 'Super Admin', phone: '+0000000000' },
 ];
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -924,7 +924,7 @@ async function main() {
   console.log('\n🔑 Test Credentials:');
   console.log('   Customer  : customer1@shielder.test  / Customer@1234');
   console.log('   Admin     : admin1@shielder.test     / Admin@Shielder1');
-  console.log('   Super Admin: superadmin@shielder.com / SuperAdmin@2026\n');
+    console.log('   Super Admin: zubair.m1815@gmail.com / SuperAdmin@2026\n');
 }
 
 main()

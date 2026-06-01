@@ -15,7 +15,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding Super Admin...');
 
-  const email = 'superadmin@shielder.com';
+  const email = 'zubair.m1815@gmail.com';
   const password = 'Super@123';
 
   // Check if super admin already exists
