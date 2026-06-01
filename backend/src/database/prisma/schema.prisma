@@ -19,6 +19,7 @@ model User {
   verificationStatus      EmailVerificationStatus @default(PENDING) @map("verification_status")
   requiresEmailReverification Boolean             @default(false) @map("requires_email_reverification")
   failedLoginAttempts     Int                     @default(0) @map("failed_login_attempts")
+  tokenVersion            Int                     @default(0) @map("token_version")
   isActive                Boolean                 @default(true) @map("is_active")
   lastLoginAt             DateTime?               @map("last_login_at")
   lastPasswordChange      DateTime?               @map("last_password_change")

@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { isCommonWeakPassword } from '../utils/password.utils';
 
 export const sharedValidationSchemas = {
   email: Joi.string()
@@ -13,6 +14,17 @@ export const sharedValidationSchemas = {
     }),
 
   password: Joi.string()
+    .custom((value, helpers) => {
+      if (typeof value !== 'string' || value.trim().length === 0) {
+        return helpers.error('string.empty');
+      }
+
+      if (isCommonWeakPassword(value)) {
+        return helpers.error('password.common');
+      }
+
+      return value;
+    }, 'Password policy pre-check')
     .min(8)
     .max(128)
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/)
@@ -21,6 +33,7 @@ export const sharedValidationSchemas = {
       'string.empty': 'Password is required',
       'string.min': 'Password must be at least 8 characters long',
       'string.max': 'Password must not exceed 128 characters',
+      'password.common': 'Password does not meet security requirements',
       'string.pattern.base':
         'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
       'any.required': 'Password is required',
@@ -40,6 +53,17 @@ export const sharedValidationSchemas = {
     }, 'No HTML/JS')
     .messages({
       'string.invalid': 'Input contains disallowed HTML or script content',
+    }),
+
+  // Strict name field for customer/person names
+  personName: Joi.string()
+    .trim()
+    .max(100)
+    .pattern(/^[\p{L}]+(?:[ .'’-][\p{L}]+)*$/u)
+    .messages({
+      'string.empty': 'Name is required',
+      'string.pattern.base': 'Invalid name format',
+      'string.max': 'Name must not exceed 100 characters',
     }),
 
   pagination: Joi.object({

@@ -640,7 +640,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"success\": true,\n  \"message\": \"Current user retrieved successfully.\",\n  \"data\": {\n    \"id\": \"uuid-here\",\n    \"email\": \"john.doe@example.com\",\n    \"fullName\": \"John Doe\",\n    \"role\": \"USER\",\n    \"status\": \"ACTIVE\"\n  }\n}"
+              "body": "{\n  \"success\": true,\n  \"message\": \"Current user retrieved successfully.\",\n  \"data\": {\n    \"id\": \"uuid-here\",\n    \"email\": \"john.doe@example.com\",\n    \"fullName\": \"John Doe\",\n    \"phoneNumber\": \"+966500000000\",\n    \"role\": \"USER\",\n    \"status\": \"ACTIVE\"\n  }\n}"
             }
           ]
         },
@@ -6328,7 +6328,7 @@
                   "name": "200 OK",
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Current user retrieved successfully.\",\n  \"data\": {\n    \"id\": \"uuid-here\",\n    \"email\": \"john.doe@example.com\",\n    \"fullName\": \"John Doe\",\n    \"role\": \"USER\",\n    \"status\": \"ACTIVE\"\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Current user retrieved successfully.\",\n  \"data\": {\n    \"id\": \"uuid-here\",\n    \"email\": \"john.doe@example.com\",\n    \"fullName\": \"John Doe\",\n    \"phoneNumber\": \"+966500000000\",\n    \"role\": \"USER\",\n    \"status\": \"ACTIVE\"\n  }\n}"
                 }
               ]
             },

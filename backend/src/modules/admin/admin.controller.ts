@@ -12,6 +12,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { adminService } from './admin.service';
+import { sanitizeAuthUser } from '../../common/utils/helpers';
 import {
   getPaginationParams,
   getSearchFilters,
@@ -105,7 +106,7 @@ export class AdminController {
       res.json({
         success: true,
         message: 'User retrieved successfully',
-        data: user,
+        data: sanitizeAuthUser(user),
       });
     } catch (error) {
       next(error);
@@ -145,7 +146,7 @@ export class AdminController {
       res.status(201).json({
         success: true,
         message: 'User created successfully',
-        data: user,
+        data: sanitizeAuthUser(user),
       });
     } catch (error) {
       next(error);
@@ -189,7 +190,7 @@ export class AdminController {
       res.json({
         success: true,
         message: 'User updated successfully',
-        data: user,
+        data: sanitizeAuthUser(user),
       });
     } catch (error) {
       next(error);

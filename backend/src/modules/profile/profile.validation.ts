@@ -1,6 +1,18 @@
 import Joi from 'joi';
 import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
+export const PROFILE_UPDATE_FIELDS = [
+  'email',
+  'fullName',
+  'phoneNumber',
+  'address',
+  'location',
+  'profileImage',
+  'companyName',
+  'taxId',
+  'preferences',
+] as const;
+
 export const profileValidation = {
   updateProfile: Joi.object({
     email: Joi.string().trim().email().optional(),
@@ -17,7 +29,9 @@ export const profileValidation = {
     companyName: sharedValidationSchemas.textNoHtml.max(100).optional(),
     taxId: sharedValidationSchemas.textNoHtml.max(50).optional(),
     preferences: Joi.object().optional(),
-  }),
+  })
+    .min(1)
+    .unknown(false),
 
   updateLanguage: Joi.object({
     preferredLanguage: Joi.string().valid('en', 'ar').required(),

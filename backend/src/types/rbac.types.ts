@@ -70,7 +70,6 @@ export interface UserDTO {
   role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
-  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;

@@ -33,8 +33,13 @@ export const superAdminValidation = {
   }),
 
   updateAdmin: Joi.object({
-    fullName: sharedValidationSchemas.textNoHtml.optional().allow(''),
-    phoneNumber: Joi.string().optional().allow(''),
+    email: sharedValidationSchemas.email.optional(),
+    password: sharedValidationSchemas.password.optional(),
+    fullName: sharedValidationSchemas.textNoHtml.optional(),
+    phoneNumber: Joi.string().trim().min(1).messages({
+      'string.empty': 'Phone number cannot be empty',
+      'string.min': 'Phone number cannot be empty',
+    }).optional(),
     role: Joi.string().valid(...Object.values(UserRole)).optional(),
     isActive: Joi.boolean().optional(),
     status: Joi.string().valid(...Object.values(UserStatus)).optional(),

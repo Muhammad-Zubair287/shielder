@@ -33,7 +33,11 @@ router.post('/', validate(superAdminValidation.createAdmin, 'body'), superAdminC
 /**
  * PUT /api/admins/:id
  */
-router.put('/:id', superAdminController.updateUser.bind(superAdminController));
+router.put(
+	'/:id',
+	validate(superAdminValidation.updateAdmin, 'body'),
+	superAdminController.updateUser.bind(superAdminController)
+);
 
 /**
  * PATCH /api/admins/:id/status

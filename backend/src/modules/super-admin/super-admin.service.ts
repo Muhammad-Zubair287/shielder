@@ -4,7 +4,7 @@
  */
 
 import { UserRole, UserStatus } from '../../common/constants/roles';
-import { ApiError } from '../../common/errors/api.error';
+import { ApiError, BadRequestError, ValidationError } from '../../common/errors/api.error';
 import { prisma } from '../../config/database';
 import {
   PaginationParams,
@@ -12,6 +12,8 @@ import {
 } from '../../common/utils/pagination';
 import bcrypt from 'bcryptjs';
 import { AuditService } from '../../common/services/audit.service';
+import { sanitizeAuthUser } from '../../common/utils/helpers';
+import { validatePasswordStrength as validatePasswordStrengthUtil } from '../../common/utils/password.utils';
 import redisCacheService from '@/common/services/redis-cache.service';
 import { CACHE_KEYS, CACHE_TTL_SECONDS } from '@/common/constants/cache-keys';
 
@@ -139,6 +141,25 @@ export class SuperAdminService {
    * Create a new user (Admin, Staff, or Customer)
    */
   async createUser(data: any, createdBy: string) {
+    // Validate required fields at service entry point
+    const validationErrors: Array<{ field: string; message: string }> = [];
+
+    if (!data.email || (typeof data.email === 'string' && !data.email.trim())) {
+      validationErrors.push({ field: 'email', message: 'email is required' });
+    }
+
+    if (!data.password || (typeof data.password === 'string' && !data.password.trim())) {
+      validationErrors.push({ field: 'password', message: 'password is required' });
+    }
+
+    if (!data.role || (typeof data.role === 'string' && !data.role.trim())) {
+      validationErrors.push({ field: 'role', message: 'role is required' });
+    }
+
+    if (validationErrors.length > 0) {
+      throw new ValidationError('Validation failed', validationErrors);
+    }
+
     const email = String(data.email || '').trim().toLowerCase();
 
     // 1. Check if email exists (including soft-deleted users)
@@ -162,7 +183,12 @@ export class SuperAdminService {
       throw new ApiError('Admin accounts must use an @shielder.com email address.', 400);
     }
 
-    // 3. Hash password
+    // 3. Validate and hash password
+    validatePasswordStrengthUtil(data.password, {
+      minLength: 8,
+      requireComplexity: true,
+    });
+
     const passwordHash = await bcrypt.hash(data.password, 12);
 
     let user;
@@ -255,7 +281,7 @@ export class SuperAdminService {
 
     await this.invalidateDashboardCaches();
 
-    return user;
+    return sanitizeAuthUser(user);
   }
 
   /**
@@ -289,6 +315,47 @@ export class SuperAdminService {
       throw new ApiError('System protection rule: Promotion to Super Admin is not allowed.', 403);
     }
 
+    if (Object.prototype.hasOwnProperty.call(data, 'password')) {
+      if (typeof data.password !== 'string' || !data.password.trim()) {
+        throw new BadRequestError('Password cannot be empty');
+      }
+
+      validatePasswordStrengthUtil(data.password, {
+        minLength: 8,
+        requireComplexity: true,
+      });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'email')) {
+      if (typeof data.email !== 'string' || !data.email.trim()) {
+        throw new BadRequestError('Email cannot be empty');
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'fullName')) {
+      if (typeof data.fullName !== 'string' || !data.fullName.trim()) {
+        throw new BadRequestError('Full name cannot be empty');
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'phoneNumber')) {
+      if (typeof data.phoneNumber !== 'string' || !data.phoneNumber.trim()) {
+        throw new BadRequestError('Phone number cannot be empty');
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'role')) {
+      if (typeof data.role !== 'string' || !data.role.trim()) {
+        throw new BadRequestError('Role cannot be empty');
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'status')) {
+      if (typeof data.status !== 'string' || !data.status.trim()) {
+        throw new BadRequestError('Status cannot be empty');
+      }
+    }
+
     const updateData: any = {
       updatedBy,
     };
@@ -303,27 +370,34 @@ export class SuperAdminService {
       updateData.lockedUntil = isSuspending && data.suspensionUntil ? new Date(data.suspensionUntil) : null;
     }
 
-    if (data.role) updateData.role = data.role;
-    if (data.status) {
+    if (Object.prototype.hasOwnProperty.call(data, 'role')) updateData.role = data.role;
+    if (Object.prototype.hasOwnProperty.call(data, 'status')) {
       updateData.isActive = data.status === 'ACTIVE';
       updateData.status = data.status === 'ACTIVE' ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
     }
 
     // Handle Password Update if provided
-    if (data.password) {
+    if (Object.prototype.hasOwnProperty.call(data, 'password')) {
       updateData.passwordHash = await bcrypt.hash(data.password, 12);
     }
 
     // Use transaction to batch operations
     const updatedUser = await prisma.$transaction(async (tx) => {
       // Update profile if needed
-      if (data.fullName || data.phoneNumber) {
+      if (Object.prototype.hasOwnProperty.call(data, 'fullName') || Object.prototype.hasOwnProperty.call(data, 'phoneNumber')) {
+        const profileUpdateData: Record<string, any> = {};
+
+        if (Object.prototype.hasOwnProperty.call(data, 'fullName')) {
+          profileUpdateData.fullName = data.fullName;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(data, 'phoneNumber')) {
+          profileUpdateData.phoneNumber = data.phoneNumber;
+        }
+
         await tx.userProfile.update({
           where: { userId: id },
-          data: {
-            fullName: data.fullName,
-            phoneNumber: data.phoneNumber,
-          },
+          data: profileUpdateData,
         });
       }
 
@@ -352,7 +426,7 @@ export class SuperAdminService {
 
     await this.invalidateDashboardCaches();
 
-    return updatedUser;
+    return sanitizeAuthUser(updatedUser);
   }
 
   /**

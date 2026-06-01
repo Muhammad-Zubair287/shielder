@@ -13,12 +13,14 @@ import {
   BadRequestError,
   UnauthorizedError,
   NotFoundError,
+  ForbiddenError,
   ConflictError,
   TooManyRequestsError,
 } from '@/common/errors/api.error';
 import { AuditService } from '@/common/services/audit.service';
 import { sanitizeString } from '@/common/security/sanitizer';
 import { logger } from '@/common/logger/logger';
+import { validatePasswordStrength as validatePasswordStrengthUtil } from '@/common/utils/password.utils';
 import { UserRole } from '@/types/rbac.types';
 import type {
   AuthResponse,
@@ -40,7 +42,6 @@ type SanitizedAuthUser = {
   email: string;
   role: string;
   status: string;
-  isActive: boolean;
   emailVerified: boolean;
   emailVerifiedAt?: Date | null;
   verificationStatus?: string;
@@ -53,7 +54,6 @@ type SanitizedAuthUser = {
     firstName?: string;
     lastName?: string;
     phoneNumber?: string;
-    phone?: string;
     address?: string;
     location?: string;
     companyName?: string;
@@ -326,6 +326,7 @@ export class AuthService {
           userId: user.id,
           email: user.email,
           role: user.role as UserRole,
+          tokenVersion: user.tokenVersion ?? 0,
           preferredLanguage: user.profile?.preferredLanguage || 'en',
         },
         deviceInfo
@@ -399,6 +400,7 @@ export class AuthService {
           email: true,
           createdAt: true,
           role: true,
+          tokenVersion: true,
           status: true,
           isActive: true,
           emailVerified: true,
@@ -526,6 +528,7 @@ export class AuthService {
               userId: user.id,
               email: user.email,
               role: user.role as UserRole,
+              tokenVersion: user.tokenVersion ?? 0,
               preferredLanguage: user.profile?.preferredLanguage || 'en',
             };
 
@@ -575,6 +578,7 @@ export class AuthService {
         userId: user.id,
         email: user.email,
         role: user.role as UserRole,
+        tokenVersion: user.tokenVersion ?? 0,
         preferredLanguage: user.profile?.preferredLanguage || 'en',
       };
 
@@ -740,8 +744,28 @@ export class AuthService {
    */
   static async logoutAll(userId: string): Promise<void> {
     try {
-      // Revoke all refresh tokens for user
-      await TokenService.revokeAllUserTokens(userId, 'logout_all');
+      // Revoke all refresh tokens and invalidate all access tokens in one transaction
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: userId },
+          data: {
+            tokenVersion: {
+              increment: 1,
+            },
+          },
+        }),
+        prisma.refreshToken.updateMany({
+          where: {
+            userId,
+            isRevoked: false,
+          },
+          data: {
+            isRevoked: true,
+            revokedAt: new Date(),
+            revokedReason: 'logout_all',
+          },
+        }),
+      ]);
 
       // Fire-and-forget audit log
       this.createAuditLog(userId, 'LOGOUT_ALL', 'User logged out from all devices');
@@ -1195,6 +1219,7 @@ export class AuthService {
           id: true,
           email: true,
           role: true,
+          tokenVersion: true,
           status: true,
           isActive: true,
           emailVerified: true,
@@ -1483,15 +1508,28 @@ export class AuthService {
    */
   static async revokeSession(userId: string, sessionId: string): Promise<void> {
     try {
-      const session = await prisma.refreshToken.findFirst({
+      const session = await prisma.refreshToken.findUnique({
         where: {
           id: sessionId,
-          userId,
+        },
+        select: {
+          id: true,
+          userId: true,
+          tokenHash: true,
+          isRevoked: true,
         },
       });
 
       if (!session) {
-        throw new NotFoundError('Session not found');
+        throw new NotFoundError('Session not found or already revoked');
+      }
+
+      if (session.userId !== userId) {
+        throw new ForbiddenError('You do not have permission to revoke this session');
+      }
+
+      if (session.isRevoked) {
+        throw new NotFoundError('Session not found or already revoked');
       }
 
       await TokenService.revokeToken(session.tokenHash, 'user_revoked');
@@ -1627,41 +1665,11 @@ export class AuthService {
    * Validate Password Strength (async — reads settings from DB)
    */
   private static async validatePasswordWithSettings(password: string): Promise<void> {
-    const { passwordMinLength, forceStrongPasswords } = await this.getSecuritySettings();
-    this.validatePasswordStrength(password, passwordMinLength, forceStrongPasswords);
-  }
-
-  /**
-   * Validate Password Strength (sync core — called with explicit settings)
-   */
-  private static validatePasswordStrength(
-    password: string,
-    minLength = 8,
-    forceStrong = true
-  ): void {
-    if (password.length < minLength) {
-      throw new BadRequestError(`Password must be at least ${minLength} characters long`);
-    }
-
-    if (forceStrong) {
-      const hasUpperCase = /[A-Z]/.test(password);
-      const hasLowerCase = /[a-z]/.test(password);
-      const hasNumbers = /\d/.test(password);
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-      if (!hasUpperCase) {
-        throw new BadRequestError('Password must contain at least one uppercase letter');
-      }
-      if (!hasLowerCase) {
-        throw new BadRequestError('Password must contain at least one lowercase letter');
-      }
-      if (!hasNumbers) {
-        throw new BadRequestError('Password must contain at least one number');
-      }
-      if (!hasSpecialChar) {
-        throw new BadRequestError('Password must contain at least one special character');
-      }
-    }
+    const { passwordMinLength } = await this.getSecuritySettings();
+    validatePasswordStrengthUtil(password, {
+      minLength: passwordMinLength,
+      requireComplexity: true,
+    });
   }
 
   /**
@@ -1739,7 +1747,6 @@ export class AuthService {
       email: sanitized.email,
       role: sanitized.role,
       status: sanitized.status || 'ACTIVE',
-      isActive: sanitized.isActive ?? true,
       emailVerified: sanitized.emailVerified ?? false,
       emailVerifiedAt: sanitized.emailVerifiedAt ?? null,
       verificationStatus: sanitized.verificationStatus || 'PENDING',
@@ -1750,7 +1757,6 @@ export class AuthService {
             firstName: firstName || undefined,
             lastName: lastName || undefined,
             phoneNumber: sanitized.profile.phoneNumber || undefined,
-            phone: sanitized.profile.phoneNumber || undefined,
             address: sanitized.profile.address || undefined,
             location: sanitized.profile.location || undefined,
             companyName: sanitized.profile.companyName || undefined,
@@ -1866,6 +1872,7 @@ export class AuthService {
               profileImage: true,
             },
           },
+          tokenVersion: true,
           otpSessionToken: true,
         },
       });
@@ -1899,6 +1906,7 @@ export class AuthService {
           userId: user.id,
           email: user.email,
           role: user.role as UserRole,
+          tokenVersion: user.tokenVersion ?? 0,
           preferredLanguage: user.profile?.preferredLanguage || 'en',
         },
         deviceInfo

@@ -5,6 +5,7 @@
 
 import Joi from 'joi';
 import { UserStatus } from '../../common/constants/roles';
+import { sharedValidationSchemas } from '../../common/validation/shared.schemas';
 
 export const adminValidation = {
   /**
@@ -15,10 +16,7 @@ export const adminValidation = {
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required',
     }),
-    password: Joi.string().min(8).required().messages({
-      'string.min': 'Password must be at least 8 characters',
-      'any.required': 'Password is required',
-    }),
+    password: sharedValidationSchemas.password,
     fullName: Joi.string().optional(),
     phoneNumber: Joi.string().optional(),
     companyName: Joi.string().optional(),
@@ -50,10 +48,7 @@ export const adminValidation = {
    * Reset password validation
    */
   resetPassword: Joi.object({
-    password: Joi.string().min(8).required().messages({
-      'string.min': 'Password must be at least 8 characters',
-      'any.required': 'Password is required',
-    }),
+    password: sharedValidationSchemas.password,
   }),
 
   /**

@@ -139,11 +139,10 @@ export interface AuthResponse {
     role: string;
     status: string;
     emailVerified: boolean;
-    isActive: boolean;
     profile?: {
       firstName?: string;
       lastName?: string;
-      phone?: string;
+      phoneNumber?: string;
       address?: string;
       location?: string;
       companyName?: string;

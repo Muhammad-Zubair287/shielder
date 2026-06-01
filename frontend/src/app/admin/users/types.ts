@@ -20,7 +20,6 @@ export interface AdminUser {
   email: string;
   role: UserRole;
   status: UserStatus;
-  isActive: boolean;
   emailVerified: boolean;
   lastLoginAt?: string | null;
   createdAt: string;
@@ -65,5 +64,4 @@ export interface UserUpdatePayload {
 export type UserFilters = {
   search: string;
   status: string;
-  isActive: string;
 };

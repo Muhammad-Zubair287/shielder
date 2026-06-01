@@ -75,13 +75,13 @@ export class TooManyRequestsError extends ApiError {
 }
 
 /**
- * Validation Error (422)
+ * Validation Error (400)
  */
 export class ValidationError extends ApiError {
   public errors: any[];
 
   constructor(message: string = 'Validation failed', errors: any[] = []) {
-    super(message, 422);
+    super(message, 400);
     this.errors = errors;
   }
 }

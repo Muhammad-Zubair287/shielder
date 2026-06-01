@@ -156,6 +156,24 @@ export class CartService {
     return cart?.id ?? null;
   }
 
+  static async findCartItem(userId: string, productId: string) {
+    const cartId = await this.getActiveCartId(userId);
+
+    if (!cartId) {
+      return null;
+    }
+
+    return prisma.cartItem.findUnique({
+      where: {
+        cartId_productId: {
+          cartId,
+          productId,
+        },
+      },
+      select: { id: true },
+    });
+  }
+
   /**
    * Get user cart
    */
@@ -280,6 +298,12 @@ export class CartService {
    * Remove item from cart
    */
   static async removeItem(userId: string, productId: string) {
+    const cartItem = await this.findCartItem(userId, productId);
+
+    if (!cartItem) {
+      throw new NotFoundError('Cart item not found');
+    }
+
     const cartId = await this.getActiveCartId(userId);
 
     if (!cartId) {
@@ -304,11 +328,20 @@ export class CartService {
   static async clearCart(userId: string) {
     const cartId = await this.getActiveCartId(userId);
 
-    if (cartId) {
-      await prisma.cartItem.deleteMany({
-        where: { cartId },
-      });
-      logger.info(`Cart cleared for user ${userId}`);
+    if (!cartId) {
+      throw new BadRequestError('Cart is already empty');
     }
+
+    const { count } = await prisma.cartItem.deleteMany({
+      where: { cartId },
+    });
+
+    if (count === 0) {
+      throw new BadRequestError('Cart is already empty');
+    }
+
+    logger.info(`Cart cleared for user ${userId} (removed ${count} item(s))`);
+
+    return { removedItems: count };
   }
 }

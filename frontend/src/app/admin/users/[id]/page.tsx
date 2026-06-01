@@ -169,7 +169,8 @@ export default function UserDetailPage({
     if (!user) return;
     setActionLoading(true);
     try {
-      await adminService.updateAdminManagedUserStatus(user!.id, !user!.isActive);
+      const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await adminService.updateAdminManagedUserStatus(user!.id, newStatus);
       toast.success(t('userStatusUpdated'));
       fetchUser();
     } catch {
@@ -272,13 +273,13 @@ export default function UserDetailPage({
             <button
               onClick={() => setShowToggleModal(true)}
               className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-colors ${
-                user.isActive
+                user.status === 'ACTIVE'
                   ? 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100'
                   : 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
               } ${isRTL ? 'flex-row-reverse' : ''}`}
             >
-              {user.isActive ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
-              {user.isActive ? t('deactivateUser') : t('activateUser')}
+              {user.status === 'ACTIVE' ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
+              {user.status === 'ACTIVE' ? t('deactivateUser') : t('activateUser')}
             </button>
 
             <button
@@ -306,7 +307,7 @@ export default function UserDetailPage({
                 <p className="text-sm text-gray-500">{user.email}</p>
                 <div className={`flex items-center gap-2 mt-2 flex-wrap ${isRTL ? 'justify-end' : ''}`}>
                   <RoleBadge role={user.role} size="sm" />
-                  <StatusBadge isActive={user.isActive} status={user.status} size="sm" />
+                  <StatusBadge status={user.status} size="sm" />
                   {user.emailVerified && (
                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider border rounded-full px-2 py-0.5 bg-teal-50 text-teal-700 border-teal-200">
                       <ShieldCheck size={9} />
@@ -496,10 +497,10 @@ export default function UserDetailPage({
       {/* ── Confirm Modals ── */}
       <ConfirmModal
         open={showToggleModal}
-        title={user.isActive ? t('confirmDeactivateTitle') : t('confirmActivateTitle')}
-        message={user.isActive ? t('confirmDeactivateMsg') : t('confirmActivateMsg')}
-        confirmLabel={user.isActive ? t('deactivateUser') : t('activateUser')}
-        danger={user.isActive}
+        title={user.status === 'ACTIVE' ? t('confirmDeactivateTitle') : t('confirmActivateTitle')}
+        message={user.status === 'ACTIVE' ? t('confirmDeactivateMsg') : t('confirmActivateMsg')}
+        confirmLabel={user.status === 'ACTIVE' ? t('deactivateUser') : t('activateUser')}
+        danger={user.status === 'ACTIVE'}
         loading={actionLoading}
         onConfirm={handleToggleStatus}
         onCancel={() => setShowToggleModal(false)}

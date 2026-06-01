@@ -1,8 +1,9 @@
 import { prisma } from '../../config/database';
 import { Prisma } from '@prisma/client';
-import { ConflictError, ForbiddenError, NotFoundError } from '../../common/errors/api.error';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../../common/errors/api.error';
 import { logger } from '../../common/logger/logger';
 import { UserRole } from '../../types/rbac.types';
+import { PROFILE_UPDATE_FIELDS } from './profile.validation';
 
 type UpdateProfileInput = {
   email?: string;
@@ -47,6 +48,19 @@ export class ProfileService {
    */
   static async updateProfile(userId: string, data: UpdateProfileInput, currentUserRole: UserRole) {
     try {
+      const hasUpdatableField = PROFILE_UPDATE_FIELDS.some((field) => {
+        if (!Object.prototype.hasOwnProperty.call(data, field)) {
+          return false;
+        }
+
+        const value = (data as Record<string, unknown>)[field];
+        return value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '');
+      });
+
+      if (!hasUpdatableField) {
+        throw new BadRequestError('No fields provided to update');
+      }
+
       const normalizedEmail = data.email?.trim().toLowerCase();
       const { email: _email, ...profileData } = data;
 

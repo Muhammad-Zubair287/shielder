@@ -108,7 +108,8 @@ export default function AdminUsersPage() {
 
   async function handleToggleStatus(target: AdminUser) {
     try {
-      await adminService.updateAdminManagedUserStatus(target.id, !target.isActive);
+      const newStatus = target.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await adminService.updateAdminManagedUserStatus(target.id, newStatus);
       toast.success(t('userStatusUpdated'));
       fetchUsers();
     } catch {

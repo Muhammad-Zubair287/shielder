@@ -9,6 +9,8 @@ import { Request, Response, NextFunction } from 'express';
 import { orderService } from './order.service';
 import { getPaginationParams } from '../../common/utils/pagination';
 import { AuthRequest } from '@/types/global';
+import { BadRequestError } from '../../common/errors/api.error';
+import { PaymentStatus } from '@prisma/client';
 
 const getRequestOrigin = (req: Request): string => {
   const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
@@ -86,6 +88,12 @@ const normalizeOrder = (req: Request, order: any) => {
     } : undefined,
     orderItems,
   };
+};
+
+const validatePaymentStatusTransition = (current: PaymentStatus, next: PaymentStatus) => {
+  if (current === PaymentStatus.PAID && next === PaymentStatus.UNPAID) {
+    throw new BadRequestError('Payment status cannot be changed once marked as PAID');
+  }
 };
 
 export class OrderController {
@@ -236,6 +244,12 @@ export class OrderController {
     try {
       const { id } = req.params;
       const performedBy = req.user ? `${req.user.role}: ${req.user.email}` : 'Unknown Admin';
+
+      if (req.body?.paymentStatus) {
+        const currentOrder = await orderService.getOrderById(id as string, req.user);
+        validatePaymentStatusTransition(currentOrder.paymentStatus, req.body.paymentStatus);
+      }
+
       const order = await orderService.updateOrderStatus(id as string, { ...req.body, performedBy });
       res.json({
         success: true,

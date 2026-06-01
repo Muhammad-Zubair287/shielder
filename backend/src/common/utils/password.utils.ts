@@ -9,6 +9,37 @@
 
 import bcrypt from 'bcryptjs';
 
+const COMMON_WEAK_PASSWORDS = new Set([
+  '123456',
+  '12345678',
+  'password',
+  'password1',
+  'password123',
+  'password123!',
+  'admin123',
+  'admin123!',
+  'welcome',
+  'welcome1!',
+  'qwerty',
+  'qwerty123',
+  'letmein',
+  'iloveyou',
+  'p@ssw0rd!',
+]);
+
+export type PasswordStrengthOptions = {
+  minLength?: number;
+  requireComplexity?: boolean;
+};
+
+export function normalizePasswordCandidate(password: string): string {
+  return password.trim().toLowerCase();
+}
+
+export function isCommonWeakPassword(password: string): boolean {
+  return COMMON_WEAK_PASSWORDS.has(normalizePasswordCandidate(password));
+}
+
 /**
  * Standard bcrypt salt rounds
  * Matches AuthService.SALT_ROUNDS (12 rounds = ~200ms on modern hardware)
@@ -60,16 +91,37 @@ export async function verifyPassword(
  * @param password - The password to validate
  * @throws Error if password doesn't meet requirements
  */
-export function validatePasswordStrength(password: string): void {
-  const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+export function validatePasswordStrength(
+  password: string,
+  options: PasswordStrengthOptions = {}
+): void {
+  const minLength = options.minLength ?? 8;
+  const requireComplexity = options.requireComplexity ?? true;
+
+  if (typeof password !== 'string' || password.trim().length === 0) {
+    throw new Error('Password is required');
+  }
+
+  if (password.length > 128) {
+    throw new Error('Password must not exceed 128 characters');
+  }
 
   if (password.length < minLength) {
     throw new Error(`Password must be at least ${minLength} characters long`);
   }
+
+  if (isCommonWeakPassword(password)) {
+    throw new Error('Password does not meet security requirements');
+  }
+
+  if (!requireComplexity) {
+    return;
+  }
+
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   if (!hasUpperCase) {
     throw new Error('Password must contain at least one uppercase letter');

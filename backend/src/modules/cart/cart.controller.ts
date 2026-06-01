@@ -7,7 +7,9 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { CartService } from './cart.service';
+import SettingsService from '../settings/settings.service';
 import { AuthRequest } from '../../types/global';
+import { NotFoundError } from '../../common/errors/api.error';
 
 const messages: any = {
   en: {
@@ -62,7 +64,7 @@ export class CartController {
     return messages[lang]?.[key] || messages['en'][key];
   }
 
-  private static normalizeCart(req: Request, cart: any, lang: string) {
+  private static normalizeCart(req: Request, cart: any, lang: string, currency: string) {
     let totalAmount = 0;
 
     const items = (cart?.items || []).map((item: any) => {
@@ -97,7 +99,7 @@ export class CartController {
       ...cart,
       items,
       totalAmount,
-      currency: 'USD',
+      currency,
     };
   }
 
@@ -116,11 +118,12 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
+      const currency = await SettingsService.getCurrency();
       const cart: any = await CartService.getCart(userId);
 
       res.status(200).json({
         success: true,
-        data: CartController.normalizeCart(req, cart, lang),
+        data: CartController.normalizeCart(req, cart, lang, currency),
       });
     } catch (error) {
       next(error);
@@ -152,6 +155,7 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
+      const currency = await SettingsService.getCurrency();
       const { productId, quantity } = req.body;
       await CartService.addItem(userId, productId, quantity);
       const cart = await CartService.getCart(userId);
@@ -159,7 +163,7 @@ export class CartController {
       res.status(201).json({
         success: true,
         message: CartController.getMessage(lang, 'added'),
-        data: CartController.normalizeCart(req, cart, lang),
+        data: CartController.normalizeCart(req, cart, lang, currency),
       });
     } catch (error) {
       next(error);
@@ -191,6 +195,7 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
+      const currency = await SettingsService.getCurrency();
       const { productId, quantity } = req.body;
       await CartService.updateItem(userId, productId, quantity);
       const cart = await CartService.getCart(userId);
@@ -198,7 +203,7 @@ export class CartController {
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'updated'),
-        data: CartController.normalizeCart(req, cart, lang),
+        data: CartController.normalizeCart(req, cart, lang, currency),
       });
     } catch (error) {
       next(error);
@@ -225,14 +230,22 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
+      const currency = await SettingsService.getCurrency();
       const { productId } = req.params;
+
+      const cartItemExists = Boolean(await CartService.findCartItem(userId, productId as string));
+
+      if (!cartItemExists) {
+        throw new NotFoundError('Cart item not found');
+      }
+
       await CartService.removeItem(userId, productId as string);
-      const cart = await CartService.getCart(userId);
+      const updatedCart = await CartService.getCart(userId);
       
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'removed'),
-        data: CartController.normalizeCart(req, cart, lang),
+        data: CartController.normalizeCart(req, updatedCart, lang, currency),
       });
     } catch (error) {
       next(error);
@@ -254,13 +267,14 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const lang = req.user!.preferredLanguage || 'en';
+      const currency = await SettingsService.getCurrency();
       await CartService.clearCart(userId);
       const cart = await CartService.getCart(userId);
       
       res.status(200).json({
         success: true,
         message: CartController.getMessage(lang, 'cleared'),
-        data: CartController.normalizeCart(req, cart, lang),
+        data: CartController.normalizeCart(req, cart, lang, currency),
       });
     } catch (error) {
       next(error);

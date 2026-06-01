@@ -11,6 +11,55 @@ import { logger } from '../../common/logger/logger';
 import { UserRole } from '../../types/rbac.types';
 import { prisma } from '@/config/database';
 
+const verifyEmailStatusInternal = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError('User not authenticated');
+    }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: {
+        id: true,
+        role: true,
+        deletedAt: true,
+        isActive: true,
+        tokenVersion: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        verificationStatus: true,
+        requiresEmailReverification: true,
+      },
+    });
+
+    if (!dbUser || dbUser.deletedAt || !dbUser.isActive) {
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    if ((req.user.tokenVersion ?? 0) !== dbUser.tokenVersion) {
+      throw new UnauthorizedError('Token has already been invalidated');
+    }
+
+    if (
+      req.user.role === 'USER' &&
+      (!dbUser.emailVerified ||
+        !dbUser.emailVerifiedAt ||
+        dbUser.verificationStatus !== 'VERIFIED' ||
+        dbUser.requiresEmailReverification)
+    ) {
+      throw new UnauthorizedError('Email verification required. Please verify your email to continue.');
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Authenticate user middleware
  * Verifies JWT token and attaches user to request
@@ -39,42 +88,19 @@ export const authenticate = async (
       userId: payload.userId,
       email: payload.email,
       role: payload.role as UserRole,
+      tokenVersion: payload.tokenVersion ?? 0,
       preferredLanguage: payload.preferredLanguage,
     };
 
-    // Harden customer-protected routes: unverified or re-verification-required
-    // users must not be allowed through even if they hold a stale JWT.
-    if (req.user.role === 'USER') {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: req.user.userId },
-        select: {
-          id: true,
-          role: true,
-          deletedAt: true,
-          isActive: true,
-          emailVerified: true,
-          emailVerifiedAt: true,
-          verificationStatus: true,
-          requiresEmailReverification: true,
-        },
-      });
-
-      if (
-        !dbUser ||
-        dbUser.deletedAt ||
-        !dbUser.isActive ||
-        !dbUser.emailVerified ||
-        !dbUser.emailVerifiedAt ||
-        dbUser.verificationStatus !== 'VERIFIED' ||
-        dbUser.requiresEmailReverification
-      ) {
-        throw new UnauthorizedError('Email verification required. Please verify your email to continue.');
-      }
-    }
-
-    next();
+    await verifyEmailStatusInternal(req, _res, next);
   } catch (error) {
     logger.error('Authentication error', error);
+
+    if (error instanceof UnauthorizedError) {
+      next(error);
+      return;
+    }
+
     next(new UnauthorizedError('Invalid or expired token'));
   }
 };
@@ -121,6 +147,7 @@ export const optionalAuth = async (
         userId: payload.userId,
         email: payload.email,
         role: payload.role as UserRole,
+        tokenVersion: payload.tokenVersion ?? 0,
         preferredLanguage: payload.preferredLanguage,
       };
     }
@@ -130,4 +157,13 @@ export const optionalAuth = async (
     // If token is invalid, just continue without user
     next();
   }
+};
+
+export const verifyEmailStatus = verifyEmailStatusInternal;
+
+export const AuthMiddleware = {
+  authenticate,
+  authorize,
+  optionalAuth,
+  verifyEmailStatus,
 };

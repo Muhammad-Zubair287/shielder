@@ -89,10 +89,46 @@ export const parsePagination = (
 /**
  * Sanitize user object (remove sensitive fields)
  */
-export const sanitizeUser = (user: any): any => {
-  const { password, ...sanitized } = user;
-  return sanitized;
+/**
+ * Sanitize user object for API responses (explicit whitelist)
+ * Removes authentication and security-related fields.
+ */
+export const sanitizeAuthUser = (user: any): any => {
+  if (!user) return null;
+
+  const profile = user.profile || {};
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    status: user.status || (user.isActive ? 'ACTIVE' : 'INACTIVE'),
+    emailVerified: user.emailVerified ?? false,
+    emailVerifiedAt: user.emailVerifiedAt ?? null,
+    verificationStatus: user.verificationStatus || undefined,
+    requiresEmailReverification: user.requiresEmailReverification ?? undefined,
+    createdAt: user.createdAt || undefined,
+    updatedAt: user.updatedAt || undefined,
+    lastLoginAt: user.lastLoginAt || undefined,
+    profile: profile
+      ? {
+          fullName: profile.fullName || undefined,
+          firstName: (profile.fullName || '').split(' ')[0] || undefined,
+          lastName: ((profile.fullName || '').split(' ').slice(1).join(' ') || undefined) as string | undefined,
+          phoneNumber: profile.phoneNumber || undefined,
+          phone: profile.phoneNumber || undefined,
+          address: profile.address || undefined,
+          location: profile.location || undefined,
+          companyName: profile.companyName || undefined,
+          profileImage: profile.profileImage || undefined,
+          locale: profile.preferredLanguage || undefined,
+        }
+      : undefined,
+  };
 };
+
+// Backwards-compat shim for other modules that previously imported `sanitizeUser`
+export const sanitizeUser = sanitizeAuthUser;
 
 /**
  * Check if email is valid

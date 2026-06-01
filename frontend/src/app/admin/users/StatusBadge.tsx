@@ -6,8 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import type { UserStatus } from './types';
 
 interface Props {
-  isActive: boolean;
-  status?: UserStatus | string;
+  status: UserStatus | string;
   size?: 'sm' | 'md';
 }
 
@@ -23,18 +22,25 @@ const INACTIVE_CONFIG = {
   Icon: XCircle as LucideIcon,
 };
 
-const STATUS_OVERRIDE: Record<string, { labelKey: string; classes: string; Icon: LucideIcon }> = {
-  SUSPENDED:            { labelKey: 'userSuspended', classes: 'bg-orange-50 text-orange-700 border-orange-200', Icon: AlertCircle },
-  PENDING_VERIFICATION: { labelKey: 'userPending',   classes: 'bg-amber-50 text-amber-700 border-amber-200',   Icon: Clock       },
+const STATUS_CONFIG: Record<string, { labelKey: string; classes: string; Icon: LucideIcon }> = {
+  ACTIVE:               { labelKey: 'userActive',      classes: 'bg-green-50 text-green-700 border-green-200',      Icon: CheckCircle2 },
+  INACTIVE:             { labelKey: 'userInactive',    classes: 'bg-red-50 text-red-700 border-red-200',            Icon: XCircle      },
+  SUSPENDED:            { labelKey: 'userSuspended',   classes: 'bg-orange-50 text-orange-700 border-orange-200',   Icon: AlertCircle  },
+  PENDING_VERIFICATION: { labelKey: 'userPending',     classes: 'bg-amber-50 text-amber-700 border-amber-200',      Icon: Clock        },
+  PENDING:              { labelKey: 'userPending',     classes: 'bg-amber-50 text-amber-700 border-amber-200',      Icon: Clock        },
 };
 
-export default function StatusBadge({ isActive, status, size = 'md' }: Props) {
+export default function StatusBadge({ status, size = 'md' }: Props) {
   const { t } = useLanguage();
 
   function resolveConfig(): { labelKey: string; classes: string; Icon: LucideIcon } {
-    if (status && STATUS_OVERRIDE[status]) return STATUS_OVERRIDE[status];
-    return isActive ? ACTIVE_CONFIG : INACTIVE_CONFIG;
+    if (status && STATUS_CONFIG[status]) {
+      return STATUS_CONFIG[status];
+    }
+    // Fallback to ACTIVE if status is not recognized
+    return ACTIVE_CONFIG;
   }
+  
   const config = resolveConfig();
 
   const { Icon } = config;

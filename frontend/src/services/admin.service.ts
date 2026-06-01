@@ -241,7 +241,9 @@ class AdminService {
     return response.data;
   }
 
-  async updateAdminManagedUserStatus(id: string, isActive: boolean) {
+  async updateAdminManagedUserStatus(id: string, newStatus: 'ACTIVE' | 'INACTIVE') {
+    // Convert status to isActive boolean for API (backend still uses isActive)
+    const isActive = newStatus === 'ACTIVE';
     const response = await apiClient.patch(API_ENDPOINTS.ADMIN_USERS.STATUS(id), { isActive });
     return response.data;
   }

@@ -8,6 +8,7 @@ import { inventoryService } from '../inventory/inventory.service';
 import { orderRepository } from './order.repository';
 import redisCacheService from '@/common/services/redis-cache.service';
 import { CACHE_KEYS } from '@/common/constants/cache-keys';
+import SettingsService from '../settings/settings.service';
 
 type OrderItemInput = {
   productId: string;
@@ -56,6 +57,14 @@ type AuthenticatedUser = {
 };
 
 export class OrderService {
+  private validatePaymentStatusTransition(current: PaymentStatus, next: PaymentStatus) {
+    if (current === next) return;
+
+    if (current === PaymentStatus.PAID && next === PaymentStatus.UNPAID) {
+      throw new BadRequestError('Payment status cannot be changed once marked as PAID');
+    }
+  }
+
   private validateStatusTransition(current: OrderStatus, next: OrderStatus, deliveryType: 'DELIVERY' | 'PICKUP') {
     if (current === next) return;
 
@@ -187,11 +196,12 @@ export class OrderService {
     };
   }
 
-  private static normalizeOrder(order: any) {
+  private static normalizeOrder(order: any, currency: string) {
     if (!order) return order;
 
     return {
       ...order,
+      currency,
       orderItems: Array.isArray(order.orderItems)
         ? order.orderItems.map((item: any) => OrderService.normalizeOrderItem(item))
         : order.orderItems,
@@ -379,6 +389,7 @@ export class OrderService {
   async getOrders(filters: OrderFilters, pagination: PaginationInput) {
     const { skip, limit } = pagination;
     const { search, status, paymentStatus, dateFrom, dateTo, sortBy, sortOrder } = filters;
+     const currency = await SettingsService.getCurrency();
 
     const where: Prisma.OrderWhereInput = {};
 
@@ -410,7 +421,7 @@ export class OrderService {
     ]);
 
     return {
-      orders: orders.map((order) => OrderService.normalizeOrder(order)),
+       orders: orders.map((order) => OrderService.normalizeOrder(order, currency)),
       pagination: {
         total,
         page: Math.floor(skip / limit) + 1,
@@ -427,6 +438,7 @@ export class OrderService {
    */
   async getOrderById(id: string, user?: AuthenticatedUser) {
     const order = await orderRepository.findByIdWithDetails(id);
+     const currency = await SettingsService.getCurrency();
 
     if (!order) {
       throw new NotFoundError('Order not found');
@@ -450,7 +462,7 @@ export class OrderService {
       }
     }
 
-    return OrderService.normalizeOrder(order);
+     return OrderService.normalizeOrder(order, currency);
   }
 
   /**
@@ -503,6 +515,10 @@ export class OrderService {
 
     if (newStatus) {
       this.validateStatusTransition(previousStatus, newStatus, order.deliveryType as 'DELIVERY' | 'PICKUP');
+    }
+
+    if (data.paymentStatus) {
+      this.validatePaymentStatusTransition(order.paymentStatus, data.paymentStatus);
     }
 
     const updatedOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -656,6 +672,7 @@ export class OrderService {
    */
   async getMyOrders(userId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
+     const currency = await SettingsService.getCurrency();
     const where: Prisma.OrderWhereInput = { userId };
 
     const [total, orders] = await Promise.all([
@@ -690,7 +707,7 @@ export class OrderService {
     ]);
 
     return {
-      orders: orders.map((order) => OrderService.normalizeOrder(order)),
+       orders: orders.map((order) => OrderService.normalizeOrder(order, currency)),
       pagination: {
         total,
         page,

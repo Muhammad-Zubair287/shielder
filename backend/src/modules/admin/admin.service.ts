@@ -6,13 +6,14 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { UserRole, UserStatus } from '../../common/constants/roles';
-import { ApiError } from '../../common/errors/api.error';
+import { ApiError, BadRequestError } from '../../common/errors/api.error';
 import {
   SearchFilter,
   PaginationParams,
   buildWhereClause,
   createPaginatedResponse,
 } from '../../common/utils/pagination';
+import { validatePasswordStrength as validatePasswordStrengthUtil } from '../../common/utils/password.utils';
 
 const prisma = new PrismaClient();
 
@@ -169,7 +170,12 @@ export class AdminService {
       throw new ApiError('Email already exists', 400);
     }
 
-    // Hash password
+    // Validate and hash password
+    validatePasswordStrengthUtil(data.password, {
+      minLength: 8,
+      requireComplexity: true,
+    });
+
     const passwordHash = await bcrypt.hash(data.password, 12);
 
     const deletedUser = await prisma.user.findFirst({
@@ -361,7 +367,16 @@ export class AdminService {
     // Verify user exists and is manageable
     await this.getUserById(userId, adminRole);
 
-    // Hash new password
+    if (typeof newPassword !== 'string' || !newPassword.trim()) {
+      throw new BadRequestError('Password cannot be empty');
+    }
+
+    validatePasswordStrengthUtil(newPassword, {
+      minLength: 8,
+      requireComplexity: true,
+    });
+
+    // Validate and hash new password
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     await prisma.user.update({

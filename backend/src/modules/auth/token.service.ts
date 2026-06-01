@@ -18,6 +18,7 @@ export interface JWTPayload {
   userId: string;
   email: string;
   role: UserRole;
+  tokenVersion: number;
   preferredLanguage?: string;
 }
 
@@ -202,6 +203,7 @@ export class TokenService {
         userId: storedToken.user.id,
         email: storedToken.user.email,
         role: storedToken.user.role as UserRole,
+        tokenVersion: storedToken.user.tokenVersion ?? 0,
         preferredLanguage: storedToken.user.profile?.preferredLanguage || 'en',
       };
     } catch (error) {

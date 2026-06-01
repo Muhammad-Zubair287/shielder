@@ -17,6 +17,7 @@ declare global {
         userId: string;
         email: string;
         role: UserRole;
+        tokenVersion?: number;
         preferredLanguage?: string;
       };
       /** Normalised locale set by languageMiddleware — 'en' | 'ar' */
@@ -34,6 +35,7 @@ export interface AuthRequest extends Request {
     userId: string;
     email: string;
     role: UserRole;
+    tokenVersion?: number;
     preferredLanguage?: string;
   };
 }

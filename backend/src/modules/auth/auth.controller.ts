@@ -442,6 +442,35 @@ class AuthController {
    *     responses:
    *       200:
    *         description: Current user data
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     user:
+   *                       type: object
+   *                       properties:
+   *                         id:
+   *                           type: string
+   *                         email:
+   *                           type: string
+   *                         role:
+   *                           type: string
+   *                         status:
+   *                           type: string
+   *                         profile:
+   *                           type: object
+   *                           properties:
+   *                             fullName:
+   *                               type: string
+   *                             phoneNumber:
+   *                               type: string
+   *                               example: "+966500000000"
    */
   getCurrentUser = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user!.userId;

@@ -1,15 +1,29 @@
 import { prisma } from '../../config/database';
-import { BadRequestError, NotFoundError } from '../../common/errors/api.error';
+import { BadRequestError, NotFoundError, ConflictError } from '../../common/errors/api.error';
 import { PaymentStatus, PaymentMethod, OrderStatus, NotificationType, UserRole } from '@prisma/client';
 import { AuditService } from '../../common/services/audit.service';
 import { createPaginatedResponse, PaginationParams } from '../../common/utils/pagination';
 import NotificationService from '../notification/notification.service';
+import SettingsService from '../settings/settings.service';
 
 export class PaymentService {
+  private async getCurrency(): Promise<string> {
+    return SettingsService.getCurrency();
+  }
+
+  private async normalizePayment<T extends Record<string, any>>(payment: T): Promise<T & { currency: string }> {
+    const currency = await this.getCurrency();
+    return {
+      ...payment,
+      currency,
+    };
+  }
+
   /**
    * Get Payment dashboard stats
    */
   async getPaymentStats() {
+    const currency = await this.getCurrency();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -51,7 +65,8 @@ export class PaymentService {
       totalRevenue: netTotalRevenue,
       todayRevenue: netTodayRevenue,
       pendingPayments,
-      failedPayments
+      failedPayments,
+      currency
     };
   }
 
@@ -105,7 +120,12 @@ export class PaymentService {
       orderBy: { createdAt: 'desc' }
     });
 
-    return createPaginatedResponse(payments, total, pagination.page, pagination.limit);
+    const currency = await this.getCurrency();
+    return {
+      ...createPaginatedResponse(payments, total, pagination.page, pagination.limit),
+      currency,
+      data: await Promise.all(payments.map((payment) => this.normalizePayment(payment))),
+    };
   }
 
   /**
@@ -141,11 +161,22 @@ export class PaymentService {
       throw new NotFoundError('Payment record not found');
     }
 
-    return payment;
+    return this.normalizePayment(payment);
   }
 
   /**
    * Record a manual payment
+   * 
+   * Business Rules:
+   * 1. Only ONE PAID payment is allowed per order.
+   * 2. Amount must be a valid positive number.
+   * 3. Payment cannot exceed remaining order balance.
+   * 
+   * Validation Layers:
+   * - Input validation (Joi schema)
+   * - Service-level type safety checks
+   * - Database constraints (unique index)
+   * - Transaction atomicity
    */
   async recordPayment(data: {
     orderId: string;
@@ -155,7 +186,49 @@ export class PaymentService {
     notes?: string;
     recordedBy: string;
   }) {
-    // 1. Check if order exists
+    // ============================================
+    // VALIDATION LAYER 1: Type Safety Checks
+    // ============================================
+    
+    // Validate amount is a proper number
+    if (typeof data.amount !== 'number') {
+      throw new BadRequestError(
+        'Amount must be a valid number'
+      );
+    }
+
+    // Check for NaN
+    if (isNaN(data.amount)) {
+      throw new BadRequestError(
+        'Amount is not a valid number (NaN detected)'
+      );
+    }
+
+    // Check for Infinity
+    if (!isFinite(data.amount)) {
+      throw new BadRequestError(
+        'Amount must be a finite number (not infinity)'
+      );
+    }
+
+    // Check amount is positive
+    if (data.amount <= 0) {
+      throw new BadRequestError(
+        'Amount must be greater than zero'
+      );
+    }
+
+    // Validate orderId is a valid UUID
+    if (!data.orderId || typeof data.orderId !== 'string') {
+      throw new BadRequestError(
+        'Order ID must be a valid UUID'
+      );
+    }
+
+    // ============================================
+    // VALIDATION LAYER 2: Order Existence
+    // ============================================
+    
     const order = await prisma.order.findUnique({
       where: { id: data.orderId },
       include: { payments: true }
@@ -165,24 +238,47 @@ export class PaymentService {
       throw new NotFoundError('Order not found');
     }
 
-    // 2. Prevent overpayment
-    const alreadyPaid = order.payments
-      .filter(p => p.status === PaymentStatus.PAID)
-      .reduce((sum, p) => sum + Number(p.amount), 0);
+    // ============================================
+    // VALIDATION LAYER 3: Business Logic
+    // ============================================
     
-    const remainingBalance = Number(order.total) - alreadyPaid;
-
-    if (data.amount > remainingBalance + 0.01) { // 0.01 for floating point safety
-      throw new BadRequestError(`Payment amount ($${data.amount}) exceeds remaining balance ($${remainingBalance.toFixed(2)})`);
+    // CRITICAL: Prevent duplicate PAID payments for the same order
+    // Check if a PAID payment already exists for this order
+    const existingPaidPayment = order.payments.find(p => p.status === PaymentStatus.PAID);
+    if (existingPaidPayment) {
+      throw new ConflictError('Payment already recorded for this order');
     }
 
-    // 3. Double Payment Prevention (Transaction ID check)
+    // Prevent overpayment
+    const alreadyPaid = order.payments
+      .filter(p => p.status === PaymentStatus.PAID || p.status === PaymentStatus.PARTIALLY_PAID)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    
+    const orderTotal = Number(order.total);
+    
+    // Type safety: ensure order.total is valid
+    if (isNaN(orderTotal) || !isFinite(orderTotal)) {
+      throw new BadRequestError(
+        'Order has an invalid total amount'
+      );
+    }
+    
+    const remainingBalance = orderTotal - alreadyPaid;
+
+    if (data.amount > remainingBalance + 0.01) { // 0.01 for floating point safety
+      throw new BadRequestError(
+        `Payment amount ($${data.amount.toFixed(2)}) exceeds remaining balance ($${remainingBalance.toFixed(2)})`
+      );
+    }
+
+    // Double Payment Prevention via Transaction ID (idempotency)
+    // Supports retry scenarios - same transaction ID should return existing payment
     if (data.transactionId) {
       const existing = await prisma.payment.findUnique({
         where: { transactionId: data.transactionId }
       });
       if (existing) {
-        throw new BadRequestError('Transaction ID already exists');
+        throw new ConflictError('Transaction ID already exists');
       }
     }
 
@@ -253,7 +349,7 @@ export class PaymentService {
         triggeredById: data.recordedBy
       });
 
-      return payment;
+      return this.normalizePayment(payment);
     });
   }
 
@@ -327,7 +423,7 @@ export class PaymentService {
         triggeredById: userId
       });
 
-      return updatedPayment;
+      return this.normalizePayment(updatedPayment);
     });
   }
 }

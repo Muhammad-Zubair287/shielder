@@ -197,7 +197,6 @@ export default function UsersTable({
                       {/* Status */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <StatusBadge
-                          isActive={user.isActive}
                           status={user.status}
                           size="sm"
                         />
@@ -235,13 +234,13 @@ export default function UsersTable({
                           <button
                             onClick={() => setToggleTarget(user)}
                             className={`p-1.5 rounded-lg transition-colors ${
-                              user.isActive
+                              user.status === 'ACTIVE'
                                 ? 'text-gray-400 hover:text-orange-600 hover:bg-orange-50'
                                 : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
                             }`}
-                            title={user.isActive ? t('deactivateUser') : t('activateUser')}
+                            title={user.status === 'ACTIVE' ? t('deactivateUser') : t('activateUser')}
                           >
-                            {user.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                            {user.status === 'ACTIVE' ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
                           </button>
 
                           {/* Delete */}
@@ -285,15 +284,15 @@ export default function UsersTable({
       <ConfirmModal
         open={!!toggleTarget}
         title={
-          toggleTarget?.isActive ? t('confirmDeactivateTitle') : t('confirmActivateTitle')
+          toggleTarget?.status === 'ACTIVE' ? t('confirmDeactivateTitle') : t('confirmActivateTitle')
         }
         message={
-          toggleTarget?.isActive ? t('confirmDeactivateMsg') : t('confirmActivateMsg')
+          toggleTarget?.status === 'ACTIVE' ? t('confirmDeactivateMsg') : t('confirmActivateMsg')
         }
         confirmLabel={
-          toggleTarget?.isActive ? t('deactivateUser') : t('activateUser')
+          toggleTarget?.status === 'ACTIVE' ? t('deactivateUser') : t('activateUser')
         }
-        danger={toggleTarget?.isActive ?? false}
+        danger={toggleTarget?.status === 'ACTIVE' ?? false}
         loading={actionLoading}
         onConfirm={handleConfirmToggle}
         onCancel={() => setToggleTarget(null)}

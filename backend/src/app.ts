@@ -14,6 +14,7 @@ import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './common/middleware/error.middleware';
 import { languageMiddleware } from './common/middleware/language.middleware';
 import { sanitizationMiddleware } from './common/middleware/sanitize.middleware';
+import { jsonParseErrorHandler } from './common/middleware/json-parse-error.middleware';
 import { logger } from './common/logger/logger';
 
 // Import routes
@@ -107,6 +108,9 @@ export const createApp = (): Application => {
   // Body parsing middleware
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    // JSON parse error handler - catches SyntaxError from malformed JSON/URL-encoded bodies
+    app.use(jsonParseErrorHandler);
 
   // Sanitization middleware: reject obvious HTML/JS and normalize strings
   app.use(sanitizationMiddleware);

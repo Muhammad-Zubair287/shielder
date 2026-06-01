@@ -8,6 +8,35 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 
 class SettingsService {
+  private cachedCurrency: string | null = null;
+  private lastCurrencyFetch: number = 0;
+  private readonly CURRENCY_CACHE_TTL = 60000; // Cache for 1 minute
+
+  /**
+   * Get platform currency code (e.g., 'SAR', 'USD')
+   * Defaults to 'SAR' for the Shielder platform
+   * @returns Currency code string
+   */
+  async getCurrency(): Promise<string> {
+    const now = Date.now();
+    
+    // Return cached currency if still valid
+    if (this.cachedCurrency && (now - this.lastCurrencyFetch < this.CURRENCY_CACHE_TTL)) {
+      return this.cachedCurrency;
+    }
+
+    const settings = await prisma.systemSettings.findUnique({
+      where: { id: 'CURRENT' },
+      select: { currency: true }
+    });
+
+    const currency = settings?.currency || 'SAR';
+    this.cachedCurrency = currency;
+    this.lastCurrencyFetch = now;
+
+    return currency;
+  }
+
   /**
    * Get Current Settings
    */
@@ -27,6 +56,12 @@ class SettingsService {
         where: { id: 'CURRENT' },
         data: { currency: 'SAR' },
       });
+    }
+
+    // Invalidate currency cache when settings are fetched
+    if (settings.currency !== this.cachedCurrency) {
+      this.cachedCurrency = settings.currency;
+      this.lastCurrencyFetch = Date.now();
     }
 
     // Mask sensitive fields

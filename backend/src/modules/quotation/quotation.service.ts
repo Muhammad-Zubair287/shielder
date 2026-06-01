@@ -7,6 +7,7 @@ import { prisma } from '@/config/database';
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
 import { QuotationStatus, QuotationActivityType, NotificationType, UserRole, Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 import NotificationService from '@/modules/notification/notification.service';
+import SettingsService from '@/modules/settings/settings.service';
 import { QuotationItem } from './quotation.types';
 
 type QuotationListFilters = {
@@ -167,7 +168,8 @@ export class QuotationService {
             });
         }
 
-        return quotation;
+           const currency = await SettingsService.getCurrency();
+           return { ...quotation, currency };
     }
 
     /**
@@ -176,6 +178,7 @@ export class QuotationService {
     async getQuotations(filters: QuotationListFilters, pagination: QuotationPagination) {
         const { search, status, dateFrom, dateTo, sortBy = 'createdAt', sortOrder = 'desc' } = filters;
         const { skip, limit } = pagination;
+           const currency = await SettingsService.getCurrency();
 
         const where: Prisma.QuotationWhereInput = {};
 
@@ -208,7 +211,7 @@ export class QuotationService {
         ]);
 
         return {
-            quotations,
+               quotations: quotations.map(q => ({ ...q, currency })),
             pagination: {
                 total,
                 page: Math.floor(skip / limit) + 1,
@@ -222,6 +225,7 @@ export class QuotationService {
      * Get single quotation by ID
      */
     async getQuotationById(id: string) {
+           const currency = await SettingsService.getCurrency();
         const quotation = await prisma.quotation.findUnique({
             where: { id },
             include: {
@@ -232,7 +236,7 @@ export class QuotationService {
             }
         });
         if (!quotation) throw new NotFoundError('Quotation not found');
-        return quotation;
+           return { ...quotation, currency };
     }
 
     /**
@@ -249,6 +253,14 @@ export class QuotationService {
         const { items, discount = 0, taxRate = 0, ...rest } = data;
 
         let updateData: Prisma.QuotationUpdateInput = { ...rest, updatedAt: new Date() };
+
+        // Failsafe: Ensure at least one meaningful field is being updated (besides updatedAt)
+        const hasItems = items && items.length > 0;
+        const hasOtherFields = Object.keys(rest).length > 0 || discount !== 0 || taxRate !== 0;
+        
+        if (!hasItems && !hasOtherFields) {
+            throw new BadRequestError('At least one field is required to update quotation');
+        }
 
         if (items && items.length > 0) {
             let subtotal = new Prisma.Decimal(0);
@@ -320,31 +332,90 @@ export class QuotationService {
 
     /**
      * Send quotation to customer
+     * 
+     * Business Logic:
+     * - DRAFT/PENDING: Initial send allowed, transitions to SENT (or REPLIED if adminReply provided)
+     * - SENT/VIEWED without adminReply: BLOCKED (duplicate send prevention)
+     * - SENT/VIEWED with adminReply: ALLOWED (transitioning to REPLIED - reply scenario)
+     * - REPLIED without adminReply: BLOCKED (already sent with reply)
+     * - REPLIED with new adminReply: ALLOWED (updating reply)
+     * - Terminal states (APPROVED/REJECTED/CONVERTED/EXPIRED): BLOCKED
+     * 
+     * Prevents: Duplicate quotation sends, duplicate email/notification generation
      */
     async sendQuotation(id: string, userId: string, adminReply?: string) {
         const quotation = await prisma.quotation.findUnique({ where: { id }, include: { items: true } });
         if (!quotation) throw new NotFoundError('Quotation not found');
 
-        if (!['DRAFT', 'SENT', 'PENDING', 'VIEWED'].includes(quotation.status)) {
-            throw new BadRequestError(`Cannot send a quotation with status: ${quotation.status}`);
+        // Normalize the reply
+        const normalizedReply = adminReply?.trim() || null;
+
+        // ──── Validate Quotation Status ────────────────────────────────────
+        // Terminal states: Cannot send regardless of reply
+        if (['APPROVED', 'REJECTED', 'CONVERTED', 'EXPIRED'].includes(quotation.status)) {
+            throw new BadRequestError(
+                `Cannot send a quotation with status ${quotation.status}. Terminal states cannot be sent.`
+            );
         }
 
-        const normalizedReply = adminReply?.trim() || quotation.adminReply || null;
+        // Initial send allowed: DRAFT, PENDING
+        const canInitiallySend = ['DRAFT', 'PENDING'].includes(quotation.status);
+        
+        // Already sent states: SENT, VIEWED, REPLIED
+        const alreadySent = ['SENT', 'VIEWED', 'REPLIED'].includes(quotation.status);
 
+        // ──── Duplicate Send Prevention ────────────────────────────────────
+        // CRITICAL: Block duplicate sends (same quotation sent without new reply)
+        if (alreadySent && !normalizedReply) {
+            // Quotation already sent without new reply → Duplicate attempt
+            throw new BadRequestError(
+                'Quotation has already been sent to the customer. ' +
+                'To send a reply or update, provide an admin reply message.'
+            );
+        }
+
+        // CRITICAL: Block re-sending when already replied (unless updating reply)
+        if (quotation.status === QuotationStatus.REPLIED && normalizedReply) {
+            // Update existing reply scenario - allowed
+        } else if (quotation.status === QuotationStatus.REPLIED && !normalizedReply) {
+            // Already replied, trying to send again without new reply - blocked
+            throw new BadRequestError(
+                'Quotation has already been sent with a reply. ' +
+                'To send another message, provide a new admin reply.'
+            );
+        }
+
+        // ──── Determine Target Status ────────────────────────────────────
+        // Transition logic:
+        // - Initial send with no reply: DRAFT/PENDING → SENT
+        // - Initial send with reply: DRAFT/PENDING → REPLIED
+        // - Reply to already-sent: SENT/VIEWED → REPLIED
+        // - Update existing reply: REPLIED → REPLIED (refresh timestamp)
+        const targetStatus = normalizedReply 
+            ? QuotationStatus.REPLIED 
+            : (canInitiallySend ? QuotationStatus.SENT : quotation.status);
+
+        // ──── Perform Update ────────────────────────────────────────────────
         const updated = await prisma.quotation.update({
             where: { id },
             data: {
-                status: normalizedReply ? QuotationStatus.REPLIED : QuotationStatus.SENT,
-                adminReply: normalizedReply,
+                status: targetStatus,
+                adminReply: normalizedReply || quotation.adminReply,
+                updatedAt: new Date(), // Update timestamp to track resend attempts
             }
         });
+
+        // ──── Log Activity ────────────────────────────────────────────────
+        const activityNote = normalizedReply
+            ? `${canInitiallySend ? 'Initial send with' : 'Reply to'} quotation for ${quotation.customerEmail}`
+            : `Sent in-app to ${quotation.customerEmail}`;
 
         await prisma.quotationActivity.create({
             data: {
                 quotationId: id,
                 action: QuotationActivityType.SENT,
                 performedBy: userId,
-                note: normalizedReply ? `In-app reply posted for ${quotation.customerEmail}` : `Sent in-app to ${quotation.customerEmail}`,
+                note: activityNote,
             }
         });
 
@@ -353,12 +424,21 @@ export class QuotationService {
 
     /**
      * Approve quotation
+     * 
+     * Valid transitions: PENDING/DRAFT/SENT/VIEWED/REPLIED → APPROVED
+     * Cannot approve: APPROVED (already approved), REJECTED (rejected), CONVERTED/EXPIRED (terminal states)
      */
     async approveQuotation(id: string, userId: string) {
         const quotation = await prisma.quotation.findUnique({ where: { id } });
         if (!quotation) throw new NotFoundError('Quotation not found');
-        if (quotation.status !== 'SENT' && quotation.status !== 'VIEWED') {
-            throw new BadRequestError('Only Sent or Viewed quotations can be approved.');
+        
+        // Validate quotation can be approved
+        const validInitialStates = ['PENDING', 'DRAFT', 'SENT', 'VIEWED', 'REPLIED'];
+        if (!validInitialStates.includes(quotation.status)) {
+            throw new BadRequestError(
+                `Cannot approve quotation with status ${quotation.status}. ` +
+                `Allowed statuses: ${validInitialStates.join(', ')}`
+            );
         }
 
         const updated = await prisma.quotation.update({
@@ -385,12 +465,22 @@ export class QuotationService {
 
     /**
      * Reject quotation
+     * 
+     * Valid transitions: PENDING/DRAFT/SENT/VIEWED/REPLIED → REJECTED
+     * Cannot reject: APPROVED (must not reverse approval), REJECTED (already rejected), CONVERTED/EXPIRED (terminal states)
      */
     async rejectQuotation(id: string, reason: string, userId: string) {
         const quotation = await prisma.quotation.findUnique({ where: { id } });
         if (!quotation) throw new NotFoundError('Quotation not found');
-        if (!['SENT', 'VIEWED', 'APPROVED'].includes(quotation.status)) {
-            throw new BadRequestError('Quotation cannot be rejected in its current state.');
+        
+        // Validate quotation can be rejected
+        // CRITICAL: Cannot reject APPROVED quotations (business rule violation)
+        const validInitialStates = ['PENDING', 'DRAFT', 'SENT', 'VIEWED', 'REPLIED'];
+        if (!validInitialStates.includes(quotation.status)) {
+            const errorMessage = quotation.status === 'APPROVED' 
+                ? 'Approved quotation cannot be rejected. Approved quotations are final and can only be converted to orders.'
+                : `Cannot reject quotation with status ${quotation.status}.`;
+            throw new BadRequestError(errorMessage);
         }
 
         const updated = await prisma.quotation.update({
@@ -580,6 +670,7 @@ export class QuotationService {
      */
     async getMyQuotations(customerEmail: string, pagination: QuotationPagination, filters?: { status?: QuotationStatus }) {
         const { skip, limit } = pagination;
+           const currency = await SettingsService.getCurrency();
 
         const where: Prisma.QuotationWhereInput = {
             customerEmail: customerEmail.toLowerCase()
@@ -612,7 +703,7 @@ export class QuotationService {
         ]);
 
         return {
-            data: quotations,
+               data: quotations.map(q => ({ ...q, currency })),
             pagination: {
                 total,
                 page: Math.floor(skip / limit) + 1,

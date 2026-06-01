@@ -15,7 +15,7 @@ const quotationItemSchema = Joi.object({
 
 export const quotationValidation = {
     create: Joi.object({
-        customerName: sharedValidationSchemas.textNoHtml.min(2).max(100).required().messages({
+        customerName: sharedValidationSchemas.personName.required().messages({
             'string.empty': 'Customer name is required',
         }),
         customerEmail: Joi.string().email().required().messages({
@@ -55,6 +55,8 @@ export const quotationValidation = {
         adminReply: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
         terms: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
         expiryDate: Joi.date().iso().optional(),
+    }).min(1).messages({
+        'object.min': 'At least one field is required to update quotation',
     }),
 
     reactivate: Joi.object({
