@@ -1,8 +1,8 @@
 -- DropForeignKey
-ALTER TABLE "orders" DROP CONSTRAINT "fk_order_warehouse";
+ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "fk_order_warehouse";
 
 -- DropIndex
-DROP INDEX "users_otp_session_token_idx";
+DROP INDEX IF EXISTS "users_otp_session_token_idx";
 
 -- CreateTable
 CREATE TABLE "privacy_policy" (
@@ -34,7 +34,14 @@ CREATE INDEX "users_email_deleted_at_idx" ON "users"("email", "deleted_at");
 ALTER TABLE "orders" ADD CONSTRAINT "orders_warehouse_id_fkey" FOREIGN KEY ("warehouse_id") REFERENCES "warehouses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- RenameIndex
-ALTER INDEX "idx_order_delivery_type" RENAME TO "orders_delivery_type_idx";
-
--- RenameIndex
-ALTER INDEX "idx_order_warehouse" RENAME TO "orders_warehouse_id_idx";
+-- RenameIndex (safe: only rename if the old index exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_order_delivery_type') THEN
+        ALTER INDEX "idx_order_delivery_type" RENAME TO "orders_delivery_type_idx";
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_order_warehouse') THEN
+        ALTER INDEX "idx_order_warehouse" RENAME TO "orders_warehouse_id_idx";
+    END IF;
+END
+$$;
