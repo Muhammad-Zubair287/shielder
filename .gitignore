@@ -61,6 +61,7 @@ temp/
 *.db
 *.dump
 *.sql
+!backend/src/database/prisma/migrations/**/migration.sql
 backend/prisma/migrations/
 prisma/migrations/.migrate_lock
 
