@@ -247,6 +247,13 @@
                   "    pm.collectionVariables.set('admin_token', json.data.accessToken);",
                   "    console.log('admin_token saved');",
                   "  }",
+                  "  if (json.data && json.data.requiresTwoFactor && json.data.otpSessionToken && json.data.user && json.data.user.id) {",
+                  "    pm.collectionVariables.set('admin_2fa_user_id', json.data.user.id);",
+                  "    pm.collectionVariables.set('admin_otp_session_token', json.data.otpSessionToken);",
+                  "    pm.collectionVariables.set('twofa_user_id', json.data.user.id);",
+                  "    pm.collectionVariables.set('twofa_otp_session_token', json.data.otpSessionToken);",
+                  "    console.log('admin 2FA session saved');",
+                  "  }",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -299,6 +306,13 @@
                   "    pm.collectionVariables.set('superadmin_token', json.data.accessToken);",
                   "    console.log('superadmin_token saved');",
                   "  }",
+                  "  if (json.data && json.data.requiresTwoFactor && json.data.otpSessionToken && json.data.user && json.data.user.id) {",
+                  "    pm.collectionVariables.set('superadmin_2fa_user_id', json.data.user.id);",
+                  "    pm.collectionVariables.set('superadmin_otp_session_token', json.data.otpSessionToken);",
+                  "    pm.collectionVariables.set('twofa_user_id', json.data.user.id);",
+                  "    pm.collectionVariables.set('twofa_otp_session_token', json.data.otpSessionToken);",
+                  "    console.log('superadmin 2FA session saved');",
+                  "  }",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -335,6 +349,41 @@
               "status": "OK",
               "code": 200,
               "body": "{\n  \"success\": true,\n  \"message\": \"Login successful.\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"uuid-here\",\n      \"email\": \"john.doe@example.com\",\n      \"fullName\": \"John Doe\",\n      \"role\": \"USER\",\n      \"status\": \"ACTIVE\"\n    },\n    \"accessToken\": \"eyJ...\",\n    \"refreshToken\": \"eyJ...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP (Admin/Super Admin 2FA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{twofa_user_id}}\",\n  \"otpSessionToken\": \"{{twofa_otp_session_token}}\",\n  \"code\": \"123456\",\n  \"rememberDevice\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-otp"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"OTP verified successfully.\",\n  \"data\": {\n    \"user\": { \"id\": \"uuid\", \"email\": \"admin@shielder.com\", \"role\": \"ADMIN\" },\n    \"tokens\": {\n      \"accessToken\": \"eyJ...\",\n      \"refreshToken\": \"eyJ...\"\n    },\n    \"trustedDeviceToken\": \"optional-device-token\"\n  }\n}"
             }
           ]
         },
