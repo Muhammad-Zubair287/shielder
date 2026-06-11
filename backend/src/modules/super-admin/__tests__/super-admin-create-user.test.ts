@@ -69,6 +69,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
         password: 'SecurePassword123!',
         role: 'ADMIN',
         fullName: 'John Doe',
+        phoneNumber: '0551234567',
       });
 
     expect(response.status).toBe(201);
@@ -81,9 +82,131 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
         password: 'SecurePassword123!',
         role: 'ADMIN',
         fullName: 'John Doe',
+        phoneNumber: '0551234567',
       }),
       'super-admin-1'
     );
+  });
+
+  it('returns 400 when name contains numbers or special characters', async () => {
+    const response = await request(app)
+      .post('/api/super-admin/users/create')
+      .send({
+        email: 'newadmin@shielder.com',
+        password: 'SecurePassword123!',
+        role: 'ADMIN',
+        fullName: 'John123!@#',
+        phoneNumber: '0551234567',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'fullName',
+          message: 'Name must contain letters only and cannot exceed 25 characters',
+        }),
+      ])
+    );
+    expect(createUserMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when name exceeds 25 characters', async () => {
+    const response = await request(app)
+      .post('/api/super-admin/users/create')
+      .send({
+        email: 'newadmin@shielder.com',
+        password: 'SecurePassword123!',
+        role: 'ADMIN',
+        fullName: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        phoneNumber: '0551234567',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'fullName',
+          message: 'Name must contain letters only and cannot exceed 25 characters',
+        }),
+      ])
+    );
+    expect(createUserMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when phone contains letters or special characters', async () => {
+    const response = await request(app)
+      .post('/api/super-admin/users/create')
+      .send({
+        email: 'newadmin@shielder.com',
+        password: 'SecurePassword123!',
+        role: 'ADMIN',
+        fullName: 'John Doe',
+        phoneNumber: '05512AB#67',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'phoneNumber',
+          message: 'Phone number must contain digits only and cannot exceed 15 characters',
+        }),
+      ])
+    );
+    expect(createUserMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when phone exceeds 15 digits', async () => {
+    const response = await request(app)
+      .post('/api/super-admin/users/create')
+      .send({
+        email: 'newadmin@shielder.com',
+        password: 'SecurePassword123!',
+        role: 'ADMIN',
+        fullName: 'John Doe',
+        phoneNumber: '0551234567890123',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'phoneNumber',
+          message: 'Phone number must contain digits only and cannot exceed 15 characters',
+        }),
+      ])
+    );
+    expect(createUserMock).not.toHaveBeenCalled();
+  });
+
+  it('returns specific validation errors for a weak password', async () => {
+    const response = await request(app)
+      .post('/api/super-admin/users/create')
+      .send({
+        email: 'newadmin@shielder.com',
+        password: '123',
+        role: 'ADMIN',
+        fullName: 'John Doe',
+        phoneNumber: '0551234567',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe('Password must be at least 8 characters');
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'password', message: 'Password must be at least 8 characters' }),
+        expect.objectContaining({ field: 'password', message: 'Password must contain at least one uppercase letter' }),
+        expect.objectContaining({ field: 'password', message: 'Password must contain at least one lowercase letter' }),
+        expect.objectContaining({ field: 'password', message: 'Password must contain at least one special character' }),
+      ])
+    );
+    expect(createUserMock).not.toHaveBeenCalled();
   });
 
   /**
@@ -197,7 +320,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toContain('must be one of');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'role' }),
@@ -245,7 +368,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toContain('must be one of');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'role' }),
@@ -311,7 +434,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toBe('Password is required');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'password' }),
@@ -331,11 +454,12 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
         password: 'Password123!',
         role: 'ADMIN',
         fullName: 'John Doe',
+        phoneNumber: '0551234567',
       });
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toBe('Password does not meet security requirements');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'password' }),
@@ -359,7 +483,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toContain('must be one of');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'role' }),
@@ -383,7 +507,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toBe('"password" must be a string');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'password' }),
@@ -407,7 +531,7 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.message).toContain('must be one of');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: 'role' }),
@@ -440,11 +564,12 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
         password: 'SecurePassword123!',
         role: 'USER',
         fullName: 'Jane Customer',
+        phoneNumber: '0559876543',
       });
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.role).toBe('USER');
+    expect(response.body.message).toBe('User account created successfully.');
   });
 
   /**
@@ -471,11 +596,12 @@ describe('POST /api/super-admin/users/create - Input Validation', () => {
         password: 'SecurePassword123!',
         role: 'STAFF',
         fullName: 'John Staff',
+        phoneNumber: '0551112222',
       });
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.role).toBe('STAFF');
+    expect(response.body.message).toBe('User account created successfully.');
   });
 
   /**

@@ -97,10 +97,33 @@ class SettingsService {
     // In this simplified version, we'll create a snapshot for every update to allow rollback
     await this.createSnapshot(userId, 'Auto-snapshot before updating ' + section, oldSettings);
 
+    // Filter input data to only include valid Prisma SystemSettings fields to avoid schema errors.
+    // E.g., fields like favicon that aren't physically in the schema.prisma SystemSettings model.
+    const systemSettingsFields = [
+      'systemName', 'companyName', 'companyNameEn', 'companyNameAr', 'companyLogo',
+      'companyEmail', 'companyPhone', 'companyAddress', 'companyLocationEn', 'companyLocationAr',
+      'currency', 'timezone', 'dateFormat', 'language', 'defaultOrderStatus',
+      'autoCompleteOrderAfterPayment', 'allowPartialPayment', 'allowOrderCancellation',
+      'autoCancelUnpaidOrdersHours', 'paymentMethodsEnabled', 'onlinePaymentEnabled',
+      'paymentTestMode', 'paymentGatewayApiKey', 'paymentGatewaySecretKey', 'paymentWebhookUrl',
+      'enableEmailNotifications', 'enableLowStockAlerts', 'lowStockThreshold',
+      'enableOrderStatusNotifications', 'enablePaymentNotifications', 'roleNotificationMappings',
+      'passwordMinLength', 'maxLoginAttempts', 'accountLockDurationMinutes', 'sessionTimeoutMinutes',
+      'enableTwoFactorAuth', 'forceStrongPasswords', 'lastBackupDate', 'autoBackupSchedule',
+      'updatedBy'
+    ];
+
+    const prismaUpdateData: Record<string, any> = {};
+    for (const key of Object.keys(data)) {
+      if (systemSettingsFields.includes(key)) {
+        prismaUpdateData[key] = data[key];
+      }
+    }
+
     const updatedSettings = await prisma.systemSettings.update({
       where: { id: 'CURRENT' },
       data: {
-        ...data,
+        ...prismaUpdateData,
         updatedBy: userId
       }
     });

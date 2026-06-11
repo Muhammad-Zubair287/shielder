@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8d989191-e650-4c73-89e7-ecac45d640ae",
     "name": "Shielder Complete API Collection",
-    "description": "Complete API collection for the Shielder backend platform.\n\n## Setup\n1. Import this collection into Postman.\n2. Create an Environment with the following variables:\n   - `base_url` = `http://localhost:5000`\n   - `auth_token` = (filled automatically by the Login request)\n   - `admin_token` = (filled automatically by Admin Login)\n   - `superadmin_token` = (filled automatically by Super Admin Login)\n3. Run **Auth > Login** first — the test script auto-fills `auth_token`.\n\n## Roles\n- **USER** – standard customer\n- **ADMIN** – store administrator\n- **SUPER_ADMIN** – platform owner (full access)\n- **STAFF** – read-only staff member\n\nMerged collection with web APIs and a separate mobile API section. Every request includes a sample response body.",
+    "description": "Complete API collection for the Shielder backend platform.\n\n## Setup\n1. Import this collection into Postman.\n2. Create an Environment with the following variables:\n   - `base_url` = `http://localhost:5000`\n   - `auth_token` = (filled automatically by the Login request)\n   - `admin_token` = (filled automatically by Admin Login)\n   - `superadmin_token` = (filled automatically by Super Admin Login)\n3. Run **Auth > Login** first — the test script auto-fills `auth_token`.\n\n## Roles\n- **USER** – standard customer\n- **ADMIN** – store administrator\n- **SUPER_ADMIN** – platform owner (full access)\n- **STAFF** – read-only staff member\n\nMerged collection with web APIs and a separate mobile API section. Every request includes a sample response body.\n\n## Production-Ready Notes\n- Credentials in sample request bodies use placeholders (for example {{user_email}} and {{user_password}}).\n- Collection-level pre-request and test scripts auto-chain tokens and key IDs.\n- Sample JSON response bodies are kept consistently structured as success/message/data where available.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -90,6 +90,167 @@
       "key": "epg_session_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "user@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "ChangeMe@123",
+      "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "admin@example.com",
+      "type": "string"
+    },
+    {
+      "key": "admin_password",
+      "value": "ChangeMe@123",
+      "type": "string"
+    },
+    {
+      "key": "superadmin_email",
+      "value": "superadmin@example.com",
+      "type": "string"
+    },
+    {
+      "key": "superadmin_password",
+      "value": "ChangeMe@123",
+      "type": "string"
+    },
+    {
+      "key": "otp_code",
+      "value": "123456",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "twofa_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "twofa_otp_session_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reset_session_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email_verification_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "attachment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "template_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "quotation_number",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const requestName = (pm.info.requestName || '').toLowerCase();",
+          "const authHeader = pm.request.headers.get('Authorization') || '';",
+          "if (!authHeader.includes('{{')) return;",
+          "let tokenKey = 'auth_token';",
+          "if (requestName.includes('super admin') || requestName.includes('superadmin')) tokenKey = 'superadmin_token';",
+          "else if (requestName.includes('admin')) tokenKey = 'admin_token';",
+          "const token = pm.collectionVariables.get(tokenKey) || pm.environment.get(tokenKey);",
+          "if (token) pm.request.headers.upsert({ key: 'Authorization', value: `Bearer ${token}` });"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "let json = null;",
+          "try { json = pm.response.json(); } catch (e) { return; }",
+          "if (!json || typeof json !== 'object') return;",
+          "const data = json.data || {};",
+          "const reqName = (pm.info.requestName || '').toLowerCase();",
+          "const reqUrl = pm.request.url.toString().toLowerCase();",
+          "const setVar = (k, v) => { if (v !== undefined && v !== null && v !== '') pm.collectionVariables.set(k, String(v)); };",
+          "const accessToken = data.accessToken || data.tokens?.accessToken || json.accessToken || json.tokens?.accessToken;",
+          "const refreshToken = data.refreshToken || data.tokens?.refreshToken || json.refreshToken || json.tokens?.refreshToken;",
+          "if (accessToken) {",
+          "  if (reqName.includes('super admin') || reqName.includes('superadmin')) setVar('superadmin_token', accessToken);",
+          "  else if (reqName.includes('admin') && !reqName.includes('super')) setVar('admin_token', accessToken);",
+          "  else setVar('auth_token', accessToken);",
+          "}",
+          "if (refreshToken) setVar('refresh_token', refreshToken);",
+          "const user = data.user || json.user;",
+          "if (user?.id) setVar('user_id', user.id);",
+          "if (data.userId) setVar('user_id', data.userId);",
+          "if (data.orderId) setVar('order_id', data.orderId);",
+          "if (data.quotationId) setVar('quotation_id', data.quotationId);",
+          "if (data.paymentId) setVar('payment_id', data.paymentId);",
+          "if (data.categoryId) setVar('category_id', data.categoryId);",
+          "if (data.subcategoryId) setVar('subcategory_id', data.subcategoryId);",
+          "if (data.productId) setVar('product_id', data.productId);",
+          "if (data.cartId) setVar('cart_id', data.cartId);",
+          "if (data.warehouseId) setVar('warehouse_id', data.warehouseId);",
+          "if (data.orderNumber) setVar('order_number', data.orderNumber);",
+          "if (data.quotationNumber) setVar('quotation_number', data.quotationNumber);",
+          "if (data.paymentUrl) setVar('payment_url', data.paymentUrl);",
+          "if (data.epgSessionId) setVar('epg_session_id', data.epgSessionId);",
+          "if (data.resetSessionToken) setVar('reset_session_token', data.resetSessionToken);",
+          "if (data.otpSessionToken) setVar('twofa_otp_session_token', data.otpSessionToken);",
+          "if (data.id && reqUrl.includes('/orders')) setVar('order_id', data.id);",
+          "if (data.id && reqUrl.includes('/quotations')) setVar('quotation_id', data.id);",
+          "if (data.id && reqUrl.includes('/payments')) setVar('payment_id', data.id);",
+          "if (data.id && reqUrl.includes('/categories')) setVar('category_id', data.id);",
+          "if (data.id && reqUrl.includes('/subcategories')) setVar('subcategory_id', data.id);",
+          "if (data.id && reqUrl.includes('/products')) setVar('product_id', data.id);",
+          "if (data.id && reqUrl.includes('/notifications')) setVar('notification_id', data.id);",
+          "const items = data.items || json.items;",
+          "if (Array.isArray(items) && items.length) {",
+          "  const first = items[0] || {};",
+          "  if (first.id && reqUrl.includes('/orders')) setVar('order_id', first.id);",
+          "  if (first.id && reqUrl.includes('/quotations')) setVar('quotation_id', first.id);",
+          "  if (first.id && reqUrl.includes('/payments')) setVar('payment_id', first.id);",
+          "  if (first.id && reqUrl.includes('/categories')) setVar('category_id', first.id);",
+          "  if (first.id && reqUrl.includes('/subcategories')) setVar('subcategory_id', first.id);",
+          "  if (first.id && reqUrl.includes('/products')) setVar('product_id', first.id);",
+          "  if (first.id && reqUrl.includes('/notifications')) setVar('notification_id', first.id);",
+          "}"
+        ]
+      }
     }
   ],
   "item": [
@@ -156,7 +317,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Test@1234\",\n  \"fullName\": \"John Doe\",\n  \"phoneNumber\": \"0512345678\",\n  \"address\": \"123 Main Street, Riyadh, Saudi Arabia\",\n  \"companyName\": \"Doe Industries\",\n  \"preferredLanguage\": \"en\"\n}"
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\",\n  \"fullName\": \"John Doe\",\n  \"phoneNumber\": \"0512345678\",\n  \"address\": \"123 Main Street, Riyadh, Saudi Arabia\",\n  \"companyName\": \"Doe Industries\",\n  \"preferredLanguage\": \"en\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/signup",
@@ -211,7 +372,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Test@1234\"\n}"
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/login",
@@ -270,7 +431,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@shielder.com\",\n  \"password\": \"Admin@1234\"\n}"
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/login",
@@ -329,7 +490,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"superadmin@shielder.com\",\n  \"password\": \"SuperAdmin@1234\"\n}"
+              "raw": "{\n  \"email\": \"{{superadmin_email}}\",\n  \"password\": \"{{superadmin_password}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/login",
@@ -364,7 +525,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{twofa_user_id}}\",\n  \"otpSessionToken\": \"{{twofa_otp_session_token}}\",\n  \"code\": \"123456\",\n  \"rememberDevice\": true\n}"
+              "raw": "{\n  \"userId\": \"{{twofa_user_id}}\",\n  \"otpSessionToken\": \"{{twofa_otp_session_token}}\",\n  \"code\": \"{{otp_code}}\",\n  \"rememberDevice\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/verify-otp",
@@ -434,7 +595,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+              "raw": "{\n  \"email\": \"{{user_email}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/forgot-password",
@@ -541,7 +702,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"code\": \"248596\"\n}"
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"code\": \"{{otp_code}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/forgot-password/verify-otp",
@@ -6020,7 +6181,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Test@1234\",\n  \"fullName\": \"John Doe\",\n  \"phoneNumber\": \"0512345678\",\n  \"address\": \"123 Main Street, Riyadh, Saudi Arabia\",\n  \"companyName\": \"Doe Industries\",\n  \"preferredLanguage\": \"en\"\n}"
+                  "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\",\n  \"fullName\": \"John Doe\",\n  \"phoneNumber\": \"0512345678\",\n  \"address\": \"123 Main Street, Riyadh, Saudi Arabia\",\n  \"companyName\": \"Doe Industries\",\n  \"preferredLanguage\": \"en\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/signup",
@@ -6078,7 +6239,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Test@1234\"\n}"
+                  "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/login",
@@ -6148,7 +6309,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+                  "raw": "{\n  \"email\": \"{{user_email}}\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/forgot-password",
@@ -6255,7 +6416,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"code\": \"248596\"\n}"
+                  "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"code\": \"{{otp_code}}\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/forgot-password/verify-otp",

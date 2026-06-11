@@ -13,7 +13,7 @@ import { Request, Response, NextFunction } from 'express';
 import { superAdminService } from './super-admin.service';
 import { sanitizeAuthUser } from '../../common/utils/helpers';
 import { getPaginationParams } from '../../common/utils/pagination';
-import { ValidationError } from '../../common/errors/api.error';
+import { validateCreateAdminInput } from './super-admin.validation';
 
 export class SuperAdminController {
   /**
@@ -140,29 +140,10 @@ export class SuperAdminController {
    */
   async createUser(req: Request, res: Response, next: NextFunction) {
     try {
-      // Defensive validation at controller layer (safety net)
-      const { email, password, role } = req.body;
-      const validationErrors: Array<{ field: string; message: string }> = [];
-
-      if (!email || (typeof email === 'string' && !email.trim())) {
-        validationErrors.push({ field: 'email', message: 'email is required' });
-      }
-
-      if (!password || (typeof password === 'string' && !password.trim())) {
-        validationErrors.push({ field: 'password', message: 'password is required' });
-      }
-
-      if (!role || (typeof role === 'string' && !role.trim())) {
-        validationErrors.push({ field: 'role', message: 'role is required' });
-      }
-
-      if (validationErrors.length > 0) {
-        throw new ValidationError('Validation failed', validationErrors);
-      }
-
       const createdByRaw = req.user?.id!;
       const createdBy = Array.isArray(createdByRaw) ? createdByRaw[0] : createdByRaw;
-      const user = await superAdminService.createUser(req.body, createdBy);
+      const validatedBody = validateCreateAdminInput(req.body);
+      const user = await superAdminService.createUser(validatedBody, createdBy);
 
       res.status(201).json({ 
         success: true, 

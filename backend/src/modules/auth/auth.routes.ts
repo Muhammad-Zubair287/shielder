@@ -73,7 +73,7 @@ router.post(
  */
 router.post(
   '/forgot-password/send-otp',
-  rateLimitAuth({ maxRequests: 3, windowMinutes: 60 }),
+  rateLimitAuth({ maxRequests: 3, windowMinutes: 15, identifierFn: (req) => req.body.email?.toLowerCase() || req.ip }),
   validate(authValidation.forgotPasswordSendOtp),
   authController.sendForgotPasswordOtp
 );

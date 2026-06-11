@@ -14,6 +14,39 @@ import SettingsService from './settings.service';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { AuthRequest } from '@/types/global';
 import { upload } from '@/common/middleware/upload.middleware';
+import env from '@/config/env';
+
+export const formatSettingUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  
+  const baseUrl = env.APP_URL.replace(/\/$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${normalizedPath}`;
+};
+
+export const serializeSettings = (settings: any): any => {
+  if (!settings) return settings;
+  const serialized = { ...settings };
+  
+  const fileFields = ['companyLogo', 'favicon'];
+  for (const field of fileFields) {
+    if (serialized[field] && typeof serialized[field] === 'string') {
+      serialized[field] = formatSettingUrl(serialized[field]);
+    }
+  }
+  
+  for (const key of Object.keys(serialized)) {
+    const value = serialized[key];
+    if (typeof value === 'string') {
+      if (value.startsWith('/uploads/') || value.startsWith('/images/')) {
+        serialized[key] = formatSettingUrl(value);
+      }
+    }
+  }
+  
+  return serialized;
+};
 
 class SettingsController {
   /**
@@ -53,7 +86,7 @@ class SettingsController {
           { companyLogo: logoPath },
           req.ip || ''
         );
-        res.json({ success: true, message: 'Company logo updated', data: { companyLogo: logoPath } });
+        res.json({ success: true, message: 'Company logo updated', data: serializeSettings({ companyLogo: logoPath }) });
       })
     ];
   /**
@@ -69,7 +102,7 @@ class SettingsController {
    */
   getSettings = asyncHandler(async (_req: Request, res: Response) => {
     const data = await SettingsService.getSettings();
-    res.json({ success: true, data });
+    res.json({ success: true, data: serializeSettings(data) });
   });
 
   /**
@@ -92,7 +125,7 @@ class SettingsController {
       whatsAppHref: (s as any).whatsAppHref || null,
     };
 
-    res.json({ success: true, data: publicPayload });
+    res.json({ success: true, data: serializeSettings(publicPayload) });
   });
 
   /**
@@ -118,8 +151,21 @@ class SettingsController {
     const section = req.path.split('/').filter(Boolean)[0] || (req.params.section as string) || '';
     const ipAddress = req.ip || '';
 
-    const data = await SettingsService.updateSettings(userId, section, req.body, ipAddress);
-    res.json({ success: true, message: `${section} settings updated successfully`, data });
+    const updatePayload = { ...req.body };
+    if (section === 'general' && req.files && typeof req.files === 'object') {
+      const filesMap = req.files as { [fieldname: string]: Express.Multer.File[] };
+      if (filesMap['companyLogo']?.[0]) {
+        updatePayload.companyLogo = `/uploads/${filesMap['companyLogo'][0].filename}`;
+      } else if (filesMap['logo']?.[0]) {
+        updatePayload.companyLogo = `/uploads/${filesMap['logo'][0].filename}`;
+      }
+      if (filesMap['favicon']?.[0]) {
+        updatePayload.favicon = `/uploads/${filesMap['favicon'][0].filename}`;
+      }
+    }
+
+    const data = await SettingsService.updateSettings(userId, section, updatePayload, ipAddress);
+    res.json({ success: true, message: `${section} settings updated successfully`, data: serializeSettings(data) });
   });
 
   /**

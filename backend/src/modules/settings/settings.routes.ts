@@ -5,6 +5,7 @@ import { requireRoles } from '@/common/middleware/rbac.middleware';
 import { validate } from '@/common/middleware/validation.middleware';
 import { settingsValidation } from './settings.validation';
 import { UserRole } from '@/common/constants/roles';
+import { upload } from '@/common/middleware/upload.middleware';
 
 const router = Router();
 
@@ -52,10 +53,26 @@ router.post('/verify', requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), valid
 router.post('/backup', requireRoles(UserRole.SUPER_ADMIN), SettingsController.triggerBackup);
 
 /**
+ * @route   GET /api/settings/general
+ * @desc    Get general settings section (Admin + Super Admin)
+ */
+router.get('/general', requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), SettingsController.getSettings);
+
+/**
  * @route   PUT /api/settings/:section
  * @desc    Update specific settings sections
  */
-router.put('/general', requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate(settingsValidation.updateGeneral), SettingsController.updateSettings);
+router.put(
+  '/general',
+  requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  upload.fields([
+    { name: 'companyLogo', maxCount: 1 },
+    { name: 'logo', maxCount: 1 },
+    { name: 'favicon', maxCount: 1 },
+  ]),
+  validate(settingsValidation.updateGeneral),
+  SettingsController.updateSettings
+);
 router.put('/notification',  requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate(settingsValidation.updateNotification), SettingsController.updateSettings);
 router.put('/security',     requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate(settingsValidation.updateSecurity),     SettingsController.updateSettings);
 router.put('/order',        requireRoles(UserRole.SUPER_ADMIN), validate(settingsValidation.updateOrder),        SettingsController.updateSettings);

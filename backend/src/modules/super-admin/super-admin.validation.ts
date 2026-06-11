@@ -5,13 +5,15 @@
 import Joi from 'joi';
 import { UserRole, UserStatus } from '../../common/constants/roles';
 import { sharedValidationSchemas } from '../../common/validation/shared.schemas';
+import { ValidationError } from '../../common/errors/api.error';
+import { resolveValidationMessage } from '../../common/middleware/validation.middleware';
 
 export const superAdminValidation = {
   createAdmin: Joi.object({
     email: Joi.string().email().required(),
     password: sharedValidationSchemas.password,
-    fullName: sharedValidationSchemas.textNoHtml.optional(),
-    phoneNumber: Joi.string().optional(),
+    fullName: sharedValidationSchemas.superAdminName.optional(),
+    phoneNumber: sharedValidationSchemas.superAdminPhone.optional(),
     role: Joi.string().valid(...Object.values(UserRole)).required(),
   }),
 
@@ -59,4 +61,23 @@ export const superAdminValidation = {
   resolveInquiry: Joi.object({
     id: sharedValidationSchemas.uuid,
   }),
+};
+
+export const validateCreateAdminInput = (data: unknown) => {
+  const { error, value } = superAdminValidation.createAdmin.validate(data, {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  if (error) {
+    throw new ValidationError(
+      resolveValidationMessage(error),
+      error.details.map((detail) => ({
+        field: detail.path.join('.'),
+        message: detail.message,
+      }))
+    );
+  }
+
+  return value;
 };

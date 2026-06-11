@@ -22,6 +22,8 @@ import React, { useState } from 'react';
 import { AlertCircle, Lock, Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validatePasswordChange } from '@/utils/profile.validation';
+import { validatePassword } from '@/utils/password';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import authService from '@/services/auth.service';
 import { toast } from 'react-hot-toast';
 
@@ -64,14 +66,32 @@ export const ChangePasswordSection = () => {
       confirmNewPassword: formData.confirmNewPassword,
     });
 
-    // Map translation keys to translated error messages
     const translatedErrors: Record<string, string> = {};
+    // Map existing validation keys to translations
     Object.entries(result.errors).forEach(([key, errorKey]) => {
       translatedErrors[key] = t(errorKey as any);
     });
 
+    // Use the same password validation used in signup for identical messages
+    if (formData.newPassword) {
+      const pwValidation = validatePassword(formData.newPassword);
+      if (!pwValidation.isValid) {
+        translatedErrors.newPassword = pwValidation.errors[0];
+      }
+    }
+
+    // Enforce reuse check
+    if (formData.currentPassword && formData.currentPassword === formData.newPassword) {
+      translatedErrors.newPassword = t('profile.passwordDifferent');
+    }
+
+    // Confirm password
+    if (formData.confirmNewPassword && formData.newPassword !== formData.confirmNewPassword) {
+      translatedErrors.confirmNewPassword = t('profile.passwordMismatch');
+    }
+
     setErrors(translatedErrors);
-    return result.isValid;
+    return Object.keys(translatedErrors).length === 0;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +100,35 @@ export const ChangePasswordSection = () => {
       ...prev,
       [name]: value,
     }));
+
+    // Real-time validation for new password and confirmation to match signup UX
+    if (name === 'newPassword') {
+      const pwValidation = validatePassword(value);
+      if (!pwValidation.isValid) {
+        setErrors(prev => ({ ...prev, newPassword: pwValidation.errors[0] }));
+      } else if (value && value === formData.currentPassword) {
+        setErrors(prev => ({ ...prev, newPassword: t('profile.passwordDifferent') }));
+      } else {
+        setErrors(prev => ({ ...prev, newPassword: '' }));
+      }
+
+      // clear confirm error if it now matches
+      if (formData.confirmNewPassword && value === formData.confirmNewPassword) {
+        setErrors(prev => ({ ...prev, confirmNewPassword: '' }));
+      }
+
+      return;
+    }
+
+    if (name === 'confirmNewPassword') {
+      if (formData.newPassword && value !== formData.newPassword) {
+        setErrors(prev => ({ ...prev, confirmNewPassword: t('profile.passwordMismatch') }));
+      } else {
+        setErrors(prev => ({ ...prev, confirmNewPassword: '' }));
+      }
+      return;
+    }
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -198,6 +247,9 @@ export const ChangePasswordSection = () => {
               <AlertCircle className="w-4 h-4" />
               {errors.newPassword}
             </div>
+          )}
+          {formData.newPassword && (
+            <PasswordStrengthMeter password={formData.newPassword} showRequirements={true} className="mt-2" />
           )}
         </div>
 

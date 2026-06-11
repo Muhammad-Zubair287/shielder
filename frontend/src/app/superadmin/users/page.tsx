@@ -25,6 +25,39 @@ import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { getImageUrl } from '@/utils/helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+type UserFormErrors = {
+  email?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  password?: string[];
+  role?: string;
+  status?: string;
+};
+
+const NAME_REGEX = /^[a-zA-Z\s]+$/;
+const PHONE_REGEX = /^[0-9]+$/;
+const NAME_ERROR = 'Name must contain letters only and cannot exceed 25 characters';
+const PHONE_ERROR = 'Phone number must contain digits only and cannot exceed 15 characters';
+
+const mapValidationErrors = (apiErrors: Array<{ field?: string; message?: string }>): UserFormErrors => {
+  const nextErrors: UserFormErrors = {};
+
+  for (const error of apiErrors) {
+    if (!error.field || !error.message) continue;
+
+    if (error.field === 'password') {
+      nextErrors.password = [...(nextErrors.password ?? []), error.message];
+      continue;
+    }
+
+    if (error.field === 'email' || error.field === 'fullName' || error.field === 'phoneNumber' || error.field === 'role' || error.field === 'status') {
+      nextErrors[error.field] = error.message;
+    }
+  }
+
+  return nextErrors;
+};
+
 interface UserStats {
   totalUsers: number;
   activeUsers: number;
@@ -40,6 +73,7 @@ export default function UserManagement() {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [formErrors, setFormErrors] = useState<UserFormErrors>({});
   const queryClient = useQueryClient();
 
   // Form state
@@ -121,6 +155,7 @@ export default function UserManagement() {
         status: 'ACTIVE'
       });
     }
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -130,6 +165,28 @@ export default function UserManagement() {
   }, [searchTerm, roleFilter, statusFilter]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const nextErrors: UserFormErrors = {};
+    const trimmedName = formData.fullName.trim();
+    const trimmedPhone = formData.phoneNumber.trim();
+
+    if (!trimmedName || trimmedName.length > 25 || !NAME_REGEX.test(trimmedName)) {
+      nextErrors.fullName = NAME_ERROR;
+    }
+
+    if (trimmedPhone && (trimmedPhone.length > 15 || !PHONE_REGEX.test(trimmedPhone))) {
+      nextErrors.phoneNumber = PHONE_ERROR;
+    }
+
+    if (!editingUser && !formData.password.trim()) {
+      nextErrors.password = ['Password is required'];
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
+      return;
+    }
+
     try {
       if (editingUser?.id) {
         await upsertUserMutation.mutateAsync({ id: editingUser.id, payload: formData });
@@ -138,9 +195,25 @@ export default function UserManagement() {
         await upsertUserMutation.mutateAsync({ payload: formData });
         toast.success(t('userCreated'));
       }
+      setFormErrors({});
       setIsModalOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || t('userCreateFailed'));
+      const apiErrors = err?.response?.data?.errors;
+      if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+        const mappedErrors = mapValidationErrors(apiErrors);
+        if (Object.keys(mappedErrors).length > 0) {
+          setFormErrors(mappedErrors);
+          return;
+        }
+      }
+
+      const message = err?.response?.data?.message || t('userCreateFailed');
+      if (typeof message === 'string' && message.toLowerCase().includes('email')) {
+        setFormErrors((prev) => ({ ...prev, email: message }));
+        return;
+      }
+
+      toast.error(message);
     }
   };
 
@@ -422,8 +495,14 @@ export default function UserManagement() {
                     placeholder="Enter name"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
                     value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, fullName: e.target.value});
+                      setFormErrors((prev) => ({ ...prev, fullName: undefined }));
+                    }}
                   />
+                  {formErrors.fullName && (
+                    <p className="text-[11px] text-red-500 font-medium">{formErrors.fullName}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('phone')}</label>
@@ -432,8 +511,14 @@ export default function UserManagement() {
                     placeholder="Phone number"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, phoneNumber: e.target.value});
+                      setFormErrors((prev) => ({ ...prev, phoneNumber: undefined }));
+                    }}
                   />
+                  {formErrors.phoneNumber && (
+                    <p className="text-[11px] text-red-500 font-medium">{formErrors.phoneNumber}</p>
+                  )}
                 </div>
               </div>
 
@@ -453,6 +538,7 @@ export default function UserManagement() {
                         onChange={(e) => {
                           const prefix = e.target.value.replace(/@.*/, '').replace(/\s/g, '');
                           setFormData({...formData, email: prefix ? `${prefix}@shielder.com` : ''});
+                          setFormErrors((prev) => ({ ...prev, email: undefined }));
                         }}
                       />
                     </div>
@@ -470,9 +556,15 @@ export default function UserManagement() {
                       disabled={!!editingUser}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary disabled:opacity-50"
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, email: e.target.value});
+                        setFormErrors((prev) => ({ ...prev, email: undefined }));
+                      }}
                     />
                   </div>
+                )}
+                {formErrors.email && (
+                  <p className="text-[11px] text-red-500 font-medium">{formErrors.email}</p>
                 )}
               </div>
 
@@ -487,9 +579,21 @@ export default function UserManagement() {
                       placeholder="Enter password"
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
                       value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, password: e.target.value});
+                        setFormErrors((prev) => ({ ...prev, password: undefined }));
+                      }}
                     />
                   </div>
+                  {Array.isArray(formErrors.password) && formErrors.password.length > 0 && (
+                    <div className="space-y-1">
+                      {formErrors.password.map((message, index) => (
+                        <p key={`password-error-${index}`} className="text-[11px] text-red-500 font-medium">
+                          {message}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -499,7 +603,10 @@ export default function UserManagement() {
                   <select 
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
                     value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value, email: ''})}
+                    onChange={(e) => {
+                      setFormData({...formData, role: e.target.value, email: ''});
+                      setFormErrors((prev) => ({ ...prev, role: undefined, email: undefined }));
+                    }}
                   >
                     <option value="ADMIN">{t('roleAdmin')}</option>
                     <option value="USER">{t('simpleUser')}</option>

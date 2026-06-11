@@ -4,7 +4,7 @@
  */
 
 import { UserRole, UserStatus } from '../../common/constants/roles';
-import { ApiError, BadRequestError, ValidationError } from '../../common/errors/api.error';
+import { ApiError, BadRequestError } from '../../common/errors/api.error';
 import { prisma } from '../../config/database';
 import {
   PaginationParams,
@@ -16,6 +16,7 @@ import { sanitizeAuthUser } from '../../common/utils/helpers';
 import { validatePasswordStrength as validatePasswordStrengthUtil } from '../../common/utils/password.utils';
 import redisCacheService from '@/common/services/redis-cache.service';
 import { CACHE_KEYS, CACHE_TTL_SECONDS } from '@/common/constants/cache-keys';
+import { validateCreateAdminInput } from './super-admin.validation';
 
 export class SuperAdminService {
   private async invalidateDashboardCaches() {
@@ -141,24 +142,8 @@ export class SuperAdminService {
    * Create a new user (Admin, Staff, or Customer)
    */
   async createUser(data: any, createdBy: string) {
-    // Validate required fields at service entry point
-    const validationErrors: Array<{ field: string; message: string }> = [];
-
-    if (!data.email || (typeof data.email === 'string' && !data.email.trim())) {
-      validationErrors.push({ field: 'email', message: 'email is required' });
-    }
-
-    if (!data.password || (typeof data.password === 'string' && !data.password.trim())) {
-      validationErrors.push({ field: 'password', message: 'password is required' });
-    }
-
-    if (!data.role || (typeof data.role === 'string' && !data.role.trim())) {
-      validationErrors.push({ field: 'role', message: 'role is required' });
-    }
-
-    if (validationErrors.length > 0) {
-      throw new ValidationError('Validation failed', validationErrors);
-    }
+    const validatedData = validateCreateAdminInput(data);
+    data = validatedData;
 
     const email = String(data.email || '').trim().toLowerCase();
 

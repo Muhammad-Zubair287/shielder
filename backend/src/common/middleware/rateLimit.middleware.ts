@@ -66,14 +66,19 @@ export const rateLimitAuth = (config: RateLimitConfig) => {
         next();
         return;
       }
+      
 
       if (record.count >= config.maxRequests) {
-        const retryAfter = Math.ceil((record.resetTime - now) / 1000);
-        logger.warn(`Rate limit exceeded for ${identifier} on ${req.path}`);
-        throw new TooManyRequestsError(
-          `Too many requests. Please try again in ${Math.ceil(retryAfter / 60)} minutes.`
-        );
-      }
+  const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+  const minutesLeft = Math.ceil(retryAfter / 60);
+  logger.warn(`Rate limit exceeded for ${identifier} on ${req.path}`);
+
+  const message = req.locale === 'ar'
+    ? `لقد تجاوزت الحد المسموح به. يرجى المحاولة مرة أخرى بعد ${minutesLeft} دقيقة.`
+    : `Too many attempts. Please try again in ${minutesLeft} minutes.`;
+
+  throw new TooManyRequestsError(message);
+}
 
       // Increment counter
       record.count++;

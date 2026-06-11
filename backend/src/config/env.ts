@@ -114,6 +114,13 @@ export const env = {
     return `https://${raw}`;
   })(),
 
+  // API base URL for resolving uploaded file links (ensure protocol is always present)
+  APP_URL: (() => {
+    const raw = process.env.APP_URL || process.env.BASE_URL || `http://localhost:${process.env.PORT || '5001'}`;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return `https://${raw}`;
+  })(),
+
   // Email Configuration
   EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'smtp',
   EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || 'Shielder Platform',

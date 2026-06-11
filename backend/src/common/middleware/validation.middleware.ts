@@ -13,12 +13,16 @@ interface ValidationOptions {
 
 const REQUIRED_FIELD_ERROR_TYPES = new Set(['any.required', 'object.min', 'string.empty']);
 
-const resolveValidationMessage = (error: Joi.ValidationError, options?: ValidationOptions) => {
-  if (options?.requiredFieldsMessage && error.details.every((detail) => REQUIRED_FIELD_ERROR_TYPES.has(detail.type))) {
-    return options.requiredFieldsMessage;
+export const resolveValidationMessage = (error: Joi.ValidationError, options?: ValidationOptions) => {
+  if (error.details.every((detail) => REQUIRED_FIELD_ERROR_TYPES.has(detail.type))) {
+    if (options?.requiredFieldsMessage) {
+      return options.requiredFieldsMessage;
+    }
+
+    return 'Validation failed';
   }
 
-  return 'Validation failed';
+  return error.details[0]?.message || 'Validation failed';
 };
 
 /**
