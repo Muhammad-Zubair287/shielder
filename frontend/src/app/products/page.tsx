@@ -245,7 +245,7 @@ function ProductDetailModal({
       productId: product.id, name: productName, sku: product.sku,
       price, quantity: qty, thumbnail: rawImage, stock: product.stock,
     });
-    toast.success(`${productName} ${t('products.addedToQuotationBasket')}`);
+    toast.success(`${productName} ${t('productsaddedToQuotationBasket')}`);
     onClose();
   };
 

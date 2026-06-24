@@ -75,7 +75,7 @@ export const ProfileImageUpload = () => {
     setIsUploading(true);
     try {
       const response = await profileService.uploadProfileImage(file);
-      const newProfileImage = response?.data?.profileImage || response?.profileImage;
+      const newProfileImage = response?.imageUrl || response?.data?.profileImage || response?.profileImage;
       
       if (newProfileImage && user) {
         const updatedUser = {

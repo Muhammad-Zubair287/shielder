@@ -8,6 +8,7 @@
 import { Response, NextFunction } from 'express';
 import { ProfileService } from './profile.service';
 import { AuthRequest } from '../../types/global';
+import { deleteLocalProfileImageFile, storeProfileImageFile } from '../../common/services/profile-image.service';
 
 export class ProfileController {
   /**
@@ -203,21 +204,27 @@ export class ProfileController {
         return;
       }
 
-      // Convert buffer to base64 data URL — stored in DB, survives Railway restarts
-      const base64 = file.buffer.toString('base64');
-      const profileImageUrl = `data:${file.mimetype};base64,${base64}`;
+      const existingProfile = await ProfileService.getProfile(userId);
+      const storedImage = await storeProfileImageFile(file, userId);
+      const profileImageUrl = storedImage.path;
 
-      // Update profile with new image URL
-      const profile = await ProfileService.updateProfile(userId, {
-        profileImage: profileImageUrl,
-      }, req.user!.role);
+      try {
+        await ProfileService.updateProfile(userId, {
+          profileImage: profileImageUrl,
+        }, req.user!.role);
+      } catch (error) {
+        deleteLocalProfileImageFile(profileImageUrl);
+        throw error;
+      }
+
+      deleteLocalProfileImageFile(existingProfile.profileImage);
 
       res.status(200).json({
         success: true,
         message: 'Profile image uploaded successfully',
+        imageUrl: profileImageUrl,
         data: {
           profileImage: profileImageUrl,
-          profile,
         },
       });
     } catch (error) {

@@ -101,7 +101,7 @@ export const ProfileDropdown = () => {
       // Merge the new profileImage into the stored user
       const updatedUser = {
         ...user!,
-        profile: { ...user!.profile, profileImage: data?.profileImage ?? data?.data?.profileImage ?? user!.profile?.profileImage },
+        profile: { ...user!.profile, profileImage: data?.imageUrl ?? data?.profileImage ?? data?.data?.profileImage ?? user!.profile?.profileImage },
       };
       setUser(updatedUser as any);
       toast.success(t('profile.photoUpdated'));

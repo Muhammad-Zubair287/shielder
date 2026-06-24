@@ -61,7 +61,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
         host === '::1';
 
       if (isLocalHost) {
-        backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:4000`;
+        backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:5001`;
       }
     }
 
@@ -72,7 +72,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     } else if (!backendOrigin && typeof window !== 'undefined') {
       backendOrigin = window.location.origin;
     } else {
-      backendOrigin = 'http://localhost:4000';
+      backendOrigin = 'http://localhost:5001';
     }
 
     const encodedProductPath = normalized
@@ -108,7 +108,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
 
     if (isLocalHost) {
       // Prefer explicit uploads base if provided, else fallback to common local backend
-      backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:4000`;
+      backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:5001`;
     }
   }
 
@@ -119,7 +119,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   } else if (!backendOrigin && typeof window !== 'undefined') {
     backendOrigin = window.location.origin;
   } else {
-    backendOrigin = 'http://localhost:4000';
+    backendOrigin = 'http://localhost:5001';
   }
 
   const uploadPath = normalized.startsWith('/') ? normalized : `/${normalized}`;

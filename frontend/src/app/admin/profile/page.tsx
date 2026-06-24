@@ -69,7 +69,7 @@ export default function ProfilePage() {
     setIsUploadingPhoto(true);
     try {
       const data = await profileService.uploadProfileImage(file);
-      const newImg = data?.profileImage ?? data?.data?.profileImage ?? data?.user?.profile?.profileImage;
+      const newImg = data?.imageUrl ?? data?.profileImage ?? data?.data?.profileImage ?? data?.user?.profile?.profileImage;
       if (user && newImg) {
         setUser({ ...user, profile: { ...user.profile, profileImage: newImg } } as any);
       }

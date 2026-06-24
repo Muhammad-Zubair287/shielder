@@ -48,13 +48,23 @@ export class ProfileService {
    */
   static async updateProfile(userId: string, data: UpdateProfileInput, currentUserRole: UserRole) {
     try {
+      // FIX: Explicit null values (e.g. { profileImage: null }) represent an
+      // intentional "remove" action and must count as a valid update.
+      // The old check excluded null entirely, causing "Remove Photo" to
+      // always throw "No fields provided to update" (400 Bad Request).
       const hasUpdatableField = PROFILE_UPDATE_FIELDS.some((field) => {
         if (!Object.prototype.hasOwnProperty.call(data, field)) {
           return false;
         }
 
         const value = (data as Record<string, unknown>)[field];
-        return value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '');
+
+        // Explicit null is a valid "clear this field" update (e.g. remove photo)
+        if (value === null) {
+          return true;
+        }
+
+        return value !== undefined && !(typeof value === 'string' && value.trim() === '');
       });
 
       if (!hasUpdatableField) {

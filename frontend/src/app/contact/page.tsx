@@ -149,7 +149,7 @@ export default function ContactPage() {
       setForm(initialFormValues);
       setTimeout(() => setSent(false), 4000);
     } catch (error: any) {
-      toast.error(error?.message || t('contact.sendMessageFailed'));
+      toast.error(error?.message || t('contactsendMessageFailed'));
     } finally {
       setSending(false);
     }
