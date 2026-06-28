@@ -60,11 +60,10 @@ const rejectEmptyProfileUpdate = (req: any, _res: any, next: any) => {
     const value = req.body[field];
 
     // Explicit null is a valid "clear this field" update (e.g. remove photo)
-    if (value === null) {
-      return true;
-    }
-
-    return value !== undefined && !(typeof value === 'string' && value.trim() === '');
+     
+// Allow null for profileImage to support photo removal
+     if (field === 'profileImage' && value === null) return true;
+      return value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '');
   });
 
   if (!hasAllowedField) {
