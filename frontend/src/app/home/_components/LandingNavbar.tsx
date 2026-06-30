@@ -174,7 +174,7 @@ export default function LandingNavbar() {
                 </button>
 
                 {profileOpen && (
-                  <div className={`fixed lg:absolute ${isRTL ? 'left-4 lg:left-0' : 'right-4 lg:right-0'} top-20 lg:top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-xl py-1.5 z-[100] overflow-hidden`}
+                  <div className={`fixed lg:absolute ${isRTL ? 'right-4 lg:right-0' : 'right-4 lg:right-0'} top-20 lg:top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-xl py-1.5 z-[100] overflow-hidden`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Link

@@ -46,6 +46,13 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* LTR override for Latin-only inputs (email, password, search, OTP, etc.) */
+.input-ltr {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate;
+}
+
 /* Arabic form ergonomics */
 [dir='rtl'] input:not([type='number']):not([type='email']):not([type='url']),
 [dir='rtl'] textarea,

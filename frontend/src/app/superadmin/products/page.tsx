@@ -734,7 +734,8 @@ const ProductManagement = () => {
             <input
               type="text"
               placeholder={t('searchProducts')}
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent transition-all text-sm font-medium"
+              dir="ltr"
+              className="input-ltr w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent transition-all text-sm font-medium"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

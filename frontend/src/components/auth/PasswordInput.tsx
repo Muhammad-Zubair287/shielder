@@ -15,6 +15,7 @@ interface PasswordInputProps
   required?: boolean;
   helpText?: string;
   showToggle?: boolean;
+  forceLTR?: boolean;
 }
 
 /**
@@ -30,6 +31,7 @@ export const PasswordInput = React.forwardRef<
   helpText,
   showToggle = true,
   className = '',
+  forceLTR = false,
   ...props
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +53,7 @@ export const PasswordInput = React.forwardRef<
         <input
           ref={ref}
           type={showPassword ? 'text' : 'password'}
+          dir={forceLTR ? 'ltr' : undefined}
           className={`
             w-full px-4 py-2.5 pr-10 text-sm
             border rounded-lg transition-colors
@@ -61,6 +64,7 @@ export const PasswordInput = React.forwardRef<
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:border-transparent'
             }
+            ${forceLTR ? 'input-ltr' : ''}
             ${className}
           `}
           {...props}

@@ -25,6 +25,7 @@ interface CartContextType {
   cart: Cart;
   itemCount: number;
   loading: boolean;
+  hasInvalidItems: boolean;
   addItem: (
     productId: string,
     quantity: number,
@@ -32,9 +33,11 @@ interface CartContextType {
     price: number,
   ) => Promise<void>;
   updateItem: (productId: string, quantity: number) => Promise<void>;
+  updateItemOptimistic: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
+  setItemValidation: (productId: string, isValid: boolean) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -48,9 +51,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   const [cart, setCart] = useState<Cart>(EMPTY_CART);
   const [loading, setLoading] = useState(false);
+  const [invalidItemIds, setInvalidItemIds] = useState<Set<string>>(new Set());
 
   /** Compute badge count from current cart */
   const itemCount = cartService.countItems(cart);
+
+  /** Track whether any cart item has an invalid quantity */
+  const hasInvalidItems = invalidItemIds.size > 0;
+
+  const setItemValidation = useCallback((productId: string, isValid: boolean) => {
+    setInvalidItemIds((prev) => {
+      const next = new Set(prev);
+      if (isValid) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  }, []);
 
   /** Load (or reload) cart */
   const refreshCart = useCallback(async () => {
@@ -169,6 +188,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [t, refreshCart],
   );
 
+  const updateItemOptimistic = useCallback((productId: string, quantity: number) => {
+    setCart((prev) => {
+      const items = prev.items.map((item) =>
+        item.productId === productId
+          ? { ...item, quantity, subtotal: item.priceAtTime * quantity }
+          : item,
+      ).filter((item) => item.quantity > 0);
+      return {
+        ...prev,
+        items,
+        totalAmount: items.reduce((s, i) => s + i.subtotal, 0),
+      };
+    });
+  }, []);
+
   const clearCart = useCallback(async () => {
     try {
       const updated = await cartService.clearCart();
@@ -183,7 +217,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ cart, itemCount, loading, addItem, updateItem, removeItem, clearCart, refreshCart }}
+      value={{
+        cart,
+        itemCount,
+        loading,
+        hasInvalidItems,
+        addItem,
+        updateItem,
+        updateItemOptimistic,
+        removeItem,
+        clearCart,
+        refreshCart,
+        setItemValidation,
+      }}
     >
       {children}
     </CartContext.Provider>

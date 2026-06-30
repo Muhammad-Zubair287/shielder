@@ -262,7 +262,7 @@ export default function CreateUserPage() {
                   icon={Mail}
                   type="email"
                   value={form.email}
-                  placeholder={t('emailPlaceholder')}
+                  placeholder={t('emailPlaceholderName')}
                   error={errors.email}
                   onChange={(v) => set('email', v)}
                   required
@@ -302,7 +302,7 @@ export default function CreateUserPage() {
                   icon={Lock}
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
-                  placeholder={t('passwordPlaceholder')}
+                  placeholder={t('passwordPlaceholderMin')}
                   error={errors.password}
                   onChange={(v) => set('password', v)}
                   required

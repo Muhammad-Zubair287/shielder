@@ -4,18 +4,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Loader2, Trash2, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import notificationService, { Notification } from '@/services/notification.service';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 export const NotificationDropdown = () => {
   const { user } = useAuth();
+  const { isRTL } = useLanguage();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Use custom RTL-aware positioning hook
+  const dropdownPosition = useDropdownPosition(triggerRef, dropdownRef, isOpen, isRTL);
 
   const extractUnreadCount = (payload: any): number => {
     const raw = payload?.data?.count ?? payload?.count ?? 0;
@@ -75,7 +82,11 @@ export const NotificationDropdown = () => {
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      // Close dropdown if clicking outside both the trigger and dropdown
+      if (
+        triggerRef.current && !triggerRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -159,8 +170,9 @@ export const NotificationDropdown = () => {
   const notificationsLink = user?.role === 'ADMIN' ? '/admin/notifications' : '/superadmin/notifications';
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
+    <div className="relative">
+      <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         className={`relative p-2 rounded-full transition-colors ${isOpen ? 'bg-gray-100 dark:bg-white/5 text-shielder-primary dark:text-[#ff8a5b]' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/5'}`}
       >
@@ -173,7 +185,17 @@ export const NotificationDropdown = () => {
       </button>
 
       {isOpen && (
-        <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 mt-2 w-auto md:w-96 bg-white dark:bg-slate-950 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 z-[200] overflow-hidden transform origin-top-right transition-all">
+        <div 
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            right: dropdownPosition.right,
+            zIndex: 200,
+          }}
+          className="w-[calc(100vw-2rem)] md:w-96 bg-white dark:bg-slate-950 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden transform animate-in fade-in"
+        >
           <div className="p-4 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-900/70">
             <h3 className="font-bold text-gray-800 dark:text-slate-100">Notifications</h3>
             {unreadCount > 0 && (

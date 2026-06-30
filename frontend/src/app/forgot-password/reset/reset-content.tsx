@@ -152,7 +152,7 @@ export function ForgotPasswordResetContent() {
               disabled={loading}
               className="w-full h-11 bg-[#FF7A1A] text-white rounded-full font-semibold hover:bg-[#f06d08] disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {loading ? t('processing') : t('Reset Password')}
+              {loading ? t('processingLoading') : t('Reset Password')}
             </button>
           </form>
 

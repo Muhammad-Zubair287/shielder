@@ -211,7 +211,7 @@ export function VerifyEmailContent() {
                 disabled={isSubmittingOtp}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
               >
-                {isSubmittingOtp ? t('processing') : t('auth.verifyAndContinue')}
+                {isSubmittingOtp ? t('processingLoading') : t('auth.verifyAndContinue')}
               </button>
             </form>
 
@@ -246,7 +246,7 @@ export function VerifyEmailContent() {
                   disabled={isChangingEmail}
                   className="w-full rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
-                  {isChangingEmail ? t('processing') : t('auth.updateEmailAndSendCode')}
+                  {isChangingEmail ? t('processingLoading') : t('auth.updateEmailAndSendCode')}
                 </button>
               </form>
             )}

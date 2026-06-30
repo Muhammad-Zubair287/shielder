@@ -331,19 +331,20 @@ function LoginPageContent() {
                   <div className={`absolute inset-y-0 ${isRTL ? 'right-4' : 'left-4'} flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#FF6B35] transition-colors`}>
                     <Mail className="w-5 h-5" />
                   </div>
-                      <input
-                        id="login-email"
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        onFocus={() => prefetchRoute('/forgot-password')}
-                        placeholder="example@gmail.com"
-                        autoComplete="email"
-                        className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
-                          errors.email ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
-                        }`}
-                      />
+                       <input
+                         id="login-email"
+                         type="email"
+                         name="email"
+                         value={formData.email}
+                         onChange={handleChange}
+                         onFocus={() => prefetchRoute('/forgot-password')}
+                         placeholder="example@gmail.com"
+                         autoComplete="email"
+                         dir="ltr"
+                         className={`input-ltr w-full py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
+                           errors.email ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
+                         }`}
+                       />
                 </div>
                 {errors.email && (
                   <p className="text-xs text-red-500 mt-1 ml-1">{errors.email}</p>
@@ -359,20 +360,21 @@ function LoginPageContent() {
                   <div className={`absolute inset-y-0 ${isRTL ? 'right-4' : 'left-4'} flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#FF6B35] transition-colors`}>
                     <Lock className="w-5 h-5" />
                   </div>
-                      <input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        onFocus={() => prefetchRoute('/forgot-password')}
-                        placeholder="••••••••"
-                        autoComplete="current-password"
-                        maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
-                        className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-12' : 'pl-12 pr-12'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
-                          errors.password ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
-                        }`}
-                      />
+                       <input
+                         id="login-password"
+                         type={showPassword ? "text" : "password"}
+                         name="password"
+                         value={formData.password}
+                         onChange={handleChange}
+                         onFocus={() => prefetchRoute('/forgot-password')}
+                         placeholder="••••••••"
+                         autoComplete="current-password"
+                         maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
+                         dir="ltr"
+                         className={`input-ltr w-full py-3.5 ${isRTL ? 'pr-12 pl-12' : 'pl-12 pr-12'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
+                           errors.password ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'
+                         }`}
+                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}

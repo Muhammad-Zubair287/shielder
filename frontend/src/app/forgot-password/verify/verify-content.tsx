@@ -119,7 +119,8 @@ export function ForgotPasswordVerifyContent() {
                   value={ch}
                   onChange={(e) => handleChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(e, idx)}
-                  className="w-11 h-11 sm:w-12 sm:h-12 text-center border border-slate-300 rounded-xl text-lg font-semibold focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none"
+                  dir="ltr"
+                  className="input-ltr w-11 h-11 sm:w-12 sm:h-12 text-center border border-slate-300 rounded-xl text-lg font-semibold focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none"
                   maxLength={1}
                 />
               ))}
@@ -130,7 +131,7 @@ export function ForgotPasswordVerifyContent() {
               disabled={loading}
               className="w-full h-11 bg-[#FF7A1A] text-white rounded-full font-semibold hover:bg-[#f06d08] disabled:opacity-50 transition"
             >
-              {loading ? t('processing') : t('Next')}
+              {loading ? t('processingLoading') : t('Next')}
             </button>
 
             <div className="text-center text-sm text-slate-600">

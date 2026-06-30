@@ -213,7 +213,8 @@ export default function AdminCategoriesPage() {
             placeholder={t('searchCategories')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className={`w-full rounded-xl border border-gray-200 bg-gray-50 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${
+            dir="ltr"
+            className={`input-ltr w-full rounded-xl border border-gray-200 bg-gray-50 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${
               isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'
             }`}
             aria-label={t('search')}

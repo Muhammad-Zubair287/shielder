@@ -21,14 +21,17 @@ interface QuotationContextValue {
   items: QuotationBasketItem[];
   itemCount: number;
   loading: boolean;
+  hasInvalidItems: boolean;
   
   addItem: (
     item: Omit<QuotationBasketItem, 'quantity'> & { quantity?: number },
   ) => Promise<void>;
   removeItem: (productId: string) => Promise<void>;
   updateQty: (productId: string, quantity: number) => Promise<void>;
+  updateQtyOptimistic: (productId: string, quantity: number) => void;
   clearBasket: () => Promise<void>;
   refreshBasket: () => Promise<void>;
+  setItemValidation: (productId: string, isValid: boolean) => void;
   
   drawerOpen: boolean;
   openDrawer: () => void;
@@ -45,6 +48,7 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<QuotationBasketItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [invalidItemIds, setInvalidItemIds] = useState<Set<string>>(new Set());
 
   /**
    * Load basket from backend
@@ -171,6 +175,12 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
     [removeItem, t, refreshBasket]
   );
 
+  const updateQtyOptimistic = useCallback((productId: string, quantity: number) => {
+    setItems(prev =>
+      prev.map(i => (i.productId === productId ? { ...i, quantity } : i))
+    );
+  }, []);
+
   const clearBasket = useCallback(async () => {
     // Optimistic clear
     setItems([]);
@@ -189,17 +199,34 @@ export function QuotationProvider({ children }: { children: React.ReactNode }) {
 
   const itemCount = items.length;
 
+  const hasInvalidItems = invalidItemIds.size > 0;
+
+  const setItemValidation = useCallback((productId: string, isValid: boolean) => {
+    setInvalidItemIds((prev) => {
+      const next = new Set(prev);
+      if (isValid) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <QuotationContext.Provider
       value={{
         items,
         itemCount,
         loading,
+        hasInvalidItems,
         addItem,
         removeItem,
         updateQty,
+        updateQtyOptimistic,
         clearBasket,
         refreshBasket,
+        setItemValidation,
         drawerOpen,
         openDrawer,
         closeDrawer,

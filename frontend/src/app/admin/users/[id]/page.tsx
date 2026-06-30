@@ -311,7 +311,7 @@ export default function UserDetailPage({
                   {user.emailVerified && (
                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider border rounded-full px-2 py-0.5 bg-teal-50 text-teal-700 border-teal-200">
                       <ShieldCheck size={9} />
-                      {t('emailVerified')}
+                      {t('emailVerifiedStatus')}
                     </span>
                   )}
                 </div>

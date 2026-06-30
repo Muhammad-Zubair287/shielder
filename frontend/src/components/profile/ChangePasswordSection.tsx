@@ -195,7 +195,8 @@ export const ChangePasswordSection = () => {
               value={formData.currentPassword}
               onChange={handleChange}
               placeholder={t('profile.currentPasswordPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
+              dir="ltr"
+              className={`input-ltr w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
                 errors.currentPassword ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />
@@ -229,7 +230,8 @@ export const ChangePasswordSection = () => {
               value={formData.newPassword}
               onChange={handleChange}
               placeholder={t('profile.newPasswordPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
+              dir="ltr"
+              className={`input-ltr w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
                 errors.newPassword ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />
@@ -266,7 +268,8 @@ export const ChangePasswordSection = () => {
               value={formData.confirmNewPassword}
               onChange={handleChange}
               placeholder={t('profile.confirmNewPasswordPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
+              dir="ltr"
+              className={`input-ltr w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-10 pr-10' : 'pl-10 pr-10'} ${
                 errors.confirmNewPassword ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />

@@ -202,7 +202,8 @@ export default function AdminOrdersPage() {
             value={filters.search}
             onChange={handleFilterChange}
             placeholder={t('searchOrders')}
-            className={`w-full py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
+            dir="ltr"
+            className={`input-ltr w-full py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
           />
         </div>
 

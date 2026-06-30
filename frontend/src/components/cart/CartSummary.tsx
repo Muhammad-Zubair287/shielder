@@ -24,7 +24,7 @@ interface CartSummaryProps {
 
 export default function CartSummary({ onCheckout }: CartSummaryProps) {
   const { t, isRTL } = useLanguage();
-  const { cart, loading } = useCart();
+  const { cart, loading, hasInvalidItems } = useCart();
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
 
@@ -76,7 +76,7 @@ export default function CartSummary({ onCheckout }: CartSummaryProps) {
       {/* Checkout button */}
       <button
         onClick={handleCheckout}
-        disabled={loading || cart.items.length === 0}
+        disabled={loading || cart.items.length === 0 || hasInvalidItems}
         className="mt-5 w-full bg-[#F97316] hover:bg-[#e8650a] active:bg-[#d45d0a] text-white font-semibold text-base py-4 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
       >
         {t('cart.checkout')}

@@ -14,6 +14,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 import Link from 'next/link';
 import { ROUTES } from '@/utils/constants';
 import { getImageUrl } from '@/utils/helpers';
@@ -30,19 +31,21 @@ export const ProfileDropdown = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [profileImageFailed, setProfileImageFailed] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const popupPositionClasses = (isRTL: boolean) => {
-    if (isRTL) {
-      return 'fixed inset-x-4 top-20 w-[calc(100vw-2rem)] max-w-[18rem] md:absolute md:inset-x-auto md:top-full md:mt-3 md:w-72 md:max-w-none bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain transform origin-top-left animate-in fade-in slide-in-from-top-1 rtl:md:left-0 rtl:md:right-auto';
-    }
-    return 'fixed inset-x-4 top-20 w-[calc(100vw-2rem)] max-w-[18rem] md:absolute md:inset-x-auto md:top-full md:mt-3 md:w-72 md:max-w-none bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 z-[200] overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain transform origin-top-right animate-in fade-in slide-in-from-top-1 ltr:md:right-0 ltr:md:left-auto';
-  };
+  // Use custom RTL-aware positioning hook
+  console.log('ProfileDropdown isRTL:', isRTL);
+  const dropdownPosition = useDropdownPosition(triggerRef, dropdownRef, isOpen, isRTL);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      // Close dropdown if clicking outside both the trigger and dropdown
+      if (
+        triggerRef.current && !triggerRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -115,8 +118,9 @@ export const ProfileDropdown = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
+    <div className="relative">
+      <button
+        ref={triggerRef} 
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 md:gap-3 cursor-pointer group hover:bg-secondary/10 dark:hover:bg-white/5 p-1 px-2 rounded-xl transition-all ${isRTL ? 'flex-row-reverse' : ''}`}
       >
@@ -160,7 +164,19 @@ export const ProfileDropdown = () => {
       />
 
       {isOpen && (
-        <div className={popupPositionClasses(isRTL)}>
+        <div 
+          ref={dropdownRef}
+         style={{
+            position: 'fixed',
+            top: dropdownPosition.top,
+            ...(isRTL 
+            ? { left: triggerRef.current ? `${triggerRef.current.getBoundingClientRect().left}px` : 'auto', right: 'auto' }
+            : { right: dropdownPosition.right, left: 'auto' }
+            ),
+            zIndex: 200,
+          }}
+          className="w-[calc(100vw-2rem)] max-w-72 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-secondary/10 dark:border-slate-800 overflow-hidden max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain animate-in fade-in slide-in-from-top-1"
+        >
           {/* Header with avatar + change photo */}
           <div className="p-4 bg-secondary/5 dark:bg-slate-900/70 border-b border-secondary/10 dark:border-slate-800">
             <div className="flex items-center gap-3 mb-2">

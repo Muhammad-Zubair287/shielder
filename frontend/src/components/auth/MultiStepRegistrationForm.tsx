@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 import { PASSWORD_REQUIREMENTS } from '@/utils/password';
@@ -31,6 +32,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   onSubmit,
   isLoading = false,
 }) => {
+  const { t } = useLanguage();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
@@ -60,7 +62,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   };
 
   const validateStep = (currentStep: 1 | 2 | 3): boolean => {
-    const newErrors = validateRegistrationStep(currentStep, formData);
+    const newErrors = validateRegistrationStep(currentStep, formData, t);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -96,12 +98,12 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {step === 1 && 'Personal Information'}
-            {step === 2 && 'Company Information'}
-            {step === 3 && 'Security Settings'}
+            {step === 1 && t('personalInfo')}
+            {step === 2 && t('companyInfo')}
+            {step === 3 && t('securitySettings')}
           </h2>
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            Step {step} of 3
+            {t('stepOf').replace('{step}', String(step))}
           </span>
         </div>
 
@@ -119,14 +121,14 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Full Name <span className="text-red-500">*</span>
+              {t('name')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="fullName"
               value={formData.fullName}
               onChange={handleInputChange}
-              placeholder="John Doe"
+              placeholder={t('enterName')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.fullName ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -138,15 +140,16 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email <span className="text-red-500">*</span>
+              {t('email')} <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="john@example.com"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
+              placeholder={t('emailPlaceholder')}
+              dir="ltr"
+              className={`input-ltr w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -157,7 +160,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Phone Number <span className="text-red-500">*</span>
+              {t('phone')} <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -176,14 +179,14 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Address <span className="text-red-500">*</span>
+              {t('address')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              placeholder="123 Main St, City, Country"
+              placeholder={t('enterAddress')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.address ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -195,16 +198,21 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Location
+              {t('profile.location')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleInputChange}
-              placeholder="City, district, or area"
-              className="w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 border-gray-300"
+              placeholder={t('profile.locationPlaceholder')}
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
+                errors.location ? 'border-red-500' : 'border-gray-300'
+              }`}
             />
+            {errors.location && (
+              <p className="text-sm text-red-500 mt-1">{errors.location}</p>
+            )}
           </div>
         </div>
       )}
@@ -214,14 +222,14 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Company Name <span className="text-red-500">*</span>
+              {t('company')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="companyName"
               value={formData.companyName}
               onChange={handleInputChange}
-              placeholder="Your Company Name"
+              placeholder={t('enterCompany')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.companyName ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -233,7 +241,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <p className="text-sm text-blue-900 dark:text-blue-200">
-              💡 Your company information helps us provide better service and pricing for B2B customers.
+              💡 {t('createAccountDesc')}
             </p>
           </div>
         </div>
@@ -243,14 +251,15 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       {step === 3 && (
         <div className="space-y-4">
           <PasswordInput
-            label="Password"
+            label={t('password')}
             name="password"
             value={formData.password}
             onChange={handleInputChange}
             error={errors.password}
             required
             maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
-            placeholder="Create a strong password"
+            placeholder={t('passwordPlaceholder')}
+            forceLTR
           />
 
           {formData.password && (
@@ -261,19 +270,20 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           )}
 
           <PasswordInput
-            label="Confirm Password"
+            label={t('confirmPassword')}
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleInputChange}
             error={errors.confirmPassword}
             required
             maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
-            placeholder="Confirm your password"
+            placeholder={t('confirmPasswordPlaceholder')}
+            forceLTR
           />
 
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <p className="text-sm text-green-900 dark:text-green-200">
-              🔒 Your password is encrypted and stored securely. We follow industry best practices for data protection.
+              🔒 {t('createAccountDesc')}
             </p>
           </div>
         </div>
@@ -288,7 +298,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          Previous
+          {t('previous')}
         </button>
 
         {step < 3 ? (
@@ -298,7 +308,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             disabled={isLoading}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next
+            {t('next')}
             <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
@@ -307,7 +317,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             disabled={isLoading}
             className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
+            {isLoading ? t('creating') : t('createAccountBtn')}
           </button>
         )}
       </div>

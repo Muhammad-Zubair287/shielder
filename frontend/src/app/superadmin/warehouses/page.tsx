@@ -103,7 +103,8 @@ export default function SuperAdminWarehousesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('searchWarehouse') || 'Search warehouses...'}
-              className={`w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-sm outline-none focus:border-[#FF6B35] ${
+              dir="ltr"
+              className={`input-ltr w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-sm outline-none focus:border-[#FF6B35] ${
                 isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'
               }`}
             />

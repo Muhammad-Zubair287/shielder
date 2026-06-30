@@ -7,7 +7,7 @@
  * generates a PDF.  Opens/closes via QuotationContext.openDrawer / closeDrawer.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Trash2, Plus, Minus, FileText, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -45,7 +45,7 @@ function validate(form: FormState): FormErrors {
 }
 
 export default function QuotationDrawer() {
-  const { items, itemCount, removeItem, updateQty, clearBasket, drawerOpen, closeDrawer } =
+  const { items, itemCount, removeItem, updateQty, updateQtyOptimistic, clearBasket, hasInvalidItems, setItemValidation, drawerOpen, closeDrawer } =
     useQuotation();
   const { isAuthenticated } = useAuthStore();
   const { isRTL, t } = useLanguage();
@@ -54,6 +54,9 @@ export default function QuotationDrawer() {
   const [form, setForm]         = useState<FormState>({ companyName: '', vatNumber: '', address: '' });
   const [errors, setErrors]     = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  const [inputErrors, setInputErrors] = useState<Record<string, string | null>>({});
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -76,6 +79,100 @@ export default function QuotationDrawer() {
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
   };
 
+  const validateQuantity = (productId: string, raw: string): { value: number; error: string | null; isValid: boolean } => {
+    const trimmed = raw.trim();
+
+    if (trimmed === '') {
+      return { value: 0, error: t('quotation.quantityInvalid'), isValid: false };
+    }
+
+    if (/^0\d+$/.test(trimmed)) {
+      return { value: 0, error: t('quotation.quantityInvalid'), isValid: false };
+    }
+
+    if (!/^\d+$/.test(trimmed)) {
+      return { value: 0, error: t('quotation.quantityInvalid'), isValid: false };
+    }
+
+    const parsed = Number(trimmed);
+
+    if (parsed < 1) {
+      return { value: 0, error: t('quotation.quantityMinError'), isValid: false };
+    }
+
+    const item = items.find(i => i.productId === productId);
+    const stockLimit = typeof item?.stock === 'number' ? item.stock : null;
+
+    if (stockLimit !== null && parsed > stockLimit) {
+      return { value: 0, error: t('quotation.quantityExceedsStock'), isValid: false };
+    }
+
+    return { value: parsed, error: null, isValid: true };
+  };
+
+  const handleQuantityChange = (productId: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+
+    if (!/^\d*$/.test(raw)) {
+      return;
+    }
+
+    setInputValues(prev => ({ ...prev, [productId]: raw }));
+
+    if (raw.trim() !== '') {
+      const { isValid, value } = validateQuantity(productId, raw);
+      if (isValid) {
+        updateQtyOptimistic(productId, value);
+        setInputErrors(prev => ({ ...prev, [productId]: null }));
+        setItemValidation(productId, true);
+      } else {
+        setItemValidation(productId, false);
+      }
+    } else {
+      setItemValidation(productId, false);
+    }
+  };
+
+  const handleQuantityBlur = (productId: string) => {
+    const raw = inputValues[productId] ?? String(items.find(i => i.productId === productId)?.quantity ?? 1);
+    const { value, error, isValid } = validateQuantity(productId, raw);
+
+    setEditingId(null);
+
+    if (!isValid) {
+      setInputErrors(prev => ({ ...prev, [productId]: error }));
+      setInputValues(prev => ({ ...prev, [productId]: String(items.find(i => i.productId === productId)?.quantity ?? 1) }));
+      setItemValidation(productId, false);
+    } else {
+      setInputErrors(prev => ({ ...prev, [productId]: null }));
+      setItemValidation(productId, true);
+      if (value !== items.find(i => i.productId === productId)?.quantity) {
+        updateQty(productId, value);
+      }
+      setInputValues(prev => ({ ...prev, [productId]: String(value) }));
+    }
+  };
+
+  const handleQuantityKeyDown = (productId: string) => (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      (e.target as HTMLInputElement).blur();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      const currentQty = items.find(i => i.productId === productId)?.quantity ?? 1;
+      setInputValues(prev => ({ ...prev, [productId]: String(currentQty) }));
+      setInputErrors(prev => ({ ...prev, [productId]: null }));
+      setItemValidation(productId, true);
+      setEditingId(null);
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleQuantityFocus = (productId: string) => {
+    setEditingId(productId);
+    setInputErrors(prev => ({ ...prev, [productId]: null }));
+  };
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -88,6 +185,11 @@ export default function QuotationDrawer() {
 
     if (items.length === 0) {
       goToQuotationTab();
+      return;
+    }
+
+    if (hasInvalidItems) {
+      toast.error(t('quotation.quantityInvalid') || 'Please correct invalid quantities before generating quotation');
       return;
     }
 
@@ -176,85 +278,100 @@ export default function QuotationDrawer() {
           {/* Item list */}
           {items.length > 0 && (
             <div className="divide-y divide-gray-50 px-5 pt-4">
-              {items.map(item => (
-                <div key={item.productId} className="flex items-center gap-3 py-3">
-                  {/* Thumbnail */}
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getImageUrl(item.thumbnail) ?? PLACEHOLDER}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
-                    />
-                  </div>
+              {items.map(item => {
+                const stockLimit = typeof item.stock === 'number' ? item.stock : null;
+                const currentInputValue = inputValues[item.productId] ?? String(item.quantity);
+                const currentInputError = inputErrors[item.productId];
+                const isCurrentlyEditing = editingId === item.productId;
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
-                    {item.sku && (
-                      <p className="text-xs text-gray-400">{item.sku}</p>
-                    )}
-                    {typeof item.stock === 'number' && (
-                      <p className={`mt-1 text-xs font-semibold ${item.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
-                        {item.stock === 0
-                          ? (t('productsOutOfStock') || 'Out of Stock')
-                          : `${item.stock} ${t('productsInStock') || 'in stock'}`}
+                return (
+                  <div key={item.productId} className="flex items-center gap-3 py-3">
+                    {/* Thumbnail */}
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getImageUrl(item.thumbnail) ?? PLACEHOLDER}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
+                      {item.sku && (
+                        <p className="text-xs text-gray-400">{item.sku}</p>
+                      )}
+                      {typeof item.stock === 'number' && (
+                        <p className={`mt-1 text-xs font-semibold ${item.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                          {item.stock === 0
+                            ? (t('productsOutOfStock') || 'Out of Stock')
+                            : `${item.stock} ${t('productsInStock') || 'in stock'}`}
+                        </p>
+                      )}
+                      <p className="text-xs font-bold text-[#0D1637] flex items-center gap-0.5 mt-0.5">
+                        <SARSymbol />{(item.price * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Qty controls */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => {
+                          if (item.quantity <= 1) {
+                            removeItem(item.productId);
+                            return;
+                          }
+                          updateQty(item.productId, Math.max(1, item.quantity - 1));
+                        }}
+                        className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                      >
+                        <Minus size={10} />
+                      </button>
+
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={currentInputValue}
+                        onChange={handleQuantityChange(item.productId)}
+                        onBlur={() => handleQuantityBlur(item.productId)}
+                        onKeyDown={handleQuantityKeyDown(item.productId)}
+                        onFocus={() => handleQuantityFocus(item.productId)}
+                        aria-label={t('cart.quantity')}
+                        aria-invalid={!!currentInputError}
+                        className={`w-10 text-center text-sm font-semibold text-gray-800 border rounded-md py-0.5 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316] ${
+                          currentInputError ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+
+                      <button
+                        onClick={() => updateQty(item.productId, Math.min(stockLimit ?? item.quantity + 1, item.quantity + 1))}
+                        disabled={stockLimit !== null && item.quantity >= stockLimit}
+                        className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                      >
+                        <Plus size={10} />
+                      </button>
+                    </div>
+
+                    {/* Remove */}
+                    <button
+                      onClick={() => removeItem(item.productId)}
+                      className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+
+                    {/* Inline error */}
+                    {currentInputError && !isCurrentlyEditing && (
+                      <p className="absolute mt-8 text-xs text-red-600" role="alert">
+                        {currentInputError}
                       </p>
                     )}
-                    <p className="text-xs font-bold text-[#0D1637] flex items-center gap-0.5 mt-0.5">
-                      <SARSymbol />{(item.price * item.quantity).toFixed(2)}
-                    </p>
                   </div>
-
-                  {/* Qty controls */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    {(() => {
-                      const stockLimit = typeof item.stock === 'number' ? item.stock : null;
-                      const clampQuantity = (nextQuantity: number) => {
-                        if (stockLimit === null) {
-                          return Math.max(1, nextQuantity);
-                        }
-                        return Math.max(1, Math.min(nextQuantity, stockLimit));
-                      };
-                      return (
-                        <>
-                          <button
-                            onClick={() => {
-                              if (item.quantity <= 1) {
-                                removeItem(item.productId);
-                                return;
-                              }
-                              updateQty(item.productId, clampQuantity(item.quantity - 1));
-                            }}
-                            className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                          >
-                            <Minus size={10} />
-                          </button>
-                          <span className="w-6 text-center text-sm font-semibold text-gray-800">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQty(item.productId, clampQuantity(item.quantity + 1))}
-                            disabled={stockLimit !== null && item.quantity >= stockLimit}
-                            className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                          >
-                            <Plus size={10} />
-                          </button>
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeItem(item.productId)}
-                    className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Grand total */}
               <div className="flex items-center justify-between py-3">
@@ -351,7 +468,7 @@ export default function QuotationDrawer() {
             <button
               type="submit"
               form="quotation-form"
-              disabled={submitting}
+              disabled={submitting || hasInvalidItems}
               className="w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
             >
               <Download size={16} />

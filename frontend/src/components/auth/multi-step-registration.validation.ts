@@ -15,38 +15,42 @@ export type MultiStepRegistrationErrors = Record<string, string>;
 
 export const validateRegistrationStep = (
   currentStep: 1 | 2 | 3,
-  formData: MultiStepRegistrationData
+  formData: MultiStepRegistrationData,
+  t: (key: string) => string = (key: string) => key
 ): MultiStepRegistrationErrors => {
   const newErrors: MultiStepRegistrationErrors = {};
 
   if (currentStep === 1) {
     if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+      newErrors.fullName = t('nameRequired');
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('invalidEmail');
     }
     if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
+      newErrors.phoneNumber = t('phoneRequired');
     } else if (!/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Please enter a valid phone number';
+      newErrors.phoneNumber = t('invalidPhone');
     }
     if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
+      newErrors.address = t('addressRequired');
+    }
+    if (!formData.location.trim()) {
+      newErrors.location = t('locationRequired');
     }
   }
 
   if (currentStep === 2) {
     if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required';
+      newErrors.companyName = t('companyRequired');
     }
   }
 
   if (currentStep === 3) {
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('passwordRequired');
     } else {
       const passwordValidation = validatePassword(formData.password);
       if (!passwordValidation.isValid) {
@@ -54,9 +58,9 @@ export const validateRegistrationStep = (
       }
     }
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirm password is required';
+      newErrors.confirmPassword = t('confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('passwordMismatch');
     }
   }
 

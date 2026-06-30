@@ -6,7 +6,7 @@
  * Matches the design in the reference screenshot.
  */
 
-import React from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { CartItem as CartItemType } from '@/services/cart.service';
@@ -24,30 +24,156 @@ interface CartItemProps {
 
 export default function CartItem({ item, isLast }: CartItemProps) {
   const { t, isRTL } = useLanguage();
-  const { updateItem, removeItem, loading } = useCart();
+  const { updateItem, updateItemOptimistic, removeItem, loading, setItemValidation } = useCart();
+
+  const [inputValue, setInputValue] = useState(String(item.quantity));
+  const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const image = getImageUrl(item.product.thumbnail) ?? PLACEHOLDER;
   const stockLimit = typeof item.product.stock === 'number' ? item.product.stock : null;
 
-  const clampQuantity = (nextQuantity: number) => {
-    if (stockLimit === null) {
-      return Math.max(1, nextQuantity);
-    }
+  const validateQuantity = useCallback(
+    (raw: string): { value: number; error: string | null; isValid: boolean } => {
+      const trimmed = raw.trim();
 
-    return Math.max(1, Math.min(nextQuantity, stockLimit));
-  };
+      if (trimmed === '') {
+        return { value: 0, error: t('cart.quantityInvalid'), isValid: false };
+      }
+
+      // Reject leading zeros like 0005
+      if (/^0\d+$/.test(trimmed)) {
+        return { value: 0, error: t('cart.quantityInvalid'), isValid: false };
+      }
+
+      // Reject non-integer / non-numeric input
+      if (!/^\d+$/.test(trimmed)) {
+        return { value: 0, error: t('cart.quantityInvalid'), isValid: false };
+      }
+
+      const parsed = Number(trimmed);
+
+      if (parsed < 1) {
+        return { value: 0, error: t('cart.quantityMinError'), isValid: false };
+      }
+
+      if (stockLimit !== null && parsed > stockLimit) {
+        return { value: 0, error: t('cart.quantityExceedsStock'), isValid: false };
+      }
+
+      return { value: parsed, error: null, isValid: true };
+    },
+    [stockLimit, t]
+  );
+
+  const applyQuantity = useCallback(
+    (nextQuantity: number) => {
+      updateItem(item.productId, nextQuantity);
+      setInputValue(String(nextQuantity));
+      setError(null);
+      setItemValidation(item.productId, true);
+    },
+    [updateItem, item.productId, setItemValidation]
+  );
+
+  const previewQuantity = useCallback(
+    (nextQuantity: number) => {
+      updateItemOptimistic(item.productId, nextQuantity);
+    },
+    [updateItemOptimistic, item.productId]
+  );
 
   const handleDecrease = () => {
     if (item.quantity <= 1) {
       removeItem(item.productId);
     } else {
-      updateItem(item.productId, clampQuantity(item.quantity - 1));
+      applyQuantity(item.quantity - 1);
     }
   };
 
   const handleIncrease = () => {
-    updateItem(item.productId, clampQuantity(item.quantity + 1));
+    applyQuantity(item.quantity + 1);
   };
+
+  const commitInput = useCallback(
+    (raw: string) => {
+      const { value, error, isValid } = validateQuantity(raw);
+
+      if (!isValid) {
+        setError(error);
+        setInputValue(raw);
+        setItemValidation(item.productId, false);
+        return;
+      }
+
+      if (value !== item.quantity) {
+        applyQuantity(value);
+      } else {
+        setInputValue(String(item.quantity));
+        setError(null);
+        setItemValidation(item.productId, true);
+      }
+    },
+    [validateQuantity, item.quantity, item.productId, applyQuantity, setItemValidation]
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+
+    // Allow only digits while typing
+    if (!/^\d*$/.test(raw)) {
+      return;
+    }
+
+    setInputValue(raw);
+
+    // Real-time price preview for valid intermediate values (no API call yet)
+    if (raw.trim() !== '') {
+      const { isValid, value } = validateQuantity(raw);
+      if (isValid && value !== item.quantity) {
+        previewQuantity(value);
+      }
+    }
+
+    // Clear error while user is typing a valid-looking value
+    if (raw.trim() !== '' && /^\d+$/.test(raw) && !(/^0\d+$/.test(raw))) {
+      setError(null);
+    }
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    commitInput(inputValue);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      inputRef.current?.blur();
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setInputValue(String(item.quantity));
+      setError(null);
+      setItemValidation(item.productId, true);
+      inputRef.current?.blur();
+    }
+  };
+
+  const handleFocus = () => {
+    setIsEditing(true);
+    setError(null);
+  };
+
+  // Keep input in sync if cart updates from elsewhere
+  useEffect(() => {
+    if (!isEditing) {
+      setInputValue(String(item.quantity));
+    }
+  }, [item.quantity, isEditing]);
 
   return (
     <>
@@ -89,9 +215,22 @@ export default function CartItem({ item, isLast }: CartItemProps) {
               <Plus size={12} strokeWidth={3} />
             </button>
 
-            <span className="text-sm font-semibold text-gray-800 w-5 text-center">
-              {item.quantity}
-            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={inputValue}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
+              aria-label={t('cart.quantity')}
+              aria-invalid={!!error}
+              className={`text-sm font-semibold text-gray-800 w-12 text-center border rounded-md py-0.5 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316] ${
+                error ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
 
             <button
               onClick={handleDecrease}
@@ -101,6 +240,12 @@ export default function CartItem({ item, isLast }: CartItemProps) {
               <Minus size={12} strokeWidth={3} />
             </button>
           </div>
+
+          {error && !isEditing && (
+            <p className="mt-1 text-xs text-red-600" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         {/* Price + remove */}
