@@ -3,14 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getImageUrl } from '@/utils/helpers';
 
 /**
  * Hero Section — /home
  * ─────────────────────────────────────────────────────────────────────────
- * Animated gradient background with floating elements, CTA buttons, and
- * responsive hero image. Features smooth animations and modern design.
+ * New design: Full-width hero with background image and overlay
  */
 export default function HeroSection() {
   const { t, isRTL } = useLanguage();
@@ -30,114 +30,82 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative pt-20 pb-16 bg-white overflow-hidden"
+      className="relative w-full overflow-hidden mt-[120px]"
+      style={{ height: 'clamp(500px, 60vh, 600px)', minHeight: '500px' }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      {/* ── Animated gradient background orbs ── */}
-      {mounted && (
-        <>
-          <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute top-1/4 right-0 w-72 h-72 bg-slate-900/5 rounded-full blur-3xl animate-pulse animation-delay-2s" />
-          <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-[#F97216]/5 rounded-full blur-3xl animate-pulse animation-delay-4s" />
-        </>
-      )}
-
-      <div className="relative z-10">
-      {/* ── Centered text content ── */}
-        {/* Text content — with gradient text and smooth animations */}
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 text-center space-y-6">
-          {/* Badge with animation */}
-          <div style={introStyle(0)}>
-            <span className="inline-block bg-[#F97216] text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2 rounded-full shadow-lg hover:shadow-orange-500/30 hover:shadow-xl transition-all duration-300 cursor-default">
-              {t('landingHeroBadge')}
-            </span>
-          </div>
-
-          {/* Main heading with gradient text */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight" style={introStyle(70)}>
-            <span className="block text-[#0A1E36]">
-              {t('landingHeroTitle')}
-            </span>
-          </h1>
-
-          {/* Subtitle with animation */}
-          <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto" style={introStyle(130)}>
-            {t('landingHeroSubtitle')}
-          </p>
-
-          {/* CTA Buttons with hover effects */}
-          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`} style={introStyle(190)}>
-            <Link
-              href="/products"
-              className="group relative inline-flex items-center gap-2 bg-[#0205A6] hover:bg-[#0205A6]/90 text-white font-bold px-8 sm:px-9 py-3 sm:py-4 rounded-full transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-900/20 hover:-translate-y-1 w-full sm:w-auto justify-center"
-            >
-              {t('landingHeroCta')}
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link
-              href="#contact"
-              className="group relative inline-flex items-center gap-2 border-2 border-[#0A1E36]/20 hover:border-[#0A1E36]/35 text-[#0A1E36] font-bold px-8 sm:px-9 py-3 sm:py-4 rounded-full transition-all duration-300 bg-white hover:bg-gray-50 hover:-translate-y-1 w-full sm:w-auto justify-center"
-            >
-              {t('landingHeroCtaSecondary')}
-              <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-        </div>
-
-      {/* ── Hero image block with animations ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-0 relative" style={introStyle(250)}>
-        {/* Rating badge — floats with animation */}
-        <div className={`absolute top-0 z-10 ${isRTL ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} -translate-y-1/2`}>
-          <div className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.10)] px-5 py-3 flex flex-col gap-1 hover:shadow-[0_14px_36px_rgba(15,23,42,0.14)] transition-all border border-gray-100">
-            <p className="text-[#F97216] font-bold text-xs sm:text-sm whitespace-nowrap">{t('landingHeroRatingText')}</p>
-            <div className={`flex gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={16} className="fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Hero image with gradient border and hover effect */}
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl group hover:shadow-3xl transition-all duration-500">
-          {/* Gradient border wrapper */}
-          <div className="absolute inset-0 bg-gradient-to-r from-shielder-primary via-shielder-secondary to-orange-500 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl" />
-          
-          <div className="relative rounded-3xl overflow-hidden bg-white border border-gray-100">
-            <div className="relative w-full" style={{ paddingBottom: '68%' }}>
-              <Image
-                src="/images/landing/herosection-upgrade image.png"
-                alt={t('landingHeroImageAlt')}
-                fill
-                priority
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1152px"
-              />
-              {/* Overlay gradient on hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            </div>
-
-            {/* Bottom-right caption overlay with animation */}
-            <div className={`absolute bottom-4 sm:bottom-6 ${isRTL ? 'left-4 sm:left-6' : 'right-2 sm:right-3'} group-hover:translate-y-0 translate-y-2 transition-all duration-500`}>
-              <div className={`bg-[#0A1E3699] backdrop-blur-xl border border-white/10 rounded-2xl px-5 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4 shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
-                {/* Text */}
-                <div className={isRTL ? 'text-right' : 'text-start'}>
-                  <p className="text-white font-bold text-xs sm:text-sm leading-tight">Our 1k Client Satisfied</p>
-                  <p className="text-white/70 font-medium text-xs mt-0.5">With Our Recent Work</p>
-                </div>
-                {/* Avatars */}
-                <div className={`flex flex-shrink-0 ${isRTL ? '-space-x-reverse' : ''} -space-x-2`}>
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="relative w-8 sm:w-9 h-8 sm:h-9 rounded-full border-2 border-white overflow-hidden bg-gradient-to-br from-slate-400 to-slate-600 flex-shrink-0 hover:scale-110 transition-transform">
-                      <Image src={`/images/landing/user-${i}.jpg`} alt="" fill className="object-cover" sizes="36px" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={getImageUrl('uploads/New landing pages images/Hero Section Image.png') || '/images/landing/Hero Section Image.png'}
+          alt="Industrial background"
+          fill
+          priority
+          className="object-cover object-center"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0A1E36]/95 via-[#0A1E36]/80 to-transparent" />
       </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-[1280px] mx-auto px-8 h-full">
+        <div className="flex items-center h-full">
+          {/* Left Column - Text Content */}
+          <div className="w-full space-y-6" style={introStyle(0)}>
+            {/* Badge */}
+            <div style={introStyle(100)}>
+              <span className="inline-block px-4 py-2 bg-[#123C9C] text-white text-xs font-bold rounded-full mb-4">
+                {t('landingHeroBadge') || 'Premium Filter Solutions'}
+              </span>
+            </div>
+
+            {/* Main heading */}
+            <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold leading-tight tracking-tight text-white" style={introStyle(150)}>
+              <span className="block mb-2">{t('landingHeroTitle')?.split('.')[0] || 'BUILT TO PROTECT'}.</span>
+              <span className="block">{t('landingHeroTitle')?.split('.')[1]?.trim() || 'ENGINEERED TO PERFORM'}</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-base sm:text-lg font-normal leading-relaxed text-gray-200 max-w-[500px]" style={introStyle(200)}>
+              {t('landingHeroSubtitle') || 'Premium filtration solutions for heavy-duty engines and equipment. Built for reliability. Designed for performance.'}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-4 pt-2" style={introStyle(250)}>
+              <Link
+                href="/products"
+                className="inline-flex items-center gap-2 bg-[#123C9C] hover:bg-[#0D2F8C] text-white font-bold text-sm h-[48px] px-8 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                {t('landingHeroCta') || 'SHOP FILTERS'}
+                <ArrowRight size={18} className={isRTL ? 'rotate-180' : ''} />
+              </Link>
+              {/* <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#0A1E36] font-bold text-sm h-[48px] px-8 rounded-lg transition-all duration-300"
+              >
+                {t('landingHeroCtaSecondary') || 'Contact Us'}
+              </Link> */}
+            </div>
+
+            {/* Stats */}
+            {/* <div className="flex flex-wrap items-center gap-6 pt-4" style={introStyle(300)}>
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-bold text-white">{t('landingStat1Value') || '150+'}</div>
+                <div className="text-xs text-gray-300">{t('landingStat1Label') || 'Products Available'}</div>
+              </div>
+              <div className="w-px h-8 bg-gray-500"></div>
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-bold text-white">{t('landingStat2Value') || '1000+'}</div>
+                <div className="text-xs text-gray-300">{t('landingStat2Label') || 'Happy Customers'}</div>
+              </div>
+              <div className="w-px h-8 bg-gray-500"></div>
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-bold text-white">{t('landingStat3Value') || '15+'}</div>
+                <div className="text-xs text-gray-300">{t('landingStat3Label') || 'Years Experience'}</div>
+              </div>
+            </div> */}
+          </div>
+        </div>
       </div>
     </section>
   );

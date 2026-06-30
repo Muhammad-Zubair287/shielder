@@ -65,12 +65,12 @@
 }
 
 :root {
-  --color-primary: #F97216;
-  --color-primary-hover: #e8630d;
+  --color-primary: #0A1E36;
+  --color-primary-hover: #081a2f;
   --color-secondary: #0205A6;
   --color-secondary-hover: #0104a0;
-  --color-tertiary: #0A1E36;
-  --color-tertiary-hover: #081a2f;
+  --color-accent: #F97316;
+  --color-accent-hover: #e8630d;
 
   --color-success: #10b981;
   --color-danger: #ef4444;
@@ -78,9 +78,12 @@
   --color-info: #3b82f6;
 
   --color-bg: #fff;
+  --color-bg-light: #f8fafc;
   --color-bg-dark: #0A1E36;
-  --color-text: #222;
+  --color-text: #1e293b;
   --color-text-light: #fff;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
 }
 
 /* Button classes */
