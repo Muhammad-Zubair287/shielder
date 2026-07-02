@@ -10,7 +10,7 @@ import ScrollReveal from './ScrollReveal';
 
 // 6 categories matching the new design - using new landing page images
 const CATEGORIES = [
-  { nameKey: 'landingCat1Name', descKey: 'landingCat1Desc', keyword: 'air', image: '/images/landing/Air filter.png', href: '/products?category=air' },
+  { nameKey: 'landingCat1Name', descKey: 'landingCat1Desc', keyword: 'air', image: '/images/landing/air filter new.png', href: '/products?category=air' },
   { nameKey: 'landingCat2Name', descKey: 'landingCat2Desc', keyword: 'oil', image: '/images/landing/oil filter.png', href: '/products?category=oil' },
   { nameKey: 'landingCat3Name', descKey: 'landingCat3Desc', keyword: 'fuel', image: '/images/landing/filter image 2.png', href: '/products?category=fuel' },
   { nameKey: 'landingCat4Name', descKey: 'landingCat4Desc', keyword: 'hydraulic', image: '/images/landing/Hydrulic Filter.png', href: '/products?category=hydraulic' },

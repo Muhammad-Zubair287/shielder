@@ -58,7 +58,7 @@ export default function LandingNavbar() {
     { label: t('landingNavHome'), href: '/home' },
     { label: t('landingNavProducts'), href: '/products' },
     { label: t('landingNavApplications'), href: '/applications' },
-    { label: t('landingNavAboutUs'), href: '/about-us' },
+    { label: t('landingNavAboutUs'), href: '/about' },
     { label: t('landingNavResources'), href: '/resources' },
     { label: t('landingNavLogin'), href: '/login' },
     { label: t('landingNavContact'), href: '/contact' },
@@ -70,9 +70,9 @@ export default function LandingNavbar() {
     { label: t('landingNavPrivacy'), href: '/privacy-policy' },
     ...(user
       ? [
-          { label: t('myOrders.title'), href: '/my-orders' },
-          { label: t('myQuotations.title'), href: '/my-quotations' },
-        ]
+        { label: t('myOrders.title'), href: '/my-orders' },
+        { label: t('myQuotations.title'), href: '/my-quotations' },
+      ]
       : []),
   ];
 
@@ -103,27 +103,24 @@ export default function LandingNavbar() {
     const active = isActiveLink(href);
 
     if (mobile) {
-      return `block px-6 py-3.5 text-sm transition-colors border-b border-gray-100 ${isRTL ? 'text-right' : 'text-start'} ${
-        active
-          ? 'bg-blue-50 text-[#0205A6] font-bold'
-          : 'text-gray-700 font-semibold hover:text-[#0205A6] hover:bg-gray-50'
-      }`;
+      return `block px-6 py-3.5 text-sm transition-colors border-b border-gray-100 ${isRTL ? 'text-right' : 'text-start'} ${active
+          ? 'bg-blue-50 text-[#0e2441] font-bold'
+          : 'text-[#0e2441] font-semibold hover:text-[#191970] hover:bg-gray-50'
+        }`;
     }
 
-    return `px-3 py-2 text-[13px] transition-colors rounded-lg whitespace-nowrap ${
-      active
-        ? 'bg-blue-50 text-[#0205A6] font-extrabold'
-        : 'text-gray-700 font-semibold hover:text-[#0205A6] hover:bg-gray-50'
-    }`;
+    return `px-3 py-2 text-[13px] transition-colors rounded-lg whitespace-nowrap ${active
+        ? 'bg-blue-50 text-[#0e2441] font-extrabold'
+        : 'text-[#0e2441] font-semibold hover:text-[#191970] hover:bg-gray-50'
+      }`;
   };
 
   return (
     <>
       {/* Combined Navbar with Top Bar */}
       <header
-        className={`fixed top-0 inset-x-0 z-50 bg-white transition-all duration-300 ${
-          scrolled ? 'shadow-lg' : 'border-b border-[#EAEAEA]'
-        }`}
+        className={`fixed top-0 inset-x-0 z-50 bg-white transition-all duration-300 ${scrolled ? 'shadow-lg' : 'border-b border-[#EAEAEA]'
+          }`}
       >
         {/* Top Information Bar */}
         <div className="bg-[#0A1E36] text-white">
@@ -164,7 +161,7 @@ export default function LandingNavbar() {
             <Link href="/home" className="flex-shrink-0 flex items-center">
               <div className="flex items-center justify-center h-10 px-2 bg-white rounded">
                 <Image
-                  src="/images/shielder navbar logo 2.jpeg"
+                  src="/images/shielder navbar logo1.png"
                   alt="Shielder"
                   width={120}
                   height={40}
@@ -179,14 +176,13 @@ export default function LandingNavbar() {
               {visibleNavLinks.map(link => (
                 <Link key={link.href} href={link.href}
                   aria-current={isActiveLink(link.href) ? 'page' : undefined}
-                  className={`relative px-1 py-2 text-[12px] font-semibold uppercase tracking-[0.4px] leading-[18px] transition-colors whitespace-nowrap ${
-                    isActiveLink(link.href)
-                      ? 'text-[#0D2F8C]'
-                      : 'text-[#1F2937] hover:text-[#0D2F8C]'
-                  }`}>
+                  className={`relative px-1 py-2 text-[12px] font-semibold uppercase tracking-[0.4px] leading-[18px] transition-colors whitespace-nowrap ${isActiveLink(link.href)
+                      ? 'text-[#0e2441]'
+                      : 'text-[#0e2441] hover:text-[#191970]'
+                    }`}>
                   {link.label}
                   {isActiveLink(link.href) && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#0D2F8C]" />
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#0e2441]" />
                   )}
                 </Link>
               ))}
@@ -194,24 +190,24 @@ export default function LandingNavbar() {
 
             <div className="flex-1" />
 
-             {/* Actions */}
-             <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                {/* Search Input */}
-                <div className="relative" ref={searchRef}>
-                  <input
-                    type="text"
-                    placeholder={t('landingNavSearchPlaceholder') || 'Search by filter number...'}
-                    className="w-[170px] lg:w-[190px] h-[34px] pl-3 pr-8 border border-[#E5E7EB] rounded text-[13px] text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:border-[#0D2F8C]"
-                    dir={isRTL ? 'rtl' : 'ltr'}
-                  />
-                  <Search size={16} className={`absolute ${isRTL ? 'left-2.5' : 'right-2.5'} top-1/2 -translate-y-1/2 text-[#9CA3AF]`} />
-                </div>
+            {/* Actions */}
+            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              {/* Search Input */}
+              <div className="relative" ref={searchRef}>
+                <input
+                  type="text"
+                  placeholder={t('landingNavSearchPlaceholder') || 'Search by filter number...'}
+                  className="w-[170px] lg:w-[190px] h-[34px] pl-3 pr-8 border border-[#E5E7EB] rounded text-[13px] text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:border-[#0D2F8C]"
+                  dir={isRTL ? 'rtl' : 'ltr'}
+                />
+                <Search size={16} className={`absolute ${isRTL ? 'left-2.5' : 'right-2.5'} top-1/2 -translate-y-1/2 text-[#9CA3AF]`} />
+              </div>
 
-                <div className={`scale-90 ${isRTL ? 'origin-left' : 'origin-right'}`}>
-                  <LanguageSwitcher variant="pills" />
-                </div>
-                <CartBadge />
-                <QuotationBadge />
+              <div className={`scale-90 ${isRTL ? 'origin-left' : 'origin-right'}`}>
+                <LanguageSwitcher variant="pills" />
+              </div>
+              <CartBadge />
+              <QuotationBadge />
               {user ? (
                 <div className="relative" ref={profileRef}>
                   <button
@@ -234,7 +230,7 @@ export default function LandingNavbar() {
                         </span>
                       )}
                     </span>
-                    <span className="text-[10px] font-bold text-gray-700 leading-none truncate max-w-[64px] text-center">
+                    <span className="text-[10px] font-bold text-[#0e2441] leading-none truncate max-w-[64px] text-center">
                       {profileFirstName}
                     </span>
                   </button>
@@ -308,11 +304,10 @@ export default function LandingNavbar() {
               href={user ? '/profile' : '/login'}
               onClick={() => setMobileOpen(false)}
               aria-current={isActiveLink(user ? '/profile' : '/login') ? 'page' : undefined}
-              className={`flex items-center gap-3 px-6 py-3.5 text-sm border-b border-gray-100 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-start'} ${
-                isActiveLink(user ? '/profile' : '/login')
-                  ? 'bg-blue-50 text-[#0205A6] font-bold'
-                  : 'text-gray-700 font-semibold hover:text-[#0205A6] hover:bg-gray-50'
-              }`}
+              className={`flex items-center gap-3 px-6 py-3.5 text-sm border-b border-gray-100 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-start'} ${isActiveLink(user ? '/profile' : '/login')
+                  ? 'bg-blue-50 text-[#0e2441] font-bold'
+                  : 'text-[#0e2441] font-semibold hover:text-[#191970] hover:bg-gray-50'
+                }`}
             >
               <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-gray-600">
                 {user?.profile?.profileImage ? (

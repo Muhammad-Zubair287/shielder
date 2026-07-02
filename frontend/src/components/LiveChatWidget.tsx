@@ -20,7 +20,7 @@ export default function LiveChatWidget() {
   if (!shouldShow) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[70]">
+    <div className="fixed bottom-9 right-6 z-[70]">
       {open && (
         <div className="mb-3 w-72 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden animate-fade-in">
           <div className="bg-[#0205A6] text-white px-4 py-3">

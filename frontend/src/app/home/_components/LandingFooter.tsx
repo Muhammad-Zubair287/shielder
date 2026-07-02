@@ -23,7 +23,10 @@ export default function LandingFooter() {
 
   const companyLinks = [
     { label: t('landingFooterAboutUs') || 'About Us', href: '/about-us' },
-    { label: t('landingFooterContact') || 'Contact', href: '/contact' },
+    { label: t('landingFooterOurQuality') || 'Our Quality', href: '/our-quality' },
+    { label: t('landingFooterCareers') || 'Careers', href: '/careers' },
+    { label: t('landingFooterNews') || 'News', href: '/news' },
+    { label: t('landingFooterContactUS') || 'Contact', href: '/contact' },
     { label: t('landingFooterPrivacy') || 'Privacy Policy', href: '/privacy-policy' },
   ];
 
@@ -47,12 +50,12 @@ export default function LandingFooter() {
             <div className={`col-span-2 md:col-span-3 lg:col-span-1 space-y-4 ${isRTL ? 'text-right' : 'text-start'}`}>
               <Link href="/home" className="inline-block">
                 <div className="relative h-16 w-40">
-                  <Image 
-                    src={getImageUrl('uploads/New landing pages images/shielder new footer logo.png') || '/images/shielder-logo.png'} 
-                    alt="Shielder" 
-                    fill 
-                    className="object-contain" 
-                    sizes="160px" 
+                  <Image
+                    src={getImageUrl('uploads/New landing pages images/shielder new footer logo.png') || '/images/shielder-logo.png'}
+                    alt="Shielder"
+                    fill
+                    className="object-contain"
+                    sizes="160px"
                   />
                 </div>
               </Link>
@@ -147,17 +150,17 @@ export default function LandingFooter() {
         <div className="border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className={`flex flex-col md:flex-row items-center justify-between gap-4 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
-              <p className="text-white/60 text-sm">
-                © {year} Shielder. {t('landingFooterRights') || 'All Rights Reserved.'}
+              <p className="text-white/60 text-xs">
+                © {year} Shielder. {t('landingFooterRights') || 'All rights reserved.'}
               </p>
               <div className={`flex items-center gap-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <Link href="/privacy-policy" className="text-white/60 text-sm hover:text-white transition-colors">
+                <Link href="/privacy-policy" className="text-white/60 text-xs hover:text-white transition-colors">
                   {t('landingFooterPrivacyPolicy') || 'Privacy Policy'}
                 </Link>
-                <Link href="#" className="text-white/60 text-sm hover:text-white transition-colors">
+                <Link href="#" className="text-white/60 text-xs hover:text-white transition-colors">
                   {t('landingFooterTermsOfUse') || 'Terms of Use'}
                 </Link>
-                <Link href="#" className="text-white/60 text-sm hover:text-white transition-colors">
+                <Link href="#" className="text-white/60 text-xs hover:text-white transition-colors">
                   {t('landingFooterSitemap') || 'Sitemap'}
                 </Link>
               </div>
