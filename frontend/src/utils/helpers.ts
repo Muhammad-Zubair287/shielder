@@ -47,11 +47,18 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     .replace('images/userend images/', 'images/userend-images/')
     .replace(/^uploads\/products\/products\//, 'uploads/products/');
 
-  if (normalized.startsWith('images/products-images/')) {
+  const getBackendOrigin = () => {
     const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-    let backendOrigin = '';
+    if (uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
+      return uploadsBase.replace(/\/$/, '');
+    }
+
+    if (/^https?:\/\//i.test(apiUrl)) {
+      return apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
+    }
+
     if (typeof window !== 'undefined') {
       const host = window.location.hostname;
       const isLocalHost =
@@ -60,20 +67,14 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
         host === '0.0.0.0' ||
         host === '::1';
 
-      if (isLocalHost) {
-        backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:5001`;
-      }
+      return isLocalHost ? `http://${host}:5001` : window.location.origin;
     }
 
-    if (!backendOrigin && uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
-      backendOrigin = uploadsBase.replace(/\/$/, '');
-    } else if (!backendOrigin && /^https?:\/\//i.test(apiUrl)) {
-      backendOrigin = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
-    } else if (!backendOrigin && typeof window !== 'undefined') {
-      backendOrigin = window.location.origin;
-    } else {
-      backendOrigin = 'http://localhost:5001';
-    }
+    return 'http://localhost:5001';
+  };
+
+  if (normalized.startsWith('images/products-images/')) {
+    const backendOrigin = getBackendOrigin();
 
     const encodedProductPath = normalized
       .split('/')
@@ -93,34 +94,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
   }
 
   // User-uploaded files (uploads/...) are served by the backend.
-  const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-  // Resolve backend origin safely. Prefer local host when developing.
-  let backendOrigin = '';
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    const isLocalHost =
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host === '0.0.0.0' ||
-      host === '::1';
-
-    if (isLocalHost) {
-      // Prefer explicit uploads base if provided, else fallback to common local backend
-      backendOrigin = (uploadsBase && /^https?:\/\//i.test(uploadsBase)) ? uploadsBase.replace(/\/$/, '') : `http://${host}:5001`;
-    }
-  }
-
-  if (!backendOrigin && uploadsBase && /^https?:\/\//i.test(uploadsBase)) {
-    backendOrigin = uploadsBase.replace(/\/$/, '');
-  } else if (!backendOrigin && /^https?:\/\//i.test(apiUrl)) {
-    backendOrigin = apiUrl.replace(/\/api(\/.*)?$/, '').replace(/\/$/, '');
-  } else if (!backendOrigin && typeof window !== 'undefined') {
-    backendOrigin = window.location.origin;
-  } else {
-    backendOrigin = 'http://localhost:5001';
-  }
+  const backendOrigin = getBackendOrigin();
 
   const uploadPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
 

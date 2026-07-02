@@ -1,3 +1,24 @@
+const remoteImagePatternsFromEnv = [
+  process.env.NEXT_PUBLIC_UPLOADS_BASE_URL,
+  process.env.NEXT_PUBLIC_API_URL,
+]
+  .filter(Boolean)
+  .map((value) => {
+    try {
+      const url = new URL(value.replace(/\/api(\/.*)?$/, ''));
+
+      return {
+        protocol: url.protocol.replace(':', ''),
+        hostname: url.hostname,
+        port: url.port,
+        pathname: '/**',
+      };
+    } catch {
+      return null;
+    }
+  })
+  .filter(Boolean);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -71,6 +92,7 @@ const nextConfig = {
         port: '5001',
         pathname: '/**',
       },
+      ...remoteImagePatternsFromEnv,
       {
         protocol: 'https',
         hostname: '**',
