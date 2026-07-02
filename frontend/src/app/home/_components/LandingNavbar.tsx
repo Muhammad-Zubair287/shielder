@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Menu, X, MessageCircle, User, LogOut, ChevronDown, Search, ShoppingCart, Phone, Truck, Headphones, Zap } from 'lucide-react';
+import { Menu, X, User, LogOut, Search, Phone, Truck, Headphones, Zap } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -45,7 +45,12 @@ export default function LandingNavbar() {
   // Close search on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(target) &&
+        !target.closest('[data-nav-search-panel]')
+      ) {
         setSearchOpen(false);
       }
     };
@@ -60,8 +65,8 @@ export default function LandingNavbar() {
     { label: t('landingNavApplications'), href: '/applications' },
     { label: t('landingNavAboutUs'), href: '/about' },
     { label: t('landingNavResources'), href: '/resources' },
-    { label: t('landingNavLogin'), href: '/login' },
     { label: t('landingNavContact'), href: '/contact' },
+    { label: t('landingNavLogin'), href: '/login' },
   ];
 
   // Old navbar items (hidden but kept for functionality)
@@ -144,7 +149,11 @@ export default function LandingNavbar() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Phone size={14} className="text-green-400" />
-                  <a href="tel:+966506814416" className="font-semibold hover:text-green-400 transition-colors">
+                  <a
+                    href="tel:+966506814416"
+                    dir="ltr"
+                    className="font-semibold hover:text-green-400 transition-colors [unicode-bidi:isolate]"
+                  >
                     +966 50 681 4416
                   </a>
                 </div>
@@ -159,24 +168,26 @@ export default function LandingNavbar() {
 
             {/* Logo */}
             <Link href="/home" className="flex-shrink-0 flex items-center">
-              <div className="flex items-center justify-center h-10 px-2 bg-white rounded">
+              <div className="flex items-center justify-center h-8 px-2 bg-white rounded">
                 <Image
                   src="/images/shielder navbar logo1.png"
                   alt="Shielder"
-                  width={120}
-                  height={40}
+                  width={150}
+                  height={80}
                   className="object-contain"
                   priority
                 />
               </div>
             </Link>
 
-            {/* Desktop Nav - Only visible items from new design */}
-            <nav className="hidden lg:flex items-center gap-6" dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className="flex-1" />
+
+            {/* Desktop Nav - kept close to search/actions */}
+            <nav className="hidden lg:flex items-center gap-0 flex-shrink min-w-0 overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
               {visibleNavLinks.map(link => (
                 <Link key={link.href} href={link.href}
                   aria-current={isActiveLink(link.href) ? 'page' : undefined}
-                  className={`relative px-1 py-2 text-[12px] font-semibold uppercase tracking-[0.4px] leading-[18px] transition-colors whitespace-nowrap ${isActiveLink(link.href)
+                  className={`relative px-2 py-1.5 text-[12px] font-semibold leading-[18px] transition-colors whitespace-nowrap truncate ${isActiveLink(link.href)
                       ? 'text-[#0e2441]'
                       : 'text-[#0e2441] hover:text-[#191970]'
                     }`}>
@@ -188,19 +199,40 @@ export default function LandingNavbar() {
               ))}
             </nav>
 
-            <div className="flex-1" />
-
             {/* Actions */}
             <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              {/* Search Input */}
+              {/* Search Toggle */}
               <div className="relative" ref={searchRef}>
-                <input
-                  type="text"
-                  placeholder={t('landingNavSearchPlaceholder') || 'Search by filter number...'}
-                  className="w-[170px] lg:w-[190px] h-[34px] pl-3 pr-8 border border-[#E5E7EB] rounded text-[13px] text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:border-[#0D2F8C]"
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                />
-                <Search size={16} className={`absolute ${isRTL ? 'left-2.5' : 'right-2.5'} top-1/2 -translate-y-1/2 text-[#9CA3AF]`} />
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen((open) => !open)}
+                  aria-label={t('landingNavSearchPlaceholder') || 'Search by filter number'}
+                  aria-expanded={searchOpen}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200 ${searchOpen
+                      ? 'border-[#123C9C] bg-blue-50 text-[#123C9C] shadow-sm'
+                      : 'border-[#E5E7EB] bg-white text-[#64748B] hover:border-[#123C9C]/40 hover:text-[#123C9C]'
+                    }`}
+                >
+                  <Search size={18} strokeWidth={1.9} />
+                </button>
+                {searchOpen && (
+                  <div
+                    data-nav-search-panel
+                    className={`absolute top-full mt-2 z-50 w-[190px] lg:w-[210px] ${isRTL ? 'left-0' : 'right-0'}`}
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                  >
+                    <div className="relative">
+                      <Search size={16} className={`absolute top-1/2 -translate-y-1/2 text-[#9CA3AF] ${isRTL ? 'right-3' : 'left-3'}`} />
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder={t('landingNavSearchPlaceholder') || 'Search by filter number...'}
+                        className={`h-[34px] w-full rounded border border-[#0D2444] bg-white text-[13px] font-medium text-[#1F2937] placeholder-[#9CA3AF] shadow-lg outline-none transition-colors focus:border-[#0D2F8C] ${isRTL ? 'pr-8 pl-3 text-right' : 'pl-8 pr-3 text-left'}`}
+                        dir={isRTL ? 'rtl' : 'ltr'}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className={`scale-90 ${isRTL ? 'origin-left' : 'origin-right'}`}>
@@ -267,9 +299,10 @@ export default function LandingNavbar() {
               ) : (
                 <Link
                   href="/login"
-                  className={`hidden lg:inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#0205A6] hover:bg-[#0104a0] rounded-lg transition-colors`}
+                  aria-label={t('landingNavLogin') || 'Login'}
+                  className="hidden lg:flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#0e2441] ring-2 ring-[#004A99]/20 shadow-sm transition-all hover:ring-[#004A99]/45 hover:bg-blue-50 active:scale-95"
                 >
-                  {t('landingNavLogin')}
+                  <User size={18} strokeWidth={2} />
                 </Link>
               )}
               <button className="lg:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg" onClick={() => setMobileOpen(v => !v)}>

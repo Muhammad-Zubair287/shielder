@@ -22,7 +22,7 @@ export default function LandingFooter() {
   ];
 
   const companyLinks = [
-    { label: t('landingFooterAboutUs') || 'About Us', href: '/about-us' },
+    { label: t('landingFooterAboutUs') || 'About Us', href: '/about' },
     { label: t('landingFooterOurQuality') || 'Our Quality', href: '/our-quality' },
     { label: t('landingFooterCareers') || 'Careers', href: '/careers' },
     { label: t('landingFooterNews') || 'News', href: '/news' },
@@ -31,11 +31,11 @@ export default function LandingFooter() {
   ];
 
   const resourceLinks = [
-    { label: t('landingFooterCatalog') || 'Catalog', href: '#' },
-    { label: t('landingFooterCrossReference') || 'Cross Reference', href: '#' },
-    { label: t('landingFooterInstallationGuides') || 'Installation Guides', href: '#' },
-    { label: t('landingFooterFAQs') || 'FAQs', href: '#' },
-    { label: t('landingFooterWarranty') || 'Warranty', href: '#' },
+    { label: t('landingFooterCatalog') || 'Catalog', href: '/resources#customer-support' },
+    { label: t('landingFooterCrossReference') || 'Cross Reference', href: '/resources#customer-support' },
+    { label: t('landingFooterInstallationGuides') || 'Installation Guides', href: '/resources#installation-guides' },
+    { label: t('landingFooterFAQs') || 'FAQs', href: '/resources#faq' },
+    { label: t('landingFooterWarranty') || 'Warranty', href: '/resources#warranty-information' },
   ];
 
   const getResourceKey = (index: number) => `resource-${index}`;
