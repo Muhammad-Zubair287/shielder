@@ -242,10 +242,11 @@ function LoginPageContent() {
           {/* Background Image */}
           <div className="absolute inset-0">
             <Image 
-              src="/images/login image new download.jpg" 
+              src="/images/login image 112.png" 
               alt="Shielder Construction" 
               fill
-              className="object-cover"
+              className="object-cover object-[center_20%] md:object-[center_30%]"
+              // className="object-cover object-[center_30%]"
               sizes="50vw"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/35"></div>
