@@ -1825,5 +1825,12 @@
   "aboutCtaTitle": "مستعد لحماية معداتك؟",
   "aboutCtaSubtitle": "اكتشف حلول ترشيح عالية الأداء موثوقة من الصناعات في جميع أنحاء العالم.",
   "aboutCtaButton1": "عرض المنتجات",
-  "aboutCtaButton2": "طلب عرض سعر"
+  "aboutCtaButton2": "طلب عرض سعر",
+    "comingSoon.badge": "قريباً",
+    "comingSoon.subtitle": "نحن نعمل حالياً على بناء هذا القسم لتوفير تجربة أفضل لك. يرجى العودة قريباً لمشاهدة محتوى وميزات جديدة.",
+    "comingSoon.description": "فريقنا يعمل بنشاط على هذه الصفحة. شكراً لصبرك بينما نعد موارد ومعلومات قيمة لك.",
+    "comingSoon.returnHome": "العودة إلى الرئيسية",
+    "comingSoon.browseProducts": "تصفح المنتجات",
+    "comingSoon.status": "قيد التطوير",
+    "comingSoon.contactInfo": "تحتاج مساعدة؟ اتصل بنا على"
 }

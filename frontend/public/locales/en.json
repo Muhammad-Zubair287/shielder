@@ -1829,5 +1829,12 @@
   "aboutCtaTitle": "Ready to Protect Your Equipment?",
   "aboutCtaSubtitle": "Discover high-performance filtration solutions trusted by industries worldwide.",
   "aboutCtaButton1": "View Products",
-  "aboutCtaButton2": "Request Quotation"
+  "aboutCtaButton2": "Request Quotation",
+    "comingSoon.badge": "Coming Soon",
+    "comingSoon.subtitle": "We're currently building this section to provide you with a better experience. Please check back soon for new content and features.",
+    "comingSoon.description": "Our team is actively working on this page. Thank you for your patience while we prepare valuable resources and information for you.",
+    "comingSoon.returnHome": "Return to Home",
+    "comingSoon.browseProducts": "Browse Products",
+    "comingSoon.status": "Under Development",
+    "comingSoon.contactInfo": "Need assistance? Contact us at"
 }

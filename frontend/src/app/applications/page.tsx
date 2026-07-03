@@ -1,17 +1,17 @@
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
-import ResourcesPageClient from './ResourcesPageClient';
+import ComingSoonPage from '@/components/ComingSoonPage';
 
 export const metadata = {
-  title: 'Resources | SHIELDER',
-  description: 'Resources and documentation for industrial filtration solutions.',
+  title: 'Applications | SHIELDER',
+  description: 'Industrial filtration applications for heavy-duty equipment.',
 };
 
-export default function ResourcesPage() {
+export default function ApplicationsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <LandingNavbar />
-      <ResourcesPageClient />
+      <ComingSoonPage />
       <LandingFooter />
     </div>
   );

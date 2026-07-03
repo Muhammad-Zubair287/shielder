@@ -159,7 +159,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
             onClick={handleAddToCart}
             disabled={cartLoading || product.stock === 0}
             aria-label={`Add ${product.name} to cart`}
-            className={`mt-3 w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isRTL ? 'flex-row-reverse' : ''}`}>
+            className={`mt-3 w-full bg-[#0D2F8C] hover:bg-[#004A99] text-white font-semibold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isRTL ? 'flex-row-reverse' : ''}`}>
             <ShoppingCart size={15} />
             {t('productsAddToCart')}
           </button>
