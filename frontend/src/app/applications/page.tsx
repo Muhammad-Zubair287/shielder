@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function ApplicationsPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col pt-[80px]">
       <LandingNavbar />
       <ComingSoonPage />
       <LandingFooter />

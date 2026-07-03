@@ -162,7 +162,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <LandingNavbar />
 
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-[120px]">
 
         {/* ── Hero contact card ──────────────────────────────────────────── */}
         <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14" data-aos="fade-up" data-aos-duration="1000">

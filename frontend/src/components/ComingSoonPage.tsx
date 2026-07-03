@@ -38,7 +38,7 @@ export default function ComingSoonPage({ title }: ComingSoonPageProps) {
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="max-w-4xl w-full">
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl">
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 p-6 sm:p-8 lg:p-10">
               {/* Left Side - Illustration */}
               <div className="flex items-center justify-center">

@@ -153,7 +153,7 @@ export default function MyQuotationsPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <LandingNavbar />
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className="flex-1 pt-[120px] pb-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
 
           {/* Header */}

@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <LandingNavbar />
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className="flex-1 pt-[120px] pb-16">
         {/* Hero Section */}
         <section className="bg-[#0A1E36] text-white py-16 md:py-24 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-1/3 h-full bg-[#F97216]/10 skew-x-12 translate-x-1/2" />

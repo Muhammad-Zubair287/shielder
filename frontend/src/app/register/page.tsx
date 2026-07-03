@@ -67,7 +67,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-10 relative">
         {/* Back Button */}
         <button
-          onClick={() => router.push(ROUTES.LOGIN)}
+          onClick={() => router.replace(ROUTES.LOGIN)}
           className={`absolute top-6 ${isRTL ? 'right-6' : 'left-6'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg`}
           aria-label={t('backToLogin')}
         >
@@ -86,7 +86,7 @@ export default function RegisterPage() {
 
         <div className="text-center mt-8 text-sm text-gray-600">
           {t('alreadyHaveAccount')}{' '}
-          <Link href={ROUTES.LOGIN} className="text-[#FF6B35] font-semibold hover:text-[#FF5722]">
+          <Link href={ROUTES.LOGIN} className="text-[#004A99] font-semibold hover:text-[#0D2F8C]">
             {t('signIn')}
           </Link>
         </div>

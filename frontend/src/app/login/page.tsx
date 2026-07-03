@@ -402,7 +402,7 @@ function LoginPageContent() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full mt-8 bg-[#FF6B35] hover:bg-[#FF5722] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                    className="w-full mt-8 bg-[#004A99] hover:bg-[#0D2F8C] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                   >
                     {isSubmitting ? t('loading') || 'Loading...' : 'Continue'}
                   </button>
@@ -412,7 +412,7 @@ function LoginPageContent() {
                   type="button"
                   onClick={handleResendVerification}
                   disabled={isResendingVerification || isSubmitting}
-                  className="w-full mt-3 border border-[#FF6B35] text-[#FF6B35] hover:bg-[#FFF2EC] font-medium py-3 rounded-xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full mt-3 border border-[#004A99] text-[#004A99] hover:bg-[#0D2F8C] font-medium py-3 rounded-xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isResendingVerification ? 'Sending verification email...' : 'Resend verification email'}
                 </button>
@@ -422,12 +422,13 @@ function LoginPageContent() {
             <div className="mt-8 text-center text-gray-600">
               <p className="text-sm">
                 {t('dontHaveAccount')}{' '}
-                <Link
-                  href={ROUTES.REGISTER}
-                  className="text-[#FF6B35] font-semibold hover:text-[#FF5722] transition-colors"
+                <button
+                  type="button"
+                  onClick={() => router.replace(ROUTES.REGISTER)}
+                  className="text-[#004A99] font-semibold hover:text-[#0D2F8C] transition-colors"
                 >
                   {t('signUp')}
-                </Link>
+                </button>
               </p>
             </div>
           </div>

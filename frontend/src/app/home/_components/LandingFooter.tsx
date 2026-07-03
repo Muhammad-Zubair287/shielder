@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Mail, Facebook, Linkedin, Youtube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl } from '@/utils/helpers';
-import ScrollReveal from './ScrollReveal';
+
 
 export default function LandingFooter() {
   const { t, isRTL } = useLanguage();
@@ -41,8 +41,7 @@ export default function LandingFooter() {
   const getResourceKey = (index: number) => `resource-${index}`;
 
   return (
-    <ScrollReveal className="bg-[#0A1E36] text-white" delayMs={20} threshold={0.12} durationMs={1000}>
-      <footer dir={isRTL ? 'rtl' : 'ltr'}>
+    <footer className="bg-[#0A1E36] text-white" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
 
@@ -167,7 +166,6 @@ export default function LandingFooter() {
             </div>
           </div>
         </div>
-      </footer>
-    </ScrollReveal>
+    </footer>
   );
 }

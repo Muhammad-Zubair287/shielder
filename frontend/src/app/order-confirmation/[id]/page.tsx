@@ -166,7 +166,7 @@ function OrderConfirmationPageInner() {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <LandingNavbar />
-        <main className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center pt-24">
+        <main className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center pt-[120px]">
           <AlertCircle size={48} className="text-red-400" />
           <p className="text-lg font-semibold text-gray-700">{error || t('orderConfirmation.notFound')}</p>
           <Link href="/my-orders" className="text-[#F97316] hover:underline font-medium">
@@ -190,7 +190,7 @@ function OrderConfirmationPageInner() {
     <div className="min-h-screen bg-gray-50 flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <LandingNavbar />
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className="flex-1 pt-[120px] pb-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
 
           {/* Success Header */}

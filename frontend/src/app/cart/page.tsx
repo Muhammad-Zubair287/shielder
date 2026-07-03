@@ -90,7 +90,7 @@ export default function CartPage() {
       <LandingNavbar />
 
       {/* Main content */}
-      <main className="flex-1 pt-24 pb-32 sm:pb-16">
+      <main className="flex-1 pt-[120px] pb-32 sm:pb-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
 
           {/* Page header */}
