@@ -50,11 +50,11 @@ export default function LandingFooter() {
               <Link href="/home" className="inline-block">
                 <div className="relative h-16 w-40">
                   <Image
-                    src={getImageUrl('uploads/New landing pages images/shielder new footer logo.png') || '/images/shielder-logo.png'}
+                    src={getImageUrl('uploads/New landing pages images/shielder image 23.png') || '/images/login image 112.png'}
                     alt="Shielder"
                     fill
                     className="object-contain"
-                    sizes="160px"
+                    sizes="1000px"
                   />
                 </div>
               </Link>

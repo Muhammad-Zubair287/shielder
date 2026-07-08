@@ -10,10 +10,10 @@ export default function MissionVision() {
 
   return (
     <ScrollReveal className="bg-gray-50" delayMs={30} threshold={0.16} durationMs={1000}>
-      <section dir={isRTL ? 'rtl' : 'ltr'} className="py-24 lg:py-28">
+      <section dir={isRTL ? 'rtl' : 'ltr'} className="pt-8 pb-24 lg:pt-12 lg:pb-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <p className="text-[#004A99] font-semibold text-sm tracking-[0.2em] uppercase mb-4">
               {t('aboutOurPurpose') || 'Our Purpose'}
             </p>
@@ -35,7 +35,7 @@ export default function MissionVision() {
                 </h3>
               </div>
               <p className="text-gray-700 text-base leading-relaxed">
-                {t('aboutMissionText') || 'To provide world-class filtration solutions that protect equipment, enhance performance, and exceed customer expectations through continuous innovation, uncompromising quality, and exceptional service.'}
+                {t('aboutMissionText') || 'To deliver reliable, high-performance filtration solutions that protect equipment, enhance efficiency, and support the success of our customers worldwide.'}
               </p>
             </div>
 
@@ -50,7 +50,7 @@ export default function MissionVision() {
                 </h3>
               </div>
               <p className="text-gray-700 text-base leading-relaxed">
-                {t('aboutVisionText') || 'To be the global leader in industrial filtration, recognized for innovation, reliability, and sustainability. We aspire to set the industry standard while building lasting partnerships with customers worldwide.'}
+                {t('aboutVisionText') || 'To become a leading global filtration brand recognized for quality, innovation, and customer trust.'}
               </p>
             </div>
           </div>

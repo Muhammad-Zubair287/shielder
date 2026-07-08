@@ -27,7 +27,7 @@ export default function AboutPage() {
         <MissionVision />
         <CoreValues />
         <CompanyTimeline />
-        <IndustriesSection />
+        {/* <IndustriesSection /> */}
         <WhyChooseUs />
         <StatisticsSection />
         <CertificationsSection />

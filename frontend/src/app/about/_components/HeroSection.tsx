@@ -57,11 +57,11 @@ export default function HeroSection() {
             </h1>
 
             <p className="text-base sm:text-lg font-normal leading-relaxed text-gray-200 max-w-[500px]" style={introStyle(200)}>
-              {t('aboutHeroSubtitle') || 'Built to Protect. Engineered to Perform. Since 1994.'}
+              {t('aboutHeroSubtitle') || 'Protecting Engines. Powering Industries. Since 1994.'}
             </p>
 
             <p className="text-sm sm:text-base text-gray-300 max-w-[600px]" style={introStyle(250)}>
-              {t('aboutHeroDescription') || 'Delivering premium filtration solutions for heavy-duty equipment and industrial applications for more than three decades.'}
+              {t('aboutHeroDescription') || 'Founded in 1994, SHIELDER was built on a simple principle: deliver filtration solutions that customers can trust in the most demanding environments. What began as a specialized supplier of filtration products has grown into a trusted brand serving industries across power generation, transportation, construction, mining, agriculture, and industrial applications.'}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2" style={introStyle(300)}>

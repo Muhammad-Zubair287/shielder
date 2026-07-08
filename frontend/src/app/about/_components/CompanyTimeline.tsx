@@ -11,42 +11,42 @@ const timelineEvents = [
     year: '1994',
     icon: Factory,
     title: 'Company Founded',
-    description: 'SHIELDER was established with a vision to provide premium filtration solutions for industrial applications.'
+    description: 'Company established with a focus on filtration solutions for diesel engines and industrial equipment.'
   },
   {
     key: 'aboutTimeline2000',
     year: '2000',
     icon: Rocket,
     title: 'Product Expansion',
-    description: 'Expanded our product line to include a comprehensive range of filters for diverse industrial needs.'
+    description: 'Expanded product portfolio to serve transportation and heavy equipment sectors.'
   },
   {
     key: 'aboutTimeline2008',
     year: '2008',
     icon: Cpu,
     title: 'Advanced Filtration Technology',
-    description: 'Invested in state-of-the-art R&D, introducing advanced filtration technologies to the market.'
+    description: 'Introduced advanced filtration technologies to meet evolving engine requirements.'
   },
   {
     key: 'aboutTimeline2015',
     year: '2015',
     icon: Globe,
     title: 'Regional Expansion',
-    description: 'Extended our reach across the Middle East and Asia, serving customers in multiple countries.'
+    description: 'Expanded distribution network to serve customers across multiple regional markets.'
   },
   {
     key: 'aboutTimeline2020',
     year: '2020',
     icon: CheckCircle,
     title: 'Quality Control Enhancement',
-    description: 'Implemented ISO-certified quality management systems and enhanced testing protocols.'
+    description: 'Enhanced quality control systems and broadened coverage for power generation and industrial applications.'
   },
   {
     key: 'aboutTimelineToday',
     year: 'Today',
     icon: TrendingUp,
     title: 'Trusted Global Filtration Partner',
-    description: 'Serving thousands of customers worldwide with innovative, reliable filtration solutions.'
+    description: 'A trusted filtration partner serving diverse industries with a comprehensive range of premium filtration products.'
   }
 ];
 

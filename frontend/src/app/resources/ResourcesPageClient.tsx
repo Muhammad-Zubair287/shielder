@@ -230,28 +230,72 @@ const claimSteps = [
 
 const faqGroups = [
   {
-    category: 'Products',
+    category: 'General',
     items: [
       {
         question: 'What types of filters does SHIELDER manufacture?',
-        answer: 'SHIELDER supplies filtration products for air, oil, fuel, hydraulic, cabin, and coolant applications across heavy-duty and industrial equipment.',
+        answer: 'SHIELDER offers a complete range of filtration products including Air Filters, Oil Filters, Fuel Filters, Hydraulic Filters, Cabin Filters, and Coolant Filters for heavy-duty equipment and engines.',
       },
       {
         question: 'Which industries do your filters serve?',
-        answer: 'SHIELDER products support trucking, construction, mining, agriculture, power generation, and industrial plant operations.',
+        answer: 'Our filters are designed for generator sets, heavy-duty trucks, construction equipment, mining machinery, agricultural equipment, industrial engines, marine applications, and material handling equipment.',
       },
       {
-        question: 'Are SHIELDER filters OEM compatible?',
-        answer: 'Many SHIELDER filters are designed as compatible replacement options. Always verify the part number and application before installation.',
+        question: 'How do I find the correct filter for my equipment?',
+        answer: 'You can search by equipment model, engine model, OEM part number, or use our Cross Reference tool to identify the correct replacement filter.',
       },
       {
-        question: 'Can SHIELDER replace OEM brands?',
-        answer: 'Yes, SHIELDER can often provide replacement options for OEM filter references when the correct cross-reference and specifications are confirmed.',
+        question: 'Are SHIELDER filters compatible with OEM equipment?',
+        answer: 'Yes. Our filters are designed to meet or exceed OEM specifications and are compatible with a wide range of engines and equipment.',
+      },
+      {
+        question: 'Can SHIELDER filters replace OEM filter brands?',
+        answer: 'Yes. Many SHIELDER filters are direct replacements for leading OEM and aftermarket filter brands while maintaining high filtration performance.',
+      },
+      {
+        question: 'What are the benefits of using high-quality filters?',
+        answer: 'High-quality filters help:\n\nExtend engine life\nImprove fuel efficiency\nReduce maintenance costs\nProtect critical engine components\nMaximize equipment uptime',
+      },
+      {
+        question: 'How often should filters be replaced?',
+        answer: 'Replacement intervals depend on equipment type, operating conditions, and manufacturer recommendations. Always follow the equipment maintenance schedule.',
+      },
+      {
+        question: 'Do you offer filters for diesel generators?',
+        answer: 'Yes. We provide filtration solutions for a wide range of diesel generator engines used in standby, prime, and continuous power applications.',
+      },
+      {
+        question: 'Do you provide filters for heavy equipment and trucks?',
+        answer: 'Yes. We supply filters for construction machinery, mining equipment, agricultural machinery, and commercial trucks.',
+      },
+      {
+        question: 'What quality standards do SHIELDER filters follow?',
+        answer: 'Our products undergo strict quality control and performance testing to ensure durability, reliability, and consistent filtration efficiency.',
+      },
+      {
+        question: 'How can I verify a filter part number?',
+        answer: 'You can contact our technical support team or use our Cross Reference section to verify compatibility and equivalent part numbers.',
+      },
+      {
+        question: 'Do you provide bulk orders and distributor support?',
+        answer: 'Yes. We support distributors, dealers, fleet operators, generator manufacturers, and industrial customers worldwide.',
+      },
+      {
+        question: 'Do your filters come with a warranty?',
+        answer: 'Yes. SHIELDER products are backed by a warranty against manufacturing defects. Please refer to our Warranty Policy for details.',
+      },
+      {
+        question: 'How can I become a SHIELDER distributor?',
+        answer: 'Visit our Contact Us page and submit your company information. Our sales team will review your application and contact you.',
+      },
+      {
+        question: 'How can I contact technical support?',
+        answer: 'You can reach our technical support team through our Contact Us page, email, or telephone for assistance with filter selection and product inquiries.',
       },
     ],
   },
   {
-    category: 'Technical',
+    category: 'Technical Questions',
     items: [
       {
         question: 'What is filtration efficiency?',
@@ -262,24 +306,24 @@ const faqGroups = [
         answer: 'Micron rating indicates the particle size a filter media is designed to capture. Lower micron values generally represent finer filtration.',
       },
       {
-        question: 'Can clogged filters damage an engine?',
-        answer: 'Yes. Restricted filtration can reduce flow, increase stress on systems, lower performance, and contribute to premature equipment wear.',
-      },
-      {
         question: 'What happens if I use the wrong filter?',
         answer: 'An incorrect filter can cause poor sealing, restricted flow, contamination bypass, pressure issues, or component damage.',
+      },
+      {
+        question: 'Can clogged filters damage an engine?',
+        answer: 'Yes. Restricted filtration can reduce flow, increase stress on systems, lower performance, and contribute to premature equipment wear.',
       },
     ],
   },
   {
-    category: 'Orders & Shipping',
+    category: 'Ordering & Shipping',
     items: [
       {
         question: 'Do you ship internationally?',
         answer: 'International availability depends on product, order quantity, and destination. Contact the SHIELDER team for regional support.',
       },
       {
-        question: 'What are delivery times?',
+        question: 'What are your delivery times?',
         answer: 'Delivery times vary by location, stock availability, and logistics method. The sales team can confirm estimates for your order.',
       },
       {
@@ -289,40 +333,19 @@ const faqGroups = [
     ],
   },
   {
-    category: 'Warranty',
+    category: 'Warranty & Returns',
     items: [
       {
-        question: 'Do products include warranty?',
-        answer: 'Eligible SHIELDER products include warranty coverage subject to the applicable terms, usage conditions, and claim validation.',
-      },
-      {
-        question: 'Return policy?',
+        question: 'What is your return policy?',
         answer: 'Returns are reviewed case by case based on product condition, purchase verification, and whether the item is eligible for return.',
       },
       {
-        question: 'Warranty claims?',
+        question: 'How do I submit a warranty claim?',
         answer: 'Warranty claims require product information, issue details, supporting photos, and review by the technical support team.',
       },
-    ],
-  },
-  {
-    category: 'Support',
-    items: [
       {
-        question: 'How do I find the correct filter?',
-        answer: 'Use the part number, equipment model, application details, and current filter reference to confirm the correct replacement.',
-      },
-      {
-        question: 'How do I verify a part number?',
-        answer: 'Share the part number with technical support so the team can validate fitment, specifications, and replacement options.',
-      },
-      {
-        question: 'How can I contact technical support?',
-        answer: 'Use the contact options on this page. Contact details are loaded from company settings managed by the admin team.',
-      },
-      {
-        question: 'How can I become a distributor?',
-        answer: 'Contact the sales team through the distributor section to discuss regional coverage, product categories, and partnership requirements.',
+        question: 'What information is required for a claim?',
+        answer: 'Submit product details, issue description, supporting photos, and any available purchase information to help the team review your claim efficiently.',
       },
     ],
   },
@@ -399,17 +422,41 @@ const arText: Record<string, string> = {
   'The support team coordinates the approved replacement, credit, or recommended resolution.': 'ينسق فريق الدعم الاستبدال المعتمد أو الرصيد أو الحل الموصى به.',
   'Products': 'المنتجات',
   'Technical': 'فني',
-  'Orders & Shipping': 'الطلبات والشحن',
   'Warranty': 'الضمان',
   'Support': 'الدعم',
+  'General': 'عام',
+  'Technical Questions': 'أسئلة فنية',
+  'Warranty & Returns': 'الضمان والإرجاع',
   'What types of filters does SHIELDER manufacture?': 'ما أنواع الفلاتر التي تصنعها شيلدر؟',
-  'SHIELDER supplies filtration products for air, oil, fuel, hydraulic, cabin, and coolant applications across heavy-duty and industrial equipment.': 'توفر شيلدر منتجات ترشيح للهواء والزيت والوقود والهيدروليك والمقصورة وسائل التبريد للمعدات الثقيلة والصناعية.',
+  'SHIELDER offers a complete range of filtration products including Air Filters, Oil Filters, Fuel Filters, Hydraulic Filters, Cabin Filters, and Coolant Filters for heavy-duty equipment and engines.': 'تقدم شيلدر مجموعة كاملة من منتجات الترشيح بما في ذلك فلاتر الهواء وفلاتر الزيت وفلاتر الوقود والفلاتر الهيدروليكية وفلاتر المقصورة وفلاتر سائل التبريد للمعدات الثقيلة والمحركات.',
   'Which industries do your filters serve?': 'ما الصناعات التي تخدمها فلاتركم؟',
-  'SHIELDER products support trucking, construction, mining, agriculture, power generation, and industrial plant operations.': 'تدعم منتجات شيلدر الشاحنات والإنشاءات والتعدين والزراعة وتوليد الطاقة وعمليات المصانع الصناعية.',
-  'Are SHIELDER filters OEM compatible?': 'هل فلاتر شيلدر متوافقة مع فلاتر المصنع الأصلي؟',
-  'Many SHIELDER filters are designed as compatible replacement options. Always verify the part number and application before installation.': 'تم تصميم العديد من فلاتر شيلدر كخيارات استبدال متوافقة. تحقق دائمًا من رقم القطعة والتطبيق قبل التركيب.',
-  'Can SHIELDER replace OEM brands?': 'هل يمكن لشيلدر استبدال علامات المصنع الأصلي؟',
-  'Yes, SHIELDER can often provide replacement options for OEM filter references when the correct cross-reference and specifications are confirmed.': 'نعم، يمكن لشيلدر غالبًا توفير بدائل لمراجع فلاتر المصنع الأصلي عند تأكيد المرجع البديل والمواصفات الصحيحة.',
+  'Our filters are designed for generator sets, heavy-duty trucks, construction equipment, mining machinery, agricultural equipment, industrial engines, marine applications, and material handling equipment.': 'تم تصميم فلاترنا لمجموعات المولدات والشاحنات الثقيلة ومعدات البناء والآلات التعدين ومعدات الزراعة والمحركات الصناعية والتطبيقات البحرية ومعدات التعامل مع المواد.',
+  'How do I find the correct filter for my equipment?': 'كيف أجد الفلتر الصحيح لمعدتي؟',
+  'You can search by equipment model, engine model, OEM part number, or use our Cross Reference tool to identify the correct replacement filter.': 'يمكنك البحث حسب موديل المعدة أو موديل المحرك أو رقم قطعة المصنع الأصلي أو استخدام أداة المراجع البديلة لتحديد الفلتر البديل الصحيح.',
+  'Are SHIELDER filters compatible with OEM equipment?': 'هل فلاتر شيلدر متوافقة مع معدات المصنع الأصلي؟',
+  'Yes. Our filters are designed to meet or exceed OEM specifications and are compatible with a wide range of engines and equipment.': 'نعم. تم تصميم فلاترنا لتلبية أو تجاوز مواصفات المصنع الأصلي وهي متوافقة مع مجموعة واسعة من المحركات والمعدات.',
+  'Can SHIELDER filters replace OEM filter brands?': 'هل يمكن لفلاتر شيلدر استبدال علامات فلاتر المصنع الأصلي؟',
+  'Yes. Many SHIELDER filters are direct replacements for leading OEM and aftermarket filter brands while maintaining high filtration performance.': 'نعم. العديد من فلاتر شيلدر هي بدائل مباشرة لعلامات فلاتر المصنع الأصلي الرائدة والعلامات التجارية البديلة مع الحفاظ على أداء ترشيح عالي.',
+  'What are the benefits of using high-quality filters?': 'ما هي فوائد استخدام الفلاتر عالية الجودة؟',
+  'High-quality filters help:\n\nExtend engine life\nImprove fuel efficiency\nReduce maintenance costs\nProtect critical engine components\nMaximize equipment uptime': 'تساعد الفلاتر عالية الجودة على:\n\nإطالة عمر المحرك\nتحسين كفاءة الوقود\nتقليل تكاليف الصيانة\nحماية مكونات المحرك الحرجة\nتعظيم وقت تشغيل المعدات',
+  'How often should filters be replaced?': 'كم مرة يجب استبدال الفلاتر؟',
+  'Replacement intervals depend on equipment type, operating conditions, and manufacturer recommendations. Always follow the equipment maintenance schedule.': 'تعتمد فترات الاستبدال على نوع المعدة وظروف التشغيل وتوصيات الشركة المصنعة. اتبع دائمًا جدول صيانة المعدة.',
+  'Do you offer filters for diesel generators?': 'هل تقدمون فلاتر للمولدات الديزل؟',
+  'Yes. We provide filtration solutions for a wide range of diesel generator engines used in standby, prime, and continuous power applications.': 'نعم. نقدم حلول ترشيح لمجموعة واسعة من محركات المولدات الديزل المستخدمة في تطبيقات الطاقة الاحتياطية والرئيسية والمستمرة.',
+  'Do you provide filters for heavy equipment and trucks?': 'هل تقدمون فلاتر للمعدات الثقيلة والشاحنات؟',
+  'Yes. We supply filters for construction machinery, mining equipment, agricultural machinery, and commercial trucks.': 'نعم. نورد فلاتر لآلات البناء ومعدات التعدين والآلات الزراعية والشاحنات التجارية.',
+  'What quality standards do SHIELDER filters follow?': 'ما معايير الجودة التي تتبعها فلاتر شيلدر؟',
+  'Our products undergo strict quality control and performance testing to ensure durability, reliability, and consistent filtration efficiency.': 'تخضع منتجاتنا لمراقبة جودة صارمة واختبارات أداء لضمان المتانة والموثوقية وكفاءة ترشيح متسقة.',
+  'How can I verify a filter part number?': 'كيف يمكنني التحقق من رقم قطعة الفلتر؟',
+  'You can contact our technical support team or use our Cross Reference section to verify compatibility and equivalent part numbers.': 'يمكنك الاتصال بفريق الدعم الفني لدينا أو استخدام قسم المراجع البديلة للتحقق من التوافق وأرقام القطع المكافئة.',
+  'Do you provide bulk orders and distributor support?': 'هل تقدمون طلبات بالجملة ودعم للموزعين؟',
+  'Yes. We support distributors, dealers, fleet operators, generator manufacturers, and industrial customers worldwide.': 'نعم. ندعم الموزعين والوكلاء ومشغلي الأساطل ومصنعي المولدات والعملاء الصناعيين في جميع أنحاء العالم.',
+  'Do your filters come with a warranty?': 'هل تأتي فلاتركم مع ضمان؟',
+  'Yes. SHIELDER products are backed by a warranty against manufacturing defects. Please refer to our Warranty Policy for details.': 'نعم. منتجات شيلدر مدعومة بضمان ضد عيوب التصنيع. يرجى الرجوع إلى سياسة الضمان لدينا للحصول على التفاصيل.',
+  'How can I become a SHIELDER distributor?': 'كيف يمكنني أن أصبح موزعًا لشيلدر؟',
+  'Visit our Contact Us page and submit your company information. Our sales team will review your application and contact you.': 'قم بزيارة صفحة تواصل معنا وأرسل معلومات شركتك. سيقوم فريق المبيعات بمراجعة طلبك والتواصل معك.',
+  'How can I contact technical support?': 'كيف يمكنني التواصل مع الدعم الفني؟',
+  'You can reach our technical support team through our Contact Us page, email, or telephone for assistance with filter selection and product inquiries.': 'يمكنك الوصول إلى فريق الدعم الفني لدينا من خلال صفحة تواصل معنا أو البريد الإلكتروني أو الهاتف للحصول على مساعدة في اختيار الفلاتر والاستفسارات عن المنتجات.',
   'What is filtration efficiency?': 'ما هي كفاءة الترشيح؟',
   'Filtration efficiency describes how effectively a filter removes particles of a specific size from air, fuel, oil, coolant, or hydraulic fluid.': 'تصف كفاءة الترشيح مدى فعالية الفلتر في إزالة جسيمات بحجم محدد من الهواء أو الوقود أو الزيت أو سائل التبريد أو السائل الهيدروليكي.',
   'What is micron rating?': 'ما هو تصنيف الميكرون؟',
@@ -434,8 +481,6 @@ const arText: Record<string, string> = {
   'Use the part number, equipment model, application details, and current filter reference to confirm the correct replacement.': 'استخدم رقم القطعة وموديل المعدة وتفاصيل التطبيق ومرجع الفلتر الحالي لتأكيد البديل الصحيح.',
   'How do I verify a part number?': 'كيف أتحقق من رقم القطعة؟',
   'Share the part number with technical support so the team can validate fitment, specifications, and replacement options.': 'شارك رقم القطعة مع الدعم الفني ليتمكن الفريق من التحقق من الملاءمة والمواصفات وخيارات الاستبدال.',
-  'How can I contact technical support?': 'كيف يمكنني التواصل مع الدعم الفني؟',
-  'Use the contact options on this page. Contact details are loaded from company settings managed by the admin team.': 'استخدم خيارات التواصل في هذه الصفحة. يتم تحميل بيانات التواصل من إعدادات الشركة التي يديرها فريق الإدارة.',
   'How can I become a distributor?': 'كيف يمكنني أن أصبح موزعًا؟',
   'Contact the sales team through the distributor section to discuss regional coverage, product categories, and partnership requirements.': 'تواصل مع فريق المبيعات من قسم الموزعين لمناقشة التغطية الإقليمية وفئات المنتجات ومتطلبات الشراكة.',
   'SHIELDER Knowledge Center': 'مركز معرفة شيلدر',
@@ -776,9 +821,9 @@ export default function ResourcesPageClient() {
       <SectionShell id="faq" eyebrow="Knowledge Base" title="Frequently Asked Questions (FAQ)" description="Searchable, categorized answers for products, technical topics, orders, warranty, and support." tone="light">
         <div className="grid gap-6 lg:grid-cols-5">
           {faqGroups.map((group) => (
-            <div key={group.category} className="lg:col-span-1">
-              <div className="sticky top-32 rounded-2xl border border-gray-100 bg-white p-5 shadow-lg">
-                <h3 className="text-lg font-extrabold text-[#0A1E36]">{l(group.category)}</h3>
+            <div key={group.category} className="lg:col-span-1 flex">
+              <div className="sticky top-32 flex w-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-lg">
+                <h3 className="text-lg font-extrabold leading-tight text-[#0A1E36]">{l(group.category)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-500">{group.items.length} {l('common questions')}</p>
               </div>
             </div>
@@ -862,17 +907,25 @@ export default function ResourcesPageClient() {
       <section id="distributor-locator" className="scroll-mt-36 bg-white py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal delayMs={30} threshold={0.12} durationMs={900}>
-            <div className="relative overflow-hidden rounded-2xl bg-[#123C9C] p-8 text-white shadow-2xl sm:p-10 lg:p-12">
-              <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-gradient-to-l from-white/12 to-transparent lg:block" />
-              <div className={`relative z-10 max-w-2xl ${isRTL ? 'text-right' : ''}`}>
+            <div className="bg-gradient-to-r from-[#0A1E36] to-[#123C9C] rounded-3xl p-12 lg:p-16 text-center relative overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 50%, white 1px, transparent 1px)',
+                  backgroundSize: '50px 50px'
+                }}></div>
+              </div>
+
+              {/* Content */}
+              <div className={`relative z-10 max-w-2xl ${isRTL ? 'text-right' : 'text-left'}`}>
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/12 px-4 py-2 text-xs font-bold uppercase tracking-[0.4px] ring-1 ring-white/20">
                   <LocateFixed size={15} />
                   {l('Distributor Locator')}
                 </span>
-                <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
                   {l('Looking for an Authorized Distributor?')}
                 </h2>
-                <p className="mt-4 text-base leading-relaxed text-white/78">
+                <p className="mt-4 text-base leading-relaxed text-white">
                   {l('Our distributor network is continuously expanding. Contact our sales team to locate your nearest SHIELDER distributor.')}
                 </p>
                 <Link href="/contact" className="mt-8 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-7 text-sm font-bold text-[#123C9C] shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl">

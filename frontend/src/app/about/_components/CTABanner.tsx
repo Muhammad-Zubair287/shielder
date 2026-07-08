@@ -39,7 +39,7 @@ export default function CTABanner() {
                   <ArrowRight size={18} className={isRTL ? 'rotate-180' : ''} />
                 </Link>
                 <Link
-                  href="/contact"
+                  href="/products?type=quotation"
                   className="inline-flex items-center gap-2 bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#0A1E36] font-bold text-sm h-[52px] px-10 rounded-lg transition-all duration-300"
                 >
                   {t('aboutCtaButton2') || 'Request Quotation'}
