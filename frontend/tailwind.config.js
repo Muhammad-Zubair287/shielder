@@ -4,6 +4,7 @@ module.exports = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/utils/**/*.{js,ts}',
     './public/locales/**/*.json',
   ],
   // RTL/LTR: Tailwind v3.3+ ships `rtl:` and `ltr:` variants out-of-the-box.

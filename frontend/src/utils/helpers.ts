@@ -67,7 +67,11 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
         host === '0.0.0.0' ||
         host === '::1';
 
-      return isLocalHost ? `http://${host}:5001` : window.location.origin;
+      // On localhost fall back to the default backend dev port.
+      // On a real server NEXT_PUBLIC_UPLOADS_BASE_URL or NEXT_PUBLIC_API_URL
+      // must be set — do NOT use window.location.origin because the frontend
+      // and backend are on different ports/domains.
+      return isLocalHost ? `http://${host}:5001` : '';
     }
 
     return 'http://localhost:5001';

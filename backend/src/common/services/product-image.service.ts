@@ -260,6 +260,17 @@ export const copyExistingImageToUploads = (sourceRelative: string, productId = '
 };
 
 const getRequestOrigin = (req: Request): string => {
+  // APP_URL is the canonical public URL of the backend (e.g. http://1.2.3.4:5000).
+  // When set, use it directly so image URLs are always correct regardless of
+  // reverse-proxy header configuration.
+  const appUrl = process.env.APP_URL || process.env.BASE_URL;
+  if (appUrl) {
+    const raw = appUrl.startsWith('http://') || appUrl.startsWith('https://')
+      ? appUrl
+      : `https://${appUrl}`;
+    return raw.replace(/\/$/, '');
+  }
+
   const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
   const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
   const isProduction = process.env.NODE_ENV === 'production';

@@ -48,8 +48,8 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
           <div
-            className={`h-full transition-all duration-300 ${strength.color}`}
-            style={{ width: `${strength.percentage}%` }}
+            className="h-full transition-all duration-300"
+            style={{ width: `${strength.percentage}%`, backgroundColor: strength.color }}
           />
         </div>
       </div>

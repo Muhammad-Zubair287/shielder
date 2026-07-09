@@ -50,12 +50,12 @@ export function getPasswordStrength(password: string): {
   ];
 
   const colors = [
-    'bg-red-500',
-    'bg-orange-500',
-    'bg-yellow-500',
-    'bg-lime-500',
-    'bg-green-500',
-    'bg-green-500',
+    '#ef4444',
+    '#f97316',
+    '#eab308',
+    '#84cc16',
+    '#22c55e',
+    '#22c55e',
   ];
 
   const safeIndex = Math.max(0, Math.min(score, labels.length - 1));
