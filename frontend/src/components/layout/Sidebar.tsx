@@ -27,7 +27,8 @@ import {
   Clock,
   AlertCircle,
   PieChart,
-  MessageSquare
+  MessageSquare,
+  Smartphone
 } from 'lucide-react';
 import Image from 'next/image';
 import { clsx, type ClassValue } from 'clsx';
@@ -71,6 +72,7 @@ const superAdminMenuItems: MenuItem[] = [
       { nameKey: 'quotationReports', href: '/superadmin/quotations/reports', icon: PieChart },
     ]
   },
+  { nameKey: 'applications',   icon: Smartphone,  href: '/superadmin/applications' },
   { nameKey: 'reports',        icon: BarChart3, href: '/superadmin/reports' },
   { nameKey: 'inquiries',      icon: MessageSquare,   href: '/superadmin/inquiries', badge: true },
   { nameKey: 'notifications',  icon: Bell,      href: '/superadmin/notifications', badge: true },

@@ -141,6 +141,13 @@ export const API_ENDPOINTS = {
     STATUS: (id: string) => `admin/users/${id}/status`,
     RESET_PASSWORD: (id: string) => `admin/users/${id}/reset-password`,
   },
+  // Applications
+  APPLICATIONS: {
+    BASE: 'applications',
+    ACTIVE: 'applications/active',
+    BY_ID: (id: number) => `applications/${id}`,
+    STATUS: (id: number) => `applications/${id}/status`,
+  },
 } as const;
 
 /**

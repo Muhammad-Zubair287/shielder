@@ -953,3 +953,29 @@ enum ContactStatus {
   PENDING
   RESOLVED
 }
+
+enum ApplicationPlatform {
+  ANDROID
+  IOS
+}
+
+enum ApplicationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Application {
+  id              Int                 @id @default(autoincrement())
+  applicationName String              @map("application_name")
+  platform        ApplicationPlatform
+  description     String?
+  image           String?
+  downloadUrl     String              @map("download_url")
+  status          ApplicationStatus   @default(ACTIVE)
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([platform])
+  @@map("applications")
+}
