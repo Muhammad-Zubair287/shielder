@@ -30,11 +30,19 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
 
   // If it's already a full URL (http, https, blob, data), return as is
   if (
-    path.startsWith('http://') ||
     path.startsWith('https://') ||
     path.startsWith('blob:') ||
     path.startsWith('data:')
   ) {
+    return path;
+  }
+
+  // Upgrade http:// to https:// when the page is served over HTTPS
+  // (backend may return absolute http:// URLs which Next.js Image rejects on HTTPS pages)
+  if (path.startsWith('http://')) {
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      path = path.replace('http://', 'https://');
+    }
     return path;
   }
 

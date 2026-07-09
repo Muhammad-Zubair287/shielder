@@ -151,7 +151,7 @@ function ProductCard({ product, tab, t, isRTL, isAuthenticated, onProductClick, 
           <button
             onClick={e => { e.stopPropagation(); onProductClick(); }}
             aria-label={`Get quotation for ${product.name}`}
-            className={`mt-3 w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3 rounded-xl transition-colors inline-flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            className={`mt-3 w-full bg-[#0D2F8C] hover:bg-[#004A99] text-white font-semibold text-sm py-3 rounded-xl transition-colors inline-flex items-center justify-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
             {t('productsGetQuotation')}
           </button>
         ) : (
@@ -364,7 +364,7 @@ function ProductDetailModal({
                 <button
                   onClick={handleAddToQuotation}
                   disabled={product.stock === 0}
-                  className="w-full bg-[#0D1637] hover:bg-[#0a1128] text-white font-semibold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full bg-[#0D2F8C] hover:bg-[#004A99] text-white font-semibold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Download size={14} />
                   {t('productsGetQuotation')}
                 </button>
@@ -372,7 +372,7 @@ function ProductDetailModal({
                 <button
                   onClick={handleAddToCart}
                   disabled={cartLoading || product.stock === 0}
-                  className="w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-bold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full bg-[#0D2F8C] hover:bg-[#004A99] text-white font-bold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   <ShoppingCart size={16} />
                   {t('productsAddToCart')}
                 </button>

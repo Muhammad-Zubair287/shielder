@@ -123,7 +123,17 @@ export default function SuperAdminApplicationsPage() {
       closeModal();
       fetchApps();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to save application.');
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message;
+      let msg = 'Failed to save application.';
+      if (status === 413) {
+        msg = 'Image file is too large. Please use a smaller image (max 10MB).';
+      } else if (typeof serverMsg === 'string' && serverMsg.trim()) {
+        msg = serverMsg;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -137,7 +147,8 @@ export default function SuperAdminApplicationsPage() {
       toast.success('Application deleted successfully.');
       fetchApps();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to delete application.');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to delete application.';
+      toast.error(msg);
     }
   };
 
@@ -148,7 +159,8 @@ export default function SuperAdminApplicationsPage() {
       toast.success(`Application ${newStatus === 'ACTIVE' ? t('applicationsActivate') || 'activated' : t('applicationsDeactivate') || 'deactivated'}.`);
       fetchApps();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to update status.');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update status.';
+      toast.error(msg);
     }
   };
 
