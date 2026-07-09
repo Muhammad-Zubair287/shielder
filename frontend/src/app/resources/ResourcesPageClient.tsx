@@ -630,7 +630,7 @@ export default function ResourcesPageClient() {
     <div dir={isRTL ? 'rtl' : 'ltr'} className="overflow-hidden">
       <section className="relative mt-[112px] min-h-[560px] overflow-hidden bg-[#0A1E36]">
         <Image
-          src={getImageUrl('uploads/New landing pages images/industrial.png') || '/images/landing/Landing page.jpeg'}
+          src="/images/landing/industrial.png"
           alt="Industrial filtration resources"
           fill
           priority
@@ -738,7 +738,7 @@ export default function ResourcesPageClient() {
             <div key={guide.title} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
               <div className="relative h-40 bg-gray-100">
                 <Image
-                  src={getImageUrl(`uploads/New landing pages images/${guide.image}`) || '/images/landing/Landing page.jpeg'}
+                  src={`/images/landing/${guide.image}`}
                   alt={guide.title}
                   fill
                   className="object-cover"

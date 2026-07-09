@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Facebook, Linkedin, Youtube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getImageUrl } from '@/utils/helpers';
 
 
 export default function LandingFooter() {
@@ -50,7 +49,7 @@ export default function LandingFooter() {
               <Link href="/home" className="inline-block">
                 <div className="relative h-16 w-40">
                   <Image
-                    src={getImageUrl('uploads/New landing pages images/shielder image 23.png') || '/images/login image 112.png'}
+                    src="/images/landing/shielder image 23.png"
                     alt="Shielder"
                     fill
                     className="object-contain"

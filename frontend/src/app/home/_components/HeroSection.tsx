@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getImageUrl } from '@/utils/helpers';
 
 /**
  * Hero Section — /home
@@ -37,7 +36,7 @@ export default function HeroSection() {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <Image
-          src={isRTL ? '/images/landing/Hero section arabic image.png' : (getImageUrl('uploads/New landing pages images/Hero Section Image.png') || '/images/landing/Hero Section Image.png')}
+          src={isRTL ? '/images/landing/Hero section arabic image.png' : '/images/landing/Hero Section Image.png'}
           alt="Industrial background"
           fill
           priority

@@ -3,7 +3,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getImageUrl } from '@/utils/helpers';
 import ScrollReveal from '@/app/home/_components/ScrollReveal';
 
 const industries = [
@@ -63,7 +62,7 @@ export default function IndustriesSection() {
                 style={{ aspectRatio: '4/3' }}
               >
                 <Image
-                  src={industry.image ? getImageUrl(`uploads/New landing pages images/${industry.image}`) || `/images/landing/${industry.image}` : '/images/landing/Landing page.jpeg'}
+                  src={industry.image ? `/images/landing/${industry.image}` : '/images/landing/Landing page.jpeg'}
                   alt={t(industry.key) || industry.title}
                   fill
                   className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"

@@ -3,7 +3,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getImageUrl } from '@/utils/helpers';
 import ScrollReveal from '@/app/home/_components/ScrollReveal';
 
 export default function CompanyStory() {
@@ -40,7 +39,7 @@ export default function CompanyStory() {
             <div className={`relative ${isRTL ? 'lg:order-first' : ''}`}>
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <Image
-                  src={getImageUrl('uploads/New landing pages images/our story section image.png') || '/images/landing/Landing page.jpeg'}
+                  src="/images/landing/our story section image.png"
                   alt={t('aboutStoryImageAlt') || 'SHIELDER manufacturing facility'}
                   width={600}
                   height={500}

@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getImageUrl } from '@/utils/helpers';
 import ScrollReveal from './ScrollReveal';
 
 const POINTS = [
@@ -70,7 +69,7 @@ export default function WhyChooseUsSection() {
             {/* Image - Right side (or left in RTL) */}
             <div className={`relative ${isRTL ? 'lg:order-first' : ''}`}>
               <Image
-                src={getImageUrl('uploads/New landing pages images/Why choose us section image.png') || '/images/landing/Why choose us section image.png'}
+                src="/images/landing/Why choose us section image.png"
                 alt={t('landingWhyImageAlt') || 'Why Choose Shielder'}
                 width={600}
                 height={500}
