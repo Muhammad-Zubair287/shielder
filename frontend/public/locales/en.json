@@ -40,6 +40,7 @@
   "emailVerified": "Email Verified Successfully",
   "redirectingToLogin": "Redirecting you to the login page...",
   "verificationFailed": "Email Verification Failed",
+  "verificationFailedMessage": "The verification link is invalid, expired, or has already been used.",
   "invalidVerificationLink": "This verification link is invalid or has expired.",
   "resetPassword": "Reset Password",
   "enterNewPassword": "Enter your new password below",

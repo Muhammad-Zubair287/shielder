@@ -40,6 +40,7 @@
   "emailVerified": "تم التحقق من البريد الإلكتروني بنجاح",
   "redirectingToLogin": "جاري تحويلك إلى صفحة تسجيل الدخول...",
   "verificationFailed": "فشل التحقق من البريد الإلكتروني",
+  "verificationFailedMessage": "رابط التحقق غير صالح أو انتهت صلاحيته أو تم استخدامه بالفعل.",
   "invalidVerificationLink": "رابط التحقق هذا غير صالح أو انتهت صلاحيته.",
   "resetPassword": "إعادة تعيين كلمة المرور",
   "enterNewPassword": "أدخل كلمة المرور الجديدة أدناه",

@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+type VerifyState = 'loading' | 'success' | 'error';
 
 export default function VerifyEmailTokenPage() {
   const params = useParams();
@@ -13,55 +15,62 @@ export default function VerifyEmailTokenPage() {
   const tokenParam = params.token;
   const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [state, setState] = useState<VerifyState>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Prevent double-call from React Strict Mode or dependency re-runs.
+  const calledRef = useRef(false);
+  const routerRef = useRef(router);
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      if (!token) {
-        setError(t('invalidVerificationLink'));
-        setLoading(false);
-        return;
-      }
+    routerRef.current = router;
+  }, [router]);
 
-      try {
-        setLoading(true);
-        await authService.verifyEmail(token);
-        setSuccess(true);
-        setTimeout(() => router.replace('/login'), 3000);
-      } catch (err: unknown) {
-        const message =
+  useEffect(() => {
+    if (calledRef.current) return;
+    calledRef.current = true;
+
+    if (!token) {
+      setErrorMessage(t('invalidVerificationLink'));
+      setState('error');
+      return;
+    }
+
+    authService
+      .verifyEmail(token)
+      .then(() => {
+        setState('success');
+        setTimeout(() => routerRef.current.replace('/login'), 3000);
+      })
+      .catch((err: unknown) => {
+        const msg =
           typeof err === 'object' &&
           err !== null &&
-          'response' in err &&
-          typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
-            'string'
-            ? (err as { response: { data: { message: string } } }).response.data.message
-            : t('errors.verificationFailed');
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    verifyEmail();
-  }, [token, t, router]);
+          'message' in err &&
+          typeof (err as { message?: string }).message === 'string'
+            ? (err as { message: string }).message
+            : t('verificationFailedMessage');
+        setErrorMessage(msg);
+        setState('error');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-        {loading && (
+
+        {state === 'loading' && (
           <>
             <div className="mb-4">
-              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('verifyingEmail')}</h2>
             <p className="text-slate-600">{t('pleaseWait')}</p>
           </>
         )}
 
-        {success && !loading && (
+        {state === 'success' && (
           <>
             <div className="mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
@@ -71,11 +80,11 @@ export default function VerifyEmailTokenPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('emailVerified')}</h2>
-            <p className="text-slate-600 mb-6">{t('redirectingToLogin')}</p>
+            <p className="text-slate-600 mb-2">{t('redirectingToLogin')}</p>
           </>
         )}
 
-        {error && !loading && (
+        {state === 'error' && (
           <>
             <div className="mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
@@ -85,12 +94,13 @@ export default function VerifyEmailTokenPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-red-600 mb-2">{t('verificationFailed')}</h2>
-            <p className="text-slate-600 mb-6">{error}</p>
+            <p className="text-slate-600 mb-6">{errorMessage}</p>
             <Link href="/login" className="text-blue-600 hover:underline font-semibold">
               {t('backToLogin')}
             </Link>
           </>
         )}
+
       </div>
     </div>
   );

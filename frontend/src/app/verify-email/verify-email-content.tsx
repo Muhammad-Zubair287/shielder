@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { VALIDATION_RULES } from '@/utils/constants';
+
+type VerifyState = 'loading' | 'success' | 'error' | 'otp';
 
 export function VerifyEmailContent() {
   const router = useRouter();
@@ -17,9 +19,8 @@ export function VerifyEmailContent() {
   const sessionFromQuery = searchParams.get('session');
   const emailFromQuery = searchParams.get('email');
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [verifyState, setVerifyState] = useState<VerifyState>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [verificationSessionToken, setVerificationSessionToken] = useState(sessionFromQuery || '');
   const [verificationEmail, setVerificationEmail] = useState(emailFromQuery || '');
@@ -29,72 +30,82 @@ export function VerifyEmailContent() {
   const [showEmailChange, setShowEmailChange] = useState(false);
   const [newEmail, setNewEmail] = useState('');
 
-  useEffect(() => {
-    const isOtpMode = mode === 'otp';
+  // Prevent double-call from React Strict Mode.
+  const calledRef = useRef(false);
+  const routerRef = useRef(router);
 
-    if (isOtpMode) {
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
+
+  useEffect(() => {
+    if (mode === 'otp') {
       if (!verificationSessionToken || !verificationEmail) {
-        setError(t('auth.verificationSessionInvalid'));
+        setErrorMessage(t('auth.verificationSessionInvalid'));
+        setVerifyState('error');
+      } else {
+        setVerifyState('otp');
       }
-      setLoading(false);
       return;
     }
 
-    const verifyEmail = async () => {
-      if (!token) {
-        setError(t('invalidVerificationLink'));
-        setLoading(false);
-        return;
-      }
+    if (calledRef.current) return;
+    calledRef.current = true;
 
-      try {
-        setLoading(true);
-        await authService.verifyEmail(token);
-        setSuccess(true);
-        setTimeout(() => router.push('/login'), 3000);
-      } catch (err: unknown) {
-        const message =
+    if (!token) {
+      setErrorMessage(t('invalidVerificationLink'));
+      setVerifyState('error');
+      return;
+    }
+
+    authService
+      .verifyEmail(token)
+      .then(() => {
+        setVerifyState('success');
+        setTimeout(() => routerRef.current.replace('/login'), 3000);
+      })
+      .catch((err: unknown) => {
+        const msg =
           typeof err === 'object' &&
           err !== null &&
-          'response' in err &&
-          typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
-            'string'
-            ? (err as { response: { data: { message: string } } }).response.data.message
-            : t('errors.verificationFailed');
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    verifyEmail();
-  }, [token, t, router, mode, verificationSessionToken, verificationEmail]);
+          'message' in err &&
+          typeof (err as { message?: string }).message === 'string'
+            ? (err as { message: string }).message
+            : t('verificationFailedMessage');
+        setErrorMessage(msg);
+        setVerifyState('error');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, mode]);
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!verificationSessionToken) {
-      setError(t('auth.verificationSessionInvalid'));
+      setErrorMessage(t('auth.verificationSessionInvalid'));
+      setVerifyState('error');
       return;
     }
 
     if (!/^\d{6}$/.test(otpCode)) {
-      setError(t('auth.otpSixDigits'));
+      setErrorMessage(t('auth.otpSixDigits'));
+      setVerifyState('error');
       return;
     }
 
     try {
-      setError('');
+      setVerifyState('otp');
       setIsSubmittingOtp(true);
       await authService.verifyEmailOtp(verificationSessionToken, otpCode);
-      setSuccess(true);
+      setVerifyState('success');
       toast.success(t('auth.emailVerificationSuccess') || 'Email verified successfully');
-      setTimeout(() => router.replace('/login'), 2500);
+      setTimeout(() => routerRef.current.replace('/login'), 2500);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('errors.verificationFailed');
-      setError(errorMessage);
-      setOtpCode(''); // Clear the OTP input on error
-      toast.error(errorMessage);
+      const msg = err instanceof Error ? err.message : t('verificationFailedMessage');
+      setErrorMessage(msg);
+      setVerifyState('error');
+      setOtpCode('');
+      toast.error(msg);
     } finally {
       setIsSubmittingOtp(false);
     }
@@ -102,19 +113,20 @@ export function VerifyEmailContent() {
 
   const handleResendOtp = async () => {
     if (!verificationSessionToken) {
-      setError(t('auth.verificationSessionInvalid'));
+      setErrorMessage(t('auth.verificationSessionInvalid'));
+      setVerifyState('error');
       return;
     }
 
     try {
-      setError('');
       setIsResendingOtp(true);
       await authService.resendEmailOtp(verificationSessionToken);
       toast.success(t('auth.otpResendSuccess') || 'OTP sent successfully to your email');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('auth.resendVerificationFailed');
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const msg = err instanceof Error ? err.message : t('auth.resendVerificationFailed');
+      setErrorMessage(msg);
+      setVerifyState('error');
+      toast.error(msg);
     } finally {
       setIsResendingOtp(false);
     }
@@ -124,17 +136,18 @@ export function VerifyEmailContent() {
     e.preventDefault();
 
     if (!verificationSessionToken) {
-      setError(t('auth.verificationSessionInvalid'));
+      setErrorMessage(t('auth.verificationSessionInvalid'));
+      setVerifyState('error');
       return;
     }
 
     if (!VALIDATION_RULES.EMAIL_REGEX.test(newEmail.trim())) {
-      setError(t('invalidEmail'));
+      setErrorMessage(t('invalidEmail'));
+      setVerifyState('error');
       return;
     }
 
     try {
-      setError('');
       setIsChangingEmail(true);
       const result = await authService.changeVerificationEmail(
         verificationSessionToken,
@@ -145,11 +158,13 @@ export function VerifyEmailContent() {
       setVerificationEmail(result.verificationEmail);
       setShowEmailChange(false);
       setNewEmail('');
+      setVerifyState('otp');
       toast.success(t('auth.emailChangedSuccess') || 'Email updated successfully');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('auth.changeEmailFailed');
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const msg = err instanceof Error ? err.message : t('auth.changeEmailFailed');
+      setErrorMessage(msg);
+      setVerifyState('error');
+      toast.error(msg);
     } finally {
       setIsChangingEmail(false);
     }
@@ -158,7 +173,8 @@ export function VerifyEmailContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-        {loading && (
+
+        {verifyState === 'loading' && (
           <>
             <div className="mb-4">
               <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
@@ -168,7 +184,7 @@ export function VerifyEmailContent() {
           </>
         )}
 
-        {success && !loading && (
+        {verifyState === 'success' && (
           <>
             <div className="mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
@@ -178,11 +194,11 @@ export function VerifyEmailContent() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('emailVerified')}</h2>
-            <p className="text-slate-600 mb-6">{t('redirectingToLogin')}</p>
+            <p className="text-slate-600 mb-2">{t('redirectingToLogin')}</p>
           </>
         )}
 
-        {!loading && !success && mode === 'otp' && !error && (
+        {verifyState === 'otp' && (
           <>
             <div className="mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
@@ -253,7 +269,7 @@ export function VerifyEmailContent() {
           </>
         )}
 
-        {error && !loading && (
+        {verifyState === 'error' && (
           <>
             <div className="mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
@@ -263,11 +279,11 @@ export function VerifyEmailContent() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-red-600 mb-2">{t('verificationFailed')}</h2>
-            <p className="text-slate-600 mb-6">{error}</p>
+            <p className="text-slate-600 mb-6">{errorMessage}</p>
             {mode === 'otp' && (
               <button
                 type="button"
-                onClick={() => setError('')}
+                onClick={() => setVerifyState('otp')}
                 className="mb-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50"
               >
                 {t('auth.tryAgain')}

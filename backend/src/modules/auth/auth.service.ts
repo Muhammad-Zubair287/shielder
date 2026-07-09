@@ -1272,7 +1272,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new BadRequestError('Invalid or expired verification token');
+        throw new BadRequestError('This verification link has already been used or has expired. Please request a new one.');
       }
 
       await prisma.user.update({

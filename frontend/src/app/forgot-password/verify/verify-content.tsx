@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Link from 'next/link';
 
 export function ForgotPasswordVerifyContent() {
   const router = useRouter();
@@ -129,7 +130,7 @@ export function ForgotPasswordVerifyContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-[#FF7A1A] text-white rounded-full font-semibold hover:bg-[#f06d08] disabled:opacity-50 transition"
+              className="w-full h-11 bg-[#004A99] text-white rounded-full font-semibold hover:bg-[#0D2F8C] disabled:opacity-50 transition"
             >
               {loading ? t('processingLoading') : t('Next')}
             </button>
@@ -138,11 +139,17 @@ export function ForgotPasswordVerifyContent() {
               {timer > 0 ? (
                 <span>{t('Didn\'t get a code?')} 00:{timer.toString().padStart(2, '0')}</span>
               ) : (
-                <button type="button" onClick={handleResend} disabled={resendLoading} className="text-[#FF7A1A] hover:underline font-semibold">
+                <button type="button" onClick={handleResend} disabled={resendLoading} className="text-[#004A99] hover:underline font-semibold">
                   {resendLoading ? t('resending') : t('Resend code')}
                 </button>
               )}
             </div>
+            <div className="mt-6 text-center text-sm">
+                        <span className="text-slate-600">{t('rememberPassword')}</span>{' '}
+                        <Link href="/login" className="text-[#004A99] hover:underline font-semibold">
+                          {t('backToLogin')}
+                        </Link>
+                      </div>
           </form>
         </div>
       </div>

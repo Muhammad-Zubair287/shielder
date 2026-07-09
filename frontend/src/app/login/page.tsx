@@ -419,7 +419,6 @@ function LoginPageContent() {
                 </button>
               )}
             </form>
-
             <div className="mt-8 text-center text-gray-600">
               <p className="text-sm">
                 {t('dontHaveAccount')}{' '}

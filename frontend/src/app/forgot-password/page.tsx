@@ -54,8 +54,8 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">{t('forgot Password')}</h1>
-          <p className="text-sm text-slate-600 mb-6">{t('enter Email To Reset')}</p>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">{t('forgotPassword')}</h1>
+          <p className="text-sm text-slate-600 mb-6">{t('enterEmailToReset')}</p>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={t('Enter your email')}
+                placeholder={t('enterEmail')}
                 dir="ltr"
                 className="input-ltr w-full h-11 px-4 border border-slate-300 rounded-full focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none text-sm"
                 disabled={loading}
@@ -83,16 +83,16 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-[#FF7A1A] text-white rounded-full font-semibold hover:bg-[#f06d08] disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full h-11 bg-[#004A99] text-white rounded-full font-semibold hover:bg-[#0D2F8C] disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {loading ? t('sending') : 'Submit'}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-slate-600">{t('remember Password')}</span>{' '}
-            <Link href="/login" className="text-[#FF7A1A] hover:underline font-semibold">
-              {t('back To Login')}
+            <span className="text-slate-600">{t('rememberPassword')}</span>{' '}
+            <Link href="/login" className="text-[#004A99] hover:underline font-semibold">
+              {t('backToLogin')}
             </Link>
           </div>
         </div>

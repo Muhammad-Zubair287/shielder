@@ -79,7 +79,7 @@ export function ForgotPasswordResetContent() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('passwordReset')}</h2>
-            <p className="text-slate-600 mb-6">{t('redirecting To Login')}</p>
+            <p className="text-slate-600 mb-6">{t('redirectingToLogin')}</p>
           </div>
         </div>
       </div>
@@ -150,7 +150,7 @@ export function ForgotPasswordResetContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-[#FF7A1A] text-white rounded-full font-semibold hover:bg-[#f06d08] disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full h-11 bg-[#004A99] text-white rounded-full font-semibold hover:bg-[#0D2F8C] disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {loading ? t('processingLoading') : t('Reset Password')}
             </button>
