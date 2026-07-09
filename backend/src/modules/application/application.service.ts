@@ -6,7 +6,6 @@
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
 import { prisma } from '@/config/database';
 import { ApplicationPlatform, ApplicationStatus } from '@prisma/client';
-import path from 'path';
 
 export interface ApplicationCreateInput {
   applicationName: string;
