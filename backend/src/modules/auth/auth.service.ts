@@ -9,6 +9,7 @@ import { prisma } from '@/config/database';
 import { env } from '@/config/env';
 import { TokenService, type DeviceInfo } from './token.service';
 import { emailService } from '@/common/services/email.service';
+import { t } from '@/common/i18n';
 import {
   BadRequestError,
   UnauthorizedError,
@@ -377,7 +378,8 @@ export class AuthService {
    */
   static async login(
     data: LoginRequest,
-    deviceInfo?: DeviceInfo
+    deviceInfo?: DeviceInfo,
+    locale: string = 'en'
   ): Promise<AuthResponse> {
     // 📊 Performance monitoring
     const perfMetrics = {
@@ -427,7 +429,7 @@ export class AuthService {
 
       if (!user) {
         logger.warn(`Login failed: User not found - ${data.email.toLowerCase()}`);
-        throw new UnauthorizedError('Invalid credentials');
+        throw new UnauthorizedError(t('auth.invalidCredentials', locale));
       }
 
       // Check account lock
@@ -436,7 +438,7 @@ export class AuthService {
           (user.lockedUntil.getTime() - Date.now()) / (1000 * 60)
         );
         throw new UnauthorizedError(
-          `Account locked. Try again in ${minutesLeft} minutes.`
+          t('auth.accountLocked', locale, { minutes: minutesLeft })
         );
       }
 
@@ -456,7 +458,7 @@ export class AuthService {
       // Check if user is active
       if (!user.isActive) {
         logger.warn(`Login failed: Account inactive - ${user.email}`);
-        throw new UnauthorizedError('Account has been deactivated');
+        throw new UnauthorizedError(t('auth.accountDeactivated', locale));
       }
 
       // Verify password
@@ -467,7 +469,7 @@ export class AuthService {
         logger.warn(`Login failed: Invalid password - ${user.email}`);
         // Increment failed attempts
         await this.handleFailedLogin(user.id, user.failedLoginAttempts);
-        throw new UnauthorizedError('Invalid credentials');
+        throw new UnauthorizedError(t('auth.invalidCredentials', locale));
       }
 
       // Force customer verification checks only after credentials are validated.
@@ -1262,7 +1264,7 @@ export class AuthService {
   /**
    * Verify Email
    */
-  static async verifyEmail(token: string): Promise<void> {
+  static async verifyEmail(token: string, locale: string = 'en'): Promise<void> {
     try {
       const user = await prisma.user.findFirst({
         where: {
@@ -1272,7 +1274,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new BadRequestError('This verification link has already been used or has expired. Please request a new one.');
+        throw new BadRequestError(t('auth.verificationLinkExpired', locale));
       }
 
       await prisma.user.update({
@@ -1347,10 +1349,10 @@ export class AuthService {
   /**
    * Verify OTP for forced email verification flow.
    */
-  static async verifyEmailVerificationOtp(data: VerifyEmailOtpRequest): Promise<void> {
+  static async verifyEmailVerificationOtp(data: VerifyEmailOtpRequest, locale: string = 'en'): Promise<void> {
     const user = await this.findUserByVerificationSessionToken(data.verificationSessionToken);
     if (!user) {
-      throw new UnauthorizedError('Verification session expired. Please login again.');
+      throw new UnauthorizedError(t('auth.verificationSessionExpired', locale));
     }
 
     const { TwoFactorService } = await import('./twofa.service');
@@ -1383,11 +1385,12 @@ export class AuthService {
    * Resend OTP for forced email verification flow.
    */
   static async resendEmailVerificationOtp(
-    data: ResendEmailVerificationOtpRequest
+    data: ResendEmailVerificationOtpRequest,
+    locale: string = 'en'
   ): Promise<{ expiresInMinutes: number; resendCooldownSeconds: number }> {
     const user = await this.findUserByVerificationSessionToken(data.verificationSessionToken);
     if (!user) {
-      throw new UnauthorizedError('Verification session expired. Please login again.');
+      throw new UnauthorizedError(t('auth.verificationSessionExpired', locale));
     }
 
     const otpResult = await this.issueEmailVerificationOtp(
@@ -1399,7 +1402,7 @@ export class AuthService {
 
     if (!otpResult.sent) {
       throw new TooManyRequestsError(
-        `Please wait ${otpResult.cooldownSeconds} seconds before requesting a new code.`
+        t('auth.resendCooldown', locale, { seconds: otpResult.cooldownSeconds })
       );
     }
 
@@ -1419,20 +1422,21 @@ export class AuthService {
    * Change email while pending forced verification, then send OTP to new email.
    */
   static async changeVerificationEmail(
-    data: ChangeVerificationEmailRequest
+    data: ChangeVerificationEmailRequest,
+    locale: string = 'en'
   ): Promise<{ verificationSessionToken: string; verificationEmail: string; expiresInMinutes: number }> {
     const user = await this.findUserByVerificationSessionToken(data.verificationSessionToken);
     if (!user) {
-      throw new UnauthorizedError('Verification session expired. Please login again.');
+      throw new UnauthorizedError(t('auth.verificationSessionExpired', locale));
     }
 
     const newEmail = data.newEmail.toLowerCase().trim();
     if (!newEmail) {
-      throw new BadRequestError('New email is required');
+      throw new BadRequestError(t('auth.newEmailRequired', locale));
     }
 
     if (newEmail === user.email.toLowerCase()) {
-      throw new BadRequestError('New email must be different from current email');
+      throw new BadRequestError(t('auth.emailMustBeDifferent', locale));
     }
 
     const existing = await prisma.user.findUnique({
@@ -1444,7 +1448,7 @@ export class AuthService {
     });
 
     if (existing && existing.id !== user.id && !existing.deletedAt) {
-      throw new ConflictError('User with this email already exists');
+      throw new ConflictError(t('auth.emailAlreadyExists', locale));
     }
 
     const verificationSessionToken = crypto.randomBytes(32).toString('hex');

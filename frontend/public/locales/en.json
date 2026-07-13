@@ -78,6 +78,7 @@
   "confirmPasswordRequired": "Confirm password is required",
   "loginSuccess": "Login successful",
   "loginError": "Login failed. Please check your credentials",
+  "logoutSuccess": "Logged out successfully",
   "registerSuccess": "Registration successful",
   "registerError": "Registration failed",
   "auth.login2faPrompt": "Login successful. Check your email, then enter the 6-digit code on the verification page to continue.",

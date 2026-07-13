@@ -64,6 +64,15 @@ export const en: Record<string, string> = {
   'auth.emailUpdatedVerificationSent':   'Email updated successfully. A verification code was sent to your new address.',
   'auth.devModeAutoVerified':            'Development mode: email delivery unavailable, account auto-verified.',
   'auth.resendVerificationSent':         'If the email exists and is unverified, a verification link has been sent.',
+  'auth.invalidCredentials':             'Invalid credentials.',
+  'auth.accountLocked':                  'Account locked. Try again in {{minutes}} minute(s).',
+  'auth.accountDeactivated':             'Account has been deactivated.',
+  'auth.verificationLinkExpired':        'This verification link has been used or expired. Please request a new one.',
+  'auth.verificationSessionExpired':     'Verification session expired. Please log in again.',
+  'auth.emailAlreadyExists':             'An account with this email already exists.',
+  'auth.newEmailRequired':               'New email is required.',
+  'auth.emailMustBeDifferent':           'New email must be different from your current email.',
+  'auth.resendCooldown':                 'Please wait {{seconds}} second(s) before requesting a new code.',
 
   // ── Profile ────────────────────────────────────────────────────────────────
   'profile.updateSuccess':      'Profile updated successfully.',

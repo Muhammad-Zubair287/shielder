@@ -148,7 +148,9 @@ function LoginPageContent() {
     const normalized = message.toLowerCase();
     return (
       normalized.includes('verify your email') ||
-      normalized.includes('email not verified')
+      normalized.includes('email not verified') ||
+      message.includes('التحقق من بريدك') ||
+      message.includes('تحقق من بريد')
     );
   };
 

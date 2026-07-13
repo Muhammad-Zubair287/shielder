@@ -64,6 +64,15 @@ export const ar: Record<string, string> = {
   'auth.emailUpdatedVerificationSent':   'تم تحديث البريد الإلكتروني بنجاح. تم إرسال رمز تحقق إلى عنوانك الجديد.',
   'auth.devModeAutoVerified':            'وضع التطوير: تسليم البريد الإلكتروني غير متاح، تم التحقق من الحساب تلقائياً.',
   'auth.resendVerificationSent':         'إذا كان البريد الإلكتروني موجوداً وغير مُفعَّل، فقد تم إرسال رابط التحقق.',
+  'auth.invalidCredentials':             'بيانات الاعتماد غير صحيحة.',
+  'auth.accountLocked':                  'تم قفل الحساب. حاول مرة أخرى خلال {{minutes}} دقيقة.',
+  'auth.accountDeactivated':             'تم تعطيل الحساب.',
+  'auth.verificationLinkExpired':        'هذا الرابط مستخدم بالفعل أو منتهي الصلاحية. يرجى طلب رابط جديد.',
+  'auth.verificationSessionExpired':     'انتهت صلاحية جلسة التحقق. يرجى تسجيل الدخول مرة أخرى.',
+  'auth.emailAlreadyExists':             'يوجد حساب مرتبط بهذا البريد الإلكتروني.',
+  'auth.newEmailRequired':               'البريد الإلكتروني الجديد مطلوب.',
+  'auth.emailMustBeDifferent':           'يجب أن يختلف البريد الإلكتروني الجديد عن بريدك الحالي.',
+  'auth.resendCooldown':                 'يرجى الانتظار {{seconds}} ثانية قبل طلب رمز جديد.',
 
   // ── Profile ────────────────────────────────────────────────────────────────
   'profile.updateSuccess':      'تم تحديث الملف الشخصي بنجاح.',

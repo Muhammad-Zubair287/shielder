@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Cairo } from 'next/font/google';
 import '@/styles/globals.css';
-import { Toaster } from 'react-hot-toast';
+import { LocalizedToaster } from '@/components/providers/LocalizedToaster';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { AOSProvider } from '@/components/providers/AOSProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
@@ -79,30 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <CartProvider>
                   <QuotationProvider>
                   {children}
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      duration: 1000,
-                      style: {
-                        background: '#363636',
-                        color: '#fff',
-                      },
-                      success: {
-                        duration: 1000,
-                        iconTheme: {
-                          primary: '#10b981',
-                          secondary: '#fff',
-                        },
-                      },
-                      error: {
-                        duration: 1000,
-                        iconTheme: {
-                          primary: '#ef4444',
-                          secondary: '#fff',
-                        },
-                      },
-                    }}
-                  />
+                  <LocalizedToaster />
                   </QuotationProvider>
                 </CartProvider>
                 </CurrencyProvider>

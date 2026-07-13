@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import authService from '@/services/auth.service';
 import type { LoginRequest, RegisterRequest } from '@/types';
-import { ROUTES, STORAGE_KEYS, SUCCESS_MESSAGES } from '@/utils/constants';
+import { ROUTES, STORAGE_KEYS } from '@/utils/constants';
 import toast from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -34,15 +34,9 @@ export const useAuth = () => {
       router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
 
       const response = await authService.register(data);
-      const authData = response.data!;
       setUser(null);
 
-      const registerMessage =
-        authData.emailDeliveryStatus === 'auto_verified'
-          ? 'Registration successful. Your account has been auto-verified.'
-          : response.message || 'Registration successful. Please check your email to verify your account.';
-
-      toast.success(registerMessage, { duration: REGISTER_TOAST_DURATION_MS });
+      toast.success(response.message || t('registerSuccess'), { duration: REGISTER_TOAST_DURATION_MS });
 
       router.replace(ROUTES.LOGIN);
 
@@ -130,7 +124,7 @@ export const useAuth = () => {
       }
 
       setUser(response.user);
-      toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS, { duration: LOGIN_TOAST_DURATION_MS });
+      toast.success(t('loginSuccess'), { duration: LOGIN_TOAST_DURATION_MS });
 
       // Redirect based on role
       if (role === 'SUPER_ADMIN') {
@@ -168,7 +162,7 @@ export const useAuth = () => {
     try {
       setLoading(true);
       await storeLogout();
-      toast.success(SUCCESS_MESSAGES.LOGOUT_SUCCESS);
+      toast.success(t('logoutSuccess'));
       router.push(ROUTES.LOGIN);
     } catch (error) {
       console.error('Logout error:', error);

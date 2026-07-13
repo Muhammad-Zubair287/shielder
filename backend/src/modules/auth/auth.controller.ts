@@ -129,7 +129,7 @@ class AuthController {
       logger.info(`🍪 Login: Trusted device cookie found: ${cookieToken.slice(0, 8)}...`);
     }
 
-    const result = await AuthService.login(data, deviceInfo);
+    const result = await AuthService.login(data, deviceInfo, req.locale);
 
     if (result.requiresEmailVerification) {
       res.status(403).json({
@@ -502,7 +502,7 @@ class AuthController {
   verifyEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token } = req.params;
 
-    await AuthService.verifyEmail(token as string);
+    await AuthService.verifyEmail(token as string, req.locale);
 
     res.status(200).json({
       success: true,
@@ -666,7 +666,7 @@ class AuthController {
   verifyEmailOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: VerifyEmailOtpRequest = req.body;
 
-    await AuthService.verifyEmailVerificationOtp(data);
+    await AuthService.verifyEmailVerificationOtp(data, req.locale);
 
     res.status(200).json({
       success: true,
@@ -680,7 +680,7 @@ class AuthController {
   resendEmailVerificationOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ResendEmailVerificationOtpRequest = req.body;
 
-    const result = await AuthService.resendEmailVerificationOtp(data);
+    const result = await AuthService.resendEmailVerificationOtp(data, req.locale);
 
     res.status(200).json({
       success: true,
@@ -695,7 +695,7 @@ class AuthController {
   changeVerificationEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ChangeVerificationEmailRequest = req.body;
 
-    const result = await AuthService.changeVerificationEmail(data);
+    const result = await AuthService.changeVerificationEmail(data, req.locale);
 
     res.status(200).json({
       success: true,
