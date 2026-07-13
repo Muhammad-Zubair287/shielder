@@ -497,7 +497,7 @@ export class CustomerQuotationController {
         doc.font('Helvetica').fillColor('#111827').fontSize(VALUE_SIZE)
           .text(value || '—', MARGIN, valueY, { width: LEFT_META_WIDTH, lineBreak: true });
         // return Y after the value block
-        const valueHeight = doc.heightOfString(value || '—', { width: LEFT_META_WIDTH, fontSize: VALUE_SIZE });
+        const valueHeight = doc.heightOfString(value || '—', { width: LEFT_META_WIDTH });
         return valueY + valueHeight + FIELD_GAP;
       };
 
@@ -506,7 +506,7 @@ export class CustomerQuotationController {
         .text('COMPANY NAME', MARGIN, topY, { width: LEFT_META_WIDTH, lineBreak: false });
       doc.font('Helvetica-Bold').fillColor('#0D1637').fontSize(11)
         .text(quotation.companyName || '—', MARGIN, topY + LABEL_SIZE + LINE_GAP, { width: LEFT_META_WIDTH, lineBreak: true });
-      const companyNameHeight = doc.heightOfString(quotation.companyName || '—', { width: LEFT_META_WIDTH, fontSize: 11 });
+      const companyNameHeight = doc.heightOfString(quotation.companyName || '—', { width: LEFT_META_WIDTH });
       let leftY = topY + LABEL_SIZE + LINE_GAP + companyNameHeight + FIELD_GAP;
 
       leftY = drawField('VAT NUMBER', vatNumber || '—', leftY);

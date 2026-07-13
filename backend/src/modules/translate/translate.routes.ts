@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { translate } from '@vitalets/google-translate-api';
 import { authenticate } from '@/modules/auth/auth.middleware';
 import { requireRoles } from '@/common/middleware/rbac.middleware';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const router = Router();
 router.post(
   '/to-arabic',
   authenticate,
-  requireRoles(['ADMIN', 'SUPER_ADMIN', 'STAFF']),
+  requireRoles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.STAFF),
   async (req: Request, res: Response) => {
     const { text } = req.body as { text?: string };
     if (!text || typeof text !== 'string' || !text.trim()) {
