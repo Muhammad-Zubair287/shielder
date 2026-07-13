@@ -10,9 +10,10 @@ export function validateAddUpdateItem(data: any) {
       'string.empty': 'Product ID is required',
       'string.guid': 'Product ID must be a valid UUID',
     }),
-    quantity: Joi.number().integer().min(1).required().messages({
+    quantity: Joi.number().integer().min(1).max(10_000).required().messages({
       'number.base': 'Quantity must be a number',
       'number.min': 'Quantity must be at least 1',
+      'number.max': 'Quantity cannot exceed 10,000',
     }),
   });
 
@@ -21,9 +22,10 @@ export function validateAddUpdateItem(data: any) {
 
 export function validateUpdateQuantity(data: any) {
   const schema = Joi.object({
-    quantity: Joi.number().integer().min(1).required().messages({
+    quantity: Joi.number().integer().min(1).max(10_000).required().messages({
       'number.base': 'Quantity must be a number',
       'number.min': 'Quantity must be at least 1',
+      'number.max': 'Quantity cannot exceed 10,000',
     }),
   });
 

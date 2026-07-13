@@ -1,0 +1,219 @@
+export const ar: Record<string, string> = {
+  // ── Common ─────────────────────────────────────────────────────────────────
+  'common.internalError':      'حدث خطأ داخلي. يرجى المحاولة مجدداً.',
+  'common.notFound':           'المورد غير موجود.',
+  'common.unauthorized':       'غير مصرح. يرجى تسجيل الدخول.',
+  'common.forbidden':          'ليس لديك صلاحية لتنفيذ هذا الإجراء.',
+  'common.badRequest':         'طلب غير صالح.',
+  'common.conflict':           'حدث تعارض.',
+  'common.tooManyRequests':    'طلبات كثيرة جداً. يرجى المحاولة لاحقاً.',
+  'common.rateLimitMinutes':   'لقد تجاوزت الحد المسموح به. يرجى المحاولة مرة أخرى بعد {{minutes}} دقيقة.',
+  'common.validationFailed':   'فشل التحقق من البيانات.',
+  'common.routeNotFound':      'نقطة النهاية المطلوبة غير موجودة.',
+
+  // ── Validation (Joi type mapping) ──────────────────────────────────────────
+  'validation.failed':         'فشل التحقق من البيانات.',
+  'validation.required':       'هذا الحقل مطلوب.',
+  'validation.invalidEmail':   'يرجى تقديم بريد إلكتروني صالح.',
+  'validation.stringMin':      'يجب أن يكون {{limit}} حرفاً على الأقل.',
+  'validation.stringMax':      'يجب ألا يتجاوز {{limit}} حرفاً.',
+  'validation.numberMin':      'يجب أن يكون {{limit}} على الأقل.',
+  'validation.numberMax':      'يجب ألا يتجاوز {{limit}}.',
+  'validation.numberInteger':  'يجب أن يكون عدداً صحيحاً.',
+  'validation.numberBase':     'يجب أن يكون رقماً.',
+  'validation.stringBase':     'يجب أن يكون نصاً.',
+  'validation.invalidFormat':  'صيغة غير صالحة.',
+  'validation.invalidUrl':     'يجب أن يكون رابطاً صالحاً.',
+  'validation.invalidUUID':    'صيغة المعرف غير صالحة.',
+  'validation.invalidDate':    'تاريخ غير صالح.',
+  'validation.dateFuture':     'يجب أن يكون التاريخ في المستقبل.',
+  'validation.arrayMin':       'يجب أن يحتوي على {{limit}} عنصر على الأقل.',
+  'validation.arrayMax':       'يجب ألا يتجاوز {{limit}} عناصر.',
+  'validation.invalidEnum':    'قيمة غير صالحة.',
+  'validation.booleanBase':    'يجب أن يكون صحيحاً أو خاطئاً.',
+  'validation.unknownField':   'حقل غير معروف.',
+  'validation.passwordWeak':   'يجب أن تحتوي كلمة المرور على حرف كبير وصغير ورقم ورمز خاص.',
+  'validation.passwordCommon': 'كلمة المرور شائعة جداً. يرجى اختيار كلمة مرور أقوى.',
+  'validation.passwordMax':    'يجب ألا تتجاوز كلمة المرور {{limit}} حرفاً.',
+  'validation.invalidPhone':   'يرجى تقديم رقم هاتف صالح (مثل: 05XXXXXXXX أو +966 5X XXX XXXX).',
+  'validation.htmlNotAllowed': 'محتوى HTML غير مسموح به.',
+  'validation.invalidName':    'صيغة الاسم غير صالحة.',
+
+  // ── Authentication ─────────────────────────────────────────────────────────
+  'auth.registerSuccessAutoVerified':    'تم التسجيل بنجاح. تم التحقق من حسابك تلقائياً.',
+  'auth.registerSuccessEmailRequired':   'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك.',
+  'auth.emailNotVerified':               'يرجى التحقق من بريدك الإلكتروني قبل المتابعة.',
+  'auth.loginSuccess':                   'تم تسجيل الدخول بنجاح.',
+  'auth.refreshTokenRequired':           'رمز التحديث مطلوب.',
+  'auth.tokensRefreshed':                'تم تحديث الرموز بنجاح.',
+  'auth.logoutSuccess':                  'تم تسجيل الخروج بنجاح.',
+  'auth.logoutAllSuccess':               'تم تسجيل الخروج من جميع الأجهزة بنجاح.',
+  'auth.forgotPasswordEmailSent':        'إذا كان البريد الإلكتروني موجوداً، فقد تم إرسال رابط إعادة تعيين كلمة المرور.',
+  'auth.forgotPasswordOtpSent':          'إذا كان البريد الإلكتروني موجوداً، فقد تم إرسال رمز التحقق.',
+  'auth.forgotPasswordOtpResent':        'إذا كان البريد الإلكتروني موجوداً، فقد تم إرسال رمز تحقق جديد.',
+  'auth.otpVerified':                    'تم التحقق من الرمز بنجاح.',
+  'auth.passwordResetSuccess':           'تم إعادة تعيين كلمة المرور بنجاح. يرجى تسجيل الدخول بكلمة المرور الجديدة.',
+  'auth.passwordChangedSuccess':         'تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مجدداً على جميع الأجهزة.',
+  'auth.emailVerified':                  'تم التحقق من البريد الإلكتروني بنجاح.',
+  'auth.sessionRevoked':                 'تم إلغاء الجلسة بنجاح.',
+  'auth.trustedDeviceRevoked':           'تم إلغاء ثقة الجهاز.',
+  'auth.otpSent':                        'تم إرسال رمز التحقق إلى {{method}}.',
+  'auth.twoFaSuccess':                   'تم التحقق بخطوتين بنجاح.',
+  'auth.emailVerifiedLogin':             'تم التحقق من البريد الإلكتروني بنجاح. يرجى تسجيل الدخول للمتابعة.',
+  'auth.newVerificationCodeSent':        'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني.',
+  'auth.emailUpdatedVerificationSent':   'تم تحديث البريد الإلكتروني بنجاح. تم إرسال رمز تحقق إلى عنوانك الجديد.',
+  'auth.devModeAutoVerified':            'وضع التطوير: تسليم البريد الإلكتروني غير متاح، تم التحقق من الحساب تلقائياً.',
+  'auth.resendVerificationSent':         'إذا كان البريد الإلكتروني موجوداً وغير مُفعَّل، فقد تم إرسال رابط التحقق.',
+
+  // ── Profile ────────────────────────────────────────────────────────────────
+  'profile.updateSuccess':      'تم تحديث الملف الشخصي بنجاح.',
+  'profile.languageUpdated':    'تم تحديث تفضيل اللغة بنجاح.',
+  'profile.preferencesUpdated': 'تم تحديث التفضيلات بنجاح.',
+  'profile.noFileUploaded':     'لم يتم رفع أي ملف.',
+  'profile.imageUploaded':      'تم رفع صورة الملف الشخصي بنجاح.',
+
+  // ── Category ───────────────────────────────────────────────────────────────
+  'category.createSuccess':     'تم إنشاء الفئة بنجاح.',
+  'category.updateSuccess':     'تم تحديث الفئة بنجاح.',
+  'category.deleteSuccess':     'تم حذف الفئة بنجاح.',
+  'category.bulkDelete':        'تم الحذف المتعدد بنجاح.',
+  'category.notFound':          'الفئة غير موجودة.',
+
+  // ── Subcategory ────────────────────────────────────────────────────────────
+  'subcategory.createSuccess':  'تم إنشاء الفئة الفرعية بنجاح.',
+  'subcategory.updateSuccess':  'تم تحديث الفئة الفرعية بنجاح.',
+  'subcategory.deleteSuccess':  'تم حذف الفئة الفرعية بنجاح.',
+  'subcategory.bulkDelete':     'تم الحذف المتعدد بنجاح.',
+  'subcategory.notFound':       'الفئة الفرعية غير موجودة.',
+
+  // ── Product ────────────────────────────────────────────────────────────────
+  'product.noFileUploaded':         'يرجى رفع ملف.',
+  'product.noImageFile':            'لم يتم تقديم صورة.',
+  'product.dbUpdateFailed':         'فشل تحديث قاعدة البيانات — لم يتم حفظ مسار الصورة.',
+  'product.specificationsAssigned': 'تم تعيين المواصفات بنجاح.',
+  'product.attachmentDeleted':      'تم حذف المرفق بنجاح.',
+  'product.createSuccess':          'تم إنشاء المنتج بنجاح.',
+  'product.updateSuccess':          'تم تحديث المنتج بنجاح.',
+  'product.deleteSuccess':          'تم حذف المنتج بنجاح.',
+  'product.bulkDelete':             'تم الحذف المتعدد بنجاح.',
+  'product.notFound':               'المنتج غير موجود.',
+  'product.insufficientStock':      'الكمية المتوفرة في المخزون غير كافية.',
+
+  // ── Order ──────────────────────────────────────────────────────────────────
+  'order.paymentStatusLocked': 'لا يمكن تغيير حالة الدفع بعد تعليمها كـ "مدفوعة".',
+  'order.createSuccess':       'تم إنشاء الطلب بنجاح.',
+  'order.listSuccess':         'تم استرداد الطلبات بنجاح.',
+  'order.getSuccess':          'تم استرداد الطلب بنجاح.',
+  'order.updateSuccess':       'تم تحديث حالة الطلب بنجاح.',
+  'order.summarySuccess':      'تم استرداد ملخص الطلبات بنجاح.',
+  'order.notFound':            'الطلب غير موجود.',
+  'order.cannotCancel':        'لا يمكن إلغاء هذا الطلب.',
+
+  // ── Cart ───────────────────────────────────────────────────────────────────
+  'cart.itemAdded':    'تمت إضافة المنتج إلى السلة.',
+  'cart.updated':      'تم تحديث السلة.',
+  'cart.itemRemoved':  'تمت إزالة المنتج من السلة.',
+  'cart.cleared':      'تم مسح السلة.',
+  'cart.itemNotFound': 'المنتج غير موجود في السلة.',
+
+  // ── Quotation (Admin) ──────────────────────────────────────────────────────
+  'quotation.sent':        'تم إرسال عرض السعر بنجاح.',
+  'quotation.approved':    'تم قبول عرض السعر.',
+  'quotation.rejected':    'تم رفض عرض السعر.',
+  'quotation.converted':   'تم تحويل عرض السعر إلى طلب بنجاح.',
+  'quotation.reactivated': 'تم إعادة تفعيل عرض السعر بنجاح.',
+  'quotation.expired':     'انتهت صلاحية {{count}} عرض/عروض أسعار.',
+  'quotation.notFound':    'عرض السعر غير موجود.',
+
+  // ── Customer Quotation ────────────────────────────────────────────────────
+  'customerQuotation.noProductsNoBasket': 'لم يتم تقديم منتجات وسلة عروض الأسعار فارغة.',
+  'customerQuotation.companyRequired':    'اسم الشركة مطلوب.',
+  'customerQuotation.vatRequired':        'رقم ضريبة القيمة المضافة مطلوب.',
+  'customerQuotation.vatInvalid':         'صيغة رقم ضريبة القيمة المضافة غير صالحة (10–20 رقماً).',
+  'customerQuotation.addressRequired':    'العنوان مطلوب.',
+  'customerQuotation.productRequired':    'مطلوب منتج واحد على الأقل.',
+  'customerQuotation.quantityMin':        'يجب أن تكون الكمية 1 على الأقل.',
+  'customerQuotation.productNotFound':    'المنتج غير موجود: {{productId}}',
+  'customerQuotation.productUnavailable': 'المنتج لم يعد متاحاً: {{productId}}',
+  'customerQuotation.notFound':           'عرض السعر غير موجود.',
+  'customerQuotation.cannotAccept':       'لا يمكن قبول عرض السعر في حالته الحالية.',
+  'customerQuotation.acceptSuccess':      'تم قبول عرض السعر بنجاح.',
+  'customerQuotation.cannotReject':       'لا يمكن رفض عرض السعر في حالته الحالية.',
+  'customerQuotation.rejectSuccess':      'تم رفض عرض السعر بنجاح.',
+
+  // ── Customer Quotation Basket ──────────────────────────────────────────────
+  'basket.itemAdded':    'تمت إضافة المنتج إلى سلة عروض الأسعار.',
+  'basket.itemUpdated':  'تم تحديث كمية المنتج.',
+  'basket.itemRemoved':  'تمت إزالة المنتج من سلة عروض الأسعار.',
+  'basket.cleared':      'تم مسح سلة عروض الأسعار.',
+  'basket.itemNotFound': 'المنتج غير موجود في السلة.',
+
+  // ── Contact ────────────────────────────────────────────────────────────────
+  'contact.submitSuccess': 'تم إرسال رسالتك بنجاح.',
+
+  // ── Payment ────────────────────────────────────────────────────────────────
+  'payment.recorded':     'تم تسجيل الدفع بنجاح.',
+  'payment.refunded':     'تمت معالجة الاسترداد بنجاح.',
+  'payment.notFound':     'الدفع غير موجود.',
+  'payment.statusLocked': 'تم تسجيل الدفع مسبقاً ولا يمكن تغييره.',
+
+  // ── Warehouse ──────────────────────────────────────────────────────────────
+  'warehouse.createSuccess': 'تم إنشاء المستودع بنجاح.',
+  'warehouse.updateSuccess': 'تم تحديث المستودع بنجاح.',
+  'warehouse.deleteSuccess': 'تم حذف المستودع بنجاح.',
+  'warehouse.notFound':      'المستودع غير موجود.',
+
+  // ── Settings ───────────────────────────────────────────────────────────────
+  'settings.updateSuccess':   'تم تحديث الإعدادات بنجاح.',
+  'settings.logoUploaded':    'تم رفع شعار الشركة بنجاح.',
+  'settings.backupTriggered': 'تم تشغيل النسخ الاحتياطي بنجاح.',
+  'settings.notFound':        'الإعدادات غير موجودة.',
+
+  // ── Application ────────────────────────────────────────────────────────────
+  'application.createSuccess': 'تم إنشاء التطبيق بنجاح.',
+  'application.updateSuccess': 'تم تحديث التطبيق بنجاح.',
+  'application.deleteSuccess': 'تم حذف التطبيق بنجاح.',
+  'application.statusUpdated': 'تم تحديث حالة التطبيق بنجاح.',
+  'application.notFound':      'التطبيق غير موجود.',
+
+  // ── Privacy Policy ─────────────────────────────────────────────────────────
+  'privacyPolicy.updateSuccess': 'تم تحديث سياسة الخصوصية بنجاح.',
+  'privacyPolicy.notFound':      'سياسة الخصوصية غير موجودة.',
+
+  // ── Super Admin ────────────────────────────────────────────────────────────
+  'superAdmin.userCreated':     'تم إنشاء المستخدم بنجاح.',
+  'superAdmin.userUpdated':     'تم تحديث المستخدم بنجاح.',
+  'superAdmin.userDeleted':     'تم حذف المستخدم بنجاح.',
+  'superAdmin.inquiryResolved': 'تم حل الاستفسار بنجاح.',
+  'superAdmin.userNotFound':    'المستخدم غير موجود.',
+
+  // ── Admin ──────────────────────────────────────────────────────────────────
+  'admin.userCreated':       'تم إنشاء المستخدم بنجاح.',
+  'admin.userUpdated':       'تم تحديث المستخدم بنجاح.',
+  'admin.userStatusUpdated': 'تم تحديث حالة المستخدم بنجاح.',
+  'admin.userPasswordReset': 'تم إرسال بريد إعادة تعيين كلمة المرور بنجاح.',
+  'admin.userDeleted':       'تم حذف المستخدم بنجاح.',
+  'admin.userNotFound':      'المستخدم غير موجود.',
+
+  // ── Newsletter ─────────────────────────────────────────────────────────────
+  'newsletter.subscribeSuccess': 'تم الاشتراك في النشرة الإخبارية بنجاح.',
+
+  // ── Notification ───────────────────────────────────────────────────────────
+  'notification.markedRead':    'تم تحديد الإشعار كمقروء.',
+  'notification.allMarkedRead': 'تم تحديد جميع الإشعارات كمقروءة.',
+  'notification.deleted':       'تم حذف الإشعار بنجاح.',
+  'notification.created':       'تم إنشاء الإشعار وبثه بنجاح.',
+  'notification.notFound':      'الإشعار غير موجود.',
+
+  // ── Inventory Alert ────────────────────────────────────────────────────────
+  'inventoryAlert.createSuccess':   'تم إنشاء تنبيه المخزون.',
+  'inventoryAlert.updateSuccess':   'تم تحديث تنبيه المخزون.',
+  'inventoryAlert.deleteSuccess':   'تم حذف تنبيه المخزون.',
+  'inventoryAlert.checksTriggered': 'تم تشغيل فحوصات التنبيهات.',
+  'inventoryAlert.notFound':        'تنبيه المخزون غير موجود.',
+
+  // ── Product Review ─────────────────────────────────────────────────────────
+  'productReview.addSuccess':    'تم تقديم المراجعة بنجاح.',
+  'productReview.approveSuccess':'تم تحديث حالة المراجعة.',
+  'productReview.notFound':      'المراجعة غير موجودة.',
+};

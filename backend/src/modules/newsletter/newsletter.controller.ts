@@ -8,13 +8,14 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { newsletterService } from './newsletter.service';
+import { t } from '@/common/i18n';
 
 class NewsletterController {
   subscribe = asyncHandler(async (req: Request, res: Response) => {
     const result = await newsletterService.subscribe(req.body.email as string);
     res.status(201).json({
       success: true,
-      message: 'Subscribed successfully',
+      message: t('newsletter.subscribeSuccess', req.locale),
       data: result,
     });
   });

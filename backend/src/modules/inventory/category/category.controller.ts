@@ -8,6 +8,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { categoryService } from './category.service';
 import { getPaginationParams } from '@/common/utils/pagination';
+import { emitToAll } from '@/modules/realtime/socket.service';
+import { t } from '@/common/i18n';
 
 export class CategoryController {
   /**
@@ -31,6 +33,7 @@ export class CategoryController {
         descriptionAr: req.body.descriptionAr,
       };
       const category = await categoryService.create(data, req.locale);
+      emitToAll('category:created', { id: category.id });
       res.status(201).json({ success: true, data: category });
     } catch (error) {
       next(error);
@@ -111,6 +114,7 @@ export class CategoryController {
         descriptionAr: req.body.descriptionAr,
       };
       const category = await categoryService.update(String(req.params.id), data, req.locale);
+      emitToAll('category:updated', { id: category.id });
       res.json({ success: true, data: category });
     } catch (error) {
       next(error);
@@ -127,8 +131,10 @@ export class CategoryController {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await categoryService.delete(String(req.params.id));
-      res.json({ success: true, message: 'Category deleted successfully' });
+      const deletedId = String(req.params.id);
+      await categoryService.delete(deletedId);
+      emitToAll('category:deleted', { id: deletedId });
+      res.json({ success: true, message: t('category.deleteSuccess', req.locale) });
     } catch (error) {
       next(error);
     }
@@ -139,7 +145,7 @@ export class CategoryController {
       const result = await categoryService.bulkDelete(req.body.ids || []);
       res.json({
         success: true,
-        message: 'Bulk delete completed',
+        message: t('category.bulkDelete', req.locale),
         data: result,
       });
     } catch (error) {

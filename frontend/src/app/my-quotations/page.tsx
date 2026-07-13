@@ -144,7 +144,7 @@ export default function MyQuotationsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#F97316]" size={36} />
+        <Loader2 className="animate-spin text-[#0205A6]" size={36} />
       </div>
     );
   }
@@ -160,7 +160,7 @@ export default function MyQuotationsPage() {
           <div className="flex items-center mb-8 relative">
             <Link
               href="/products"
-              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ms-auto"
+              className="p-2 text-gray-600 hover:text-[#0205A6] hover:bg-blue-50 rounded-lg transition-colors"
               aria-label="back"
             >
               <BackArrow size={22} />
@@ -171,7 +171,7 @@ export default function MyQuotationsPage() {
             <button
               onClick={() => fetchQuotations(pagination.page)}
               disabled={refreshing}
-              className="ms-auto text-gray-400 hover:text-[#F97316] transition-colors disabled:opacity-40"
+              className="ms-auto text-gray-400 hover:text-[#0205A6] transition-colors disabled:opacity-40"
               aria-label="refresh"
             >
               <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
@@ -182,7 +182,7 @@ export default function MyQuotationsPage() {
           {quotations.length === 0 && !refreshing ? (
             <div className="flex flex-col items-center justify-center py-20 gap-5 text-center">
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center">
-                <FileText size={36} className="text-[#F97316]" />
+                <FileText size={36} className="text-[#0205A6]" />
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900">
@@ -194,7 +194,7 @@ export default function MyQuotationsPage() {
               </div>
               <Link
                 href="/generate-quotation"
-                className="inline-flex items-center gap-2 bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm px-7 py-3 rounded-2xl transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 bg-[#0205A6] hover:bg-[#0204c0] text-white font-semibold text-sm px-7 py-3 rounded-2xl transition-colors shadow-sm"
               >
                 {t('myQuotations.requestQuotation') || 'Request Quotation'}
               </Link>
@@ -257,7 +257,7 @@ export default function MyQuotationsPage() {
                         )}
                         {quotation.adminReply && (
                           <p className="text-sm text-teal-700 mb-2">
-                            <span className="font-semibold text-teal-800">Admin Reply:</span> {quotation.adminReply.substring(0, 100)}
+                            <span className="font-semibold text-teal-800">{t('myQuotations.adminReply')}:</span> {quotation.adminReply.substring(0, 100)}
                             {quotation.adminReply.length > 100 ? '...' : ''}
                           </p>
                         )}
@@ -282,7 +282,7 @@ export default function MyQuotationsPage() {
                         </span>
                         <Link
                           href={`/my-quotation/${quotation.id}`}
-                          className="inline-flex items-center gap-1 text-[#F97316] hover:text-[#e8650a] text-sm font-semibold transition-colors"
+                          className="inline-flex items-center gap-1 text-[#0205A6] hover:text-[#0204c0] text-sm font-semibold transition-colors"
                         >
                           {t('myQuotations.viewDetails') || 'View'}
                           <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
@@ -293,7 +293,7 @@ export default function MyQuotationsPage() {
                       <div className={`px-5 pb-4 flex items-center gap-2 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Link
                           href={`/my-quotation/${quotation.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#F97316] hover:text-[#F97316] text-xs font-semibold transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#0205A6] hover:text-[#0205A6] text-xs font-semibold transition-colors"
                         >
                           <FileText size={13} />
                           {t('myQuotations.viewDetails') || 'View'}

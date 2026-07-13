@@ -41,6 +41,7 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
   const [showFallback, setShowFallback] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string>('');
   const [providerLoading, setProviderLoading] = useState(false);
+  const [captchaError, setCaptchaError] = useState<string>('');
   const { locale, isRTL, t } = useLanguage();
   const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   const providerEnabled = Boolean(recaptchaSiteKey);
@@ -75,6 +76,7 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
     setUserAnswer('');
     setAttempts(0);
     setVerificationToken('');
+    setCaptchaError('');
     onVerify(false);
   };
 
@@ -84,6 +86,7 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
     if (parseInt(userAnswer) === challenge.answer) {
       const token = `captcha_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       setVerificationToken(token);
+      setCaptchaError('');
       onVerify(true, token);
     } else {
       const newAttempts = attempts + 1;
@@ -94,8 +97,7 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
         setShowFallback(true);
         generateChallenge();
       } else {
-        // Generate new challenge after wrong answer
-        generateChallenge();
+        setCaptchaError(t('contactCaptchaInvalid') || 'Invalid CAPTCHA. Please try again.');
       }
     }
   };
@@ -157,15 +159,15 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
   if (isVerified === false && attempts >= 3 && showFallback) {
     return (
       <div className="space-y-3">
-        <div className="rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-3">
-          <p className="text-xs font-semibold text-orange-900 mb-2">{t('contactCaptchaTooMany') || CAPTCHA_LABELS.TOO_MANY_ATTEMPTS}</p>
-          <p className="text-xs text-orange-700 mb-3">
+        <div className="rounded-lg border-2 border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-xs font-semibold text-red-900 mb-2">{t('contactCaptchaTooMany') || CAPTCHA_LABELS.TOO_MANY_ATTEMPTS}</p>
+          <p className="text-xs text-red-700 mb-3">
             {t('contactCaptchaFallbackMessage') || CAPTCHA_LABELS.FALLBACK_MESSAGE}
           </p>
           <button
             type="button"
             onClick={handleFallbackVerify}
-            className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 bg-[#0205A6] hover:bg-[#0204c0] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
           >
             <Zap size={14} />
             {t('contactCaptchaFallbackButton') || CAPTCHA_LABELS.FALLBACK_BUTTON}
@@ -249,11 +251,18 @@ export default function CaptchaChallenge({ onVerify, isVerified }: CaptchaChalle
               </button>
             </div>
 
-            {/* Attempt Counter */}
-            {attempts > 0 && attempts < 3 && (
-              <p className="text-xs text-red-600">
-                {t('contactCaptchaIncorrectPrefix') || CAPTCHA_LABELS.INCORRECT_PREFIX} {3 - attempts} attempt{3 - attempts > 1 ? 's' : ''} {t('contactCaptchaAttemptsSuffix') || CAPTCHA_LABELS.ATTEMPTS_SUFFIX}
-              </p>
+            {/* Error message */}
+            {captchaError && (
+              <div className="flex items-start justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                <p className="text-xs font-semibold text-red-600">{captchaError}</p>
+                <button
+                  type="button"
+                  onClick={generateChallenge}
+                  className="shrink-0 text-xs text-red-400 underline hover:text-red-600 whitespace-nowrap"
+                >
+                  {t('contactCaptchaNewQuestion') || 'New question'}
+                </button>
+              </div>
             )}
           </div>
         )}

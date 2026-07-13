@@ -9,6 +9,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './common/logger/logger';
 import { emailService } from './common/services/email.service';
 import { checkProductImageStorage } from './common/services/product-image.service';
+import { initSocketServer } from './modules/realtime/socket.service';
 import http from 'http';
 
 // Global error handlers - set these FIRST before anything else
@@ -43,7 +44,10 @@ const startServer = async (): Promise<void> => {
     }
 
     // Start listening
-    const server = app.listen(env.port, '0.0.0.0', async () => {
+    const server = http.createServer(app);
+    initSocketServer(server);
+
+    server.listen(env.port, '0.0.0.0', async () => {
       logger.info(`🚀 Shielder API Server started successfully`, {
         port: env.port,
         environment: env.nodeEnv,

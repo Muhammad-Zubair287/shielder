@@ -88,6 +88,72 @@ function resolveLocalizedText(
   );
 }
 
+/** Arabic translations for common spec key names stored in English by admins */
+const SPEC_KEY_AR: Record<string, string> = {
+  // filter-specific
+  'filter number':        'رقم الفلتر',
+  'filter type':          'نوع الفلتر',
+  'alternate numbers':    'الأرقام البديلة',
+  'alternate number':     'الرقم البديل',
+  'filter numbers':       'أرقام الفلتر',
+  // physical properties
+  'material':             'المادة',
+  'dimensions':           'الأبعاد',
+  'dimension':            'البعد',
+  'weight':               'الوزن',
+  'size':                 'الحجم',
+  'color':                'اللون',
+  'colour':               'اللون',
+  'length':               'الطول',
+  'width':                'العرض',
+  'height':               'الارتفاع',
+  'thickness':            'السماكة',
+  'diameter':             'القطر',
+  'inner diameter':       'القطر الداخلي',
+  'outer diameter':       'القطر الخارجي',
+  // performance
+  'flow rate':            'معدل التدفق',
+  'pressure':             'الضغط',
+  'pressure drop':        'انخفاض الضغط',
+  'max pressure':         'الضغط الأقصى',
+  'temperature':          'درجة الحرارة',
+  'max temperature':      'درجة الحرارة القصوى',
+  'efficiency':           'الكفاءة',
+  'filtration efficiency':'كفاءة الترشيح',
+  'micron rating':        'تصنيف الميكرون',
+  'micron':               'ميكرون',
+  'capacity':             'السعة',
+  'compatibility':        'التوافق',
+  'service interval':     'فترة الخدمة',
+  // origin & compliance
+  'country of origin':    'بلد المنشأ',
+  'brand':                'العلامة التجارية',
+  'manufacturer':         'الشركة المصنعة',
+  'part number':          'رقم الجزء',
+  'oem number':           'رقم OEM',
+  'oem':                  'OEM',
+  'sku':                  'رمز المنتج',
+  'certification':        'الشهادة',
+  'warranty':             'الضمان',
+  'application':          'التطبيق',
+  'usage':                'الاستخدام',
+  'oil type':             'نوع الزيت',
+  'thread size':          'حجم اللولب',
+  'bypass valve':         'صمام التجاوز',
+  'media type':           'نوع الوسيط',
+  'media':                'الوسيط',
+};
+
+/**
+ * Return the translated display name for a spec key.
+ * Falls back to the original key if no translation is found.
+ */
+export function translateSpecKey(key: string, locale: string): string {
+  if (!key) return key;
+  if (locale !== 'ar') return key;
+  return SPEC_KEY_AR[key.toLowerCase().trim()] ?? key;
+}
+
 export function resolveProductName(product: ProductDisplayLike, locale: string): string {
   return resolveLocalizedText(product, locale, 'name');
 }

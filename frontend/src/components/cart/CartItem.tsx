@@ -178,7 +178,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
   return (
     <>
       <div
-        className={`flex items-center gap-4 py-4 px-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+        className="flex items-center gap-4 py-4 px-2"
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         {/* Product image */}
@@ -193,7 +193,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
         </div>
 
         {/* Name + quantity control */}
-        <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-start'}`}>
+        <div className="flex-1 min-w-0 text-start">
           <p className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</p>
 
           {typeof item.product.stock === 'number' && (
@@ -205,12 +205,12 @@ export default function CartItem({ item, isLast }: CartItemProps) {
           )}
 
           {/* Quantity selector */}
-          <div className={`flex items-center gap-3 mt-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <div className="flex items-center gap-3 mt-2">
             <button
               onClick={handleIncrease}
               disabled={stockLimit !== null && item.quantity >= stockLimit}
               aria-label="increase"
-              className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-orange-50 hover:border-[#F97316] hover:text-[#F97316] transition-colors disabled:opacity-40"
+              className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-blue-50 hover:border-[#0205A6] hover:text-[#0205A6] transition-colors disabled:opacity-40"
             >
               <Plus size={12} strokeWidth={3} />
             </button>
@@ -227,7 +227,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
               onFocus={handleFocus}
               aria-label={t('cart.quantity')}
               aria-invalid={!!error}
-              className={`text-sm font-semibold text-gray-800 w-12 text-center border rounded-md py-0.5 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316] ${
+              className={`text-sm font-semibold text-gray-800 w-12 text-center border rounded-md py-0.5 focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-[#0205A6] ${
                 error ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -235,7 +235,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
             <button
               onClick={handleDecrease}
               aria-label="decrease"
-              className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-orange-50 hover:border-[#F97316] hover:text-[#F97316] transition-colors disabled:opacity-40"
+              className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-blue-50 hover:border-[#0205A6] hover:text-[#0205A6] transition-colors disabled:opacity-40"
             >
               <Minus size={12} strokeWidth={3} />
             </button>
@@ -249,7 +249,7 @@ export default function CartItem({ item, isLast }: CartItemProps) {
         </div>
 
         {/* Price + remove */}
-        <div className={`flex flex-col items-end gap-2 shrink-0 ${isRTL ? 'items-start' : ''}`}>
+        <div className="flex flex-col items-end gap-2 shrink-0">
           <span className="text-sm font-bold text-[#0D1637] flex items-center gap-0.5">
             <SARSymbol />{item.subtotal.toFixed(2)}
           </span>

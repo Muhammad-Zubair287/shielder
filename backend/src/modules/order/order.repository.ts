@@ -20,6 +20,10 @@ export class OrderRepository {
               include: {
                 translations: true,
                 specifications: true,
+                attachments: {
+                  select: { fileUrl: true },
+                  take: 5,
+                },
               },
             },
           },

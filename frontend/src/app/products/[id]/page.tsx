@@ -12,7 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { useQuotation } from '@/contexts/QuotationContext';
 import { getImageUrl } from '@/utils/helpers';
-import { resolveProductImage, resolveProductImages, resolveProductDescription, resolveProductName } from '@/utils/productDisplay';
+import { resolveProductImage, resolveProductImages, resolveProductDescription, resolveProductName, translateSpecKey } from '@/utils/productDisplay';
 import SARSymbol from '@/components/SARSymbol';
 import { useAuthStore } from '@/store/auth.store';
 import { useProduct } from '@/hooks/useProduct';
@@ -175,7 +175,7 @@ export default function ProductDetailPage() {
     <>
       <LandingNavbar />
       
-      <main className="min-h-screen bg-gray-50" dir={isRTL ? 'rtl' : 'ltr'}>
+      <main className="min-h-screen bg-gray-50 pt-[100px]" dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Breadcrumb */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
@@ -193,12 +193,12 @@ export default function ProductDetailPage() {
             {/* ── Image Gallery ── */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 group cursor-pointer">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-white border border-gray-200 cursor-pointer">
                 {currentImage && !imageError ? (
                   <img
                     src={currentImage}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-300"
                     onError={() => setImageError(true)}
                   />
                 ) : (
@@ -249,7 +249,7 @@ export default function ProductDetailPage() {
               {/* Category Badge */}
               {categoryName && (
                 <div className={`flex items-center gap-2 ${isRTL ? 'justify-end' : ''}`}>
-                  <span className="inline-block bg-[#F97316]/10 text-[#F97316] text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="inline-block bg-[#0205A6]/10 text-[#0205A6] text-xs font-bold px-3 py-1 rounded-full">
                     {categoryName}
                   </span>
                 </div>
@@ -306,28 +306,35 @@ export default function ProductDetailPage() {
                   {product.filterType && (
                     <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                       <span className="font-semibold text-gray-700">{detailLabels.filterType}</span>
-                      <span>{product.filterType}</span>
+                      <span dir="ltr">{product.filterType}</span>
                     </p>
                   )}
                   {product.material && (
                     <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                       <span className="font-semibold text-gray-700">{detailLabels.material}</span>
-                      <span>{product.material}</span>
+                      <span dir="ltr">{product.material}</span>
                     </p>
                   )}
                   {product.dimensions && (
                     <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                       <span className="font-semibold text-gray-700">{detailLabels.dimensions}</span>
-                      <span>{product.dimensions}</span>
+                      <span dir="ltr">{product.dimensions}</span>
                     </p>
                   )}
                   {product.alternateNumbers && (
                     <p className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                       <span className="font-semibold text-gray-700">{detailLabels.alternateNumbers}</span>
-                      <span>{product.alternateNumbers}</span>
+                      <span dir="ltr">{product.alternateNumbers}</span>
                     </p>
                   )}
-                  {!product.filterType && !product.material && !product.dimensions && !product.alternateNumbers && (
+                  {/* Dynamic admin-defined specifications (sidebar preview) */}
+                  {product.specifications?.map((spec, i) => (
+                    <p key={spec.id ?? i} className={`flex flex-wrap gap-1 ${isRTL ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <span className="font-semibold text-gray-700">{translateSpecKey(spec.spec_key, locale)}</span>
+                      <span dir="ltr">{spec.spec_value}</span>
+                    </p>
+                  ))}
+                  {!product.filterType && !product.material && !product.dimensions && !product.alternateNumbers && (!product.specifications || product.specifications.length === 0) && (
                     <p className="text-gray-400 italic">{detailLabels.noSpecs}</p>
                   )}
                 </div>
@@ -372,7 +379,7 @@ export default function ProductDetailPage() {
                     onClick={handleAddToCart}
                     disabled={cartLoading || product.stock === 0}
                     aria-label={`Add ${product.name} to cart`}
-                    className={`w-full bg-gradient-to-r from-[#F97316] to-orange-500 hover:from-orange-500 hover:to-[#F97316] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}
+                    className={`w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl ${isRTL ? 'flex-row-reverse' : ''}`}
                   >
                     <ShoppingCart size={20} />
                     {t('productsAddToCart') || 'Add to Cart'}
@@ -510,7 +517,7 @@ export default function ProductDetailPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">{detailLabels.filterType}</h4>
-                      <p className="text-gray-600">{product.filterType}</p>
+                      <p className="text-gray-600" dir="ltr">{product.filterType}</p>
                     </div>
                   </div>
                 )}
@@ -518,7 +525,7 @@ export default function ProductDetailPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">{detailLabels.material}</h4>
-                      <p className="text-gray-600">{product.material}</p>
+                      <p className="text-gray-600" dir="ltr">{product.material}</p>
                     </div>
                   </div>
                 )}
@@ -526,7 +533,7 @@ export default function ProductDetailPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">{detailLabels.dimensions}</h4>
-                      <p className="text-gray-600">{product.dimensions}</p>
+                      <p className="text-gray-600" dir="ltr">{product.dimensions}</p>
                     </div>
                   </div>
                 )}
@@ -534,9 +541,25 @@ export default function ProductDetailPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">{detailLabels.alternateNumbers}</h4>
-                      <p className="text-gray-600">{product.alternateNumbers}</p>
+                      <p className="text-gray-600" dir="ltr">{product.alternateNumbers}</p>
                     </div>
                   </div>
+                )}
+                {/* Dynamic admin-defined specifications */}
+                {product.specifications && product.specifications.length > 0 && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {product.specifications.map((spec, i) => (
+                      <div key={spec.id ?? i}>
+                        <h4 className="font-bold text-gray-900 mb-1">
+                          {translateSpecKey(spec.spec_key, locale)}
+                        </h4>
+                        <p className="text-gray-600" dir="ltr">{spec.spec_value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!product.filterType && !product.material && !product.dimensions && !product.alternateNumbers && (!product.specifications || product.specifications.length === 0) && (
+                  <p className="text-gray-400 italic">{detailLabels.noSpecs}</p>
                 )}
               </div>
             )}

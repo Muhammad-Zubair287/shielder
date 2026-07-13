@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/auth.store';
 import { validateProfileUpdate } from '@/utils/profile.validation';
 import { toast } from 'react-hot-toast';
+import { broadcastSync } from '@/lib/crossTabSync';
 
 /**
  * Profile form data interface
@@ -161,7 +162,7 @@ export const ProfileForm = () => {
 
       const response = await profileService.updateProfile(updateData);
       
-      // Update user in auth store
+      // Update user in auth store + sync all other open tabs
       if (user) {
         const updatedUser = {
           ...user,
@@ -171,6 +172,7 @@ export const ProfileForm = () => {
           },
         };
         setUser(updatedUser as any);
+        broadcastSync({ type: 'AUTH_USER_UPDATED', user: updatedUser });
       }
 
       setInitialData(formData);

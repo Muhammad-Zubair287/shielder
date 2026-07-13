@@ -14,6 +14,7 @@ import { Response } from 'express';
 import { AuthRequest } from '@/types/global';
 import { InventoryAlertService } from './inventory-alert.service';
 import { asyncHandler } from '@/common/utils/helpers';
+import { t } from '@/common/i18n';
 
 export class InventoryAlertController {
   /**
@@ -26,7 +27,7 @@ export class InventoryAlertController {
 
     res.status(201).json({
       success: true,
-      message: 'Inventory alert created successfully',
+      message: t('inventoryAlert.createSuccess', req.locale),
       data: { alert },
     });
   });
@@ -60,7 +61,7 @@ export class InventoryAlertController {
 
     res.status(200).json({
       success: true,
-      message: 'Inventory alert updated successfully',
+      message: t('inventoryAlert.updateSuccess', req.locale),
       data: { alert },
     });
   });
@@ -75,19 +76,19 @@ export class InventoryAlertController {
 
     res.status(200).json({
       success: true,
-      message: 'Inventory alert deleted successfully',
+      message: t('inventoryAlert.deleteSuccess', req.locale),
     });
   });
 
   /**
    * Manually trigger alert checks
    */
-  static triggerAlertChecks = asyncHandler(async (_req: AuthRequest, res: Response) => {
+  static triggerAlertChecks = asyncHandler(async (req: AuthRequest, res: Response) => {
     const triggered = await InventoryAlertService.checkAndTriggerAlerts();
 
     res.status(200).json({
       success: true,
-      message: `Alert check completed. ${triggered.length} alerts triggered.`,
+      message: t('inventoryAlert.checksTriggered', req.locale),
       data: { triggeredCount: triggered.length },
     });
   });

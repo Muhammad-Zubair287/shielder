@@ -70,7 +70,7 @@ export const productValidation = {
     minPrice: Joi.number().min(0).optional(),
     maxPrice: Joi.number().min(0).optional(),
     inStock: Joi.string().valid('true', 'false').optional(),
-    sort: Joi.string().valid('price_asc', 'price_desc', 'newest').optional(),
+    sort: Joi.string().valid('price_asc', 'price_desc', 'newest', 'best_selling').optional(),
     page: Joi.number().integer().min(1).optional(),
     limit: Joi.number().integer().min(1).max(100).optional(),
     locale: Joi.string().length(2).optional(),

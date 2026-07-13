@@ -15,6 +15,7 @@ import { AuthRequest } from '@/types/global';
 import { ProductReviewService } from './product-review.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { BadRequestError } from '@/common/errors/api.error';
+import { t } from '@/common/i18n';
 
 export class ProductReviewController {
   /**
@@ -28,7 +29,7 @@ export class ProductReviewController {
 
     res.status(201).json({
       success: true,
-      message: 'Review submitted successfully',
+      message: t('productReview.addSuccess', req.locale),
       data: { review },
     });
   });
@@ -67,7 +68,7 @@ export class ProductReviewController {
 
     res.status(200).json({
       success: true,
-      message: `Review ${approved ? 'approved' : 'rejected'} successfully`,
+      message: t('productReview.approveSuccess', req.locale),
       data: { review: result },
     });
   });

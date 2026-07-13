@@ -1,176 +1,218 @@
 # Shielder Frontend
 
-Enterprise-grade frontend for the Shielder Digital Platform - Industrial Filters Management System.
+Next.js 14 frontend for the Shielder Digital Platform — B2B industrial filters e-commerce with multilingual support (English / Arabic RTL) and real-time cross-platform synchronization.
 
-## 🚀 Features
-
-- **Modern Stack**: Next.js 14 with App Router, TypeScript, Tailwind CSS
-- **Authentication**: JWT-based authentication with protected routes
-- **Multilingual**: Support for English and Arabic with RTL layout
-- **State Management**: Zustand for global state
-- **API Integration**: Axios with interceptors for token refresh
-- **Type Safety**: Full TypeScript implementation
-- **Responsive Design**: Mobile-first responsive design
-- **Form Validation**: Client-side validation with clear error messages
-
-## 📋 Prerequisites
+## Prerequisites
 
 - Node.js >= 18.0.0
 - npm >= 9.0.0
+- Shielder backend running (see `../backend/README.md`)
 
-## 🛠️ Installation
+## Setup
 
-1. **Navigate to frontend directory**
-```bash
-cd frontend
-```
-
-2. **Install dependencies**
 ```bash
 npm install
-```
-
-3. **Set up environment variables**
-```bash
 cp .env.local.example .env.local
-# Edit .env.local with your API URL
+# Set NEXT_PUBLIC_API_URL=http://localhost:5000/api
+npm run dev      # http://localhost:3000
 ```
 
-4. **Run the development server**
-```bash
-npm run dev
-```
+## Environment Variables
 
-Open [http://localhost:3000](http://localhost:3000) with your browser.
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend API base URL (e.g. `http://localhost:5000/api`) |
 
-## 🏃 Available Scripts
+The Socket.IO client derives its URL automatically by stripping `/api` from this value.
 
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint errors
-npm run format       # Format code with Prettier
-npm run type-check   # Check TypeScript types
-```
-
-## 📁 Project Structure
-
-```
-frontend/
-├── src/
-│   ├── app/                 # Next.js App Router pages
-│   │   ├── layout.tsx       # Root layout
-│   │   ├── page.tsx         # Homepage
-│   │   ├── login/           # Login page
-│   │   └── register/        # Register page
-│   ├── components/          # Reusable components
-│   │   └── providers/       # Context providers
-│   ├── hooks/               # Custom React hooks
-│   │   └── useAuth.ts       # Authentication hook
-│   ├── services/            # API services
-│   │   ├── api.service.ts   # Axios instance
-│   │   └── auth.service.ts  # Auth API calls
-│   ├── store/               # Zustand stores
-│   │   └── auth.store.ts    # Auth state
-│   ├── styles/              # Global styles
-│   │   └── globals.css      # Tailwind + custom styles
-│   ├── types/               # TypeScript types
-│   │   └── index.ts         # Type definitions
-│   └── utils/               # Utilities
-│       └── constants.ts     # Constants and endpoints
-├── public/                  # Static files
-├── .cursorrules             # Coding standards
-├── next.config.js           # Next.js configuration
-├── tailwind.config.js       # Tailwind configuration
-├── tsconfig.json            # TypeScript configuration
-└── package.json             # Dependencies
-```
-
-## 🌐 Pages & Routes
-
-### Public Pages
-- `/` - Homepage
-- `/login` - Login page
-- `/register` - Registration page
-
-### Protected Pages (Customer)
-- `/customer/dashboard` - Customer dashboard
-- `/customer/orders` - Order management
-- `/customer/profile` - User profile
-
-### Protected Pages (Admin)
-- `/admin/dashboard` - Admin dashboard
-- `/admin/products` - Product management
-- `/admin/orders` - Order management
-- `/admin/users` - User management
-- `/admin/reports` - Analytics & reports
-
-## 🔒 Authentication Flow
-
-1. User registers or logs in
-2. Backend returns JWT access token and refresh token
-3. Tokens stored in localStorage
-4. Access token sent in Authorization header for API requests
-5. Token automatically refreshed when expired
-6. Protected routes check authentication status
-
-## 🌍 Multilingual Support
-
-The application supports English and Arabic:
-
-- User can select preferred language during registration
-- RTL layout automatically applied for Arabic
-- All UI strings managed in translation files
-- API sends locale in Accept-Language header
-
-## 📦 Deployment
-
-### Deploy to Vercel
-
-1. **Connect your repository to Vercel**
-2. **Set environment variables:**
-   - `NEXT_PUBLIC_API_URL`: Your backend API URL
-3. **Deploy!**
-
-The frontend will be automatically deployed on push to main branch.
-
-### Manual Deployment
+## Scripts
 
 ```bash
-npm run build
-npm start
+npm run dev          # Next.js dev server (port 3000)
+npm run build        # Production build
+npm start            # Start production server
+npm run type-check   # TypeScript check without emit
+npm run lint         # ESLint
+npm run lint:fix     # ESLint with auto-fix
+npm run format       # Prettier
+npm run test         # Jest unit tests
+npm run test:watch   # Watch mode
+npm run test:e2e     # Cypress E2E (all specs)
+npm run test:e2e:auth # Cypress auth flow only
 ```
 
-## 🔧 Environment Variables
+## Architecture
 
-```env
-NEXT_PUBLIC_API_URL=https://your-backend-api.com/api/v1
+### Directory Layout
+
+```
+frontend/src/
+├── app/                      # Next.js App Router pages
+│   ├── layout.tsx            # Root layout: providers, theme init, font loading
+│   ├── (public)/             # Home, products, product detail, about, contact
+│   ├── login/ register/      # Auth pages
+│   ├── admin/                # Admin panel (role-guarded)
+│   │   ├── dashboard/
+│   │   ├── products/
+│   │   ├── categories/
+│   │   ├── subcategories/
+│   │   ├── orders/
+│   │   ├── quotations/
+│   │   └── users/
+│   ├── superadmin/           # Super-admin panel (role-guarded)
+│   │   ├── dashboard/
+│   │   ├── users/
+│   │   └── settings/
+│   ├── checkout/             # Order placement
+│   ├── my-orders/            # Customer order history
+│   ├── my-quotation/         # Customer quotation history + detail
+│   └── profile/              # User profile management
+├── components/
+│   ├── providers/
+│   │   ├── CrossTabSyncProvider.tsx  # BroadcastChannel + Socket.IO sync
+│   │   ├── QueryProvider.tsx         # TanStack React Query config
+│   │   └── AuthProvider.tsx          # Auth initialization
+│   ├── cart/                 # Cart drawer, QuotationDrawer
+│   ├── layout/               # Navbar, Footer, Sidebar
+│   └── ui/                   # Shared UI components
+├── contexts/
+│   ├── LanguageContext.tsx   # EN/AR locale, RTL, translations
+│   ├── CartContext.tsx        # Cart state + BroadcastChannel sync
+│   └── QuotationContext.tsx  # Quotation basket state
+├── hooks/
+│   ├── useRealtimeSync.ts    # Socket.IO event listener → React Query + DOM events
+│   └── useSyncRefetch.ts     # DOM event listener for non-RQ admin pages
+├── lib/
+│   ├── socket.ts             # Socket.IO client singleton
+│   └── crossTabSync.ts       # BroadcastChannel helpers + SyncEvent types
+├── services/                 # Axios API wrappers (one per backend module)
+├── store/
+│   └── auth.store.ts         # Zustand auth store (reads/writes sessionStorage)
+└── utils/
+    └── constants.ts          # API endpoints, storage keys, limits
 ```
 
-## 🎨 Styling
+### Provider Tree (layout.tsx)
 
-- **Tailwind CSS**: Utility-first CSS framework
-- **Custom Components**: Reusable styled components
-- **Responsive Design**: Mobile-first approach
-- **RTL Support**: Full right-to-left support for Arabic
+```
+ThemeScript (inline, runs before hydration)
+└── QueryProvider
+    └── CrossTabSyncProvider   ← BroadcastChannel + Socket.IO
+        └── LanguageProvider
+            └── AuthProvider
+                └── CartProvider
+                    └── QuotationProvider
+                        └── {children}
+```
 
-## 📝 Code Quality
+## Real-time Sync
 
-This project follows strict coding standards defined in `.cursorrules`:
+### Socket.IO (cross-device)
 
-- TypeScript only
-- Strict typing
-- No hard-coded values
-- Separation of concerns
-- Modular architecture
-- Reusable components
+`src/lib/socket.ts` holds a module-level singleton connected to the backend Socket.IO server. The connection is established lazily when the user is authenticated and torn down on logout.
 
-## 🤝 Contributing
+**Auth**: the JWT access token is read from `sessionStorage('shielder_access_token')` and passed in `socket.handshake.auth.token`.
 
-Please follow the coding standards defined in `.cursorrules`.
+`src/hooks/useRealtimeSync.ts` is mounted inside `CrossTabSyncProvider`. It listens for all backend events and routes them to:
+- `queryClient.invalidateQueries()` for React Query pages
+- `window.dispatchEvent(DATA_CHANGED_EVENT)` for non-RQ admin pages (picked up by `useSyncRefetch`)
 
-## 📄 License
+**Events handled:**
 
-MIT License - Shielder Digital Platform
+| Event | React Query keys invalidated | Module (DOM event) |
+|---|---|---|
+| `cart:updated` | `cart` | — |
+| `order:created/updated` | `orders`, `my-orders`, `order-summary` | `orders` |
+| `profile:updated` | `profile` | — |
+| `quotation:created/updated` | `quotations`, `customer-quotations` | `quotations` |
+| `product:created/updated/deleted` | `products` | `products` |
+| `category:created/updated/deleted` | `categories` | `categories` |
+| `subcategory:created/updated/deleted` | `subcategories` | `subcategories` |
+| `notification:new` | `notifications` | — |
+| `settings:updated` | `settings` | — |
+
+### BroadcastChannel (cross-tab, same browser)
+
+`src/lib/crossTabSync.ts` defines the `SyncEvent` union and `broadcastSync()` helper. `CrossTabSyncProvider` listens and handles:
+
+| Event | Action |
+|---|---|
+| `AUTH_LOGOUT` | Call `useAuthStore.logout()` on all other tabs |
+| `AUTH_USER_UPDATED` | Push new user object into Zustand on all other tabs |
+| `LANGUAGE_CHANGED` | Switch locale on all other tabs |
+| `QUERY_INVALIDATE` | Invalidate specific React Query keys |
+| `QUERY_INVALIDATE_ALL` | Invalidate all queries |
+| `DATA_CHANGED` | Dispatch `shielder:data-changed` DOM event |
+
+### useSyncRefetch
+
+Admin pages that use manual `fetch` (not React Query) call:
+
+```typescript
+useSyncRefetch(fetchData, 'products');   // re-fetch when products change
+```
+
+This hook subscribes to `shielder:data-changed` DOM events and calls `fetchData()` when the module matches.
+
+## Authentication
+
+- Tokens stored in `sessionStorage` (per-tab, cleared on tab close)
+- Zustand `auth.store.ts` is the single source of truth for auth state in React
+- `AuthProvider` initializes from `sessionStorage` on mount
+- Axios interceptors in `api.service.ts` attach the access token and handle 401 → refresh token → retry
+
+## Multilingual (EN/AR)
+
+- `LanguageContext` drives locale switching
+- Arabic applies `dir="rtl"` and Cairo font globally
+- `DirSync` sets `<html lang>` and `<html dir>` before hydration to prevent flash
+- All translation strings live in `LanguageContext.tsx` under `translations.en` / `translations.ar`
+- `isRTL` flag from `useLanguage()` is used in components to conditionally flip icon placement and text alignment
+
+## Key Patterns
+
+- **Character limits on forms**: `LIMITS` constants in checkout (`name: 100, address: 200, notes: 500`) and quotation drawer (`companyName: 100, address: 200`)
+- **RTL layout**: rely on `dir="rtl"` on the container — do not add `flex-row-reverse` inside RTL containers (double-reversal breaks layout)
+- **Drawer direction**: always `right-0` regardless of locale (icon is always on the right)
+- **Cart idempotency**: `clearCart({ silent: true })` after checkout suppresses the success toast and swallows any 400 error from an already-empty cart
+- **Non-RQ admin pages**: use `broadcastSync({ type: 'DATA_CHANGED', module: '...' })` after mutations and `useSyncRefetch(fetchFn, 'module')` to auto-refresh on changes from other tabs/devices
+
+## Pages & Routes
+
+### Public
+- `/` — Home
+- `/products` — Product catalog with filtering, compare, and quotation basket
+- `/products/[id]` — Product detail
+- `/about`, `/contact`, `/privacy-policy`, `/resources`
+
+### Auth
+- `/login`, `/register`
+- `/verify-email/[token]`, `/forgot-password`, `/reset-password`
+
+### Customer (authenticated)
+- `/checkout` — Place an order
+- `/my-orders` — Order history
+- `/my-quotation` — Quotation list
+- `/my-quotation/[id]` — Quotation detail
+- `/profile` — Profile management
+
+### Admin (role: ADMIN)
+- `/admin/dashboard`
+- `/admin/products`, `/admin/categories`, `/admin/subcategories`
+- `/admin/orders`, `/admin/quotations`
+- `/admin/users`
+
+### Super Admin (role: SUPER_ADMIN)
+- `/superadmin/dashboard`
+- `/superadmin/users`
+- `/superadmin/settings`, `/superadmin/privacy-policy`, `/superadmin/about-us`
+
+## Deployment (Vercel)
+
+1. Connect the `frontend/` directory to a Vercel project
+2. Set `NEXT_PUBLIC_API_URL` to your production backend URL
+3. Deploy — Vercel auto-deploys on push to main
+
+## License
+
+MIT — Shielder Development Team

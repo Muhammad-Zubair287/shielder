@@ -9,6 +9,8 @@ import { Response, NextFunction } from 'express';
 import { ProfileService } from './profile.service';
 import { AuthRequest } from '../../types/global';
 import { deleteLocalProfileImageFile, storeProfileImageFile } from '../../common/services/profile-image.service';
+import { emitToUser } from '../realtime/socket.service';
+import { t } from '@/common/i18n';
 
 export class ProfileController {
   /**
@@ -62,10 +64,10 @@ export class ProfileController {
     try {
       const userId = req.user!.userId;
       const profile = await ProfileService.updateProfile(userId, req.body, req.user!.role);
-      
+      emitToUser(userId, 'profile:updated', profile);
       res.status(200).json({
         success: true,
-        message: 'Profile updated successfully',
+        message: t('profile.updateSuccess', req.locale),
         data: profile,
       });
     } catch (error) {
@@ -100,7 +102,7 @@ export class ProfileController {
       
       res.status(200).json({
         success: true,
-        message: 'Language preference updated successfully',
+        message: t('profile.languageUpdated', req.locale),
         data: profile,
       });
     } catch (error) {
@@ -162,7 +164,7 @@ export class ProfileController {
       
       res.status(200).json({
         success: true,
-        message: 'Preferences updated successfully',
+        message: t('profile.preferencesUpdated', req.locale),
         data: profile,
       });
     } catch (error) {
@@ -199,7 +201,7 @@ export class ProfileController {
       if (!file) {
         res.status(400).json({
           success: false,
-          message: 'No file uploaded',
+          message: t('profile.noFileUploaded', req.locale),
         });
         return;
       }
@@ -221,7 +223,7 @@ export class ProfileController {
 
       res.status(200).json({
         success: true,
-        message: 'Profile image uploaded successfully',
+        message: t('profile.imageUploaded', req.locale),
         imageUrl: profileImageUrl,
         data: {
           profileImage: profileImageUrl,

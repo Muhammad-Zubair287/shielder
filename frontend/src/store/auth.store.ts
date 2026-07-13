@@ -6,6 +6,8 @@
 import { create } from 'zustand';
 import type { User } from '@/types';
 import authService from '@/services/auth.service';
+import { broadcastSync } from '@/lib/crossTabSync';
+import { disconnectSocket } from '@/lib/socket';
 
 interface AuthState {
   user: User | null;
@@ -79,6 +81,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
         isAuthenticated: false,
         error: null,
       });
+      // Tear down the real-time socket connection
+      disconnectSocket();
+      // Tell every other open tab to log out too
+      broadcastSync({ type: 'AUTH_LOGOUT' });
     } catch (error) {
       console.error('Logout error:', error);
     }

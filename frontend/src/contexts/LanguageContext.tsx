@@ -12,6 +12,7 @@ import {
 import initLocalizedToasts from '@/utils/localizeToasts';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { invalidateLocaleCache } from '@/services/api.service';
+import { broadcastSync, SYNC_CHANNEL, type SyncEvent } from '@/lib/crossTabSync';
 
 type TFunction = (key: TranslationKey | string) => string;
 
@@ -58,7 +59,24 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try { initLocalizedToasts(locale); } catch (e) { /* safe to ignore */ }
   }, [locale, mounted]);
 
-  const setLocale = (newLocale: Locale) => setLocaleState(newLocale);
+  const setLocale = (newLocale: Locale) => {
+    setLocaleState(newLocale);
+    broadcastSync({ type: 'LANGUAGE_CHANGED', locale: newLocale });
+  };
+
+  // Listen for language changes made in other tabs
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let channel: BroadcastChannel;
+    try { channel = new BroadcastChannel(SYNC_CHANNEL); } catch { return; }
+    channel.onmessage = (e: MessageEvent<SyncEvent>) => {
+      if (e.data?.type === 'LANGUAGE_CHANGED') {
+        setLocaleState(e.data.locale as Locale);
+      }
+    };
+    return () => channel.close();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Before mount, serve default LTR/English so children render immediately
   // (avoids blank page while waiting for localStorage). After mount the

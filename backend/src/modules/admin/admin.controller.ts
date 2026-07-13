@@ -20,6 +20,7 @@ import {
 import { UserRole } from '../../common/constants/roles';
 import { emailService } from '../../common/services/email.service';
 import { logger } from '../../common/logger/logger';
+import { t } from '@/common/i18n';
 
 export class AdminController {
   /**
@@ -145,7 +146,7 @@ export class AdminController {
 
       res.status(201).json({
         success: true,
-        message: 'User created successfully',
+        message: t('admin.userCreated', req.locale),
         data: sanitizeAuthUser(user),
       });
     } catch (error) {
@@ -189,7 +190,7 @@ export class AdminController {
 
       res.json({
         success: true,
-        message: 'User updated successfully',
+        message: t('admin.userUpdated', req.locale),
         data: sanitizeAuthUser(user),
       });
     } catch (error) {
@@ -212,7 +213,7 @@ export class AdminController {
 
       res.json({
         success: true,
-        message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+        message: t('admin.userStatusUpdated', req.locale),
         data: user,
       });
     } catch (error) {

@@ -18,6 +18,8 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
+import { broadcastSync } from '@/lib/crossTabSync';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import adminService from '@/services/admin.service';
@@ -172,7 +174,11 @@ export default function AdminProductsPage() {
   const openDelete = (p: Product) => setDeleteTarget(p);
   const closeForm = () => { setFormMode(null); setSelectedProduct(null); };
   const closeDelete = () => setDeleteTarget(null);
-  const onMutationSuccess = () => fetchData();
+  const onMutationSuccess = () => {
+    fetchData();
+    broadcastSync({ type: 'DATA_CHANGED', module: 'products' });
+  };
+  useSyncRefetch(fetchData, 'products');
 
   const clearFilters = () => {
     setSearch('');

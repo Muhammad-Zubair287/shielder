@@ -8,6 +8,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { subcategoryService } from './subcategory.service';
 import { getPaginationParams } from '@/common/utils/pagination';
+import { emitToAll } from '@/modules/realtime/socket.service';
+import { t } from '@/common/i18n';
 
 export class SubcategoryController {
   /**
@@ -30,6 +32,7 @@ export class SubcategoryController {
         nameAr: req.body.nameAr,
         descriptionAr: req.body.descriptionAr,
       }, req.locale);
+      emitToAll('subcategory:created', { id: subcategory.id });
       res.status(201).json({ success: true, data: subcategory });
     } catch (error) {
       next(error);
@@ -113,6 +116,7 @@ export class SubcategoryController {
         nameAr: req.body.nameAr,
         descriptionAr: req.body.descriptionAr,
       }, req.locale);
+      emitToAll('subcategory:updated', { id: subcategory.id });
       res.json({ success: true, data: subcategory });
     } catch (error) {
       next(error);
@@ -129,8 +133,10 @@ export class SubcategoryController {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await subcategoryService.delete(String(req.params.id));
-      res.json({ success: true, message: 'Subcategory deleted successfully' });
+      const deletedId = String(req.params.id);
+      await subcategoryService.delete(deletedId);
+      emitToAll('subcategory:deleted', { id: deletedId });
+      res.json({ success: true, message: t('subcategory.deleteSuccess', req.locale) });
     } catch (error) {
       next(error);
     }
@@ -141,7 +147,7 @@ export class SubcategoryController {
       const result = await subcategoryService.bulkDelete(req.body.ids || []);
       res.json({
         success: true,
-        message: 'Bulk delete completed',
+        message: t('subcategory.bulkDelete', req.locale),
         data: result,
       });
     } catch (error) {

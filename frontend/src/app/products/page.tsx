@@ -22,7 +22,6 @@ import {
 import {
   PRODUCTS_ITEMS_PER_PAGE,
   PRODUCTS_SORT_OPTIONS,
-  PRODUCT_UI_LABELS,
 } from './products.constants';
 import { ActiveFilters, Category, Product, ProductTab } from './products.types';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
@@ -302,15 +301,15 @@ function ProductDetailModal({
 
               {/* Description */}
               {productDescription && (
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{productDescription}</p>
+                <p className="text-gray-500 text-sm leading-relaxed">{productDescription}</p>
               )}
 
               {/* Filter Type / Material / Dimensions */}
               {(product.filterType || product.material || product.dimensions) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                  {product.filterType && <span><span className="font-semibold text-gray-700">{PRODUCT_UI_LABELS.type}</span> {product.filterType}</span>}
-                  {product.material   && <span><span className="font-semibold text-gray-700">{PRODUCT_UI_LABELS.material}</span> {product.material}</span>}
-                  {product.dimensions && <span><span className="font-semibold text-gray-700">{PRODUCT_UI_LABELS.dimensions}</span> {product.dimensions}</span>}
+                  {product.filterType && <span><span className="font-semibold text-gray-700">{t('productsDetailFilterType')}:</span> <span dir="ltr">{product.filterType}</span></span>}
+                  {product.material   && <span><span className="font-semibold text-gray-700">{t('productsDetailMaterial')}:</span> <span dir="ltr">{product.material}</span></span>}
+                  {product.dimensions && <span><span className="font-semibold text-gray-700">{t('productsDetailDimensions')}:</span> <span dir="ltr">{product.dimensions}</span></span>}
                 </div>
               )}
 
@@ -329,31 +328,41 @@ function ProductDetailModal({
               {/* Quotation qty */}
               {isQuotation && (() => {
                 const stockLimit = typeof product.stock === 'number' ? product.stock : null;
+                const isOutOfStock = stockLimit !== null && stockLimit === 0;
+                // For out-of-stock items, allow any qty >= 1 (lead-time inquiry)
                 const clampQuantity = (nextQuantity: number) => {
-                  if (stockLimit === null) {
+                  if (stockLimit === null || isOutOfStock) {
                     return Math.max(1, nextQuantity);
                   }
                   return Math.max(1, Math.min(nextQuantity, stockLimit));
                 };
                 return (
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setQty(q => clampQuantity(q - 1))} disabled={qty <= 1}
-                      aria-label="Decrease quantity"
-                      className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
-                      <Minus size={14} />
-                    </button>
-                    <input type="number" min={1} value={qty}
-                      aria-label="Quantity"
-                      onChange={e => setQty(clampQuantity(parseInt(e.target.value) || 1))}
-                      className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />
-                    <button type="button" onClick={() => setQty(q => clampQuantity(q + 1))} disabled={stockLimit !== null && qty >= stockLimit}
-                      aria-label="Increase quantity"
-                      className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
-                      <Plus size={14} />
-                    </button>
-                    <span className="text-xs text-gray-400 ms-1">
-                      Total: <span className="font-bold text-gray-700"><SARSymbol className="inline" />{(price * qty).toFixed(2)}</span>
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => setQty(q => clampQuantity(q - 1))} disabled={qty <= 1}
+                        aria-label="Decrease quantity"
+                        className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                        <Minus size={14} />
+                      </button>
+                      <input type="number" min={1} value={qty}
+                        aria-label="Quantity"
+                        onChange={e => setQty(clampQuantity(parseInt(e.target.value) || 1))}
+                        className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />
+                      <button type="button" onClick={() => setQty(q => clampQuantity(q + 1))}
+                        disabled={!isOutOfStock && stockLimit !== null && qty >= stockLimit}
+                        aria-label="Increase quantity"
+                        className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                        <Plus size={14} />
+                      </button>
+                      <span className="text-xs text-gray-400 ms-1">
+                        Total: <span className="font-bold text-gray-700"><SARSymbol className="inline" />{(price * qty).toFixed(2)}</span>
+                      </span>
+                    </div>
+                    {isOutOfStock && (
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        {t('quotation.outOfStockNote')}
+                      </p>
+                    )}
                   </div>
                 );
               })()}
@@ -363,10 +372,9 @@ function ProductDetailModal({
               {isQuotation ? (
                 <button
                   onClick={handleAddToQuotation}
-                  disabled={product.stock === 0}
-                  className="w-full bg-[#0D2F8C] hover:bg-[#004A99] text-white font-semibold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full bg-[#0D2F8C] hover:bg-[#004A99] text-white font-semibold text-sm py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2">
                   <Download size={14} />
-                  {t('productsGetQuotation')}
+                  {product.stock === 0 ? t('quotation.addOutOfStock') : t('productsGetQuotation')}
                 </button>
               ) : (
                 <button
@@ -694,6 +702,8 @@ function ProductsContent() {
     const result = productComparisonService.add({
       id: product.id,
       name: product.name,
+      nameEn: resolveProductName(product, 'en') || product.name,
+      nameAr: resolveProductName(product, 'ar') || undefined,
       price: Number(product.price),
       sku: product.sku,
       thumbnail: product.mainImage ?? product.images?.[0] ?? null,
@@ -865,29 +875,34 @@ function ProductsContent() {
 
           {/* Grid */}
           {comparedProducts.length > 0 && (
-            <div className={`mb-4 bg-white border border-gray-200 rounded-2xl p-4 flex flex-wrap items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <span className="text-sm font-semibold text-gray-700">{t('productsCompareLabel')}</span>
-              {comparedProducts.map((item) => (
-                <span key={item.id} className="inline-flex items-center gap-2 text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                  {item.name}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      productComparisonService.remove(item.id);
-                      const next = productComparisonService.getAll();
-                      setComparedProducts(next);
-                      if (next.length < 2) {
-                        setShowCompareTable(false);
-                      }
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                    aria-label={`Remove ${item.name} from compare`}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              ))}
-              <div className={`ms-auto flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className="mb-4 bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between gap-4">
+              {/* Label + chips — anchored to the start edge (right in RTL, left in LTR) */}
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="text-sm font-semibold text-gray-700 shrink-0">{t('productsCompareLabel')}</span>
+                {comparedProducts.map((item) => (
+                  <span key={item.id} className="inline-flex items-center gap-2 text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                    {(isRTL ? item.nameAr : item.nameEn) || item.name}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        productComparisonService.remove(item.id);
+                        const next = productComparisonService.getAll();
+                        setComparedProducts(next);
+                        if (next.length < 2) {
+                          setShowCompareTable(false);
+                        }
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                      aria-label={`Remove ${item.name} from compare`}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              {/* Action buttons — anchored to the end edge (left in RTL, right in LTR) */}
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCompareTable((v) => !v)}
@@ -903,7 +918,7 @@ function ProductsContent() {
                     setComparedProducts([]);
                     setShowCompareTable(false);
                   }}
-                  className="text-xs text-[#0205A6] font-semibold hover:underline"
+                  className="text-xs text-[#0205A6] font-semibold hover:underline whitespace-nowrap"
                 >
                   {t('productsCompareClear')}
                 </button>
@@ -922,7 +937,9 @@ function ProductsContent() {
                     <tr>
                       <th className={`px-4 py-3 font-semibold text-gray-700 ${isRTL ? 'text-right' : 'text-start'}`}>{t('productsComparisonField')}</th>
                       {comparedProducts.map((item) => (
-                        <th key={item.id} className={`px-4 py-3 font-semibold text-gray-900 min-w-[220px] ${isRTL ? 'text-right' : 'text-start'}`}>{item.name}</th>
+                        <th key={item.id} className={`px-4 py-3 font-semibold text-gray-900 min-w-[220px] ${isRTL ? 'text-right' : 'text-start'}`}>
+                          {(isRTL ? item.nameAr : item.nameEn) || item.name}
+                        </th>
                       ))}
                     </tr>
                   </thead>
@@ -936,7 +953,7 @@ function ProductsContent() {
                     <tr className="border-t border-gray-100">
                       <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonSku')}</td>
                       {comparedProducts.map((item) => (
-                        <td key={`${item.id}-sku`} className="px-4 py-3 text-gray-700">{item.sku || '-'}</td>
+                        <td key={`${item.id}-sku`} className="px-4 py-3 text-gray-700"><span dir="ltr">{item.sku || '-'}</span></td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
@@ -948,13 +965,13 @@ function ProductsContent() {
                     <tr className="border-t border-gray-100">
                       <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonMaterial')}</td>
                       {comparedProducts.map((item) => (
-                        <td key={`${item.id}-material`} className="px-4 py-3 text-gray-700">{item.material || '-'}</td>
+                        <td key={`${item.id}-material`} className="px-4 py-3 text-gray-700"><span dir="ltr">{item.material || '-'}</span></td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">
                       <td className="px-4 py-3 font-medium text-gray-700">{t('productsComparisonDimensions')}</td>
                       {comparedProducts.map((item) => (
-                        <td key={`${item.id}-dimensions`} className="px-4 py-3 text-gray-700">{item.dimensions || '-'}</td>
+                        <td key={`${item.id}-dimensions`} className="px-4 py-3 text-gray-700"><span dir="ltr">{item.dimensions || '-'}</span></td>
                       ))}
                     </tr>
                     <tr className="border-t border-gray-100">

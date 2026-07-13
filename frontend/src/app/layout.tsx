@@ -14,6 +14,7 @@ import { DirSync } from '@/components/DirSync';
 import SessionTimeoutWatcher from '@/components/providers/SessionTimeoutWatcher';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import { CrossTabSyncProvider } from '@/components/providers/CrossTabSyncProvider';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 const cairo = Cairo({ subsets: ['arabic', 'latin'], variable: '--font-cairo', display: 'swap' });
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LanguageProvider>
           <AOSProvider>
             <QueryProvider>
+              <CrossTabSyncProvider>
               <AuthProvider>
                 <SessionTimeoutWatcher />
                 <CurrencyProvider>
@@ -105,6 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </CartProvider>
                 </CurrencyProvider>
               </AuthProvider>
+              </CrossTabSyncProvider>
             </QueryProvider>
           </AOSProvider>
         </LanguageProvider>

@@ -1,205 +1,228 @@
-<<<<<<< HEAD
-# amazoneInventryManagement
-=======
 # Shielder Backend API
 
-Enterprise-grade backend API for the Shielder Digital Platform - Industrial Filters Management System.
+Enterprise Express/TypeScript API for the Shielder Digital Platform — industrial filters B2B e-commerce.
 
-## 🚀 Features
+## Prerequisites
 
-- **Authentication & Authorization**: JWT-based auth with role-based access control
-- **Multilingual Support**: Arabic and English support at the database level
-- **Enterprise Architecture**: Modular, scalable, and maintainable codebase
-- **Type Safety**: Full TypeScript implementation with Prisma ORM
-- **Security**: Helmet, CORS, input validation, password hashing
-- **Logging & Monitoring**: Structured logging with request tracking
-- **Database**: PostgreSQL with Prisma ORM
-- **API Documentation**: RESTful API design with clear endpoints
-
-## 📋 Prerequisites
-
-- Node.js >= 18.0.0
+- Node.js >= 20.19.0
 - PostgreSQL >= 15
+- Redis >= 6
 - npm >= 9.0.0
 
-## 🛠️ Installation
+## Setup
 
-1. **Clone the repository**
-```bash
-cd backend
-```
-
-2. **Install dependencies**
 ```bash
 npm install
-```
-
-3. **Set up environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-4. **Generate Prisma Client**
-```bash
+cp .env.example .env        # fill in required variables
 npm run prisma:generate
-```
-
-5. **Run database migrations**
-```bash
 npm run prisma:migrate
+npm run seed:super-admin    # create initial SUPER_ADMIN account
+npm run dev                 # starts on http://localhost:5000
 ```
 
-## 🏃 Running the Application
+## Environment Variables
 
-### Development Mode
-```bash
-npm run dev
-```
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `NODE_ENV` | yes | — | `development` / `production` |
+| `PORT` | yes | `5000` | Server port |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string |
+| `JWT_SECRET` | yes | — | Access token signing secret |
+| `JWT_REFRESH_SECRET` | yes | — | Refresh token signing secret |
+| `REDIS_URL` | no | `redis://localhost:6379` | Redis for rate limiting |
+| `FRONTEND_URL` | no | `http://localhost:3001` | Used in CORS and email links |
+| `APP_URL` | no | — | Backend base URL for file links |
+| `EMAIL_PROVIDER` | no | — | `smtp` / `brevo` / `sendgrid` |
+| `PRODUCT_IMAGE_STORAGE` | no | `local` | `local` or `s3` |
+| `AWS_*` | no | — | Required when `PRODUCT_IMAGE_STORAGE=s3` |
 
-### Production Build
-```bash
-npm run build
-npm start
-```
-
-### Using Docker
-```bash
-cd docker
-docker-compose up -d
-```
-
-## 📡 API Endpoints
-
-### Health Check
-- `GET /health` - API health check
-
-### Email Provider Health
-- `GET /health/email` - Verifies configured email provider connectivity (Brevo REST or SMTP). Returns 200 when mail provider is reachable and configured, 502 when unreachable/not configured, and 500 on internal error.
-
-### Testing Brevo Delivery (manual)
-If you're troubleshooting Brevo delivery, you can run a quick curl-based test from the host you want to validate. A helper script is provided at `backend/scripts/test-brevo.sh`.
-
-Usage:
-```bash
-# From the `backend/` directory
-BREVO_API_KEY=your_brevo_rest_api_key ./scripts/test-brevo.sh recipient@example.com
-```
-
-Expected outcomes:
-- HTTP 2xx and a Brevo response body: request accepted (check email inbox/spam).
-- HTTP 401/403: authorization error (key invalid or IP-restricted).
-- HTTP 4xx/5xx with explanation: Brevo returned an error — check logs and Brevo dashboard for restrictions or sender verification.
-
-Troubleshooting tips:
-- Ensure `EMAIL_FROM_ADDRESS` and `BREVO_FROM_EMAIL` match a verified sender in your Brevo account.
-- If you see IP-restriction errors, create a REST API key in Brevo without IP restrictions, or add your host IP to Brevo's allowed IP list.
-- Use `/health/email` to programmatically verify connectivity from your server.
-
-### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login user
-- `POST /api/v1/auth/refresh-token` - Refresh access token
-- `GET /api/v1/auth/me` - Get current user (protected)
-- `POST /api/v1/auth/logout` - Logout user (protected)
-- `GET /api/v1/auth/verify-email/:token` - Verify email
-
-## 🗄️ Database Schema
-
-The application uses PostgreSQL with the following main models:
-- **Users**: User accounts with authentication
-- **UserProfiles**: User profile information with locale preferences
-- **Products**: Product catalog with multilingual support
-- **ProductTranslations**: Product translations (en, ar)
-- **Categories**: Product categories with hierarchy
-- **CategoryTranslations**: Category translations
-- **Orders**: Order management
-- **OrderItems**: Order line items
-- **AuditLogs**: Activity tracking
-
-## 🔒 Security
-
-- Password hashing with bcrypt
-- JWT token authentication
-- CORS protection
-- Helmet security headers
-- Input validation with Joi
-- SQL injection prevention with Prisma
-- Rate limiting (planned)
-
-## 📦 Deployment
-
-### Railway Deployment
-
-1. Create a new project on Railway
-2. Add PostgreSQL service
-3. Add environment variables from `.env.example`
-4. Deploy from GitHub repository
-
-### Environment Variables
-
-Required environment variables:
-```
-NODE_ENV=production
-PORT=5000
-DATABASE_URL=your-database-url
-JWT_SECRET=your-jwt-secret
-JWT_REFRESH_SECRET=your-refresh-secret
-FRONTEND_URL=https://your-frontend-url.vercel.app
-```
-
-## 🧪 Testing
+## Scripts
 
 ```bash
-npm test
-npm run test:watch
-npm run test:coverage
+npm run dev                  # Dev server with hot reload
+npm run build                # Compile TypeScript → dist/
+npm start                    # Run compiled build
+npm run lint                 # ESLint
+npm run lint:fix             # ESLint with auto-fix
+npm run format               # Prettier
+
+# Database
+npm run prisma:generate      # Regenerate Prisma client after schema changes
+npm run prisma:migrate       # Apply pending migrations
+npm run prisma:studio        # Open Prisma Studio
+npm run prisma:push          # Push schema without migration (prototype only)
+
+# Seeding
+npm run seed:super-admin     # Create initial SUPER_ADMIN
+npm run seed:test-data       # Seed demo products, orders, etc.
+
+# Testing
+npm run test                 # All Jest tests
+npm run test:watch           # Watch mode
+npm run test:coverage        # Coverage report
+npm run test:auth            # Trusted-device tests only
+npm run email:check          # Verify email provider connectivity
 ```
 
-## 📝 Code Quality
+## Architecture
 
-```bash
-# Lint code
-npm run lint
+### Module Pattern
 
-# Fix linting issues
-npm run lint:fix
+Each feature lives in `src/modules/<name>/`:
 
-# Format code
-npm run format
+```
+<module>.routes.ts       → Express router, auth + validation middleware
+<module>.controller.ts   → Request/response handling
+<module>.service.ts      → Business logic, Prisma queries
+<module>.validation.ts   → Joi schemas
 ```
 
-## 🏗️ Project Structure
+All routes are mounted at both `/api` and `/api/v1`.
+
+### Modules
+
+| Module | Purpose |
+|---|---|
+| `auth` | Register, login, logout, email verification, password reset, trusted devices |
+| `profile` | User profile read/update, profile image upload |
+| `cart` | Persistent per-user cart: add, update, remove, clear |
+| `order` | Order creation, status transitions, payment status |
+| `payment` | Manual payments (cash, bank transfer); EPG online gateway |
+| `quotation` | Admin-created formal quotations |
+| `customer-quotation` | Customer-submitted quotations with PDF generation |
+| `customer-quotation-basket` | Customer quotation basket management |
+| `admin` | Admin CRUD for users; admin panel data |
+| `super-admin` | Super-admin user management, platform settings |
+| `inventory` | Products, categories, subcategories, brands |
+| `inventory-alert` | Low-stock alerts |
+| `warehouse` | Warehouse management |
+| `notification` | In-app notifications |
+| `analytics` | Dashboard stats, charts |
+| `reports` | Export reports (Excel, PDF) |
+| `settings` | Company settings, currency |
+| `privacy-policy` | Privacy policy content management |
+| `contact` | Contact form submissions |
+| `newsletter` | Newsletter subscriptions |
+| `product-review` | Product review management |
+| `application` | Job/partnership applications |
+| `security` | Security logs, session management |
+| `realtime` | Socket.IO real-time sync service |
+
+### Real-time Sync (Socket.IO)
+
+The `realtime` module (`src/modules/realtime/socket.service.ts`) provides a singleton Socket.IO server attached to the HTTP server.
+
+**Auth**: Clients must send a valid JWT in `socket.handshake.auth.token`. Invalid tokens are rejected at connect time.
+
+**Rooms**:
+- `user:<userId>` — personal events (cart, orders, profile, quotations)
+- `role:<ROLE>` — role-wide broadcast (e.g. `role:ADMIN` for new order alerts)
+
+**Emit helpers** (import from `socket.service.ts`):
+```typescript
+emitToUser(userId, 'cart:updated', data);
+emitToRole('ADMIN', 'order:created', data);
+emitToAll('product:updated', data);
+```
+
+**Controllers wired**: cart, order, profile, product, category, subcategory.
+
+Login/logout events are intentionally **not** emitted — a session on one device is not affected by auth changes on another device.
+
+### Middleware Stack
+
+1. Compression (gzip)
+2. Swagger UI (non-production)
+3. Helmet (security headers)
+4. CORS
+5. JSON / URL-encoded body parsing (10 MB limit)
+6. JSON parse error handler
+7. Sanitization (rejects raw HTML/JS)
+8. Language detection (`accept-language` header → `req.locale`)
+9. Morgan HTTP logging (development only)
+
+### Auth
+
+- Access token: 7-day JWT, signed with `JWT_SECRET`
+- Refresh token: 30-day JWT, hashed and stored in DB
+- `authenticate` middleware (`auth.middleware.ts`) attaches `req.user`
+- RBAC via `requireRoles()` / `requireAdmin` / `requireSuperAdmin` from `src/common/middleware/rbac.middleware.ts`
+- `tokenVersion` in DB allows instant token invalidation on logout-all
+
+### Key Patterns
+
+- **Bilingual content**: `*Translation` sibling models with `(entityId, locale)` unique constraint. Always `include: { translations: true }` in content queries.
+- **Soft deletes**: Users have `deletedAt`; filter with `deletedAt: null`.
+- **BigInt serialization**: Globally patched in `app.ts` — `BigInt.prototype.toJSON = () => Number(this)`.
+- **Static files**: Images at `/images`, uploads at `/uploads`. Multiple root paths searched so local dev and production both work.
+- **PDF generation**: `pdfkit` server-side with `doc.heightOfString()` for dynamic Y positioning to handle long bilingual strings.
+- **Cart idempotency**: `CartService.clearCart()` returns `{ removedItems: 0 }` instead of throwing when the cart is already empty.
+
+## API Reference
+
+Swagger UI is available at `http://localhost:5000/api-docs` in non-production environments.
+
+### Key Endpoint Groups
+
+```
+GET/POST   /api/auth/*                   Authentication
+GET/PUT    /api/profile/*                Profile management
+GET/POST   /api/cart/*                   Cart operations
+GET/POST   /api/orders/*                 Order management
+GET/POST   /api/quotations/*             Admin quotations
+GET/POST   /api/customer-quotations/*    Customer quotations (with PDF)
+GET/POST   /api/admin/*                  Admin panel
+GET/POST   /api/super-admin/*            Super-admin operations
+GET/POST   /api/inventory/products       Product catalog
+GET/POST   /api/inventory/categories     Categories
+GET/POST   /api/inventory/subcategories  Subcategories
+GET/POST   /api/notifications/*          Notifications
+GET/POST   /api/settings/*              Platform settings
+GET        /health                       Health check
+GET        /health/email                 Email provider health
+```
+
+## Project Structure
 
 ```
 backend/
 ├── src/
-│   ├── app.ts                 # Express app configuration
-│   ├── server.ts              # Server entry point
-│   ├── config/                # Configuration files
-│   ├── modules/               # Feature modules
-│   │   ├── auth/             # Authentication module
-│   │   ├── users/            # User management
-│   │   ├── products/         # Product catalog
-│   │   └── orders/           # Order management
-│   ├── common/               # Shared utilities
-│   │   ├── middleware/       # Express middleware
-│   │   ├── errors/           # Error classes
-│   │   ├── logger/           # Logging utility
-│   │   └── utils/            # Helper functions
+│   ├── app.ts                 # Express app, middleware stack, route mounting
+│   ├── server.ts              # HTTP server + Socket.IO init, graceful shutdown
+│   ├── config/
+│   │   ├── env.ts             # Environment variable validation
+│   │   ├── jwt.ts             # Token generation / verification
+│   │   ├── app.config.ts      # CORS, pagination, roles constants
+│   │   └── database.ts        # Prisma connect / disconnect
+│   ├── modules/               # Feature modules (see table above)
+│   ├── common/
+│   │   ├── middleware/        # Auth, RBAC, error, sanitize, language, rate-limit
+│   │   ├── errors/            # ApiError subclasses (400/401/403/404/409/500)
+│   │   ├── logger/            # Winston logger
+│   │   ├── services/          # Email, image storage, profile image
+│   │   └── utils/             # Pagination, helpers
 │   ├── database/
-│   │   └── prisma/           # Prisma schema and migrations
-│   └── types/                # TypeScript type definitions
-├── docker/                   # Docker configuration
-├── package.json
-└── tsconfig.json
+│   │   └── prisma/            # schema.prisma, migrations
+│   └── types/                 # Global TypeScript types (AuthRequest, etc.)
+└── scripts/                   # Seed scripts, performance baseline
 ```
 
-## 🤝 Contributing
+## Testing
 
-Please follow the coding standards defined in `.cursorrules`.
+```bash
+npm test                            # All tests
+jest path/to/test.ts --runInBand    # Single file
+npm run test:auth                   # Trusted-device suite
+npm run test:coverage               # HTML coverage report
+```
 
-## 📄 License
+## Deployment (Railway)
 
-MIT License - Shielder Digital Platform
->>>>>>> 8a6668f (feat: implement signup and login with hashed passwords and multi-device session management)
+1. Create a Railway project and add a PostgreSQL service
+2. Set environment variables from `.env.example`
+3. Deploy from GitHub — Railway auto-runs `npm run build && npm start`
+4. A self-ping every 4 minutes keeps the dyno warm in production
+
+## License
+
+MIT — Shielder Development Team

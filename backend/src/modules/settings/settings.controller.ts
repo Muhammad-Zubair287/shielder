@@ -15,6 +15,7 @@ import { asyncHandler } from '@/common/middleware/error.middleware';
 import { AuthRequest } from '@/types/global';
 import { upload } from '@/common/middleware/upload.middleware';
 import env from '@/config/env';
+import { t } from '@/common/i18n';
 
 export const formatSettingUrl = (path: string | null | undefined): string | null => {
   if (!path) return null;
@@ -86,7 +87,7 @@ class SettingsController {
           { companyLogo: logoPath },
           req.ip || ''
         );
-        res.json({ success: true, message: 'Company logo updated', data: serializeSettings({ companyLogo: logoPath }) });
+        res.json({ success: true, message: t('settings.logoUploaded', req.locale), data: serializeSettings({ companyLogo: logoPath }) });
       })
     ];
   /**
@@ -165,7 +166,7 @@ class SettingsController {
     }
 
     const data = await SettingsService.updateSettings(userId, section, updatePayload, ipAddress);
-    res.json({ success: true, message: `${section} settings updated successfully`, data: serializeSettings(data) });
+    res.json({ success: true, message: t('settings.updateSuccess', req.locale), data: serializeSettings(data) });
   });
 
   /**

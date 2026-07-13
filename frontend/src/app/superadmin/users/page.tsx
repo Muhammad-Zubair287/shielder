@@ -24,6 +24,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { getImageUrl } from '@/utils/helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { broadcastSync } from '@/lib/crossTabSync';
 
 type UserFormErrors = {
   email?: string;
@@ -122,6 +123,7 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['superadmin-users-list'] });
       queryClient.invalidateQueries({ queryKey: ['superadmin-users-stats'] });
+      broadcastSync({ type: 'QUERY_INVALIDATE', keys: ['superadmin-users-list', 'superadmin-users-stats'] });
     },
   });
 
@@ -130,6 +132,7 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['superadmin-users-list'] });
       queryClient.invalidateQueries({ queryKey: ['superadmin-users-stats'] });
+      broadcastSync({ type: 'QUERY_INVALIDATE', keys: ['superadmin-users-list', 'superadmin-users-stats'] });
     },
   });
 

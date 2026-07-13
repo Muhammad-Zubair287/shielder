@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Loader2,
   ChevronRight,
+  ChevronLeft,
   Warehouse,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -42,8 +43,10 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { orderService } from '@/services/order.service';
+import cartService from '@/services/cart.service';
 import { warehouseService, type Warehouse as WarehouseType } from '@/services/warehouse.service';
 import { getImageUrl } from '@/utils/helpers';
+import { broadcastSync } from '@/lib/crossTabSync';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -53,6 +56,8 @@ type DeliveryType = 'DELIVERY' | 'PICKUP';
 // Static shipping cost — replace with dynamic value if needed
 const SHIPPING_COST = 0;
 const TAX_RATE       = 0.1;
+
+const LIMITS = { name: 100, phone: 20, address: 200, notes: 500 } as const;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -81,12 +86,12 @@ function MethodCard({
       aria-label={title}
       className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all
         ${selected
-          ? 'border-[#F97316] bg-orange-50'
-          : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
+          ? 'border-[#0205A6] bg-blue-50'
+          : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}
         ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
     >
       <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center
-        ${selected ? 'bg-[#F97316] text-white' : 'bg-gray-100 text-gray-500'}`}>
+        ${selected ? 'bg-[#0205A6] text-white' : 'bg-gray-100 text-gray-500'}`}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
@@ -94,8 +99,8 @@ function MethodCard({
         <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{description}</p>
       </div>
       <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center
-        ${selected ? 'border-[#F97316]' : 'border-gray-300'}`}>
-        {selected && <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />}
+        ${selected ? 'border-[#0205A6]' : 'border-gray-300'}`}>
+        {selected && <div className="w-2.5 h-2.5 rounded-full bg-[#0205A6]" />}
       </div>
     </button>
   );
@@ -117,7 +122,7 @@ function SummaryRow({ label, value, bold }: { label: string; value: React.ReactN
 function CheckoutPageInner() {
   const { t, isRTL, locale } = useLanguage();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const { cart, loading: cartLoading, clearCart } = useCart();
+  const { cart, loading: cartLoading, clearCart, refreshCart } = useCart();
   const router  = useRouter();
   const params  = useSearchParams();
 
@@ -252,22 +257,30 @@ function CheckoutPageInner() {
   const tax      = subtotal * TAX_RATE;
   const total    = subtotal + shipping + tax;
 
-  // ── Field handler
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  // ── Field handler (enforces per-field character limits)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const limit = LIMITS[name as keyof typeof LIMITS];
+    setForm(prev => ({ ...prev, [name]: limit ? value.slice(0, limit) : value }));
+  };
 
   // ── Validation
   const validate = (): boolean => {
     if (!form.customerName.trim()) {
-      toast.error(t('checkout.errorName'));    return false;
+      toast.error(t('checkout.errorName')); return false;
+    }
+    if (form.customerName.trim().length > LIMITS.name) {
+      toast.error(t('checkout.errorNameTooLong')); return false;
     }
     if (!form.phoneNumber.trim()) {
-      toast.error(t('checkout.errorPhone'));    return false;
+      toast.error(t('checkout.errorPhone')); return false;
     }
     if (deliveryType === 'DELIVERY' && !form.shippingAddress.trim()) {
       toast.error(t('checkout.errorAddress')); return false;
     }
-    // PICKUP requires warehouse selection
+    if (deliveryType === 'DELIVERY' && form.shippingAddress.trim().length > LIMITS.address) {
+      toast.error(t('checkout.errorAddressTooLong')); return false;
+    }
     if (deliveryType === 'PICKUP' && !warehouseId) {
       toast.error(t('checkout.errorWarehouse')); return false;
     }
@@ -283,10 +296,19 @@ function CheckoutPageInner() {
     }
 
     setSubmitting(true);
-    const items = cart.items.map(i => ({ productId: i.productId, quantity: i.quantity }));
     const shippingAddress = deliveryType === 'DELIVERY' ? form.shippingAddress : '';
 
     try {
+      // Re-validate cart against server before submitting
+      const serverCart = await cartService.getCart();
+      if (serverCart.items.length === 0) {
+        toast.error(t('checkout.cartChangedSinceLastView'));
+        await refreshCart();
+        setSubmitting(false);
+        return;
+      }
+      const items = serverCart.items.map(i => ({ productId: i.productId, quantity: i.quantity }));
+
       if (paymentMethod === 'CREDIT_CARD') {
         // EPG card payment
         const res = await orderService.initializeEPGPayment({
@@ -315,7 +337,10 @@ function CheckoutPageInner() {
           ...(deliveryType === 'PICKUP' && { deliveryType: 'PICKUP', warehouseId }),
         });
         const orderId = res?.data?.id;
-        await clearCart();
+        // Clear cart silently — don't let cart-clear errors surface as checkout errors
+        try { await clearCart({ silent: true }); } catch { /* ignore */ }
+        // Notify other tabs: orders list changed
+        broadcastSync({ type: 'DATA_CHANGED', module: 'orders' });
         router.push(`/order-confirmation/${orderId}`);
       }
     } catch (err: any) {
@@ -330,7 +355,7 @@ function CheckoutPageInner() {
   if (authLoading || cartLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#F97316]" size={36} />
+        <Loader2 className="animate-spin text-[#0205A6]" size={36} />
       </div>
     );
   }
@@ -342,7 +367,7 @@ function CheckoutPageInner() {
         <main className="flex-1 pt-28 flex flex-col items-center justify-center gap-4 text-center px-4">
           <ShoppingBag size={48} className="text-gray-300" />
           <p className="text-xl font-bold text-gray-800">{t('checkout.emptyCartTitle')}</p>
-          <Link href="/cart" className="text-[#F97316] font-semibold hover:underline">{t('checkout.goToCart')}</Link>
+          <Link href="/cart" className="text-[#0205A6] font-semibold hover:underline">{t('checkout.goToCart')}</Link>
         </main>
         <LandingFooter />
       </div>
@@ -362,7 +387,7 @@ function CheckoutPageInner() {
           <div className="flex items-center mb-8 relative">
             <Link
               href="/cart"
-              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ms-auto"
+              className="p-2 text-gray-600 hover:text-[#123C9C] hover:bg-blue-50 rounded-lg transition-colors"
               aria-label="back"
             >
               <BackArrow size={22} />
@@ -381,7 +406,7 @@ function CheckoutPageInner() {
                 {/* Delivery Method */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                   <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <Warehouse size={18} className="text-[#F97316]" />
+                    <Warehouse size={18} className="text-[#0205A6]" />
                     {t('checkout.deliveryMethod')}
                   </h2>
 
@@ -389,13 +414,13 @@ function CheckoutPageInner() {
                     {/* Delivery Type: Home Delivery */}
                     <label className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors
                       ${deliveryType === 'DELIVERY'
-                        ? 'border-[#F97316] bg-orange-50'
-                        : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
+                        ? 'border-[#0205A6] bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}
                       ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        deliveryType === 'DELIVERY' ? 'border-[#F97316]' : 'border-gray-300'
+                        deliveryType === 'DELIVERY' ? 'border-[#0205A6]' : 'border-gray-300'
                       }`}>
-                        {deliveryType === 'DELIVERY' && <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />}
+                        {deliveryType === 'DELIVERY' && <div className="w-2.5 h-2.5 rounded-full bg-[#0205A6]" />}
                       </div>
                       <input
                         type="radio"
@@ -414,13 +439,13 @@ function CheckoutPageInner() {
                     {/* Delivery Type: Pickup from Warehouse */}
                     <label className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors
                       ${deliveryType === 'PICKUP'
-                        ? 'border-[#F97316] bg-orange-50'
-                        : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30'}
+                        ? 'border-[#0205A6] bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}
                       ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        deliveryType === 'PICKUP' ? 'border-[#F97316]' : 'border-gray-300'
+                        deliveryType === 'PICKUP' ? 'border-[#0205A6]' : 'border-gray-300'
                       }`}>
-                        {deliveryType === 'PICKUP' && <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />}
+                        {deliveryType === 'PICKUP' && <div className="w-2.5 h-2.5 rounded-full bg-[#0205A6]" />}
                       </div>
                       <input
                         type="radio"
@@ -449,7 +474,7 @@ function CheckoutPageInner() {
                             onChange={(e) => setWarehouseId(e.target.value || null)}
                             disabled={warehousesLoading || warehouses.length === 0}
                             className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
-                              bg-white focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                              bg-white focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent
                               disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400
                               ${isRTL ? 'text-right' : 'text-start'}`}
                           >
@@ -468,8 +493,8 @@ function CheckoutPageInner() {
                           </select>
                           {!warehouseId && deliveryType === 'PICKUP' && (
                             <div className={`flex items-start gap-2 mt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                              <AlertCircle size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
-                              <p className={`text-xs text-orange-600 ${isRTL ? 'text-right' : 'text-start'}`}>
+                              <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+                              <p className={`text-xs text-red-600 ${isRTL ? 'text-right' : 'text-start'}`}>
                                 {t('checkout.warehouseRequired')}
                               </p>
                             </div>
@@ -498,7 +523,7 @@ function CheckoutPageInner() {
                 {/* Shipping Information */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                   <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <MapPin size={18} className="text-[#F97316]" />
+                    <MapPin size={18} className="text-[#0205A6]" />
                     {deliveryType === 'PICKUP' ? t('checkout.customerInfo') || 'Customer Information' : t('checkout.shippingInfo')}
                   </h2>
 
@@ -518,11 +543,15 @@ function CheckoutPageInner() {
                           onChange={handleChange}
                           placeholder={t('checkout.fullNamePlaceholder')}
                           required
+                          maxLength={LIMITS.name}
                           className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
-                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent
                             ${isRTL ? 'pe-9 ps-3 text-right' : 'ps-9 pe-3 text-start'}`}
                         />
                       </div>
+                      <p className={`text-xs mt-1 ${form.customerName.length >= LIMITS.name ? 'text-red-500' : 'text-gray-400'} ${isRTL ? 'text-right' : 'text-start'}`}>
+                        {form.customerName.length}/{LIMITS.name}
+                      </p>
                     </div>
 
                     {/* Phone */}
@@ -541,7 +570,7 @@ function CheckoutPageInner() {
                           placeholder={t('checkout.phonePlaceholder')}
                           required
                           className={`w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-900
-                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                            placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent
                             ${isRTL ? 'pe-9 ps-3 text-right' : 'ps-9 pe-3 text-start'}`}
                         />
                       </div>
@@ -562,10 +591,14 @@ function CheckoutPageInner() {
                             rows={3}
                             placeholder={t('checkout.shippingAddressPlaceholder')}
                             required
+                            maxLength={LIMITS.address}
                             className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
-                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent resize-none
+                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent resize-none
                               ${isRTL ? 'text-right' : 'text-start'}`}
                           />
+                          <p className={`text-xs mt-1 ${form.shippingAddress.length >= LIMITS.address ? 'text-red-500' : 'text-gray-400'} ${isRTL ? 'text-right' : 'text-start'}`}>
+                            {form.shippingAddress.length}/{LIMITS.address}
+                          </p>
                         </div>
 
                         {/* Notes (optional) */}
@@ -573,17 +606,21 @@ function CheckoutPageInner() {
                           <label htmlFor="checkout-notes" className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : 'text-start'}`}>
                             {t('checkout.notes')}
                           </label>
-                          <input
+                          <textarea
                             id="checkout-notes"
-                            type="text"
                             name="notes"
                             value={form.notes}
                             onChange={handleChange}
+                            rows={2}
                             placeholder={t('checkout.notesPlaceholder')}
+                            maxLength={LIMITS.notes}
                             className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
-                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent
+                              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent resize-none
                               ${isRTL ? 'text-right' : 'text-start'}`}
                           />
+                          <p className={`text-xs mt-1 ${form.notes.length >= LIMITS.notes ? 'text-red-500' : 'text-gray-400'} ${isRTL ? 'text-right' : 'text-start'}`}>
+                            {form.notes.length}/{LIMITS.notes}
+                          </p>
                         </div>
                       </>
                     ) : (
@@ -602,7 +639,7 @@ function CheckoutPageInner() {
                 {/* Payment Method */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                   <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <CreditCard size={18} className="text-[#F97316]" />
+                    <CreditCard size={18} className="text-[#0205A6]" />
                     {t('checkout.paymentMethod')}
                   </h2>
 
@@ -652,9 +689,9 @@ function CheckoutPageInner() {
               <div className="lg:col-span-2 mt-6 lg:mt-0">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
                   <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <ShoppingBag size={18} className="text-[#F97316]" />
+                    <ShoppingBag size={18} className="text-[#0205A6]" />
                     {t('checkout.orderSummary')}
-                    <span className="text-[#F97316] font-normal text-sm">({cart.items.length})</span>
+                    <span className="text-[#0205A6] font-normal text-sm">({cart.items.length})</span>
                   </h2>
 
                   {/* Cart items */}
@@ -710,14 +747,14 @@ function CheckoutPageInner() {
                   <button
                     type="submit"
                     disabled={submitting || cart.items.length === 0}
-                    className="mt-5 w-full bg-[#F97316] hover:bg-[#e8650a] active:bg-[#d45d0a] text-white
+                    className="mt-5 w-full bg-[#123C9C] hover:bg-[#0D2F8C] active:bg-[#0a2570] text-white
                       font-semibold text-base py-4 rounded-2xl transition-colors disabled:opacity-50
                       disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <><Loader2 size={18} className="animate-spin" />{t('checkout.processing')}</>
                     ) : (
-                      <><ChevronRight size={18} className={isRTL ? 'rotate-180' : ''} />Checkout</>
+                      <>{isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}Checkout</>
                     )}
                   </button>
 
@@ -741,7 +778,7 @@ export default function CheckoutPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#F97316]" size={36} />
+        <Loader2 className="animate-spin text-[#0205A6]" size={36} />
       </div>
     }>
       <CheckoutPageInner />

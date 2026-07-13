@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Phone, Mail, MapPin } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Phone, Mail, MapPin, Paperclip, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
@@ -48,13 +48,13 @@ function DiscordIcon() {
 
 // ── Business hours data ───────────────────────────────────────────────────────
 const BUSINESS_HOURS = [
-  { day: 'Monday',    from: '8:00AM', to: '6:00PM', closed: false },
-  { day: 'Tuesday',   from: '8:00AM', to: '6:00PM', closed: false },
-  { day: 'Wednesday', from: '8:00AM', to: '6:00PM', closed: false },
-  { day: 'Thursday',  from: '8:00AM', to: '6:00PM', closed: false },
-  { day: 'Friday',    from: '8:00AM', to: '6:00PM', closed: false },
-  { day: 'Saturday',  from: '9:00AM', to: '4:00PM', closed: false },
-  { day: 'Sunday',    from: '',       to: '',        closed: true  },
+  { dayEn: 'Monday',    dayAr: 'الاثنين',   from: '8:00AM', to: '6:00PM', closed: false },
+  { dayEn: 'Tuesday',   dayAr: 'الثلاثاء',  from: '8:00AM', to: '6:00PM', closed: false },
+  { dayEn: 'Wednesday', dayAr: 'الأربعاء',  from: '8:00AM', to: '6:00PM', closed: false },
+  { dayEn: 'Thursday',  dayAr: 'الخميس',    from: '8:00AM', to: '6:00PM', closed: false },
+  { dayEn: 'Friday',    dayAr: 'الجمعة',    from: '8:00AM', to: '6:00PM', closed: false },
+  { dayEn: 'Saturday',  dayAr: 'السبت',     from: '9:00AM', to: '4:00PM', closed: false },
+  { dayEn: 'Sunday',    dayAr: 'الأحد',     from: '',       to: '',        closed: true  },
 ];
 
 const initialFormValues: ContactFormValues = {
@@ -71,6 +71,7 @@ const initialFormValues: ContactFormValues = {
 export default function ContactPage() {
   const { t, isRTL } = useLanguage();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ContactFormValues>(initialFormValues);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -147,7 +148,6 @@ export default function ContactPage() {
       setAttachment(null);
       setCaptchaToken('');
       setForm(initialFormValues);
-      setTimeout(() => setSent(false), 4000);
     } catch (error: any) {
       toast.error(error?.message || t('contactsendMessageFailed'));
     } finally {
@@ -171,8 +171,8 @@ export default function ContactPage() {
             {/* Left — dark navy info panel */}
             <div className="relative bg-[#0D1637] text-white md:w-80 lg:w-96 flex-shrink-0 p-8 flex flex-col overflow-hidden" data-aos={isRTL ? 'fade-right' : 'fade-left'} data-aos-delay="100" data-aos-duration="1000">
               {/* Decorative circles */}
-              <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#F97316]/70 rounded-full translate-x-12 translate-y-12 pointer-events-none" />
-              <div className="absolute bottom-16 right-10 w-24 h-24 bg-[#F97316]/40 rounded-full pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#0205A6]/70 rounded-full translate-x-12 translate-y-12 pointer-events-none" />
+              <div className="absolute bottom-16 right-10 w-24 h-24 bg-[#0205A6]/40 rounded-full pointer-events-none" />
 
               <h2 className="text-xl font-bold leading-snug mb-8 relative z-10">
                 {t('contactHeading')}
@@ -202,7 +202,10 @@ export default function ContactPage() {
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
                     <MapPin size={15} className="text-white" />
                   </div>
-                  <span className="text-sm text-gray-200 leading-relaxed" style={isRTL ? { textAlign: 'right' } : undefined}>
+                  <span
+                    className="text-sm text-gray-200 leading-relaxed"
+                    dir={isRTL && (contactInfo?.company_location_ar) ? 'rtl' : 'ltr'}
+                  >
                     {isRTL ? (contactInfo?.company_location_ar || CONTACT_INFO.address) : (contactInfo?.company_location_en || CONTACT_INFO.address)}
                   </span>
                 </div>
@@ -211,7 +214,7 @@ export default function ContactPage() {
                     href={CONTACT_INFO.whatsAppHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center bg-[#F97316] hover:bg-[#e8650a] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                    className="inline-flex items-center justify-center bg-[#0205A6] hover:bg-[#0204c0] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
                   >
                     WhatsApp Chat
                   </a>
@@ -237,12 +240,24 @@ export default function ContactPage() {
             <div className="flex-1 bg-white p-8 lg:p-10" data-aos={isRTL ? 'fade-left' : 'fade-right'} data-aos-delay="180" data-aos-duration="1000">
               <h3 className="text-xl font-bold text-gray-900 text-center mb-8">{t('contactFormTitle')}</h3>
 
-              {sent && (
-                <div className="mb-6 bg-green-50 border border-green-200 text-green-700 text-sm font-semibold rounded-xl px-4 py-3 text-center">
-                  {t('contactSentSuccess')}
+              {sent ? (
+                <div ref={(el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className="flex flex-col items-center justify-center py-12 text-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900">{t('contactSentSuccess')}</h4>
+                  <p className="text-sm text-gray-500 max-w-xs">{t('contactSentSuccessDesc') || 'We have received your message and will get back to you shortly.'}</p>
+                  <button
+                    type="button"
+                    onClick={() => setSent(false)}
+                    className="mt-2 rounded-xl bg-[#123C9C] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#0D2F8C] transition-colors"
+                  >
+                    {t('contactSendAnother') || 'Send Another Message'}
+                  </button>
                 </div>
-              )}
-
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Row 1: First / Last Name */}
                 <div className="grid grid-cols-2 gap-6">
@@ -311,14 +326,44 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="contact-attachment" className="block text-xs font-semibold text-gray-700 mb-1">Attachment</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">{t('contactAttachment')}</label>
                   <input
+                    ref={fileInputRef}
                     id="contact-attachment"
                     type="file"
                     onChange={e => setAttachment(e.target.files?.[0] || null)}
-                    className="w-full text-sm text-gray-600"
+                    className="hidden"
                     accept={CONTACT_ALLOWED_FILE_TYPES.join(',')}
                   />
+                  {attachment ? (
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Paperclip size={14} className="shrink-0 text-blue-500" />
+                        <span className="truncate text-sm font-medium text-blue-700">{attachment.name}</span>
+                        <span className="shrink-0 text-xs text-blue-400">({(attachment.size / 1024).toFixed(0)} KB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachment(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="shrink-0 rounded-full p-1 text-blue-400 hover:bg-blue-100 hover:text-red-500 transition-colors"
+                        aria-label="Remove attachment"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex w-full items-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-500 hover:border-[#123C9C] hover:bg-blue-50 hover:text-[#123C9C] transition-colors"
+                    >
+                      <Paperclip size={14} />
+                      {t('contactAttachFile')}
+                    </button>
+                  )}
                   <p className="mt-1 text-xs text-gray-500">
                     Max {CONTACT_PAGE_LIMITS.MAX_ATTACHMENT_MB}MB. PDF, DOC, DOCX, JPG, PNG.
                   </p>
@@ -348,6 +393,7 @@ export default function ContactPage() {
                   </button>
                 </div>
               </form>
+              )}
             </div>
           </div>
         </section>
@@ -357,29 +403,29 @@ export default function ContactPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('contactBusinessHours')}</h2>
 
           <div className="space-y-3">
-            {BUSINESS_HOURS.map(({ day, from, to, closed }, index) => (
-              <div key={day}
+            {BUSINESS_HOURS.map(({ dayEn, dayAr, from, to, closed }, index) => (
+              <div key={dayEn}
                 className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-6 py-4"
                 data-aos={isRTL ? 'fade-left' : 'fade-right'}
                 data-aos-delay={140 + index * 120}
                 data-aos-duration="850">
-                <span className={`text-sm font-semibold w-32 ${closed ? 'text-[#F97316]' : 'text-gray-900'}`}>
-                  {day}
+                <span className={`text-sm font-semibold w-32 ${closed ? 'text-red-500' : 'text-gray-900'}`}>
+                  {isRTL ? dayAr : dayEn}
                 </span>
                 {closed ? (
-                  <span className="text-sm font-bold text-[#F97316]">{t('contactClosed')}</span>
+                  <span className="text-sm font-bold text-red-500">{t('contactClosed')}</span>
                 ) : (
                   <div className="flex items-center gap-3 text-sm text-gray-500">
                     <span>{t('contactFrom')}</span>
-                    <span className="font-bold text-gray-900">{from}</span>
+                    <span className="font-bold text-gray-900" dir="ltr">{from}</span>
                     <span className="flex items-center gap-1 text-gray-400">
-                      <span>——</span>
-                      <svg width="16" height="10" viewBox="0 0 16 10" fill="none" className="text-gray-400">
+                      <svg width="16" height="10" viewBox="0 0 16 10" fill="none" className="text-gray-400" style={isRTL ? { transform: 'scaleX(-1)' } : undefined}>
                         <path d="M1 5h13M10 1l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
+                      <span>——</span>
                     </span>
                     <span>{t('contactTo')}</span>
-                    <span className="font-bold text-gray-900">{to}</span>
+                    <span className="font-bold text-gray-900" dir="ltr">{to}</span>
                   </div>
                 )}
               </div>
@@ -389,7 +435,7 @@ export default function ContactPage() {
 
         {/* ── Map ────────────────────────────────────────────────────────── */}
         <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Location</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('contactOurLocation')}</h2>
           <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
             <iframe
               title="Company location map"

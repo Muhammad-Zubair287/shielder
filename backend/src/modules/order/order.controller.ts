@@ -11,6 +11,8 @@ import { getPaginationParams } from '../../common/utils/pagination';
 import { AuthRequest } from '@/types/global';
 import { BadRequestError } from '../../common/errors/api.error';
 import { PaymentStatus } from '@prisma/client';
+import { emitToUser, emitToRole } from '../realtime/socket.service';
+import { t } from '@/common/i18n';
 
 const getRequestOrigin = (req: Request): string => {
   const forwardedProto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
@@ -90,9 +92,9 @@ const normalizeOrder = (req: Request, order: any) => {
   };
 };
 
-const validatePaymentStatusTransition = (current: PaymentStatus, next: PaymentStatus) => {
+const validatePaymentStatusTransition = (current: PaymentStatus, next: PaymentStatus, locale: string) => {
   if (current === PaymentStatus.PAID && next === PaymentStatus.UNPAID) {
-    throw new BadRequestError('Payment status cannot be changed once marked as PAID');
+    throw new BadRequestError(t('order.paymentStatusLocked', locale));
   }
 };
 
@@ -133,10 +135,15 @@ export class OrderController {
       };
 
       const order = await orderService.createOrder(payload);
+      const normalized = normalizeOrder(req, order);
+      const ownerId: string = (order as any).userId || payload.userId;
+      if (ownerId) emitToUser(ownerId, 'order:created', normalized);
+      emitToRole('ADMIN', 'order:created', normalized);
+      emitToRole('SUPER_ADMIN', 'order:created', normalized);
       res.status(201).json({
         success: true,
-        message: 'Order created successfully',
-        data: normalizeOrder(req, order),
+        message: t('order.createSuccess', req.locale),
+        data: normalized,
       });
     } catch (error) {
       next(error);
@@ -174,7 +181,7 @@ export class OrderController {
       const result = await orderService.getOrders(filters, pagination);
       res.json({
         success: true,
-        message: 'Orders retrieved successfully',
+        message: t('order.listSuccess', req.locale),
         orders: result.orders.map((order) => normalizeOrder(req, order)),
         pagination: result.pagination,
       });
@@ -207,7 +214,7 @@ export class OrderController {
       const order = await orderService.getOrderById(id as string, req.user);
       res.json({
         success: true,
-        message: 'Order retrieved successfully',
+        message: t('order.getSuccess', req.locale),
         data: normalizeOrder(req, order),
       });
     } catch (error) {
@@ -247,14 +254,19 @@ export class OrderController {
 
       if (req.body?.paymentStatus) {
         const currentOrder = await orderService.getOrderById(id as string, req.user);
-        validatePaymentStatusTransition(currentOrder.paymentStatus, req.body.paymentStatus);
+        validatePaymentStatusTransition(currentOrder.paymentStatus, req.body.paymentStatus, req.locale);
       }
 
       const order = await orderService.updateOrderStatus(id as string, { ...req.body, performedBy });
+      const normalized = normalizeOrder(req, order);
+      const ownerId: string = (order as any).userId;
+      if (ownerId) emitToUser(ownerId, 'order:updated', normalized);
+      emitToRole('ADMIN', 'order:updated', normalized);
+      emitToRole('SUPER_ADMIN', 'order:updated', normalized);
       res.json({
         success: true,
-        message: 'Order status updated successfully',
-        data: normalizeOrder(req, order),
+        message: t('order.updateSuccess', req.locale),
+        data: normalized,
       });
     } catch (error) {
       next(error);
@@ -272,12 +284,12 @@ export class OrderController {
    *       200:
    *         description: Order summary statistics
    */
-  async getSummary(_req: Request, res: Response, next: NextFunction) {
+  async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
       const summary = await orderService.getOrderSummary();
       res.json({
         success: true,
-        message: 'Order summary retrieved successfully',
+        message: t('order.summarySuccess', req.locale),
         data: summary,
       });
     } catch (error) {
@@ -297,7 +309,7 @@ export class OrderController {
       const result = await orderService.getMyOrders(userId, page, limit);
       res.json({
         success: true,
-        message: 'Orders retrieved successfully',
+        message: t('order.listSuccess', req.locale),
         orders: result.orders.map((order) => normalizeOrder(req, order)),
         pagination: result.pagination,
       });

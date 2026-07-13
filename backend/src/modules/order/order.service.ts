@@ -692,7 +692,7 @@ export class OrderService {
             include: {
               product: {
                 include: {
-                  translations: { where: { locale: 'en' }, select: { name: true } },
+                  translations: { select: { locale: true, name: true } },
                   attachments:  { where: { type: 'IMAGE' }, orderBy: { createdAt: 'desc' }, take: 1, select: { fileUrl: true } },
                 },
               },

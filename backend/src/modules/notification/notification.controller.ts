@@ -14,6 +14,7 @@ import { Response } from 'express';
 import NotificationService from './notification.service';
 import { asyncHandler } from '@/common/utils/helpers';
 import { AuthRequest } from '@/types/global';
+import { t } from '@/common/i18n';
 
 class NotificationController {
   /**
@@ -65,7 +66,7 @@ class NotificationController {
 
     return res.status(201).json({
       success: true,
-      message: 'Notification created and sent successfully',
+      message: t('notification.created', req.locale),
     });
   });
 
@@ -230,7 +231,7 @@ class NotificationController {
 
     return res.status(200).json({
       success: true,
-      message: 'Notification marked as read',
+      message: t('notification.markedRead', req.locale),
       data: notification,
     });
   });
@@ -254,7 +255,7 @@ class NotificationController {
 
     return res.status(200).json({
       success: true,
-      message: 'All notifications marked as read',
+      message: t('notification.allMarkedRead', req.locale),
     });
   });
 
@@ -283,7 +284,7 @@ class NotificationController {
 
     return res.status(200).json({
       success: true,
-      message: 'Notification deleted successfully',
+      message: t('notification.deleted', req.locale),
     });
   });
 

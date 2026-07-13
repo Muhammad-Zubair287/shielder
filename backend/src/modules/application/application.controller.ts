@@ -8,6 +8,7 @@ import { asyncHandler } from '@/common/middleware/error.middleware';
 import { applicationService } from './application.service';
 import { ApplicationPlatform, ApplicationStatus } from '@prisma/client';
 import path from 'path';
+import { t } from '@/common/i18n';
 
 export class ApplicationController {
   /**
@@ -58,7 +59,7 @@ export class ApplicationController {
 
     res.status(201).json({
       success: true,
-      message: 'Application created successfully.',
+      message: t('application.createSuccess', req.locale),
       data: app,
     });
   });
@@ -80,7 +81,7 @@ export class ApplicationController {
 
     res.json({
       success: true,
-      message: 'Application updated successfully.',
+      message: t('application.updateSuccess', req.locale),
       data: app,
     });
   });
@@ -94,7 +95,7 @@ export class ApplicationController {
     const result = await applicationService.remove(id);
     res.json({
       success: true,
-      message: 'Application deleted successfully.',
+      message: t('application.deleteSuccess', req.locale),
       data: result,
     });
   });
@@ -109,7 +110,7 @@ export class ApplicationController {
     const app = await applicationService.updateStatus(id, status as ApplicationStatus);
     res.json({
       success: true,
-      message: 'Application status updated successfully.',
+      message: t('application.statusUpdated', req.locale),
       data: app,
     });
   });

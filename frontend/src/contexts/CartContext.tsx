@@ -31,11 +31,12 @@ interface CartContextType {
     quantity: number,
     product: CartProduct,
     price: number,
+    options?: { silent?: boolean },
   ) => Promise<void>;
   updateItem: (productId: string, quantity: number) => Promise<void>;
   updateItemOptimistic: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => Promise<void>;
-  clearCart: () => Promise<void>;
+  clearCart: (options?: { silent?: boolean }) => Promise<void>;
   refreshCart: () => Promise<void>;
   setItemValidation: (productId: string, isValid: boolean) => void;
 }
@@ -92,6 +93,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [t]);
 
+  /** BroadcastChannel for cross-tab cart sync */
+  const broadcast = useCallback((msg: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+      new BroadcastChannel('shielder:cart').postMessage(msg);
+    } catch {
+      // BroadcastChannel not supported — silently ignore
+    }
+  }, []);
+
   /** Reload cart whenever auth state changes (login / logout) */
   useEffect(() => {
     (async () => {
@@ -104,31 +115,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  /** Listen for cart changes from other tabs */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let channel: BroadcastChannel;
+    try {
+      channel = new BroadcastChannel('shielder:cart');
+      channel.onmessage = () => { refreshCart(); };
+    } catch {
+      return;
+    }
+    return () => channel.close();
+  }, [refreshCart]);
+
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   const addItem = useCallback(
-    async (productId: string, quantity: number, product: CartProduct, price: number) => {
+    async (productId: string, quantity: number, product: CartProduct, price: number, options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
       setLoading(true);
       try {
         const updated = await cartService.addItem(productId, quantity, product, price);
         setCart(updated);
-        toast.success(t('cart.addedToCart'));
+        if (!silent) toast.success(t('cart.addedToCart'));
+        broadcast('cart_updated');
       } catch (err: any) {
-        const msg = err?.response?.data?.message || '';
-        if (msg.toLowerCase().includes('stock')) {
-          toast.error(t('cart.stockError'));
-        } else if (err?.response?.status === 401) {
-          // handled by interceptor
-        } else if (err?.response?.status >= 500) {
-          toast.error(t('cart.serverError'));
-        } else {
-          toast.error(t('cart.errorAdding'));
+        if (!silent) {
+          const msg = err?.response?.data?.message || '';
+          if (msg.toLowerCase().includes('stock')) {
+            toast.error(t('cart.stockError'));
+          } else if (err?.response?.status === 401) {
+            // handled by interceptor
+          } else if (err?.response?.status >= 500) {
+            toast.error(t('cart.serverError'));
+          } else {
+            toast.error(t('cart.errorAdding'));
+          }
         }
+        throw err;
       } finally {
         setLoading(false);
       }
     },
-    [t],
+    [t, broadcast],
   );
 
   const updateItem = useCallback(
@@ -179,13 +208,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Fire-and-forget: API call in background WITHOUT awaiting
       cartService.removeItem(productId).then(() => {
         toast.success(t('cart.removedFromCart'));
+        broadcast('cart_updated');
       }).catch(async (err: any) => {
         toast.error(t('cart.errorRemoving'));
         // Revert optimistic remove on error
         await refreshCart();
       });
     },
-    [t, refreshCart],
+    [t, refreshCart, broadcast],
   );
 
   const updateItemOptimistic = useCallback((productId: string, quantity: number) => {
@@ -203,15 +233,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const clearCart = useCallback(async () => {
+  const clearCart = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
     try {
-      const updated = await cartService.clearCart();
-      setCart(updated);
-      toast.success(t('cart.cartCleared'));
+      await cartService.clearCart();
     } catch {
-      toast.error(t('cart.serverError'));
+      // Idempotent — server may already be empty; proceed regardless
     }
-  }, [t]);
+    setCart(EMPTY_CART);
+    broadcast('cart_updated');
+    if (!silent) {
+      toast.success(t('cart.cartCleared'));
+    }
+  }, [t, broadcast]);
 
   // ── Context value ────────────────────────────────────────────────────────────
 

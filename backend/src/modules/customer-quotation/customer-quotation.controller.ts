@@ -15,6 +15,7 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../types/global';
 import { prisma } from '../../config/database';
 import { BadRequestError, NotFoundError } from '../../common/errors/api.error';
+import { t } from '@/common/i18n';
 import { Prisma } from '@prisma/client';
 import { QuotationStatus, QuotationActivityType, NotificationType, UserRole } from '@prisma/client';
 import PDFDocument from 'pdfkit';
@@ -143,7 +144,7 @@ export class CustomerQuotationController {
         try {
           requestedItems = await CustomerQuotationBasketService.getBasketItemsForQuotation(userId);
         } catch (err) {
-          throw new BadRequestError('No products provided and quotation basket is empty');
+          throw new BadRequestError(t('customerQuotation.noProductsNoBasket', req.locale));
         }
       }
 
@@ -154,12 +155,12 @@ export class CustomerQuotationController {
 
       // ── Validate inputs ────────────────────────────────────────────────────
 
-      if (!companyName?.trim()) throw new BadRequestError('Company name is required');
-      if (!vatNumber?.trim())   throw new BadRequestError('VAT number is required');
-      if (!validateVAT(vatNumber)) throw new BadRequestError('VAT number format is invalid (10–20 digits)');
-      if (!normalizedAddress)   throw new BadRequestError('Address is required');
+      if (!companyName?.trim()) throw new BadRequestError(t('customerQuotation.companyRequired', req.locale));
+      if (!vatNumber?.trim())   throw new BadRequestError(t('customerQuotation.vatRequired', req.locale));
+      if (!validateVAT(vatNumber)) throw new BadRequestError(t('customerQuotation.vatInvalid', req.locale));
+      if (!normalizedAddress)   throw new BadRequestError(t('customerQuotation.addressRequired', req.locale));
       if (!Array.isArray(requestedItems) || requestedItems.length === 0)
-        throw new BadRequestError('At least one product is required');
+        throw new BadRequestError(t('customerQuotation.productRequired', req.locale));
 
       // ── Fetch real prices & validate products ──────────────────────────────
 
@@ -168,7 +169,7 @@ export class CustomerQuotationController {
 
       for (const item of requestedItems as RequestedQuotationItem[]) {
         const qty = Number(item.quantity) || 1;
-        if (qty < 1) throw new BadRequestError('Quantity must be at least 1');
+        if (qty < 1) throw new BadRequestError(t('customerQuotation.quantityMin', req.locale));
 
         const product = await prisma.product.findUnique({
           where: { id: item.productId },
@@ -176,8 +177,8 @@ export class CustomerQuotationController {
             translations: true,
           },
         });
-        if (!product) throw new NotFoundError(`Product not found: ${item.productId}`);
-        if (!product.isActive) throw new BadRequestError(`Product is no longer available: ${item.productId}`);
+        if (!product) throw new NotFoundError(t('customerQuotation.productNotFound', req.locale, { productId: item.productId }));
+        if (!product.isActive) throw new BadRequestError(t('customerQuotation.productUnavailable', req.locale, { productId: item.productId }));
 
         const translation =
           product.translations.find((t) => t.locale === lang) ||
@@ -340,8 +341,8 @@ export class CustomerQuotationController {
 
       const quotation = await customerQuotationRepository.findByIdWithItems(id);
 
-      if (!quotation) throw new NotFoundError('Quotation not found');
-      if (quotation.createdById !== userId) throw new NotFoundError('Quotation not found');
+      if (!quotation) throw new NotFoundError(t('customerQuotation.notFound', req.locale));
+      if (quotation.createdById !== userId) throw new NotFoundError(t('customerQuotation.notFound', req.locale));
 
       const lang = req.user!.preferredLanguage || req.locale || 'en';
       const enrichedItems = quotation.items.map((item) => {
@@ -419,8 +420,8 @@ export class CustomerQuotationController {
         },
       });
 
-      if (!quotation) throw new NotFoundError('Quotation not found');
-      if (quotation.createdById !== userId) throw new NotFoundError('Quotation not found');
+      if (!quotation) throw new NotFoundError(t('customerQuotation.notFound', req.locale));
+      if (quotation.createdById !== userId) throw new NotFoundError(t('customerQuotation.notFound', req.locale));
 
       const vatNumber = quotation.notes?.replace('VAT: ', '') || '';
 
@@ -462,43 +463,61 @@ export class CustomerQuotationController {
       // ── Quotation meta ─────────────────────────────────────────────────────
 
       const topY = 108;
-      doc.fillColor('#374151').font('Helvetica').fontSize(9);
+      const RIGHT_COL_X = PAGE_WIDTH - MARGIN - 200;
+      const RIGHT_COL_W = 200;
 
-      // Left: company info
-      doc
-        .font('Helvetica-Bold').fillColor('#0D1637').fontSize(11)
-        .text(quotation.companyName || '', MARGIN, topY, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
-
-      doc
-        .font('Helvetica').fillColor('#6B7280').fontSize(9)
-        .text(`VAT: ${vatNumber}`, MARGIN, topY + 16, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
-
-      doc
-        .text(quotation.customerAddress || '', MARGIN, topY + 28, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
-
-      doc
-        .text(quotation.customerEmail, MARGIN, topY + 40, { width: LEFT_META_WIDTH, ellipsis: true, lineBreak: false });
-
-      // Right: quotation details
+      // Right column: quotation details (fixed positions — independent of left column)
       doc
         .font('Helvetica-Bold').fillColor('#0D1637').fontSize(9)
-        .text('Quotation No:', PAGE_WIDTH - MARGIN - 200, topY, { width: 200, align: 'right' })
+        .text('Quotation No:', RIGHT_COL_X, topY, { width: RIGHT_COL_W, align: 'right' })
         .font('Helvetica').fillColor('#374151')
-        .text(quotation.quotationNumber, PAGE_WIDTH - MARGIN - 200, topY + 12, { width: 200, align: 'right' })
+        .text(quotation.quotationNumber, RIGHT_COL_X, topY + 12, { width: RIGHT_COL_W, align: 'right' })
         .font('Helvetica-Bold').fillColor('#0D1637')
-        .text('Date:', PAGE_WIDTH - MARGIN - 200, topY + 28, { width: 200, align: 'right' })
+        .text('Date:', RIGHT_COL_X, topY + 28, { width: RIGHT_COL_W, align: 'right' })
         .font('Helvetica').fillColor('#374151')
-        .text(new Date(quotation.quotationDate).toLocaleDateString('en-GB'), PAGE_WIDTH - MARGIN - 200, topY + 40, { width: 200, align: 'right' });
+        .text(new Date(quotation.quotationDate).toLocaleDateString('en-GB'), RIGHT_COL_X, topY + 40, { width: RIGHT_COL_W, align: 'right' })
+        .font('Helvetica-Bold').fillColor('#0D1637')
+        .text('Valid Until:', RIGHT_COL_X, topY + 56, { width: RIGHT_COL_W, align: 'right' })
+        .font('Helvetica').fillColor('#374151')
+        .text(new Date(quotation.expiryDate).toLocaleDateString('en-GB'), RIGHT_COL_X, topY + 68, { width: RIGHT_COL_W, align: 'right' });
 
-      doc
-        .font('Helvetica-Bold').fillColor('#0D1637').fontSize(9)
-        .text('Valid Until:', PAGE_WIDTH - MARGIN - 200, topY + 56, { width: 200, align: 'right' })
-        .font('Helvetica').fillColor('#374151')
-        .text(new Date(quotation.expiryDate).toLocaleDateString('en-GB'), PAGE_WIDTH - MARGIN - 200, topY + 68, { width: 200, align: 'right' });
+      // Left column: customer info with labels and wrapping text
+      // Each field: bold label on its own line, then value (wrapping within LEFT_META_WIDTH)
+      const LINE_GAP   = 4;  // gap between label and value
+      const FIELD_GAP  = 8;  // gap between fields
+      const LABEL_SIZE = 8;
+      const VALUE_SIZE = 9;
+
+      const drawField = (label: string, value: string, y: number): number => {
+        // label
+        doc.font('Helvetica-Bold').fillColor('#6B7280').fontSize(LABEL_SIZE)
+          .text(label, MARGIN, y, { width: LEFT_META_WIDTH, lineBreak: false });
+        // value (allow wrapping)
+        const valueY = y + LABEL_SIZE + LINE_GAP;
+        doc.font('Helvetica').fillColor('#111827').fontSize(VALUE_SIZE)
+          .text(value || '—', MARGIN, valueY, { width: LEFT_META_WIDTH, lineBreak: true });
+        // return Y after the value block
+        const valueHeight = doc.heightOfString(value || '—', { width: LEFT_META_WIDTH, fontSize: VALUE_SIZE });
+        return valueY + valueHeight + FIELD_GAP;
+      };
+
+      // Company name (slightly larger, bold value)
+      doc.font('Helvetica-Bold').fillColor('#6B7280').fontSize(LABEL_SIZE)
+        .text('COMPANY NAME', MARGIN, topY, { width: LEFT_META_WIDTH, lineBreak: false });
+      doc.font('Helvetica-Bold').fillColor('#0D1637').fontSize(11)
+        .text(quotation.companyName || '—', MARGIN, topY + LABEL_SIZE + LINE_GAP, { width: LEFT_META_WIDTH, lineBreak: true });
+      const companyNameHeight = doc.heightOfString(quotation.companyName || '—', { width: LEFT_META_WIDTH, fontSize: 11 });
+      let leftY = topY + LABEL_SIZE + LINE_GAP + companyNameHeight + FIELD_GAP;
+
+      leftY = drawField('VAT NUMBER', vatNumber || '—', leftY);
+      leftY = drawField('ADDRESS', quotation.customerAddress || '—', leftY);
+      leftY = drawField('EMAIL', quotation.customerEmail || '—', leftY);
 
       // ── Divider ────────────────────────────────────────────────────────────
 
-      const divY = topY + 86;
+      // Divider sits below the taller of the two columns
+      const rightColBottom = topY + 68 + 12 + 16; // last right-col item bottom
+      const divY = Math.max(leftY, rightColBottom) + 8;
       doc.strokeColor('#E5E7EB').lineWidth(1).moveTo(MARGIN, divY).lineTo(PAGE_WIDTH - MARGIN, divY).stroke();
 
       // ── Table header ───────────────────────────────────────────────────────
@@ -650,11 +669,11 @@ export class CustomerQuotationController {
 
       const quotation = await prisma.quotation.findUnique({ where: { id } });
       if (!quotation || quotation.createdById !== userId) {
-        throw new NotFoundError('Quotation not found');
+        throw new NotFoundError(t('customerQuotation.notFound', req.locale));
       }
 
       if (quotation.status !== QuotationStatus.SENT && quotation.status !== QuotationStatus.VIEWED) {
-        throw new BadRequestError('Quotation cannot be accepted in its current status');
+        throw new BadRequestError(t('customerQuotation.cannotAccept', req.locale));
       }
 
       const updated = await prisma.quotation.update({
@@ -694,7 +713,7 @@ export class CustomerQuotationController {
       res.json({
         success: true,
         data: updated,
-        message: 'Quotation accepted successfully',
+        message: t('customerQuotation.acceptSuccess', req.locale),
       });
     } catch (err) {
       next(err);
@@ -713,11 +732,11 @@ export class CustomerQuotationController {
 
       const quotation = await prisma.quotation.findUnique({ where: { id } });
       if (!quotation || quotation.createdById !== userId) {
-        throw new NotFoundError('Quotation not found');
+        throw new NotFoundError(t('customerQuotation.notFound', req.locale));
       }
 
       if (quotation.status !== QuotationStatus.SENT && quotation.status !== QuotationStatus.VIEWED) {
-        throw new BadRequestError('Quotation cannot be rejected in its current status');
+        throw new BadRequestError(t('customerQuotation.cannotReject', req.locale));
       }
 
       const updated = await prisma.quotation.update({
@@ -759,7 +778,7 @@ export class CustomerQuotationController {
       res.json({
         success: true,
         data: updated,
-        message: 'Quotation rejected successfully',
+        message: t('customerQuotation.rejectSuccess', req.locale),
       });
     } catch (err) {
       next(err);

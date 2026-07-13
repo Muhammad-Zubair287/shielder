@@ -13,6 +13,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { AuthRequest } from '@/types/global';
 import PrivacyPolicyService from './privacy-policy.service';
+import { t } from '@/common/i18n';
 
 class PrivacyPolicyController {
   /**
@@ -66,7 +67,7 @@ class PrivacyPolicyController {
 
     res.json({
       success: true,
-      message: 'Privacy policy updated successfully',
+      message: t('privacyPolicy.updateSuccess', req.locale),
       data: policy
     });
   });

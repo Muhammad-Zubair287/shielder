@@ -8,13 +8,14 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { warehouseService } from './warehouse.service';
+import { t } from '@/common/i18n';
 
 export class WarehouseController {
   createWarehouse = asyncHandler(async (req: Request, res: Response) => {
     const warehouse = await warehouseService.createWarehouse(req.body);
     res.status(201).json({
       success: true,
-      message: 'Warehouse created successfully.',
+      message: t('warehouse.createSuccess', req.locale),
       data: warehouse,
     });
   });
@@ -58,7 +59,7 @@ export class WarehouseController {
     const warehouse = await warehouseService.updateWarehouse(id, req.body);
     res.json({
       success: true,
-      message: 'Warehouse updated successfully.',
+      message: t('warehouse.updateSuccess', req.locale),
       data: warehouse,
     });
   });
@@ -68,7 +69,7 @@ export class WarehouseController {
     const result = await warehouseService.deleteWarehouse(id);
     res.json({
       success: true,
-      message: 'Warehouse deleted successfully.',
+      message: t('warehouse.deleteSuccess', req.locale),
       data: result,
     });
   });

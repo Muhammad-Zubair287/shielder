@@ -8,6 +8,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/utils/helpers';
 import contactService from './contact.service';
+import { t } from '@/common/i18n';
 
 class ContactController {
   private splitFullName(fullName: string): { firstName: string; lastName: string } {
@@ -82,7 +83,7 @@ class ContactController {
 
     return res.status(201).json({
       success: true,
-      message: 'Contact message submitted successfully.',
+      message: t('contact.submitSuccess', req.locale),
       data: {
         id: result.id,
       },

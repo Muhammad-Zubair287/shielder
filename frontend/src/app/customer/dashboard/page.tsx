@@ -50,7 +50,10 @@ export default function CustomerDashboard() {
         orderService.getMyOrders(),
         customerQuotationService.getMyQuotations(),
       ]);
-      setOrders(ordersData || []);
+      setOrders(
+        (Array.isArray(ordersData) ? ordersData : (ordersData?.orders ?? []))
+          .map((o: any) => ({ ...o, total: Number(o.total ?? 0) }))
+      );
       setQuotations(
         (quotationsData || []).map((quote) => ({
           id: quote.id,
@@ -194,7 +197,7 @@ export default function CustomerDashboard() {
                         {order.status}
                       </span>
                       <div className="text-right">
-                        <div className="font-semibold text-shielder-dark">AED {order.total.toFixed(2)}</div>
+                        <div className="font-semibold text-shielder-dark">AED {Number(order.total).toFixed(2)}</div>
                       </div>
                     </div>
                   </Link>
@@ -239,7 +242,7 @@ export default function CustomerDashboard() {
                         {quote.status}
                       </span>
                       <div className="text-right">
-                        <div className="font-semibold text-shielder-dark">AED {quote.amount.toFixed(2)}</div>
+                        <div className="font-semibold text-shielder-dark">AED {Number(quote.amount).toFixed(2)}</div>
                       </div>
                     </div>
                   </Link>

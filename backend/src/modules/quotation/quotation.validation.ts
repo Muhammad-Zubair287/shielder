@@ -6,11 +6,14 @@ const quotationItemSchema = Joi.object({
         'string.guid': 'Invalid product ID',
         'any.required': 'Product ID is required',
     }),
-    quantity: Joi.number().integer().min(1).required().messages({
+    quantity: Joi.number().integer().min(1).max(10_000).required().messages({
         'number.min': 'Quantity must be at least 1',
+        'number.max': 'Quantity cannot exceed 10,000',
         'any.required': 'Quantity is required',
     }),
-    discount: Joi.number().min(0).default(0),
+    discount: Joi.number().min(0).max(100).default(0).messages({
+        'number.max': 'Item discount cannot exceed 100%',
+    }),
 });
 
 export const quotationValidation = {
@@ -22,46 +25,70 @@ export const quotationValidation = {
             'string.email': 'Please provide a valid email address',
             'any.required': 'Customer email is required',
         }),
-        customerPhone: Joi.string().allow('', null).optional(),
-        customerAddress: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        companyName: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
+        customerPhone: Joi.string()
+            .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
+            .allow('', null)
+            .optional()
+            .messages({
+                'string.pattern.base': 'Please provide a valid phone number',
+            }),
+        customerAddress: sharedValidationSchemas.textNoHtml.max(200).allow('', null).optional(),
+        companyName: sharedValidationSchemas.textNoHtml.max(100).allow('', null).optional(),
         items: Joi.array().items(quotationItemSchema).min(1).required().messages({
             'array.min': 'At least one product item is required',
         }),
-        discount: Joi.number().min(0).default(0),
-        taxRate: Joi.number().min(0).default(0),
-        notes: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        userMessage: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        adminReply: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        terms: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
+        discount: Joi.number().min(0).max(100).default(0).messages({
+            'number.max': 'Discount cannot exceed 100%',
+        }),
+        taxRate: Joi.number().min(0).max(100).default(0).messages({
+            'number.max': 'Tax rate cannot exceed 100%',
+        }),
+        notes: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        userMessage: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        adminReply: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        terms: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
         quotationDate: Joi.date().iso().optional(),
-        expiryDate: Joi.date().iso().required().messages({
+        expiryDate: Joi.date().iso().min('now').required().messages({
             'any.required': 'Expiry date is required',
             'date.format': 'Expiry date must be a valid ISO date',
+            'date.min': 'Expiry date must be in the future',
         }),
     }),
 
     update: Joi.object({
         customerName: sharedValidationSchemas.textNoHtml.min(2).max(100).optional(),
         customerEmail: Joi.string().email().optional(),
-        customerPhone: Joi.string().allow('', null).optional(),
-        customerAddress: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        companyName: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
+        customerPhone: Joi.string()
+            .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
+            .allow('', null)
+            .optional()
+            .messages({
+                'string.pattern.base': 'Please provide a valid phone number',
+            }),
+        customerAddress: sharedValidationSchemas.textNoHtml.max(200).allow('', null).optional(),
+        companyName: sharedValidationSchemas.textNoHtml.max(100).allow('', null).optional(),
         items: Joi.array().items(quotationItemSchema).min(1).optional(),
-        discount: Joi.number().min(0).optional(),
-        taxRate: Joi.number().min(0).optional(),
-        notes: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        userMessage: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        adminReply: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        terms: sharedValidationSchemas.textNoHtml.allow('', null).optional(),
-        expiryDate: Joi.date().iso().optional(),
+        discount: Joi.number().min(0).max(100).optional().messages({
+            'number.max': 'Discount cannot exceed 100%',
+        }),
+        taxRate: Joi.number().min(0).max(100).optional().messages({
+            'number.max': 'Tax rate cannot exceed 100%',
+        }),
+        notes: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        userMessage: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        adminReply: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        terms: sharedValidationSchemas.textNoHtml.max(2000).allow('', null).optional(),
+        expiryDate: Joi.date().iso().min('now').optional().messages({
+            'date.min': 'Expiry date must be in the future',
+        }),
     }).min(1).messages({
         'object.min': 'At least one field is required to update quotation',
     }),
 
     reactivate: Joi.object({
-        expiryDate: Joi.date().iso().required().messages({
+        expiryDate: Joi.date().iso().min('now').required().messages({
             'any.required': 'New expiry date is required',
+            'date.min': 'New expiry date must be in the future',
         }),
     }),
 

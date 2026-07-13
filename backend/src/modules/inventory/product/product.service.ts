@@ -6,14 +6,18 @@ import AdmZip from 'adm-zip';
 import { translate } from '@vitalets/google-translate-api';
 import { copyExistingImageToUploads, saveDataUrlToUploads } from '@/common/services/product-image.service';
 
-/** Translate a string to Arabic. Returns the original text if translation fails. */
-async function toArabic(text: string): Promise<string> {
-  if (!text) return text;
+/** Translate a string to Arabic. Returns undefined if translation fails or produces non-Arabic output. */
+async function toArabic(text: string): Promise<string | undefined> {
+  if (!text) return undefined;
   try {
     const { text: translated } = await translate(text, { to: 'ar' });
-    return translated || text;
+    // Validate result actually contains Arabic characters
+    if (translated && /[\u0600-\u06FF]/.test(translated)) {
+      return translated;
+    }
+    return undefined;
   } catch {
-    return text;
+    return undefined;
   }
 }
 
@@ -73,20 +77,23 @@ async function ensureArabicTranslationSet(
   const translatedDescription = english.description ? await toArabic(english.description) : undefined;
 
   if (!existingArabic) {
-    normalized.push({
-      locale: 'ar',
-      name: translatedName || english.name,
-      description: translatedDescription || english.description,
-    });
+    // Only push AR entry if we have at least a name (skip if translation failed)
+    if (translatedName) {
+      normalized.push({
+        locale: 'ar',
+        name: translatedName,
+        description: translatedDescription,
+      });
+    }
     return normalized;
   }
 
-  if (!existingArabic.name) {
-    existingArabic.name = translatedName || english.name;
+  if (!existingArabic.name && translatedName) {
+    existingArabic.name = translatedName;
   }
 
-  if (!existingArabic.description && english.description) {
-    existingArabic.description = translatedDescription || english.description;
+  if (!existingArabic.description && translatedDescription) {
+    existingArabic.description = translatedDescription;
   }
 
   return normalized;
@@ -837,6 +844,7 @@ export class ProductService {
     if (sort === 'price_asc') orderBy = { price: 'asc' };
     else if (sort === 'price_desc') orderBy = { price: 'desc' };
     else if (sort === 'newest') orderBy = { createdAt: 'desc' };
+    else if (sort === 'best_selling') orderBy = { orderItems: { _count: 'desc' } };
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -1079,8 +1087,8 @@ export class ProductService {
         const dimensions: string | undefined = asString(getRowValue(row, 'Dimensions')) || undefined;
 
         // Auto-translate if Arabic fields are not provided
-        const nameAr = nameArInput || await toArabic(name);
-        const descriptionAr = descArInput || (description ? await toArabic(description) : '');
+        const nameAr = nameArInput || await toArabic(name) || '';
+        const descriptionAr = descArInput || (description ? await toArabic(description) : '') || '';
         const rawImage: string | undefined = asString(getRowValue(row, 'Image')) || undefined;
         // Embedded Excel images are often small previews; prefer Image column path/URL when provided.
         // excelRow is 0-based; row 0 = header, so data row i (0-based) sits at excelRow i+1.
@@ -1126,7 +1134,7 @@ export class ProductService {
               translations: {
                 create: [
                   { locale: 'en', name: displayName },
-                  { locale: 'ar', name: await toArabic(displayName) },
+                  { locale: 'ar', name: await toArabic(displayName) || displayName },
                 ]
               }
             }
@@ -1145,7 +1153,7 @@ export class ProductService {
               translations: {
                 create: [
                   { locale: 'en', name: displayName },
-                  { locale: 'ar', name: await toArabic(displayName) },
+                  { locale: 'ar', name: await toArabic(displayName) || displayName },
                 ]
               }
             }

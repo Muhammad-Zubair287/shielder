@@ -329,16 +329,12 @@ export class CartService {
     const cartId = await this.getActiveCartId(userId);
 
     if (!cartId) {
-      throw new BadRequestError('Cart is already empty');
+      return { removedItems: 0 };
     }
 
     const { count } = await prisma.cartItem.deleteMany({
       where: { cartId },
     });
-
-    if (count === 0) {
-      throw new BadRequestError('Cart is already empty');
-    }
 
     logger.info(`Cart cleared for user ${userId} (removed ${count} item(s))`);
 

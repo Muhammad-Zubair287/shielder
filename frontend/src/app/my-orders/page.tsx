@@ -97,15 +97,6 @@ function methodIcon(method: string) {
   return <Banknote size={13} />;
 }
 
-function orderStatusLabel(status: string) {
-  const value = (status || '').toUpperCase();
-  return `Order Status: ${value.charAt(0)}${value.slice(1).toLowerCase()}`;
-}
-
-function paymentStatusLabel(status: string) {
-  const value = (status || '').toUpperCase();
-  return `Payment Status: ${value.charAt(0)}${value.slice(1).toLowerCase()}`;
-}
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -155,9 +146,12 @@ export default function MyOrdersPage() {
       const items = response?.data?.orderItems || [];
 
       if (!items.length) {
-        toast.error(t('myOrders.noItemsForReorder'));
+        toast.error(t('myOrders.noItemsForReorder'), { duration: 5000 });
         return;
       }
+
+      let successCount = 0;
+      let stockFailCount = 0;
 
       for (const item of items) {
         const productId = item.productId || item.product?.id;
@@ -175,34 +169,45 @@ export default function MyOrdersPage() {
             null,
           ) || null;
 
-        await addItem(
-          productId,
-          quantity,
-          {
-            id: productId,
-            name: productName,
-            thumbnail: productThumbnail,
-            isActive: true,
-          },
-          unitPrice,
-        );
+        try {
+          await addItem(
+            productId,
+            quantity,
+            { id: productId, name: productName, thumbnail: productThumbnail, isActive: true },
+            unitPrice,
+            { silent: true },
+          );
+          successCount++;
+        } catch (err: any) {
+          const msg = (err?.response?.data?.message || '').toLowerCase();
+          if (msg.includes('stock')) {
+            stockFailCount++;
+          }
+        }
       }
 
-      toast.success(t('myOrders.itemsAddedToCart'));
-      router.push('/cart');
+      if (successCount === 0) {
+        toast.error(t('myOrders.reorderOutOfStock'), { duration: 5000 });
+      } else if (stockFailCount > 0) {
+        toast.success(t('myOrders.reorderPartial'), { duration: 5000 });
+        router.push('/cart');
+      } else {
+        toast.success(t('myOrders.itemsAddedToCart'), { duration: 5000 });
+        router.push('/cart');
+      }
     } catch {
-      toast.error(t('myOrders.reorderUnavailable'));
+      toast.error(t('myOrders.reorderUnavailable'), { duration: 5000 });
     } finally {
       setReorderingId(null);
     }
-  }, [router, t]);
+  }, [router, t, addItem]);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#F97316]" size={36} />
+        <Loader2 className="animate-spin text-[#0205A6]" size={36} />
       </div>
     );
   }
@@ -218,7 +223,7 @@ export default function MyOrdersPage() {
           <div className="flex items-center mb-8 relative">
             <Link
               href="/products"
-              className="p-2 text-gray-600 hover:text-[#F97316] hover:bg-orange-50 rounded-lg transition-colors ms-auto"
+              className="p-2 text-gray-600 hover:text-[#0205A6] hover:bg-blue-50 rounded-lg transition-colors"
               aria-label="back"
             >
               <BackArrow size={22} />
@@ -229,7 +234,7 @@ export default function MyOrdersPage() {
             <button
               onClick={() => fetchOrders(pagination.page)}
               disabled={refreshing}
-              className="ms-auto text-gray-400 hover:text-[#F97316] transition-colors disabled:opacity-40"
+              className="ms-auto text-gray-400 hover:text-[#0205A6] transition-colors disabled:opacity-40"
               aria-label="refresh"
             >
               <RefreshCcw size={18} className={refreshing ? 'animate-spin' : ''} />
@@ -240,7 +245,7 @@ export default function MyOrdersPage() {
           {orders.length === 0 && !refreshing ? (
             <div className="flex flex-col items-center justify-center py-20 gap-5 text-center">
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center">
-                <ShoppingBag size={36} className="text-[#F97316]" />
+                <ShoppingBag size={36} className="text-[#0205A6]" />
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900">{t('myOrders.empty')}</p>
@@ -248,7 +253,7 @@ export default function MyOrdersPage() {
               </div>
               <Link
                 href="/products"
-                className="inline-flex items-center gap-2 bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold text-sm px-7 py-3 rounded-2xl transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 bg-[#0205A6] hover:bg-[#0204c0] text-white font-semibold text-sm px-7 py-3 rounded-2xl transition-colors shadow-sm"
               >
                 {t('myOrders.goToProducts')}
               </Link>
@@ -270,10 +275,15 @@ export default function MyOrdersPage() {
                     order.warehouse?.city,
                     order.warehouse?.country,
                   ].filter(Boolean).join(', ');
+                  const targetLocale = isRTL ? 'ar' : 'en';
                   const productSummary = (order.orderItems || [])
                     .slice(0, 2)
-                    .map((item: any) => item?.product?.translations?.[0]?.name || item?.product?.sku || 'Product')
-                    .join(', ');
+                    .map((item: any) => {
+                      const trs = item?.product?.translations || [];
+                      const tr = trs.find((r: any) => r.locale === targetLocale) || trs.find((r: any) => r.name);
+                      return tr?.name || item?.product?.sku || 'Product';
+                    })
+                    .join(isRTL ? '، ' : ', ');
                   const remainingProducts = Math.max(0, (order.orderItems?.length || 0) - 2);
                   let dateStr = '';
                   try { dateStr = format(new Date(order.createdAt), 'dd MMM yyyy'); } catch { dateStr = order.createdAt?.slice(0, 10) ?? ''; }
@@ -284,39 +294,40 @@ export default function MyOrdersPage() {
                       className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:border-orange-200 transition-colors"
                     >
                       {/* Top row */}
-                      <div className={`flex items-center justify-between px-5 py-4 border-b border-gray-50 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <div className={isRTL ? 'text-right' : 'text-start'}>
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                        <div>
                           <p className="text-xs text-gray-500">{t('myOrders.orderNumber')}</p>
-                          <p className="text-sm font-bold text-gray-900 tracking-wide">#{order.orderNumber}</p>
+                          <p className="text-sm font-bold text-gray-900 tracking-wide" dir="ltr">#{order.orderNumber}</p>
                         </div>
-                        <div className={`flex items-center gap-2 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor(order.status)}`}>
                             <Clock size={10} />
-                            {orderStatusLabel(t(`orderConfirmation.status.${order.status?.toLowerCase()}`) || order.status)}
+                            {t(`orderConfirmation.status.${order.status?.toLowerCase()}`) || order.status}
                           </span>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${paymentStatusColor(order.paymentStatus)}`}>
                             {methodIcon(order.paymentMethod)}
-                            {paymentStatusLabel(t(`orderConfirmation.paymentStatus.${order.paymentStatus?.toLowerCase()}`) || order.paymentStatus)}
+                            {t(`orderConfirmation.paymentStatus.${order.paymentStatus?.toLowerCase()}`) || order.paymentStatus}
                           </span>
                         </div>
                       </div>
 
                       {/* Bottom row */}
-                      <div className={`flex items-center justify-between px-5 py-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <div className={`flex items-center gap-4 text-sm text-gray-500 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className="flex items-center justify-between px-5 py-3">
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span className="flex items-center gap-1">
                             <Package size={14} />
-                            {itemCount} {t('myOrders.items')}
+                            <span dir="ltr">{itemCount}</span>
+                            {t('myOrders.items')}
                           </span>
-                          <span>{dateStr}</span>
+                          <span dir="ltr">{dateStr}</span>
                         </div>
-                        <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <div className="flex items-center gap-4">
                           <span className="font-bold text-[#0D1637] text-sm flex items-center gap-0.5">
                             <SARSymbol />{Number(order.total).toFixed(2)}
                           </span>
                           <Link
                             href={`/order-confirmation/${order.id}`}
-                            className="inline-flex items-center gap-1 text-[#F97316] hover:text-[#e8650a] text-sm font-semibold transition-colors"
+                            className="inline-flex items-center gap-1 text-[#0205A6] hover:text-[#0103d4] text-sm font-semibold transition-colors"
                           >
                             {t('myOrders.viewDetails')}
                             <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
@@ -327,8 +338,8 @@ export default function MyOrdersPage() {
                       {/* Delivery / Pickup info */}
                       <div className="px-5 pb-3 space-y-2">
                         {!!productSummary && (
-                          <div className={`text-sm ${isRTL ? 'text-right' : 'text-start'}`}>
-                            <span className="text-gray-500">{t('myOrders.productsSummary') || 'Products'}: </span>
+                          <div className="text-sm">
+                            <span className="text-gray-500">{t('myOrders.productsSummary')}: </span>
                             <span className="font-medium text-gray-700">
                               {productSummary}
                               {remainingProducts > 0 ? ` +${remainingProducts}` : ''}
@@ -336,7 +347,7 @@ export default function MyOrdersPage() {
                           </div>
                         )}
 
-                        <div className={`text-sm ${isRTL ? 'text-right' : 'text-start'}`}>
+                        <div className="text-sm">
                           <span className="text-gray-500">{t('myOrders.deliveryType')}: </span>
                           <span className="font-semibold text-gray-800">
                             {isPickupOrder ? t('myOrders.deliveryPickup') : t('myOrders.deliveryHome')}
@@ -344,7 +355,7 @@ export default function MyOrdersPage() {
                         </div>
 
                         {isPickupOrder && (
-                          <div className={`bg-amber-50 border border-amber-100 rounded-xl p-3 ${isRTL ? 'text-right' : 'text-start'}`}>
+                          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
                             <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-1">
                               {t('myOrders.pickupDetails')}
                             </p>
@@ -357,25 +368,25 @@ export default function MyOrdersPage() {
                       </div>
 
                       {/* Quick actions */}
-                      <div className={`px-5 pb-4 flex items-center gap-2 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className="px-5 pb-4 flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/order-confirmation/${order.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#F97316] hover:text-[#F97316] text-xs font-semibold transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#0205A6] hover:text-[#0205A6] text-xs font-semibold transition-colors"
                           aria-label={`Track order ${order.orderNumber}`}
                         >
                           <LocateFixed size={13} />
-                          Track
+                          {t('myOrders.track')}
                         </Link>
 
                         <button
                           type="button"
                           onClick={() => handleReorder(order.id)}
                           disabled={reorderingId === order.id}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#F97316] hover:text-[#F97316] text-xs font-semibold transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#0205A6] hover:text-[#0205A6] text-xs font-semibold transition-colors disabled:opacity-50"
                           aria-label={`Reorder items from ${order.orderNumber}`}
                         >
                           <RotateCcw size={13} className={reorderingId === order.id ? 'animate-spin' : ''} />
-                          Reorder
+                          {t('myOrders.reorder')}
                         </button>
 
                         {false && canRequestCancel && (

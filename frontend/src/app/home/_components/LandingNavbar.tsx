@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Menu, X, User, LogOut, Search, Phone, Truck, Headphones, Zap } from 'lucide-react';
+import { Menu, X, User, LogOut, Search, Phone, Truck, Headphones, Zap, Package, FileText } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -73,12 +73,6 @@ export default function LandingNavbar() {
   const hiddenNavLinks = [
     { label: t('landingNavRequestQuote'), href: '/generate-quotation' },
     { label: t('landingNavPrivacy'), href: '/privacy-policy' },
-    ...(user
-      ? [
-        { label: t('myOrders.title'), href: '/my-orders' },
-        { label: t('myQuotations.title'), href: '/my-quotations' },
-      ]
-      : []),
   ];
 
   const profileDisplayName = user?.profile?.fullName?.trim() || user?.email || t('profile.viewProfile');
@@ -268,16 +262,34 @@ export default function LandingNavbar() {
                   </button>
 
                   {profileOpen && (
-                    <div className={`fixed lg:absolute ${isRTL ? 'left-4 lg:left-0' : 'right-4 lg:right-0'} top-20 lg:top-full mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-xl py-1.5 z-[100] overflow-hidden`}
+                    <div
+                      className="fixed lg:absolute right-4 lg:right-0 top-20 lg:top-full mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-xl py-1.5 z-[100] overflow-hidden"
+                      dir={isRTL ? 'rtl' : 'ltr'}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Link
                         href="/profile"
                         onClick={() => setProfileOpen(false)}
-                        className={`flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-[#0205A6] transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-[#0205A6] transition-colors"
                       >
-                        <User size={16} />
+                        <User size={16} className="flex-shrink-0" />
                         <span>{t('profile.viewProfile')}</span>
+                      </Link>
+                      <Link
+                        href="/my-orders"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-[#0205A6] transition-colors"
+                      >
+                        <Package size={16} className="flex-shrink-0" />
+                        <span>{t('myOrders.title')}</span>
+                      </Link>
+                      <Link
+                        href="/my-quotations"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-[#0205A6] transition-colors"
+                      >
+                        <FileText size={16} className="flex-shrink-0" />
+                        <span>{t('myQuotations.title')}</span>
                       </Link>
                       <div className="h-px bg-gray-100 my-1" />
                       <button
@@ -288,9 +300,9 @@ export default function LandingNavbar() {
                           logout();
                           setProfileOpen(false);
                         }}
-                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
                       >
-                        <LogOut size={16} />
+                        <LogOut size={16} className="flex-shrink-0" />
                         <span>{t('logout')}</span>
                       </button>
                     </div>
@@ -361,16 +373,34 @@ export default function LandingNavbar() {
             </Link>
 
             {user && (
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-red-600 hover:bg-red-50 border-b border-gray-100 ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
-              >
-                <LogOut size={20} className={isRTL ? 'rotate-180' : ''} />
-                <span>{t('auth.logout')}</span>
-              </button>
+              <>
+                <Link
+                  href="/my-orders"
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-[#0e2441] hover:bg-gray-50 border-b border-gray-100 ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
+                >
+                  <Package size={18} className="flex-shrink-0" />
+                  <span>{t('myOrders.title')}</span>
+                </Link>
+                <Link
+                  href="/my-quotations"
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-[#0e2441] hover:bg-gray-50 border-b border-gray-100 ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
+                >
+                  <FileText size={18} className="flex-shrink-0" />
+                  <span>{t('myQuotations.title')}</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-red-600 hover:bg-red-50 border-b border-gray-100 ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
+                >
+                  <LogOut size={20} className={isRTL ? 'rotate-180' : ''} />
+                  <span>{t('auth.logout')}</span>
+                </button>
+              </>
             )}
           </div>
         )}

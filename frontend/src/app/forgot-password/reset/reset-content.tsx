@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validateResetPassword } from '@/services/validation/auth.validation';
@@ -43,7 +42,7 @@ export function ForgotPasswordResetContent() {
     try {
       await authService.resetPasswordWithForgotOtp(token, password);
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.replace('/login'), 2000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t(' reset Failed'));
     } finally {
@@ -57,9 +56,13 @@ export function ForgotPasswordResetContent() {
         <div className="w-full max-w-sm pt-2">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 text-center">
             <h2 className="text-2xl font-semibold text-red-600 mb-4">{t('invalid Reset Link')}</h2>
-            <Link href="/forgot-password" className="text-[#FF7A1A] hover:underline font-semibold">
+            <button
+              type="button"
+              onClick={() => router.replace('/forgot-password')}
+              className="text-[#FF7A1A] hover:underline font-semibold"
+            >
               {t('requestNewLink')}
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -158,9 +161,13 @@ export function ForgotPasswordResetContent() {
 
           <div className="mt-6 text-center text-sm">
             <span className="text-slate-600">{t('remember Password')}</span>{' '}
-            <Link href="/login" className="text-[#FF7A1A] hover:underline font-semibold">
+            <button
+              type="button"
+              onClick={() => router.replace('/login')}
+              className="text-[#FF7A1A] hover:underline font-semibold"
+            >
               {t('auth.backToLogin')}
-            </Link>
+            </button>
           </div>
         </div>
       </div>

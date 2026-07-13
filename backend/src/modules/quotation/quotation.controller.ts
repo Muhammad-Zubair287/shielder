@@ -14,6 +14,7 @@ import { Prisma, QuotationStatus } from '@prisma/client';
 import { quotationService } from './quotation.service';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { AuthRequest } from '@/types/global';
+import { t } from '@/common/i18n';
 
 export class QuotationController {
 
@@ -252,7 +253,7 @@ export class QuotationController {
         const userId = req.user!.id;
         const { adminReply } = req.body as { adminReply?: string };
         const quotation = await quotationService.sendQuotation(req.params.id as string, userId, adminReply);
-        res.json({ success: true, data: quotation, message: 'Quotation sent successfully.' });
+        res.json({ success: true, data: quotation, message: t('quotation.sent', req.locale) });
     });
 
     /**
@@ -274,7 +275,7 @@ export class QuotationController {
     approve = asyncHandler(async (req: AuthRequest, res: Response) => {
         const userId = req.user!.id;
         const quotation = await quotationService.approveQuotation(req.params.id as string, userId);
-        res.json({ success: true, data: quotation, message: 'Quotation approved.' });
+        res.json({ success: true, data: quotation, message: t('quotation.approved', req.locale) });
     });
 
     /**
@@ -306,7 +307,7 @@ export class QuotationController {
         const userId = req.user!.id;
         const { reason } = req.body;
         const quotation = await quotationService.rejectQuotation(req.params.id as string, reason, userId);
-        res.json({ success: true, data: quotation, message: 'Quotation rejected.' });
+        res.json({ success: true, data: quotation, message: t('quotation.rejected', req.locale) });
     });
 
     /**
@@ -328,7 +329,7 @@ export class QuotationController {
     convertToOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
         const userId = req.user!.id;
         const result = await quotationService.convertToOrder(req.params.id as string, userId);
-        res.status(201).json({ success: true, data: result, message: 'Quotation converted to order successfully.' });
+        res.status(201).json({ success: true, data: result, message: t('quotation.converted', req.locale) });
     });
 
     /**
@@ -359,7 +360,7 @@ export class QuotationController {
         const userId = req.user!.id;
         const { expiryDate } = req.body;
         const quotation = await quotationService.reactivateExpired(req.params.id as string, expiryDate, userId);
-        res.json({ success: true, data: quotation, message: 'Quotation reactivated successfully.' });
+        res.json({ success: true, data: quotation, message: t('quotation.reactivated', req.locale) });
     });
 
     /**
@@ -389,9 +390,9 @@ export class QuotationController {
      *       200:
      *         description: Stale quotations expired
      */
-    expireStale = asyncHandler(async (_req: Request, res: Response) => {
+    expireStale = asyncHandler(async (req: Request, res: Response) => {
         const result = await quotationService.expireStaleQuotations();
-        res.json({ success: true, data: result, message: `${result.expired} quotations expired.` });
+        res.json({ success: true, data: result, message: t('quotation.expired', req.locale, { count: result.expired }) });
     });
 }
 

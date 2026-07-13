@@ -43,6 +43,7 @@ import productReviewRoutes from './modules/product-review/product-review.routes'
 import inventoryAlertRoutes from './modules/inventory-alert/inventory-alert.routes';
 import publicWarehouseRoutes from './modules/warehouse/public-warehouse.routes';
 import applicationRoutes from './modules/application/application.routes';
+import translateRoutes from './modules/translate/translate.routes';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
@@ -244,6 +245,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/warehouses`, publicWarehouseRoutes);
     app.use(`${prefix}/applications`, applicationRoutes);
     app.use(`${prefix}/admin/inventory-alerts`, inventoryAlertRoutes);
+    app.use(`${prefix}/translate`, translateRoutes);
   };
 
   mountRoutes(apiPrefix);

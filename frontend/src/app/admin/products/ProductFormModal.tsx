@@ -23,6 +23,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
   const [form, setForm] = useState<ProductFormData>(EMPTY_PRODUCT_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   // Image upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -217,6 +218,47 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
       errs.minimumStockThreshold = t('productThresholdRequired');
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const handleTranslateToArabic = async () => {
+    const nameEn = form.nameEn?.trim() || '';
+    const descEn = form.descriptionEn?.trim() || '';
+    if (!nameEn && !descEn) {
+      toast.error('Enter English name or description first');
+      return;
+    }
+    setTranslating(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const [nameRes, descRes] = await Promise.allSettled([
+        nameEn
+          ? fetch(`${apiBase}/translate/to-arabic`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionStorage.getItem('accessToken')}` },
+              body: JSON.stringify({ text: nameEn }),
+            }).then((r) => r.json())
+          : Promise.resolve(null),
+        descEn
+          ? fetch(`${apiBase}/translate/to-arabic`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionStorage.getItem('accessToken')}` },
+              body: JSON.stringify({ text: descEn }),
+            }).then((r) => r.json())
+          : Promise.resolve(null),
+      ]);
+      const nameAr = nameRes.status === 'fulfilled' && nameRes.value?.translated ? nameRes.value.translated : form.nameAr;
+      const descAr = descRes.status === 'fulfilled' && descRes.value?.translated ? descRes.value.translated : form.descriptionAr;
+      setForm((prev) => ({ ...prev, nameAr, descriptionAr: descAr }));
+      if (!nameAr && !descAr) {
+        toast.error('Auto-translation failed. Please enter Arabic text manually.');
+      } else {
+        toast.success('Translated! Please review before saving.');
+      }
+    } catch {
+      toast.error('Translation service unavailable.');
+    } finally {
+      setTranslating(false);
+    }
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -491,9 +533,20 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
 
           {/* ── Arabic Section ── */}
           <div className="border border-gray-200 rounded-xl p-4 space-y-4">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-              {t('arabicSection')}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                {t('arabicSection')}
+              </p>
+              <button
+                type="button"
+                onClick={handleTranslateToArabic}
+                disabled={translating || (!form.nameEn?.trim() && !form.descriptionEn?.trim())}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition-all hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {translating ? <Loader2 size={12} className="animate-spin" /> : null}
+                {translating ? t('superadminProducts.translating') : t('superadminProducts.autoTranslate')}
+              </button>
+            </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">

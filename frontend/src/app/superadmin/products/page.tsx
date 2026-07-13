@@ -30,7 +30,7 @@ import adminService from '@/services/admin.service';
 import settingsService from '@/services/settings.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
-import { resolveProductDescription, resolveProductName } from '@/utils/productDisplay';
+import { resolveProductDescription, resolveProductName, translateSpecKey } from '@/utils/productDisplay';
 import { ApiErrorResponse } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
@@ -60,6 +60,11 @@ interface Product {
   supplierId: string | null;
   createdAt: string;
   specifications: { id: string; specKey: string; specValue: string }[];
+  filterNumber?: string;
+  alternateNumbers?: string;
+  filterType?: string;
+  material?: string;
+  dimensions?: string;
 }
 
 interface SpecTemplate {
@@ -159,8 +164,10 @@ const ProductManagement = () => {
   const [defaultLowStockThreshold, setDefaultLowStockThreshold] = useState<number>(5);
   const [formData, setFormData] = useState<{
     sku: string;
-    name: string;
-    description: string;
+    nameEn: string;
+    nameAr: string;
+    descriptionEn: string;
+    descriptionAr: string;
     categoryId: string;
     subcategoryId: string;
     supplierId: string;
@@ -169,10 +176,17 @@ const ProductManagement = () => {
     minimumStockThreshold: string;
     isActive: boolean;
     specifications: { specKey: string; specValue: string; isRequired?: boolean }[];
+    filterNumber: string;
+    alternateNumbers: string;
+    filterType: string;
+    material: string;
+    dimensions: string;
   }>({
     sku: '',
-    name: '',
-    description: '',
+    nameEn: '',
+    nameAr: '',
+    descriptionEn: '',
+    descriptionAr: '',
     categoryId: '',
     subcategoryId: '',
     supplierId: '',
@@ -181,10 +195,16 @@ const ProductManagement = () => {
     minimumStockThreshold: '5',
     isActive: true,
     specifications: [],
+    filterNumber: '',
+    alternateNumbers: '',
+    filterType: '',
+    material: '',
+    dimensions: '',
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [translating, setTranslating] = useState(false);
 
   const productName = useCallback((product: Product) => {
     return resolveProductName(product, isRTL ? 'ar' : 'en') || product.name || '—';
@@ -362,8 +382,10 @@ const ProductManagement = () => {
   const resetForm = () => {
     setFormData({
       sku: '',
-      name: '',
-      description: '',
+      nameEn: '',
+      nameAr: '',
+      descriptionEn: '',
+      descriptionAr: '',
       categoryId: '',
       subcategoryId: '',
       supplierId: '',
@@ -372,6 +394,11 @@ const ProductManagement = () => {
       minimumStockThreshold: String(defaultLowStockThreshold),
       isActive: true,
       specifications: [],
+      filterNumber: '',
+      alternateNumbers: '',
+      filterType: '',
+      material: '',
+      dimensions: '',
     });
     setImagePreview(null);
     setImageFile(null);
@@ -400,9 +427,56 @@ const ProductManagement = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleTranslateToArabic = async () => {
+    const nameEn = formData.nameEn.trim();
+    const descEn = formData.descriptionEn.trim();
+    if (!nameEn && !descEn) {
+      toast.error('Enter English name or description first');
+      return;
+    }
+    setTranslating(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const results = await Promise.allSettled([
+        nameEn
+          ? fetch(`${apiBase}/translate/to-arabic`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionStorage.getItem('accessToken')}` },
+              body: JSON.stringify({ text: nameEn }),
+            }).then((r) => r.json())
+          : Promise.resolve(null),
+        descEn
+          ? fetch(`${apiBase}/translate/to-arabic`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionStorage.getItem('accessToken')}` },
+              body: JSON.stringify({ text: descEn }),
+            }).then((r) => r.json())
+          : Promise.resolve(null),
+      ]);
+
+      const nameResult = results[0].status === 'fulfilled' ? results[0].value : null;
+      const descResult = results[1].status === 'fulfilled' ? results[1].value : null;
+
+      const newNameAr = nameResult?.translated || formData.nameAr;
+      const newDescAr = descResult?.translated || formData.descriptionAr;
+
+      setFormData((prev) => ({ ...prev, nameAr: newNameAr, descriptionAr: newDescAr }));
+
+      if (!nameResult?.translated && !descResult?.translated) {
+        toast.error('Auto-translation failed. Please enter Arabic text manually.');
+      } else {
+        toast.success('Translated! Please review before saving.');
+      }
+    } catch {
+      toast.error('Translation service unavailable. Please enter Arabic text manually.');
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.categoryId || !formData.subcategoryId || !formData.price || !formData.stock) {
+    if (!formData.nameEn.trim() || !formData.categoryId || !formData.subcategoryId || !formData.price || !formData.stock) {
       return toast.error(t('superadminProducts.fillRequiredFields'));
     }
 
@@ -419,6 +493,14 @@ const ProductManagement = () => {
       return toast.error(t('superadminProducts.duplicateSpecificationKeys'));
     }
 
+    // Build bilingual translations — always send EN; send AR only when explicitly provided
+    const translations: { locale: string; name: string; description?: string }[] = [
+      { locale: 'en', name: formData.nameEn.trim(), description: formData.descriptionEn.trim() || undefined },
+    ];
+    if (formData.nameAr.trim()) {
+      translations.push({ locale: 'ar', name: formData.nameAr.trim(), description: formData.descriptionAr.trim() || undefined });
+    }
+
     const payload: Record<string, any> = {
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
@@ -426,9 +508,7 @@ const ProductManagement = () => {
       categoryId: formData.categoryId,
       subcategoryId: formData.subcategoryId,
       isActive: formData.isActive,
-      translations: [
-        { locale: 'en', name: formData.name, description: formData.description }
-      ],
+      translations,
       specifications: formData.specifications
         .filter(s => s.specKey.trim() && s.specValue.trim())
         .map(s => ({ specKey: s.specKey.trim(), specValue: s.specValue.trim() }))
@@ -437,6 +517,11 @@ const ProductManagement = () => {
     // Joi optional string/uuid fields should be omitted when empty, not sent as null.
     if (formData.sku?.trim()) payload.sku = formData.sku.trim();
     if (formData.supplierId) payload.supplierId = formData.supplierId;
+    if (formData.filterNumber?.trim()) payload.filterNumber = formData.filterNumber.trim();
+    if (formData.alternateNumbers?.trim()) payload.alternateNumbers = formData.alternateNumbers.trim();
+    if (formData.filterType?.trim()) payload.filterType = formData.filterType.trim();
+    if (formData.material?.trim()) payload.material = formData.material.trim();
+    if (formData.dimensions?.trim()) payload.dimensions = formData.dimensions.trim();
 
     try {
       setFormLoading(true);
@@ -597,10 +682,15 @@ const ProductManagement = () => {
 
   const openEditModal = (p: Product) => {
     setSelectedProduct(p);
+    // Extract EN/AR translations from the product object (already provided by getProductsForManagement)
+    const enTr = p.translations?.find((tr) => tr.locale === 'en');
+    const arTr = p.translations?.find((tr) => tr.locale === 'ar');
     setFormData({
       sku: p.sku || '',
-      name: p.name,
-      description: p.description,
+      nameEn: enTr?.name || p.nameEn || p.name || '',
+      nameAr: arTr?.name || p.nameAr || '',
+      descriptionEn: enTr?.description || p.descriptionEn || '',
+      descriptionAr: arTr?.description || p.descriptionAr || '',
       categoryId: p.categoryId,
       subcategoryId: p.subcategoryId,
       supplierId: p.supplierId || '',
@@ -612,6 +702,11 @@ const ProductManagement = () => {
         specKey: s.specKey,
         specValue: s.specValue
       })) || [],
+      filterNumber: p.filterNumber || '',
+      alternateNumbers: p.alternateNumbers || '',
+      filterType: p.filterType || '',
+      material: p.material || '',
+      dimensions: p.dimensions || '',
     });
     setImagePreview(p.mainImage);
     setImageFile(null);
@@ -878,41 +973,41 @@ const ProductManagement = () => {
                       </button>
 
                       {openMenuId === prod.id && (
-                        <div className="absolute right-0 top-[80%] w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-[60] py-2 animate-in fade-in slide-in-from-top-2 zoom-in duration-200">
-                          <button 
+                        <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-[80%] w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-[60] py-2 animate-in fade-in slide-in-from-top-2 zoom-in duration-200`}>
+                          <button
                             onClick={() => { setSelectedProduct(prod); setShowViewModal(true); setOpenMenuId(null); }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] transition-colors"
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
                           >
                             <Eye size={16} />
-                            View Details
+                            {t('viewDetails')}
                           </button>
-                          
-                          <button 
+
+                          <button
                             onClick={() => { openEditModal(prod); setOpenMenuId(null); }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] transition-colors"
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35] transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
                           >
                             <Edit2 size={16} />
-                            Edit Product
+                            {t('editProduct')}
                           </button>
 
                           {prod.status === 'PENDING' && (
-                            <button 
+                            <button
                               onClick={() => { setSelectedProduct(prod); setShowApproveModal(true); setOpenMenuId(null); }}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#16A34A] hover:bg-[#16A34A]/5 transition-colors"
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#16A34A] hover:bg-[#16A34A]/5 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
                             >
                               <Check size={16} />
-                              Approve Product
+                              {t('approveProduct')}
                             </button>
                           )}
 
                           <div className="h-px bg-gray-50 my-1" />
-                          
-                          <button 
+
+                          <button
                             onClick={() => { setSelectedProduct(prod); setShowDeleteModal(true); setOpenMenuId(null); }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#DC2626] hover:bg-[#DC2626]/5 transition-colors"
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#DC2626] hover:bg-[#DC2626]/5 transition-colors ${isRTL ? 'flex-row-reverse text-right' : 'text-left'}`}
                           >
                             <Trash2 size={16} />
-                            Delete Product
+                            {t('deleteProduct')}
                           </button>
                         </div>
                       )}
@@ -925,12 +1020,12 @@ const ProductManagement = () => {
                   <td colSpan={8} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 text-gray-400 italic">
                       <Package size={48} className="opacity-20" />
-                      <p className="text-sm">No products found matching your active filters.</p>
-                      <button 
+                      <p className="text-sm">{t('superadminProducts.noProductsFound')}</p>
+                      <button
                         onClick={() => { setSearch(''); setCategoryFilter(''); setSubcategoryFilter(''); setSupplierFilter(''); setStatusFilter(''); }}
                         className="text-[#0205A6] text-xs font-bold underline not-italic uppercase tracking-widest mt-2"
                       >
-                        Reset All Filters
+                        {t('superadminProducts.resetFilters')}
                       </button>
                     </div>
                   </td>
@@ -961,8 +1056,8 @@ const ProductManagement = () => {
           <div className="bg-white rounded-[32px] w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-slate-100">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
               <div>
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Bulk Upload Products</h3>
-                <p className="text-xs text-slate-500 font-medium">Upload products via CSV or Excel file.</p>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('superadminProducts.bulkUploadTitle')}</h3>
+                <p className="text-xs text-slate-500 font-medium">{t('superadminProducts.bulkUploadSubtitle')}</p>
               </div>
               <button onClick={() => setShowBulkModal(false)} className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all">
                 <X size={20} />
@@ -978,16 +1073,16 @@ const ProductManagement = () => {
                         <AlertTriangle size={24} />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-orange-900">Important Instructions</h4>
+                        <h4 className="text-sm font-bold text-orange-900">{t('superadminProducts.importantInstructions')}</h4>
                         <p className="text-xs text-orange-700 leading-relaxed">
-                          Please ensure your file matches the template exactly. Categories, subcategories, and brands must already exist in the system (English names).
+                          {t('superadminProducts.importantInstructionsText')}
                         </p>
-                        <button 
+                        <button
                           onClick={handleDownloadTemplate}
                           className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline"
                         >
                           <RefreshCcw size={14} />
-                          Download Sample Template (.xlsx)
+                          {t('superadminProducts.downloadTemplate')}
                         </button>
                       </div>
                     </div>
@@ -1010,9 +1105,9 @@ const ProductManagement = () => {
                           <Upload size={32} />
                         </div>
                         <p className="text-sm font-bold text-slate-900">
-                          {bulkFile ? bulkFile.name : 'Choose a file or drag & drop'}
+                          {bulkFile ? bulkFile.name : t('superadminProducts.chooseFile')}
                         </p>
-                        <p className="text-xs text-slate-400 mt-2 font-medium">Supports .CSV, .XLSX (Max 10MB)</p>
+                        <p className="text-xs text-slate-400 mt-2 font-medium">{t('superadminProducts.supportedFormats')}</p>
                       </div>
                     </div>
 
@@ -1022,7 +1117,7 @@ const ProductManagement = () => {
                         onClick={() => setShowBulkModal(false)}
                         className="flex-1 px-8 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-100"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         type="submit"
@@ -1032,11 +1127,11 @@ const ProductManagement = () => {
                         {bulkUploading ? (
                           <>
                             <Loader2 className="animate-spin" size={18} />
-                            <span>Processing Batch...</span>
+                            <span>{t('superadminProducts.processingBatch')}</span>
                           </>
                         ) : (
                           <>
-                            <span>Start Uploading</span>
+                            <span>{t('superadminProducts.startUploading')}</span>
                             <ChevronRight size={18} />
                           </>
                         )}
@@ -1048,29 +1143,29 @@ const ProductManagement = () => {
                 <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('superadminProducts.totalLabel')}</p>
                       <h4 className="text-2xl font-bold text-slate-900">{bulkResults.total}</h4>
                     </div>
                     <div className="bg-green-50 p-6 rounded-3xl border border-green-100">
-                      <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1">Success</p>
+                      <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1">{t('superadminProducts.successLabel')}</p>
                       <h4 className="text-2xl font-bold text-green-600">{bulkResults.success}</h4>
                     </div>
                     <div className="bg-red-50 p-6 rounded-3xl border border-red-100">
-                      <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Failed</p>
+                      <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">{t('superadminProducts.failedLabel')}</p>
                       <h4 className="text-2xl font-bold text-red-600">{bulkResults.failed}</h4>
                     </div>
                   </div>
 
                   {bulkResults.errors.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="text-sm font-bold text-slate-800 ml-1">Issues Found Per Row</h4>
+                      <h4 className="text-sm font-bold text-slate-800 ml-1">{t('superadminProducts.issuesFoundPerRow')}</h4>
                       <div className="max-h-60 overflow-y-auto border border-slate-100 rounded-2xl bg-slate-50/50">
                         <table className="w-full text-left">
                           <thead className="sticky top-0 bg-slate-100 border-b border-slate-200">
                             <tr>
-                              <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Row</th>
+                              <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('superadminProducts.rowLabel')}</th>
                               <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">SKU</th>
-                              <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Error Description</th>
+                              <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('superadminProducts.errorDescription')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -1091,7 +1186,7 @@ const ProductManagement = () => {
                     onClick={() => { setBulkResults(null); setBulkFile(null); setShowBulkModal(false); }}
                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all"
                   >
-                    Finish and Close
+                    {t('superadminProducts.finishAndClose')}
                   </button>
                 </div>
               )}
@@ -1111,14 +1206,14 @@ const ProductManagement = () => {
                 <Trash2 size={22} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Bulk Delete Products</h3>
-                <p className="text-xs text-slate-500 font-medium">This action cannot be undone.</p>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('superadminProducts.bulkDeleteTitle')}</h3>
+                <p className="text-xs text-slate-500 font-medium">{t('superadminProducts.bulkDeleteSubtitle')}</p>
               </div>
             </div>
             <div className="px-8 py-6">
               <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
                 <p className="text-sm text-slate-700 leading-relaxed">
-                  You are about to delete <b className="text-red-600">{selectedProductIds.length}</b> selected products.
+                  {t('superadminProducts.bulkDeleteConfirmPrefix')} <b className="text-red-600">{selectedProductIds.length}</b> {t('superadminProducts.bulkDeleteConfirmSuffix')}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -1126,7 +1221,7 @@ const ProductManagement = () => {
                   onClick={() => setShowBulkDeleteModal(false)}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={executeBulkDeleteProducts}
@@ -1134,7 +1229,7 @@ const ProductManagement = () => {
                   className="flex-1 py-3 bg-[#DC2626] text-white rounded-2xl font-bold text-sm hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {formLoading && <Loader2 className="animate-spin" size={16} />}
-                  Delete Selected
+                  {t('superadminProducts.deleteSelected')}
                 </button>
               </div>
             </div>
@@ -1150,9 +1245,9 @@ const ProductManagement = () => {
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
               <div>
                 <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                  {isEditing ? 'Edit Product' : 'Add New Product'}
+                  {isEditing ? t('superadminProducts.editModalTitle') : t('superadminProducts.addModalTitle')}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">Fill in the details to manage your inventory product.</p>
+                <p className="text-xs text-slate-500 font-medium">{t('superadminProducts.modalSubtitle')}</p>
               </div>
               <button 
                 onClick={() => setShowAddEditModal(false)} 
@@ -1162,7 +1257,7 @@ const ProductManagement = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateOrUpdate} className="overflow-y-auto px-8 py-8 md:px-10">
+            <form onSubmit={handleCreateOrUpdate} className="overflow-y-auto px-8 py-8 md:px-10 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
               <div className="space-y-8">
                 {/* Image Section */}
                 <div className="flex flex-col items-center justify-center">
@@ -1177,7 +1272,7 @@ const ProductManagement = () => {
                         </div>
                       )}
                     </div>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
                       className="absolute -bottom-2 -right-2 p-3.5 bg-[#FF6B35] text-white rounded-2xl shadow-lg hover:bg-[#FF5722] hover:scale-110 active:scale-95 transition-all duration-200 border-4 border-white"
@@ -1192,40 +1287,90 @@ const ProductManagement = () => {
                       onChange={handleImagePick}
                     />
                   </div>
-                  <p className="mt-4 text-[10px] text-slate-400 font-medium uppercase tracking-[0.1em]">Supported formats: JPG, PNG, WEBP (Max 5MB)</p>
+                  <p className="mt-4 text-[10px] text-slate-400 font-medium uppercase tracking-[0.1em]">{t('superadminProducts.supportedImageFormats')}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                  {/* Basic Info */}
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Product Name <span className="text-red-500">*</span></label>
+                {/* English Section */}
+                <div className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-slate-50/40">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('superadminProducts.englishSection')}</span>
+                    <span className="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase">{t('required') || 'Required'}</span>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('productNameEn')} <span className="text-red-500">*</span></label>
                     <input
                       required
                       type="text"
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all outline-none font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal"
-                      placeholder="e.g. Caterpillar Excavator 320 GC"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      dir="ltr"
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all outline-none font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal"
+                      placeholder={t('superadminProducts.placeholderNameEn')}
+                      value={formData.nameEn}
+                      onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                     />
                   </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Description</label>
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('productDescEn')}</label>
                     <textarea
-                      rows={4}
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all outline-none font-medium text-slate-900 placeholder:text-slate-400"
-                      placeholder="Enter technical specifications and product features..."
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={3}
+                      dir="ltr"
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all outline-none font-medium text-slate-900 placeholder:text-slate-400 resize-none"
+                      placeholder={t('superadminProducts.placeholderDescEn')}
+                      value={formData.descriptionEn}
+                      onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
                     />
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">SKU (Stock Keeping Unit)</label>
+                {/* Arabic Section */}
+                <div className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-amber-50/20">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('arabicSection')}</span>
+                      <span className="text-[9px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-bold uppercase">{t('optional') || 'Optional'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTranslateToArabic}
+                      disabled={translating || (!formData.nameEn.trim() && !formData.descriptionEn.trim())}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition-all hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {translating ? <Loader2 size={12} className="animate-spin" /> : null}
+                      {translating ? t('superadminProducts.translating') : t('superadminProducts.autoTranslate')}
+                    </button>
+                  </div>
+                  <div dir="rtl">
+                    <label className="text-xs font-bold text-slate-700 mb-2 block text-right">{t('productNameAr')}</label>
                     <input
                       type="text"
+                      dir="rtl"
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 focus:bg-white transition-all outline-none font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal"
+                      placeholder={t('superadminProducts.placeholderNameAr')}
+                      value={formData.nameAr}
+                      onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
+                    />
+                  </div>
+                  <div dir="rtl">
+                    <label className="text-xs font-bold text-slate-700 mb-2 block text-right">{t('productDescAr')}</label>
+                    <textarea
+                      rows={3}
+                      dir="rtl"
+                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 focus:bg-white transition-all outline-none font-medium text-slate-900 placeholder:text-slate-400 resize-none"
+                      placeholder={t('superadminProducts.placeholderDescAr')}
+                      value={formData.descriptionAr}
+                      onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.skuLabel')}</label>
+                    <input
+                      type="text"
+                      dir="ltr"
                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white transition-all outline-none font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal"
-                      placeholder="e.g. CAT-320-GC-001"
+                      placeholder={t('superadminProducts.placeholderSku')}
                       value={formData.sku}
                       onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
                     />
@@ -1233,7 +1378,7 @@ const ProductManagement = () => {
 
                   {/* Classification */}
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Category <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.category')} <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <select
                         required
@@ -1241,17 +1386,17 @@ const ProductManagement = () => {
                         value={formData.categoryId}
                         onChange={(e) => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })}
                       >
-                        <option value="">Select Category</option>
+                        <option value="">{t('superadminProducts.selectCategory')}</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <div className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none text-slate-400`}>
                         <ChevronRight className="rotate-90" size={16} />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Subcategory <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.subcategory')} <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <select
                         required
@@ -1260,29 +1405,29 @@ const ProductManagement = () => {
                         onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
                         disabled={!formData.categoryId}
                       >
-                        <option value="">{formData.categoryId ? 'Select Subcategory' : 'First select a category'}</option>
+                        <option value="">{formData.categoryId ? t('superadminProducts.selectSubcategory') : t('superadminProducts.firstSelectCategory')}</option>
                         {categories.find(c => c.id === formData.categoryId) && subcategories.map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <div className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none text-slate-400`}>
                         <ChevronRight className="rotate-90" size={16} />
                       </div>
                     </div>
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Supplier</label>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.supplier')}</label>
                     <div className="relative">
                       <select
                         className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 focus:bg-white transition-all outline-none font-semibold text-slate-900 appearance-none cursor-pointer"
                         value={formData.supplierId}
                         onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
                       >
-                        <option value="">Direct Distribution (Admin)</option>
+                        <option value="">{t('superadminProducts.directDistribution')}</option>
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}
                       </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <div className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none text-slate-400`}>
                         <ChevronRight className="rotate-90" size={16} />
                       </div>
                     </div>
@@ -1290,14 +1435,15 @@ const ProductManagement = () => {
 
                   {/* Inventory Details */}
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Price (SAR) <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.priceLabel')} <span className="text-red-500">*</span></label>
                     <div className="relative group/input">
-                       <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-blue-500" size={18} />
-                       <input
+                      <DollarSign className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-blue-500`} size={18} />
+                      <input
                         required
                         type="number"
                         step="0.01"
-                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none font-semibold text-slate-900 placeholder:font-normal"
+                        dir="ltr"
+                        className={`w-full ${isRTL ? 'pr-12 pl-5' : 'pl-12 pr-5'} py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none font-semibold text-slate-900 placeholder:font-normal`}
                         placeholder="0.00"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -1306,13 +1452,14 @@ const ProductManagement = () => {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Initial Stock <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.initialStock')} <span className="text-red-500">*</span></label>
                     <div className="relative group/input">
-                      <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-blue-500" size={18} />
+                      <Layers className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-blue-500`} size={18} />
                       <input
                         required
                         type="number"
-                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none font-semibold text-slate-900 placeholder:font-normal"
+                        dir="ltr"
+                        className={`w-full ${isRTL ? 'pr-12 pl-5' : 'pl-12 pr-5'} py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none font-semibold text-slate-900 placeholder:font-normal`}
                         placeholder="0"
                         value={formData.stock}
                         onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
@@ -1320,19 +1467,81 @@ const ProductManagement = () => {
                     </div>
                   </div>
 
-                   <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-slate-700 mb-2 block ml-1">Low Stock Alert Threshold</label>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">{t('superadminProducts.lowStockThreshold')}</label>
                     <div className="relative group/input">
-                      <AlertTriangle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-amber-500" size={18} />
+                      <AlertTriangle className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-amber-500`} size={18} />
                       <input
                         type="number"
-                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none font-semibold text-slate-900"
+                        dir="ltr"
+                        className={`w-full ${isRTL ? 'pr-12 pl-5' : 'pl-12 pr-5'} py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 focus:bg-white outline-none font-semibold text-slate-900`}
                         placeholder="5"
                         value={formData.minimumStockThreshold}
                         onChange={(e) => setFormData({ ...formData, minimumStockThreshold: e.target.value })}
                       />
                     </div>
-                    <p className="mt-2 text-[11px] text-slate-400 font-medium ml-1">Receive a notification when stock falls below this level.</p>
+                    <p className="mt-2 text-[11px] text-slate-400 font-medium">{t('superadminProducts.lowStockHint')}</p>
+                  </div>
+                </div>
+
+                {/* Filter Details Section */}
+                <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-5 pb-2 border-b border-slate-200/50">
+                    <Filter size={16} className="text-blue-600" />
+                    <label className="text-sm font-bold text-slate-800 tracking-tight">{t('superadminProducts.filterDetails')}</label>
+                    <span className="text-[10px] text-slate-400 font-medium ml-1">({t('optional')})</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1.5 block">{t('superadminProducts.filterNumber')}</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        placeholder={t('superadminProducts.filterNumberPlaceholder')}
+                        value={formData.filterNumber}
+                        onChange={(e) => setFormData({ ...formData, filterNumber: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1.5 block">{t('superadminProducts.alternateNumbers')}</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        placeholder={t('superadminProducts.alternateNumbersPlaceholder')}
+                        value={formData.alternateNumbers}
+                        onChange={(e) => setFormData({ ...formData, alternateNumbers: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1.5 block">{t('superadminProducts.filterType')}</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        placeholder={t('superadminProducts.filterTypePlaceholder')}
+                        value={formData.filterType}
+                        onChange={(e) => setFormData({ ...formData, filterType: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1.5 block">{t('superadminProducts.material')}</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        placeholder={t('superadminProducts.materialPlaceholder')}
+                        value={formData.material}
+                        onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs font-bold text-slate-700 mb-1.5 block">{t('superadminProducts.dimensions')}</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                        placeholder={t('superadminProducts.dimensionsPlaceholder')}
+                        value={formData.dimensions}
+                        onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1341,18 +1550,18 @@ const ProductManagement = () => {
                   <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200/50">
                     <div className="flex items-center gap-2">
                       <Filter size={16} className="text-blue-600" />
-                      <label className="text-sm font-bold text-slate-800 tracking-tight">Technical Specifications</label>
+                      <label className="text-sm font-bold text-slate-800 tracking-tight">{t('superadminProducts.technicalSpecs')}</label>
                     </div>
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setFormData(prev => ({ 
-                        ...prev, 
-                        specifications: [...prev.specifications, { specKey: '', specValue: '' }] 
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        specifications: [...prev.specifications, { specKey: '', specValue: '' }]
                       }))}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[11px] font-bold rounded-xl hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200 shadow-sm"
                     >
                       <Plus size={14} />
-                      Add Custom
+                      {t('superadminProducts.addCustomSpec')}
                     </button>
                   </div>
                   
@@ -1362,7 +1571,7 @@ const ProductManagement = () => {
                         <div key={idx} className="flex gap-3 items-center group/spec animate-in fade-in slide-in-from-top-1 duration-200">
                            <div className="flex-1">
                               <input 
-                                placeholder="Key (e.g. Material)"
+                                placeholder={t('superadminProducts.specKeyPlaceholder')}
                                 readOnly={spec.isRequired}
                                 className={`w-full px-4 py-2.5 bg-white border ${spec.isRequired ? 'border-slate-100 text-slate-400 italic bg-slate-50/50' : 'border-slate-200 text-slate-700'} rounded-xl text-xs font-semibold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all`}
                                 value={spec.specKey}
@@ -1375,7 +1584,7 @@ const ProductManagement = () => {
                            </div>
                            <div className="flex-[2]">
                               <input 
-                                placeholder="Value (e.g. Stainless Steel)"
+                                placeholder={t('superadminProducts.specValuePlaceholder')}
                                 required={spec.isRequired}
                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
                                 value={spec.specValue}
@@ -1408,7 +1617,7 @@ const ProductManagement = () => {
                     </div>
                   ) : (
                     <div className="text-center py-8 bg-white/50 rounded-2xl border-2 border-dashed border-slate-200">
-                      <p className="text-[11px] text-slate-400 font-medium italic">No specific attributes defined for this selection.</p>
+                      <p className="text-[11px] text-slate-400 font-medium italic">{t('superadminProducts.noSpecs')}</p>
                     </div>
                   )}
                 </div>
@@ -1416,8 +1625,8 @@ const ProductManagement = () => {
                 {/* Status Toggle */}
                 <div className="flex items-center justify-between p-5 bg-orange-50/30 rounded-3xl border border-orange-100/50">
                    <div className="flex flex-col">
-                     <span className="text-sm font-bold text-slate-800">Publish Immediately</span>
-                     <span className="text-[11px] text-slate-500 font-medium">Make this product visible to customers upon saving.</span>
+                     <span className="text-sm font-bold text-slate-800">{t('superadminProducts.publishImmediately')}</span>
+                     <span className="text-[11px] text-slate-500 font-medium">{t('superadminProducts.publishHint')}</span>
                    </div>
                    <button 
                     type="button"
@@ -1438,7 +1647,7 @@ const ProductManagement = () => {
                   onClick={() => setShowAddEditModal(false)}
                   className="order-2 sm:order-1 flex-1 px-8 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-100 hover:text-slate-800 transition-all duration-200 active:scale-95 border border-slate-100"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -1449,8 +1658,8 @@ const ProductManagement = () => {
                     <Loader2 className="animate-spin" size={18} />
                   ) : (
                     <>
-                      <span>{isEditing ? 'Save Changes' : 'Create Product'}</span>
-                      <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                      <span>{isEditing ? t('superadminProducts.saveChanges') : t('superadminProducts.createProduct')}</span>
+                      <ChevronRight size={18} className={`transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-0.5' : 'group-hover:translate-x-0.5'}`} />
                     </>
                   )}
                 </button>
@@ -1502,17 +1711,17 @@ const ProductManagement = () => {
                 <div className="space-y-8 flex-1">
                   <div className="grid grid-cols-2 gap-8">
                       <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">List Price</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('superadminProducts.listPrice')}</p>
                         <p className="text-xl font-black text-[#0205A6] inline-flex items-center gap-0.5"><SARSymbol />{parseFloat(selectedProduct.price).toLocaleString()}</p>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Inventory Status</p>
-                        <p className="text-xl font-black text-[#0A1E36]">{selectedProduct.stock} Units</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('superadminProducts.inventoryStatus')}</p>
+                        <p className="text-xl font-black text-[#0A1E36]">{selectedProduct.stock} {t('units') || 'Units'}</p>
                       </div>
                   </div>
 
                   <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Product Description</h4>
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{t('superadminProducts.productDescription')}</h4>
                     <p className="text-sm text-[#0A1E36] font-medium leading-relaxed italic">
                        {productDescription(selectedProduct)}
                     </p>
@@ -1522,13 +1731,13 @@ const ProductManagement = () => {
                   {selectedProduct.specifications && selectedProduct.specifications.length > 0 && (
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 flex items-center justify-between">
-                        <span>Technical Specifications</span>
+                        <span>{t('superadminProducts.technicalSpecs')}</span>
                         <span className="text-[8px] bg-[#FF6B35]/10 text-[#FF6B35] px-2 py-0.5 rounded-full">{selectedProduct.specifications.length} ENTRIES</span>
                       </h4>
                       <div className="grid grid-cols-1 gap-2">
                         {selectedProduct.specifications.map((spec, i) => (
                            <div key={i} className="flex items-center justify-between py-1 bg-white/50 px-3 rounded-lg border border-gray-50">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{spec.specKey}</span>
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{translateSpecKey(spec.specKey, isRTL ? 'ar' : 'en')}</span>
                               <span className="text-[11px] font-bold text-[#0A1E36] italic">{spec.specValue}</span>
                            </div>
                         ))}
@@ -1537,14 +1746,14 @@ const ProductManagement = () => {
                   )}
 
                   <div className="space-y-4">
-                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Technical Registry</h4>
+                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">{t('superadminProducts.technicalRegistry')}</h4>
                      <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between text-[11px]">
-                           <span className="text-gray-400 font-bold uppercase">Source Entity:</span>
+                           <span className="text-gray-400 font-bold uppercase">{t('superadminProducts.sourceEntity')}</span>
                            <span className="text-[#0A1E36] font-black">{selectedProduct.supplierName}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                           <span className="text-gray-400 font-bold uppercase">System Ingest Date:</span>
+                           <span className="text-gray-400 font-bold uppercase">{t('superadminProducts.systemIngestDate')}</span>
                            <span className="text-[#0A1E36] font-black">{new Date(selectedProduct.createdAt).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -1556,18 +1765,18 @@ const ProductManagement = () => {
                 </div>
 
                 <div className="mt-12 flex gap-4">
-                   <button 
+                   <button
                     onClick={() => { setShowViewModal(false); openEditModal(selectedProduct); }}
                     className="flex-1 py-4 bg-gray-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-700 transition-all"
                    >
-                     Update Records
+                     {t('editProduct')}
                    </button>
                    {selectedProduct.status === 'PENDING' && (
-                      <button 
+                      <button
                         onClick={() => { setShowViewModal(false); setShowApproveModal(true); }}
                         className="flex-1 py-4 bg-[#16A34A] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-[#15803d] transition-all"
                       >
-                        Push to Market
+                        {t('approveProduct')}
                       </button>
                    )}
                 </div>
@@ -1583,11 +1792,11 @@ const ProductManagement = () => {
               <div className="w-20 h-20 bg-[#16A34A]/10 text-[#16A34A] rounded-3xl flex items-center justify-center mx-auto mb-6">
                  <CheckCircle2 size={40} />
               </div>
-              <h3 className="text-2xl font-black text-[#0A1E36] tracking-tighter mb-2 italic uppercase">Approve Product?</h3>
+              <h3 className="text-2xl font-black text-[#0A1E36] tracking-tighter mb-2 italic uppercase">{t('superadminProducts.approveTitle')}</h3>
               <p className="text-gray-500 font-medium mb-8">Make <span className="text-[#0205A6] font-bold">&quot;{productName(selectedProduct)}&quot;</span> live in the marketplace.</p>
               <div className="flex gap-4">
-                 <button onClick={() => setShowApproveModal(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest transition-all">Cancel</button>
-                 <button onClick={handleApprove} className="flex-1 py-4 bg-[#16A34A] text-white rounded-2xl font-black uppercase tracking-widest transition-all">Approve</button>
+                 <button onClick={() => setShowApproveModal(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest transition-all">{t('cancel')}</button>
+                 <button onClick={handleApprove} className="flex-1 py-4 bg-[#16A34A] text-white rounded-2xl font-black uppercase tracking-widest transition-all">{t('approveProduct')}</button>
               </div>
            </div>
         </div>
@@ -1603,8 +1812,8 @@ const ProductManagement = () => {
               <h3 className="text-2xl font-black text-[#0A1E36] tracking-tighter mb-2 italic uppercase">Sanitize Records?</h3>
               <p className="text-gray-500 font-medium mb-8">This action is <span className="text-[#DC2626] font-bold">permanent</span> and cannot be undone.</p>
               <div className="flex gap-4">
-                 <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest transition-all">Cancel</button>
-                 <button onClick={handleDelete} className="flex-1 py-4 bg-[#DC2626] text-white rounded-2xl font-black uppercase tracking-widest transition-all">Delete</button>
+                 <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest transition-all">{t('cancel')}</button>
+                 <button onClick={handleDelete} className="flex-1 py-4 bg-[#DC2626] text-white rounded-2xl font-black uppercase tracking-widest transition-all">{t('deleteProduct')}</button>
               </div>
            </div>
         </div>

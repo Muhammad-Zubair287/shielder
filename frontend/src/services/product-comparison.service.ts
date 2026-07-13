@@ -4,6 +4,8 @@ const MAX_COMPARE_PRODUCTS = 3;
 export type ComparedProductItem = {
   id: string;
   name: string;
+  nameEn?: string;
+  nameAr?: string;
   price: number;
   sku?: string;
   thumbnail?: string | null;

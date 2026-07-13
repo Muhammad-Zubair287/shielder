@@ -1,138 +1,135 @@
 # Shielder Digital Platform
 
-Enterprise-grade digital backbone for industrial filters management.
+Enterprise B2B e-commerce and order management system for industrial filters, with full multilingual support (English / Arabic RTL) and real-time cross-platform synchronization.
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 shielder/
-├── backend/         # Node.js + Express + Prisma + PostgreSQL
-└── frontend/        # Next.js 14 + TypeScript + Tailwind CSS
+├── backend/    # Node.js · Express · Prisma · PostgreSQL · Socket.IO
+└── frontend/   # Next.js 14 · TypeScript · Tailwind CSS · Socket.IO Client
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- Node.js >= 18.0.0
+- Node.js >= 20.19.0
 - PostgreSQL >= 15
+- Redis (for rate limiting)
 - npm >= 9.0.0
 
-### Backend Setup
+### Backend
 
 ```bash
 cd backend
 npm install
-cp .env.example .env
-# Edit .env with your database credentials
+cp .env.example .env          # fill in DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET
 npm run prisma:generate
 npm run prisma:migrate
-npm run dev
+npm run seed:super-admin       # create the first SUPER_ADMIN account
+npm run dev                    # http://localhost:5000
 ```
 
-Backend will run on http://localhost:5000
-
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local
-# Edit .env.local with your backend API URL
-npm run dev
+cp .env.local.example .env.local   # set NEXT_PUBLIC_API_URL=http://localhost:5000/api
+npm run dev                        # http://localhost:3000
 ```
 
-Frontend will run on http://localhost:3000
+## Features
 
-## 📚 Documentation
+### Authentication & Users
+- Register / login / logout with JWT access + refresh tokens
+- Tokens stored in `sessionStorage` (per-tab isolation)
+- Email verification and password reset flows
+- Trusted-device management
+- Role-based access: `SUPER_ADMIN > ADMIN > STAFF > SUPPLIER > USER`
+
+### Product Catalog
+- Full CRUD with bilingual support (English + Arabic at the database level)
+- Categories → Subcategories → Products hierarchy
+- Product image upload (local or S3)
+- Spec-based dynamic filtering
+- Bulk import via Excel
+
+### Cart & Checkout
+- Persistent server-side cart
+- Character-limited checkout form (name 100, address 200, notes 500)
+- Order submission with server-side cart re-fetch before placing
+
+### Quotation System
+- Customer-submitted quotation basket
+- Admin creates formal quotations from baskets
+- PDF generation with dynamic field layout and bilingual labels
+- Quotation → Order conversion flow
+
+### Order Management
+- Full order lifecycle: PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED → CANCELLED
+- Payment status tracking: PENDING → PAID → REFUNDED
+- Per-order audit trail
+
+### Admin Panel
+- Products, categories, subcategories management
+- Order and quotation management
+- User management (ADMIN role)
+- Reports and analytics
+- Inventory and warehouse management
+
+### Super Admin Panel
+- Admin user management (create / suspend / delete admins)
+- Company settings, privacy policy, about us
+- Platform-wide analytics
+
+### Real-time Sync (Socket.IO)
+- Single persistent WebSocket connection per session, authenticated with JWT
+- Any mutation on Web, Android, or iOS immediately reflects on all other connected clients
+- Covered events: cart, orders, profile, quotations, products, categories, subcategories, notifications, settings
+- Login/logout state is intentionally **not** synced across platforms
+
+### Cross-tab Sync (BroadcastChannel)
+- Same-browser multi-tab consistency for auth state, language, and data changes
+- Works in parallel with Socket.IO (one handles cross-tab, the other handles cross-device)
+
+### Multilingual
+- English and Arabic UI with full RTL layout
+- Language preference stored per-user in the database
+- All content entities (Product, Category, Subcategory) store bilingual translations natively
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| API server | Express.js, TypeScript |
+| ORM | Prisma + PostgreSQL |
+| Auth | JWT (access 7d, refresh 30d) |
+| Real-time | Socket.IO |
+| Caching / rate-limiting | Redis |
+| Email | SMTP / Brevo / SendGrid (pluggable) |
+| File storage | Local or AWS S3 |
+| PDF | pdfkit (server-side) |
+| Frontend | Next.js 14 (App Router) |
+| State | Zustand (auth) + TanStack React Query (server data) |
+| Styling | Tailwind CSS |
+| i18n | Custom LanguageContext (EN/AR) |
+
+## Deployment
+
+### Frontend → Vercel
+Set `NEXT_PUBLIC_API_URL` to your backend URL and deploy from GitHub.
+
+### Backend → Railway
+Add a PostgreSQL service, set env vars from `.env.example`, and deploy from GitHub. A self-ping (every 4 min) prevents Railway cold starts in production.
+
+## Documentation
 
 - [Backend README](./backend/README.md)
 - [Frontend README](./frontend/README.md)
+- Swagger UI: `http://localhost:5000/api-docs` (non-production only)
 
-## 🌟 Features
+## License
 
-### Implemented
-- ✅ User Authentication (Register/Login/Logout)
-- ✅ JWT Token Management
-- ✅ Role-Based Access Control
-- ✅ Multilingual Support (English/Arabic)
-- ✅ Responsive Design
-- ✅ Enterprise Architecture
-- ✅ Type-Safe Development
-
-### Coming Soon
-- 🔄 Product Catalog Management
-- 🔄 Order Management System
-- 🔄 Customer Portal
-- 🔄 Admin Dashboard
-- 🔄 Analytics & Reporting
-- 🔄 Dealer Management (Future)
-
-## 🚢 Deployment
-
-### Frontend (Vercel)
-
-1. Push code to GitHub
-2. Import project to Vercel
-3. Set environment variables:
-   - `NEXT_PUBLIC_API_URL`: Your backend API URL
-4. Deploy!
-
-### Backend (Railway)
-
-1. Push code to GitHub
-2. Create new project on Railway
-3. Add PostgreSQL database
-4. Set environment variables from `.env.example`
-5. Deploy!
-
-## 🛠️ Tech Stack
-
-### Backend
-- Node.js
-- Express.js
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- JWT Authentication
-- Docker
-
-### Frontend
-- Next.js 14 (App Router)
-- TypeScript
-- Tailwind CSS
-- Zustand (State Management)
-- Axios (API Client)
-- React Hot Toast
-
-## 📋 API Documentation
-
-### Authentication Endpoints
-
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login user
-- `POST /api/v1/auth/refresh-token` - Refresh access token
-- `GET /api/v1/auth/me` - Get current user (protected)
-- `POST /api/v1/auth/logout` - Logout user (protected)
-- `GET /api/v1/auth/verify-email/:token` - Verify email
-
-## 🔒 Security
-
-- Password hashing with bcrypt
-- JWT token authentication
-- CORS protection
-- Helmet security headers
-- Input validation
-- SQL injection prevention with Prisma
-
-## 📝 License
-
-MIT License - Shielder Digital Platform
-
-## 👥 Team
-
-Shielder Development Team
-
----
-
-**Need help?** Check the README files in backend and frontend directories for detailed setup instructions.
+MIT — Shielder Development Team

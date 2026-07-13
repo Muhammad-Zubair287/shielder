@@ -16,6 +16,7 @@ import { asyncHandler } from '@/common/utils/helpers';
 import { env } from '@/config/env';
 import { logger } from '@/common/logger/logger';
 import type { AuthRequest } from '@/types/global';
+import { t } from '@/common/i18n';
 import type {
   RegisterRequest,
   LoginRequest,
@@ -84,8 +85,8 @@ class AuthController {
     res.status(201).json({
       success: true,
       message: isAutoVerified
-        ? 'Registration successful. Your account has been auto-verified.'
-        : 'Registration successful. Please check your email to verify your account.',
+        ? t('auth.registerSuccessAutoVerified', req.locale)
+        : t('auth.registerSuccessEmailRequired', req.locale),
       data: result,
     });
   });
@@ -134,7 +135,7 @@ class AuthController {
       res.status(403).json({
         success: false,
         requiresVerification: true,
-        message: 'Please verify your email before continuing.',
+        message: t('auth.emailNotVerified', req.locale),
         verificationSessionToken: result.verificationSessionToken,
         verificationExpiresInMinutes: result.verificationExpiresInMinutes,
         verificationEmail: result.verificationEmail,
@@ -145,7 +146,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: t('auth.loginSuccess', req.locale),
       data: result,
     });
   });
@@ -175,7 +176,7 @@ class AuthController {
     if (!refreshToken) {
       res.status(400).json({
         success: false,
-        message: 'Refresh token is required',
+        message: t('auth.refreshTokenRequired', req.locale),
       });
       return;
     }
@@ -189,7 +190,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Tokens refreshed successfully',
+      message: t('auth.tokensRefreshed', req.locale),
       data: tokens,
     });
   });
@@ -221,7 +222,7 @@ class AuthController {
     if (!refreshToken) {
       res.status(400).json({
         success: false,
-        message: 'Refresh token is required',
+        message: t('auth.refreshTokenRequired', req.locale),
       });
       return;
     }
@@ -230,7 +231,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Logged out successfully',
+      message: t('auth.logoutSuccess', req.locale),
     });
   });
 
@@ -252,7 +253,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Logged out from all devices successfully',
+      message: t('auth.logoutAllSuccess', req.locale),
     });
   });
 
@@ -283,7 +284,7 @@ class AuthController {
     // Always return success (don't reveal if email exists)
     res.status(200).json({
       success: true,
-      message: 'If the email exists, a password reset link has been sent',
+      message: t('auth.forgotPasswordEmailSent', req.locale),
     });
   });
 
@@ -299,7 +300,7 @@ class AuthController {
     // Always return success (don't reveal if email exists)
     res.status(200).json({
       success: true,
-      message: 'If the email exists, an OTP has been sent',
+      message: t('auth.forgotPasswordOtpSent', req.locale),
     });
   });
 
@@ -315,7 +316,7 @@ class AuthController {
     // Always return success (don't reveal if email exists)
     res.status(200).json({
       success: true,
-      message: 'If the email exists, a new OTP has been sent',
+      message: t('auth.forgotPasswordOtpResent', req.locale),
     });
   });
 
@@ -330,7 +331,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'OTP verified successfully',
+      message: t('auth.otpVerified', req.locale),
       data: result,
     });
   });
@@ -346,7 +347,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successful. Please login with your new password.',
+      message: t('auth.passwordResetSuccess', req.locale),
     });
   });
 
@@ -363,8 +364,8 @@ class AuthController {
     res.status(200).json({
       success: true,
       message: result.bypassed
-        ? 'Development mode: email delivery unavailable, account auto-verified'
-        : 'If the email exists and is unverified, a verification link has been sent',
+        ? t('auth.devModeAutoVerified', req.locale)
+        : t('auth.resendVerificationSent', req.locale),
     });
   });
 
@@ -395,7 +396,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successful. Please login with your new password.',
+      message: t('auth.passwordResetSuccess', req.locale),
     });
   });
 
@@ -428,7 +429,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Password changed successfully. Please login again on all devices.',
+      message: t('auth.passwordChangedSuccess', req.locale),
     });
   });
 
@@ -505,7 +506,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully',
+      message: t('auth.emailVerified', req.locale),
     });
   });
 
@@ -536,7 +537,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Session revoked successfully',
+      message: t('auth.sessionRevoked', req.locale),
     });
   });
 
@@ -564,7 +565,7 @@ class AuthController {
 
     await TrustedDeviceService.revokeDevice(userId, token as string);
 
-    res.status(200).json({ success: true, message: 'Trusted device revoked' });
+    res.status(200).json({ success: true, message: t('auth.trustedDeviceRevoked', req.locale) });
   });
 
   /**
@@ -620,7 +621,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: `OTP has been sent to your ${method.toLowerCase()}`,
+      message: t('auth.otpSent', req.locale, { method: method.toLowerCase() }),
     });
   });
 
@@ -654,7 +655,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: '2FA verification successful',
+      message: t('auth.twoFaSuccess', req.locale),
       data: result,
     });
   });
@@ -669,7 +670,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully. Please login to continue.',
+      message: t('auth.emailVerifiedLogin', req.locale),
     });
   });
 
@@ -683,7 +684,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'A new verification code has been sent to your email.',
+      message: t('auth.newVerificationCodeSent', req.locale),
       data: result,
     });
   });
@@ -698,7 +699,7 @@ class AuthController {
 
     res.status(200).json({
       success: true,
-      message: 'Email updated successfully. A verification code was sent to your new address.',
+      message: t('auth.emailUpdatedVerificationSent', req.locale),
       data: result,
     });
   });

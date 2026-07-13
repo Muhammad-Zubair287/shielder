@@ -14,6 +14,7 @@ import { superAdminService } from './super-admin.service';
 import { sanitizeAuthUser } from '../../common/utils/helpers';
 import { getPaginationParams } from '../../common/utils/pagination';
 import { validateCreateAdminInput } from './super-admin.validation';
+import { t } from '@/common/i18n';
 
 export class SuperAdminController {
   /**
@@ -145,10 +146,10 @@ export class SuperAdminController {
       const validatedBody = validateCreateAdminInput(req.body);
       const user = await superAdminService.createUser(validatedBody, createdBy);
 
-      res.status(201).json({ 
-        success: true, 
-        message: 'User account created successfully.', 
-        data: sanitizeAuthUser(user) 
+      res.status(201).json({
+        success: true,
+        message: t('superAdmin.userCreated', req.locale),
+        data: sanitizeAuthUser(user)
       });
     } catch (error) {
       next(error);
@@ -199,10 +200,10 @@ export class SuperAdminController {
         updatedBy
       );
 
-      res.json({ 
-        success: true, 
-        message: 'User account updated successfully.', 
-        data: sanitizeAuthUser(user) 
+      res.json({
+        success: true,
+        message: t('superAdmin.userUpdated', req.locale),
+        data: sanitizeAuthUser(user)
       });
     } catch (error) {
       next(error);
@@ -362,7 +363,7 @@ export class SuperAdminController {
       const actorId: any = req.user!.id;
       const result = await superAdminService.resolveInquiry(targetId, actorId);
 
-      res.status(200).json({ success: true, message: 'Inquiry marked as resolved', data: result });
+      res.status(200).json({ success: true, message: t('superAdmin.inquiryResolved', req.locale), data: result });
     } catch (error) {
       next(error);
     }

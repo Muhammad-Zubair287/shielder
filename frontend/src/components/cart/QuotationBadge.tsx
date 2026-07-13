@@ -21,7 +21,7 @@ export default function QuotationBadge() {
     >
       <Download size={20} />
       {itemCount > 0 && (
-        <span className="absolute top-0.5 right-0.5 bg-[#F97316] text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
+        <span className="absolute top-0.5 right-0.5 bg-[#0205A6] text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
           {itemCount > 99 ? '99+' : itemCount}
         </span>
       )}

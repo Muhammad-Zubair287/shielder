@@ -8,6 +8,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from './payment.service';
 import { PaginationParams } from '../../common/utils/pagination';
+import { t } from '@/common/i18n';
 
 const paymentService = new PaymentService();
 
@@ -155,7 +156,7 @@ export class PaymentController {
 
       res.status(201).json({
         success: true,
-        message: 'Payment recorded successfully',
+        message: t('payment.recorded', req.locale),
         data: payment,
       });
     } catch (error) {
@@ -199,7 +200,7 @@ export class PaymentController {
 
       res.status(200).json({
         success: true,
-        message: 'Refund processed successfully',
+        message: t('payment.refunded', req.locale),
         data: payment,
       });
     } catch (error) {

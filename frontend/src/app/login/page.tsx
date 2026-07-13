@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Lock, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -270,9 +269,9 @@ function LoginPageContent() {
             <div className="space-y-4">
               <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 max-w-xs">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
-                  Welcome to the Shielder
+                  {t('welcomeToShielder')}
                   <br />
-                  Login to explore
+                  {t('loginToExplore')}
                 </h2>
               </div>
               
@@ -313,7 +312,7 @@ function LoginPageContent() {
               {t('loginYourAccount')}
             </h1>
             <p className="text-sm text-gray-600 mb-6">
-              Secure sign in protected with encrypted sessions, account lockout, and role-based access controls.
+              {t('login.secureDesc')}
             </p>
 
             {trustedDeviceMessage && (
@@ -390,12 +389,13 @@ function LoginPageContent() {
                 )}
                 <PasswordStrengthMeter password={formData.password} showRequirements={false} className="mt-2" />
                 <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
-                  <Link 
-                    href="/forgot-password" 
+                  <button
+                    type="button"
+                    onClick={() => router.replace('/forgot-password')}
                     className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     {t('forgotPassword')}
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -405,7 +405,7 @@ function LoginPageContent() {
                     disabled={isSubmitting}
                     className="w-full mt-8 bg-[#004A99] hover:bg-[#0D2F8C] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                   >
-                    {isSubmitting ? t('loading') || 'Loading...' : 'Continue'}
+                    {isSubmitting ? t('loading') : t('continue')}
                   </button>
 
               {showResendVerification && (
@@ -415,7 +415,7 @@ function LoginPageContent() {
                   disabled={isResendingVerification || isSubmitting}
                   className="w-full mt-3 border border-[#004A99] text-[#004A99] hover:bg-[#0D2F8C] font-medium py-3 rounded-xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isResendingVerification ? 'Sending verification email...' : 'Resend verification email'}
+                  {isResendingVerification ? t('auth.sendingVerification') : t('auth.resendVerification')}
                 </button>
               )}
             </form>

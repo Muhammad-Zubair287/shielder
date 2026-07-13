@@ -15,10 +15,13 @@ import { useQuotation } from '@/contexts/QuotationContext';
 import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
 import customerQuotationService from '@/services/customerQuotation.service';
+import { broadcastSync } from '@/lib/crossTabSync';
 import { getImageUrl } from '@/utils/helpers';
 import SARSymbol from '@/components/SARSymbol';
 
 const PLACEHOLDER = '/images/landing/factory-1.png';
+
+const QUOTATION_LIMITS = { companyName: 100, vatNumber: 20, address: 200 } as const;
 
 interface FormState {
   companyName: string;
@@ -35,12 +38,14 @@ interface FormErrors {
 function validate(form: FormState): FormErrors {
   const errors: FormErrors = {};
   if (!form.companyName.trim()) errors.companyName = 'Company name is required';
+  else if (form.companyName.trim().length > QUOTATION_LIMITS.companyName) errors.companyName = `Max ${QUOTATION_LIMITS.companyName} characters`;
   if (!form.vatNumber.trim()) {
     errors.vatNumber = 'VAT number is required';
   } else if (!/^\d{10,20}$/.test(form.vatNumber.replace(/[\s-]/g, ''))) {
     errors.vatNumber = 'Enter a valid VAT number (10-20 digits)';
   }
   if (!form.address.trim()) errors.address = 'Address is required';
+  else if (form.address.trim().length > QUOTATION_LIMITS.address) errors.address = `Max ${QUOTATION_LIMITS.address} characters`;
   return errors;
 }
 
@@ -75,7 +80,9 @@ export default function QuotationDrawer() {
   };
 
   const setField = (key: keyof FormState) => (value: string) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    const limit = QUOTATION_LIMITS[key as keyof typeof QUOTATION_LIMITS];
+    const clamped = limit ? value.slice(0, limit) : value;
+    setForm(prev => ({ ...prev, [key]: clamped }));
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
   };
 
@@ -103,7 +110,8 @@ export default function QuotationDrawer() {
     const item = items.find(i => i.productId === productId);
     const stockLimit = typeof item?.stock === 'number' ? item.stock : null;
 
-    if (stockLimit !== null && parsed > stockLimit) {
+    // Out-of-stock items (stockLimit === 0) are allowed as lead-time inquiries — skip stock cap
+    if (stockLimit !== null && stockLimit > 0 && parsed > stockLimit) {
       return { value: 0, error: t('quotation.quantityExceedsStock'), isValid: false };
     }
 
@@ -214,6 +222,7 @@ export default function QuotationDrawer() {
 
       clearBasket();
       closeDrawer();
+      broadcastSync({ type: 'DATA_CHANGED', module: 'quotations' });
       toast.success(t('quotationDrawer.generated'));
       router.push(`/my-quotation/${result.id}`);
     } catch (err: any) {
@@ -238,9 +247,7 @@ export default function QuotationDrawer() {
 
       {/* Panel */}
       <div
-        className={`fixed top-0 bottom-0 z-[70] w-full max-w-md bg-white shadow-2xl flex flex-col
-          transition-transform duration-300
-          ${isRTL ? 'left-0' : 'right-0'}`}
+        className="fixed top-0 right-0 bottom-0 z-[70] w-full max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-300"
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         {/* ── Header ── */}
@@ -304,9 +311,9 @@ export default function QuotationDrawer() {
                         <p className="text-xs text-gray-400">{item.sku}</p>
                       )}
                       {typeof item.stock === 'number' && (
-                        <p className={`mt-1 text-xs font-semibold ${item.stock === 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                        <p className={`mt-1 text-xs font-semibold ${item.stock === 0 ? 'text-amber-600' : 'text-gray-500'}`}>
                           {item.stock === 0
-                            ? (t('productsOutOfStock') || 'Out of Stock')
+                            ? (t('quotation.outOfStockNote') || 'Out of Stock — Lead Time Required')
                             : `${item.stock} ${t('productsInStock') || 'in stock'}`}
                         </p>
                       )}
@@ -341,14 +348,14 @@ export default function QuotationDrawer() {
                         onFocus={() => handleQuantityFocus(item.productId)}
                         aria-label={t('cart.quantity')}
                         aria-invalid={!!currentInputError}
-                        className={`w-10 text-center text-sm font-semibold text-gray-800 border rounded-md py-0.5 focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-[#F97316] ${
+                        className={`w-10 text-center text-sm font-semibold text-gray-800 border rounded-md py-0.5 focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-[#0205A6] ${
                           currentInputError ? 'border-red-500' : 'border-gray-300'
                         }`}
                       />
 
                       <button
-                        onClick={() => updateQty(item.productId, Math.min(stockLimit ?? item.quantity + 1, item.quantity + 1))}
-                        disabled={stockLimit !== null && item.quantity >= stockLimit}
+                        onClick={() => updateQty(item.productId, item.quantity + 1)}
+                        disabled={stockLimit !== null && stockLimit > 0 && item.quantity >= stockLimit}
                         className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
                       >
                         <Plus size={10} />
@@ -399,17 +406,21 @@ export default function QuotationDrawer() {
                     placeholder="e.g. Acme Corp Ltd."
                     value={form.companyName}
                     onChange={e => setField('companyName')(e.target.value)}
+                    maxLength={QUOTATION_LIMITS.companyName}
                     className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors
                       ${errors.companyName
                         ? 'border-red-400 focus:ring-red-200 bg-red-50'
                         : 'border-gray-200 focus:ring-[#0D1637]/20 focus:border-[#0D1637] bg-white'
                       }`}
                   />
-                  {errors.companyName && (
-                    <p className="flex items-center gap-1 mt-1 text-xs text-red-500">
-                      <AlertCircle size={11} />{errors.companyName}
-                    </p>
-                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    {errors.companyName
+                      ? <p className="flex items-center gap-1 text-xs text-red-500"><AlertCircle size={11} />{errors.companyName}</p>
+                      : <span />}
+                    <span className={`text-xs ${form.companyName.length >= QUOTATION_LIMITS.companyName ? 'text-red-500' : 'text-gray-400'}`}>
+                      {form.companyName.length}/{QUOTATION_LIMITS.companyName}
+                    </span>
+                  </div>
                 </div>
 
                 {/* VAT Number */}
@@ -445,17 +456,21 @@ export default function QuotationDrawer() {
                     placeholder="Street address, City, Country"
                     value={form.address}
                     onChange={e => setField('address')(e.target.value)}
+                    maxLength={QUOTATION_LIMITS.address}
                     className={`w-full border rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 transition-colors
                       ${errors.address
                         ? 'border-red-400 focus:ring-red-200 bg-red-50'
                         : 'border-gray-200 focus:ring-[#0D1637]/20 focus:border-[#0D1637] bg-white'
                       }`}
                   />
-                  {errors.address && (
-                    <p className="flex items-center gap-1 mt-1 text-xs text-red-500">
-                      <AlertCircle size={11} />{errors.address}
-                    </p>
-                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    {errors.address
+                      ? <p className="flex items-center gap-1 text-xs text-red-500"><AlertCircle size={11} />{errors.address}</p>
+                      : <span />}
+                    <span className={`text-xs ${form.address.length >= QUOTATION_LIMITS.address ? 'text-red-500' : 'text-gray-400'}`}>
+                      {form.address.length}/{QUOTATION_LIMITS.address}
+                    </span>
+                  </div>
                 </div>
               </div>
             </form>
@@ -469,7 +484,7 @@ export default function QuotationDrawer() {
               type="submit"
               form="quotation-form"
               disabled={submitting || hasInvalidItems}
-              className="w-full bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+              className="w-full bg-[#0205A6] hover:bg-[#0204c0] text-white font-semibold py-3 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
             >
               <Download size={16} />
               {submitting ? 'Generating PDF…' : 'Generate PDF'}

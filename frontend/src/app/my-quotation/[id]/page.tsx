@@ -58,14 +58,18 @@ function Detail({ icon: Icon, label, value, isRTL }: {
   icon: React.ElementType; label: string; value: string; isRTL: boolean;
 }) {
   return (
-    <div className={`flex items-start gap-2 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
-      <div className="w-7 h-7 rounded-lg bg-[#0D1637]/10 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon size={14} className="text-[#0D1637]" />
+    <div className={`flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0 ${isRTL ? 'flex-row-reverse' : ''}`}>
+      {/* Icon + label — fixed width, never shrinks */}
+      <div className={`flex items-center gap-2 shrink-0 w-36 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+        <div className="w-6 h-6 rounded-md bg-[#0D1637]/10 flex items-center justify-center shrink-0">
+          <Icon size={13} className="text-[#0D1637]" />
+        </div>
+        <span className="text-xs font-medium text-gray-400 whitespace-nowrap">{label}</span>
       </div>
-      <div>
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-semibold text-gray-900">{value}</p>
-      </div>
+      {/* Value — takes remaining width, wraps on long text */}
+      <p className={`flex-1 text-sm font-semibold text-gray-900 break-words ${isRTL ? 'text-right' : 'text-start'}`}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -184,7 +188,7 @@ export default function MyQuotationPage() {
             <div className="text-center py-20">
               <FileText size={48} className="mx-auto text-gray-300 mb-4" />
               <p className="text-lg font-bold text-gray-700">{t('quot.notFound')}</p>
-              <Link href="/products" className="mt-4 inline-block text-[#F97316] text-sm font-semibold hover:underline">
+              <Link href="/products" className="mt-4 inline-block text-[#0205A6] text-sm font-semibold hover:underline">
                 {t('quot.backToProducts')}
               </Link>
             </div>
@@ -197,12 +201,12 @@ export default function MyQuotationPage() {
               <div className={`bg-[#0D1637] px-8 py-6 flex items-start justify-between gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div>
                   <div className={`flex items-center gap-2 mb-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className="w-8 h-8 rounded-lg bg-[#F97316] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#0205A6] flex items-center justify-center">
                       <FileText size={16} className="text-white" />
                     </div>
                     <h1 className="text-lg font-bold text-white">{t('quot.previewTitle')}</h1>
                   </div>
-                  <p className={`text-sm text-[#F97316] font-bold ${isRTL ? 'text-right' : ''}`}>
+                  <p className={`text-sm text-[#0205A6] font-bold ${isRTL ? 'text-right' : ''}`}>
                     #{quotation.quotationNumber}
                   </p>
                   <p className={`text-xs text-white/80 mt-1 ${isRTL ? 'text-right' : ''}`}>
@@ -214,7 +218,7 @@ export default function MyQuotationPage() {
                 <button
                   onClick={handleDownload}
                   disabled={downloading}
-                  className={`shrink-0 flex items-center gap-2 bg-[#F97316] hover:bg-[#e8650a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50 ${isRTL ? 'flex-row-reverse' : ''}`}
+                  className={`shrink-0 flex items-center gap-2 bg-[#0205A6] hover:bg-[#0204c0] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50 ${isRTL ? 'flex-row-reverse' : ''}`}
                 >
                   <Download size={15} />
                   {downloading ? t('quot.downloadingPDF') : t('quot.downloadPDF')}
@@ -222,29 +226,25 @@ export default function MyQuotationPage() {
               </div>
 
               {/* ── Meta info ────────────────────────────────────────────── */}
-              <div className={`px-8 py-5 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-4 ${isRTL ? 'text-right' : ''}`}>
+              <div className="px-8 py-3 border-b border-gray-100">
                 <Detail icon={Building2} label={t('quot.companyLabel')} value={quotation.companyName || '—'} isRTL={isRTL} />
                 <Detail icon={Hash}      label={t('quot.vatLabel')}     value={quotation.vatNumber || '—'} isRTL={isRTL} />
                 <Detail icon={Calendar}  label={t('quot.date')}         value={fmtDate(quotation.quotationDate)} isRTL={isRTL} />
                 <Detail icon={Calendar}  label={t('quot.validUntil')}   value={fmtDate(quotation.expiryDate)} isRTL={isRTL} />
-              </div>
-
-              {/* Address */}
-              <div className={`px-8 py-4 border-b border-gray-100 ${isRTL ? 'text-right' : ''}`}>
-                <Detail icon={MapPin} label={t('quot.addressLabel')} value={quotation.customerAddress || '—'} isRTL={isRTL} />
+                <Detail icon={MapPin}    label={t('quot.addressLabel')} value={quotation.customerAddress || '—'} isRTL={isRTL} />
               </div>
 
               {(quotation.userMessage || quotation.adminReply) && (
                 <div className="px-8 py-4 border-b border-gray-100 space-y-3">
                   {quotation.userMessage && (
                     <div className={`rounded-xl border border-gray-100 bg-gray-50 p-3 ${isRTL ? 'text-right' : 'text-start'}`}>
-                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Your Message</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{t('quot.yourMessage')}</p>
                       <p className="mt-1 text-sm text-gray-700">{quotation.userMessage}</p>
                     </div>
                   )}
                   {quotation.adminReply && (
                     <div className={`rounded-xl border border-emerald-100 bg-emerald-50 p-3 ${isRTL ? 'text-right' : 'text-start'}`}>
-                      <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Admin Reply</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">{t('quot.adminReply')}</p>
                       <p className="mt-1 text-sm text-emerald-800">{quotation.adminReply}</p>
                     </div>
                   )}
@@ -364,7 +364,7 @@ export default function MyQuotationPage() {
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className={`w-full flex items-center justify-center gap-2 bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold py-4 rounded-2xl transition-colors disabled:opacity-50 ${isRTL ? 'flex-row-reverse' : ''}`}
+            className={`w-full flex items-center justify-center gap-2 bg-[#0205A6] hover:bg-[#0204c0] text-white font-semibold py-4 rounded-2xl transition-colors disabled:opacity-50 ${isRTL ? 'flex-row-reverse' : ''}`}
           >
             <Download size={18} />
             {downloading ? t('quot.downloadingPDF') : t('quot.downloadPDF')}

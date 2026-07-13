@@ -18,6 +18,7 @@ import {
   validateAddUpdateItem,
   validateUpdateQuantity,
 } from './customer-quotation-basket.validation';
+import { t } from '@/common/i18n';
 
 export class CustomerQuotationBasketController {
   /**
@@ -92,6 +93,7 @@ export class CustomerQuotationBasketController {
 
       res.status(200).json({
         success: true,
+        message: t('basket.itemAdded', req.locale),
         data: basket,
       });
     } catch (error) {
@@ -151,6 +153,7 @@ export class CustomerQuotationBasketController {
 
       res.status(200).json({
         success: true,
+        message: t('basket.itemUpdated', req.locale),
         data: basket,
       });
     } catch (error) {
@@ -188,6 +191,7 @@ export class CustomerQuotationBasketController {
 
       res.status(200).json({
         success: true,
+        message: t('basket.itemRemoved', req.locale),
         data: basket,
       });
     } catch (error) {

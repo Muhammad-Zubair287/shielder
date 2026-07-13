@@ -10,21 +10,8 @@ import { CartService } from './cart.service';
 import SettingsService from '../settings/settings.service';
 import { AuthRequest } from '../../types/global';
 import { NotFoundError } from '../../common/errors/api.error';
-
-const messages: any = {
-  en: {
-    added: 'Item added to cart',
-    updated: 'Cart updated',
-    removed: 'Item removed from cart',
-    cleared: 'Cart cleared',
-  },
-  ar: {
-    added: 'تمت إضافة المنتج إلى السلة',
-    updated: 'تم تحديث السلة',
-    removed: 'تمت إزالة المنتج من السلة',
-    cleared: 'تم مسح السلة',
-  },
-};
+import { emitToUser } from '../realtime/socket.service';
+import { t } from '@/common/i18n';
 
 export class CartController {
   private static getRequestOrigin(req: Request): string {
@@ -58,10 +45,6 @@ export class CartController {
     }
 
     return imagePath;
-  }
-
-  private static getMessage(lang: string = 'en', key: string) {
-    return messages[lang]?.[key] || messages['en'][key];
   }
 
   private static normalizeCart(req: Request, cart: any, lang: string, currency: string) {
@@ -160,10 +143,12 @@ export class CartController {
       await CartService.addItem(userId, productId, quantity);
       const cart = await CartService.getCart(userId);
       
+      const normalized = CartController.normalizeCart(req, cart, lang, currency);
+      emitToUser(userId, 'cart:updated', normalized);
       res.status(201).json({
         success: true,
-        message: CartController.getMessage(lang, 'added'),
-        data: CartController.normalizeCart(req, cart, lang, currency),
+        message: t('cart.itemAdded', req.locale),
+        data: normalized,
       });
     } catch (error) {
       next(error);
@@ -200,10 +185,12 @@ export class CartController {
       await CartService.updateItem(userId, productId, quantity);
       const cart = await CartService.getCart(userId);
       
+      const normalized = CartController.normalizeCart(req, cart, lang, currency);
+      emitToUser(userId, 'cart:updated', normalized);
       res.status(200).json({
         success: true,
-        message: CartController.getMessage(lang, 'updated'),
-        data: CartController.normalizeCart(req, cart, lang, currency),
+        message: t('cart.updated', req.locale),
+        data: normalized,
       });
     } catch (error) {
       next(error);
@@ -236,16 +223,18 @@ export class CartController {
       const cartItemExists = Boolean(await CartService.findCartItem(userId, productId as string));
 
       if (!cartItemExists) {
-        throw new NotFoundError('Cart item not found');
+        throw new NotFoundError(t('cart.itemNotFound', req.locale));
       }
 
       await CartService.removeItem(userId, productId as string);
       const updatedCart = await CartService.getCart(userId);
       
+      const normalized = CartController.normalizeCart(req, updatedCart, lang, currency);
+      emitToUser(userId, 'cart:updated', normalized);
       res.status(200).json({
         success: true,
-        message: CartController.getMessage(lang, 'removed'),
-        data: CartController.normalizeCart(req, updatedCart, lang, currency),
+        message: t('cart.itemRemoved', req.locale),
+        data: normalized,
       });
     } catch (error) {
       next(error);
@@ -271,10 +260,12 @@ export class CartController {
       await CartService.clearCart(userId);
       const cart = await CartService.getCart(userId);
       
+      const normalized = CartController.normalizeCart(req, cart, lang, currency);
+      emitToUser(userId, 'cart:updated', normalized);
       res.status(200).json({
         success: true,
-        message: CartController.getMessage(lang, 'cleared'),
-        data: CartController.normalizeCart(req, cart, lang, currency),
+        message: t('cart.cleared', req.locale),
+        data: normalized,
       });
     } catch (error) {
       next(error);

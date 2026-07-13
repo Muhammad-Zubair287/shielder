@@ -15,6 +15,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import { orderService } from '@/services/order.service';
@@ -90,6 +91,7 @@ export default function AdminOrdersPage() {
       setRefreshing(false);
     }
   }, [pagination.page, pagination.limit, filters, t]);
+  useSyncRefetch(fetchOrders, 'orders');
 
   const fetchSummary = useCallback(async () => {
     try {

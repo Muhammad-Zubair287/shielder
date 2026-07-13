@@ -4,12 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
-import Link from 'next/link';
 
 export function ForgotPasswordVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const email = searchParams.get('email') || '';
 
   const [code, setCode] = useState(Array(6).fill(''));
@@ -63,16 +62,16 @@ export function ForgotPasswordVerifyContent() {
     setError('');
     const value = code.join('');
     if (value.length !== 6) {
-      setError('Please enter the 6-digit code');
+      setError(t('auth.enterOtpError'));
       return;
     }
 
     setLoading(true);
     try {
       const res = await authService.verifyForgotPasswordOtp({ email, code: value });
-      router.push(`/forgot-password/reset?token=${encodeURIComponent(res.resetSessionToken)}`);
+      router.replace(`/forgot-password/reset?token=${encodeURIComponent(res.resetSessionToken)}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'OTP verification failed');
+      setError(err instanceof Error ? err.message : t('auth.otpVerificationFailed'));
     } finally {
       setLoading(false);
     }
@@ -86,16 +85,16 @@ export function ForgotPasswordVerifyContent() {
       setTimer(30);
       setError('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to resend OTP');
+      setError(err instanceof Error ? err.message : t('auth.resendOtpFailed'));
     } finally {
       setResendLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-orange-50/30 to-white px-4 py-8 flex items-start justify-center">
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white px-4 py-8 flex items-start justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm pt-2">
-        <div className="mb-6 text-left">
+        <div className={`mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
           <div className="inline-flex items-center gap-2 text-slate-900 font-extrabold tracking-[0.18em] text-xs">
             <span className="w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-[10px]">S</span>
             <span>SHIELDER</span>
@@ -103,8 +102,8 @@ export function ForgotPasswordVerifyContent() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">{t('OTP Verification')}</h1>
-          <p className="text-sm text-slate-600 mb-6">{t('We have sent verification code to')} {email}</p>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">{t('auth.otpVerificationTitle')}</h1>
+          <p className="text-sm text-slate-600 mb-6">{t('auth.verificationCodeSentTo')} <span dir="ltr">{email}</span></p>
 
           {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
 
@@ -121,7 +120,7 @@ export function ForgotPasswordVerifyContent() {
                   onChange={(e) => handleChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(e, idx)}
                   dir="ltr"
-                  className="input-ltr w-11 h-11 sm:w-12 sm:h-12 text-center border border-slate-300 rounded-xl text-lg font-semibold focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none"
+                  className="input-ltr w-11 h-11 sm:w-12 sm:h-12 text-center border border-slate-300 rounded-xl text-lg font-semibold focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none"
                   maxLength={1}
                 />
               ))}
@@ -132,24 +131,28 @@ export function ForgotPasswordVerifyContent() {
               disabled={loading}
               className="w-full h-11 bg-[#004A99] text-white rounded-full font-semibold hover:bg-[#0D2F8C] disabled:opacity-50 transition"
             >
-              {loading ? t('processingLoading') : t('Next')}
+              {loading ? t('processingLoading') : t('next')}
             </button>
 
             <div className="text-center text-sm text-slate-600">
               {timer > 0 ? (
-                <span>{t('Didn\'t get a code?')} 00:{timer.toString().padStart(2, '0')}</span>
+                <span>{t('auth.didntGetCode')} <span dir="ltr">00:{timer.toString().padStart(2, '0')}</span></span>
               ) : (
                 <button type="button" onClick={handleResend} disabled={resendLoading} className="text-[#004A99] hover:underline font-semibold">
-                  {resendLoading ? t('resending') : t('Resend code')}
+                  {resendLoading ? t('resending') : t('auth.resendOtp')}
                 </button>
               )}
             </div>
             <div className="mt-6 text-center text-sm">
-                        <span className="text-slate-600">{t('rememberPassword')}</span>{' '}
-                        <Link href="/login" className="text-[#004A99] hover:underline font-semibold">
-                          {t('backToLogin')}
-                        </Link>
-                      </div>
+              <span className="text-slate-600">{t('rememberPassword')}</span>{' '}
+              <button
+                type="button"
+                onClick={() => router.replace('/login')}
+                className="text-[#004A99] hover:underline font-semibold"
+              >
+                {t('backToLogin')}
+              </button>
+            </div>
           </form>
         </div>
       </div>

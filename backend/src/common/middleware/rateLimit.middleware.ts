@@ -6,6 +6,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TooManyRequestsError } from '@/common/errors/api.error';
 import { logger } from '@/common/logger/logger';
+import { t } from '@/common/i18n';
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -73,9 +74,7 @@ export const rateLimitAuth = (config: RateLimitConfig) => {
   const minutesLeft = Math.ceil(retryAfter / 60);
   logger.warn(`Rate limit exceeded for ${identifier} on ${req.path}`);
 
-  const message = req.locale === 'ar'
-    ? `لقد تجاوزت الحد المسموح به. يرجى المحاولة مرة أخرى بعد ${minutesLeft} دقيقة.`
-    : `Too many attempts. Please try again in ${minutesLeft} minutes.`;
+  const message = t('common.rateLimitMinutes', req.locale, { minutes: minutesLeft });
 
   throw new TooManyRequestsError(message);
 }

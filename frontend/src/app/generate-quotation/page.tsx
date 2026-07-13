@@ -263,7 +263,7 @@ export default function GenerateQuotationPage() {
             {/* Header band */}
             <div className="bg-[#0D1637] px-8 py-7">
               <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div className="w-9 h-9 rounded-xl bg-[#F97316] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#0205A6] flex items-center justify-center shrink-0">
                   <FileText size={18} className="text-white" />
                 </div>
                 <h1 className="text-xl font-bold text-white">{t('quot.pageTitle')}</h1>
@@ -359,7 +359,7 @@ export default function GenerateQuotationPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 bg-[#F97316] hover:bg-[#e8650a] text-white font-semibold py-3.5 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="flex-1 bg-[#0205A6] hover:bg-[#0204c0] text-white font-semibold py-3.5 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     {submitting
                       ? t('quot.generatingPDF')

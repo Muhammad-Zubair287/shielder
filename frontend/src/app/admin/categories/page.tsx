@@ -13,6 +13,8 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
+import { broadcastSync } from '@/lib/crossTabSync';
 import { useLanguage } from '@/contexts/LanguageContext';
 import adminService from '@/services/admin.service';
 
@@ -116,7 +118,11 @@ export default function AdminCategoriesPage() {
 
   const closeDelete = () => setDeleteTarget(null);
 
-  const onMutationSuccess = () => fetchData();
+  const onMutationSuccess = () => {
+    fetchData();
+    broadcastSync({ type: 'DATA_CHANGED', module: 'categories' });
+  };
+  useSyncRefetch(fetchData, 'categories');
 
   const summaryCards = [
     {

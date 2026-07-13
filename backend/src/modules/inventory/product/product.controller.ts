@@ -13,6 +13,8 @@ import {
   resolvePublicProductImageUrl,
   storeProductImageFile,
 } from '@/common/services/product-image.service';
+import { emitToAll } from '@/modules/realtime/socket.service';
+import { t } from '@/common/i18n';
 
 const parseOptionalNumberQuery = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') return undefined;
@@ -59,6 +61,7 @@ export class ProductController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const product = await productService.create(req.body);
+      emitToAll('product:created', { id: product.id });
       res.status(201).json({ success: true, data: normalizeProductResponse(req, product) });
     } catch (error) {
       next(error);
@@ -237,7 +240,7 @@ export class ProductController {
   async bulkUpload(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
-        return res.status(400).json({ success: false, message: 'Please upload a file' });
+        return res.status(400).json({ success: false, message: t('product.noFileUploaded', req.locale) });
       }
       const result = await productService.bulkUpload(req.file.buffer, req.file.mimetype);
       return res.json({ success: true, data: result });
@@ -285,6 +288,7 @@ export class ProductController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const product = await productService.update(String(req.params.id), req.body);
+      emitToAll('product:updated', { id: product.id });
       res.json({ success: true, data: normalizeProductResponse(req, product) });
     } catch (error) {
       next(error);
@@ -301,8 +305,10 @@ export class ProductController {
    */
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await productService.delete(String(req.params.id));
-      res.json({ success: true, message: 'Product deleted successfully' });
+      const deletedId = String(req.params.id);
+      await productService.delete(deletedId);
+      emitToAll('product:deleted', { id: deletedId });
+      res.json({ success: true, message: t('product.deleteSuccess', req.locale) });
     } catch (error) {
       next(error);
     }
@@ -313,7 +319,7 @@ export class ProductController {
       const result = await productService.bulkDelete(req.body.ids || []);
       res.json({
         success: true,
-        message: 'Bulk delete completed',
+        message: t('product.bulkDelete', req.locale),
         data: result,
       });
     } catch (error) {
@@ -332,7 +338,7 @@ export class ProductController {
   async uploadImage(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
-        res.status(400).json({ success: false, message: 'No image file provided' });
+        res.status(400).json({ success: false, message: t('product.noImageFile', req.locale) });
         return;
       }
 
@@ -362,7 +368,7 @@ export class ProductController {
         console.error(`[ImageUpload] CRITICAL ERROR: mainImage is null after DB update for ${productId}`);
         res.status(500).json({ 
           success: false, 
-          message: 'Database update failed - image path not saved to database' 
+          message: t('product.dbUpdateFailed', req.locale)
         });
         return;
       }
@@ -397,7 +403,7 @@ export class ProductController {
   async assignSpecifications(req: Request, res: Response, next: NextFunction) {
     try {
       await productService.assignSpecifications(String(req.params.id), req.body.specifications);
-      res.json({ success: true, message: 'Specifications assigned successfully' });
+      res.json({ success: true, message: t('product.specificationsAssigned', req.locale) });
     } catch (error) {
       next(error);
     }
@@ -425,7 +431,7 @@ export class ProductController {
   async deleteAttachment(req: Request, res: Response, next: NextFunction) {
     try {
       await productService.deleteAttachment(String(req.params.id), String(req.params.attachmentId));
-      res.json({ success: true, message: 'Attachment deleted successfully' });
+      res.json({ success: true, message: t('product.attachmentDeleted', req.locale) });
     } catch (error) {
       next(error);
     }
