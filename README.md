@@ -43,9 +43,10 @@ npm run dev                        # http://localhost:3000
 ## Features
 
 ### Authentication & Users
-- Register / login / logout with JWT access + refresh tokens
+- **OTP-based registration** — 6-digit email OTP; account created only after successful verification (no unverified users in DB)
+- Login / logout with JWT access (7d) + refresh tokens (30d)
 - Tokens stored in `sessionStorage` (per-tab isolation)
-- Email verification and password reset flows
+- Password reset via email
 - Trusted-device management
 - Role-based access: `SUPER_ADMIN > ADMIN > STAFF > SUPPLIER > USER`
 
@@ -64,17 +65,19 @@ npm run dev                        # http://localhost:3000
 ### Quotation System
 - Customer-submitted quotation basket
 - Admin creates formal quotations from baskets
+- Customer name always resolved from profile (never stored as email)
 - PDF generation with dynamic field layout and bilingual labels
 - Quotation → Order conversion flow
 
 ### Order Management
-- Full order lifecycle: PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED → CANCELLED
-- Payment status tracking: PENDING → PAID → REFUNDED
+- Full order lifecycle: `PENDING → CONFIRMED → PROCESSING → READY_FOR_PICKUP → SHIPPED → DELIVERED → COMPLETED → CANCELLED`
+- Payment status tracking: `PENDING → UNPAID → PAID → PARTIALLY_PAID → PARTIALLY_REFUNDED → REFUNDED → FAILED`
 - Per-order audit trail
+- Status labels fully localized — update instantly on language switch
 
 ### Admin Panel
 - Products, categories, subcategories management
-- Order and quotation management
+- Order and quotation management with localized status filters
 - User management (ADMIN role)
 - Reports and analytics
 - Inventory and warehouse management
@@ -87,7 +90,7 @@ npm run dev                        # http://localhost:3000
 ### Real-time Sync (Socket.IO)
 - Single persistent WebSocket connection per session, authenticated with JWT
 - Any mutation on Web, Android, or iOS immediately reflects on all other connected clients
-- Covered events: cart, orders, profile, quotations, products, categories, subcategories, notifications, settings
+- Covered events: cart, orders, profile, quotations, products, categories, subcategories, users, notifications, settings
 - Login/logout state is intentionally **not** synced across platforms
 
 ### Cross-tab Sync (BroadcastChannel)
@@ -98,6 +101,7 @@ npm run dev                        # http://localhost:3000
 - English and Arabic UI with full RTL layout
 - Language preference stored per-user in the database
 - All content entities (Product, Category, Subcategory) store bilingual translations natively
+- Dynamic navbar titles detect UUIDs/IDs in URLs and show human-readable labels (e.g. `Order Details`)
 
 ## Tech Stack
 
@@ -105,7 +109,7 @@ npm run dev                        # http://localhost:3000
 |---|---|
 | API server | Express.js, TypeScript |
 | ORM | Prisma + PostgreSQL |
-| Auth | JWT (access 7d, refresh 30d) |
+| Auth | JWT (access 7d, refresh 30d) + OTP email verification |
 | Real-time | Socket.IO |
 | Caching / rate-limiting | Redis |
 | Email | SMTP / Brevo / SendGrid (pluggable) |
@@ -118,11 +122,38 @@ npm run dev                        # http://localhost:3000
 
 ## Deployment
 
+### Server (production)
+
+```bash
+git pull origin main
+cd backend && npm install
+npx prisma migrate deploy --schema=./src/database/prisma/schema.prisma
+# fallback if above fails (no shadow DB permissions on host):
+# npx prisma db push --schema=./src/database/prisma/schema.prisma
+npm run prisma:generate
+npm run build
+cd ../frontend && npm install && npm run build
+pm2 restart all
+```
+
 ### Frontend → Vercel
 Set `NEXT_PUBLIC_API_URL` to your backend URL and deploy from GitHub.
 
-### Backend → Railway
+### Backend → Railway / VPS
 Add a PostgreSQL service, set env vars from `.env.example`, and deploy from GitHub. A self-ping (every 4 min) prevents Railway cold starts in production.
+
+## Git Remotes
+
+| Remote | Repository |
+|---|---|
+| `origin` | `https://github.com/Muhammad-Zubair287/shielder.git` |
+| `company` | `https://github.com/devflxofficial/Shielder.git` |
+| `personal` | `https://github.com/MuhammadZubairr/shielder.git` |
+
+Push to all three after every release:
+```bash
+git push origin main && git push company main && git push personal main
+```
 
 ## Documentation
 
