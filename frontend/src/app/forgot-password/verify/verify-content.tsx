@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { AuthAlert } from '@/components/auth/AuthAlert';
 
 export function ForgotPasswordVerifyContent() {
   const router = useRouter();
@@ -105,7 +106,7 @@ export function ForgotPasswordVerifyContent() {
           <h1 className="text-2xl font-semibold text-slate-900 mb-2">{t('auth.otpVerificationTitle')}</h1>
           <p className="text-sm text-slate-600 mb-6">{t('auth.verificationCodeSentTo')} <span dir="ltr">{email}</span></p>
 
-          {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
+          {error && <AuthAlert type="error" message={error} onDismiss={() => setError('')} className="mb-4" />}
 
           <form onSubmit={handleSubmit} onPaste={handlePaste} className="space-y-6">
             <div className="flex justify-between gap-2 sm:gap-2.5">

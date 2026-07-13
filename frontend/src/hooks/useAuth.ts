@@ -34,6 +34,7 @@ export const useAuth = () => {
       router.prefetch(ROUTES.CUSTOMER_DASHBOARD);
 
       const response = await authService.register(data);
+      const authData = response.data;
       setUser(null);
 
       toast.success(response.message || t('registerSuccess'), { duration: REGISTER_TOAST_DURATION_MS });
@@ -44,8 +45,7 @@ export const useAuth = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setError(errorMessage);
-      toast.error(errorMessage);
-      throw error;
+      throw error; // calling form owns the error display
     } finally {
       setIsSubmitting(false);
     }
@@ -105,11 +105,11 @@ export const useAuth = () => {
         
         // Store temporary session tokens for 2FA verification
         if (role === 'SUPER_ADMIN') {
-          sessionStorage.setItem('superadmin_2fa_user_id', response.user.id);
+          sessionStorage.setItem('superadmin_2fa_user_id', response.user?.id ?? '');
           sessionStorage.setItem('superadmin_otp_session_token', response.otpSessionToken);
           goToTwoFactorPage('/superadmin/superadmin-2fa');
         } else if (role === 'ADMIN') {
-          sessionStorage.setItem('admin_2fa_user_id', response.user.id);
+          sessionStorage.setItem('admin_2fa_user_id', response.user?.id ?? '');
           sessionStorage.setItem('admin_otp_session_token', response.otpSessionToken);
           goToTwoFactorPage('/admin/admin-2fa');
         } else {
@@ -148,8 +148,7 @@ export const useAuth = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('loginError');
       setError(errorMessage);
-      toast.error(errorMessage, { duration: LOGIN_TOAST_DURATION_MS });
-      throw error;
+      throw error; // calling page owns the error display
     } finally {
       setIsSubmitting(false);
     }

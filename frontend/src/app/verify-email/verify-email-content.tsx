@@ -98,14 +98,12 @@ export function VerifyEmailContent() {
       setIsSubmittingOtp(true);
       await authService.verifyEmailOtp(verificationSessionToken, otpCode);
       setVerifyState('success');
-      toast.success(t('auth.emailVerificationSuccess') || 'Email verified successfully');
       setTimeout(() => routerRef.current.replace('/login'), 2500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('verificationFailedMessage');
       setErrorMessage(msg);
       setVerifyState('error');
       setOtpCode('');
-      toast.error(msg);
     } finally {
       setIsSubmittingOtp(false);
     }
@@ -126,7 +124,6 @@ export function VerifyEmailContent() {
       const msg = err instanceof Error ? err.message : t('auth.resendVerificationFailed');
       setErrorMessage(msg);
       setVerifyState('error');
-      toast.error(msg);
     } finally {
       setIsResendingOtp(false);
     }
@@ -159,12 +156,10 @@ export function VerifyEmailContent() {
       setShowEmailChange(false);
       setNewEmail('');
       setVerifyState('otp');
-      toast.success(t('auth.emailChangedSuccess') || 'Email updated successfully');
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('auth.changeEmailFailed');
       setErrorMessage(msg);
       setVerifyState('error');
-      toast.error(msg);
     } finally {
       setIsChangingEmail(false);
     }

@@ -18,6 +18,7 @@ import { validateLoginForm } from '@/services/validation.service';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PASSWORD_REQUIREMENTS } from '@/utils/password';
 import authService from '@/services/auth.service';
+import { AuthAlert } from '@/components/auth/AuthAlert';
 
 const LOGIN_TOAST_DURATION_MS = 4000;
 
@@ -111,6 +112,7 @@ function LoginPageContent() {
   const [showResendVerification, setShowResendVerification] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [trustedDeviceMessage, setTrustedDeviceMessage] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (showResendVerification) {
@@ -182,6 +184,7 @@ function LoginPageContent() {
 
     if (!validate()) return;
 
+    setAuthError(null);
     redirectHandled.current = true;
     try {
       setShowResendVerification(false);
@@ -189,8 +192,8 @@ function LoginPageContent() {
     } catch (error: unknown) {
       redirectHandled.current = false;
       const message = error instanceof Error ? error.message : '';
+      setAuthError(message || t('loginError'));
       setShowResendVerification(isUnverifiedEmailError(message));
-      console.error('Login error:', error);
     }
   };
 
@@ -318,9 +321,16 @@ function LoginPageContent() {
             </p>
 
             {trustedDeviceMessage && (
-              <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                {trustedDeviceMessage}
-              </div>
+              <AuthAlert type="info" message={trustedDeviceMessage} className="mb-6" />
+            )}
+
+            {authError && (
+              <AuthAlert
+                type="error"
+                message={authError}
+                onDismiss={() => setAuthError(null)}
+                className="mb-6"
+              />
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">

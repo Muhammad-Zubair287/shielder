@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validateForgotPasswordEmail } from '@/services/validation/auth.validation';
+import { AuthAlert } from '@/components/auth/AuthAlert';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -57,9 +58,7 @@ export default function ForgotPasswordPage() {
           <p className="text-sm text-slate-600 mb-6">{t('enterEmailToReset')}</p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-              {error}
-            </div>
+            <AuthAlert type="error" message={error} onDismiss={() => setError('')} className="mb-4" />
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">

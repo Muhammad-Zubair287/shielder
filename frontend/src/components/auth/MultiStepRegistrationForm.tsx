@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { AuthAlert } from './AuthAlert';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 import { PASSWORD_REQUIREMENTS } from '@/utils/password';
@@ -34,6 +35,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 }) => {
   const { t } = useLanguage();
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -84,16 +86,27 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(3)) {
+      setApiError(null);
       try {
         await onSubmit(formData);
       } catch (error) {
-        console.error('Registration error:', error);
+        const message = error instanceof Error ? error.message : t('registerError');
+        setApiError(message);
       }
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
+      {apiError && (
+        <AuthAlert
+          type="error"
+          message={apiError}
+          onDismiss={() => setApiError(null)}
+          className="mb-6"
+        />
+      )}
+
       {/* Progress Indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">

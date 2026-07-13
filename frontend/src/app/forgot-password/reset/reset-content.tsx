@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { validateResetPassword } from '@/services/validation/auth.validation';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PASSWORD_REQUIREMENTS } from '@/utils/password';
+import { AuthAlert } from '@/components/auth/AuthAlert';
 
 export function ForgotPasswordResetContent() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export function ForgotPasswordResetContent() {
           <p className="text-sm text-slate-600 mb-6">{t('enter New Password')}</p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
+            <AuthAlert type="error" message={error} onDismiss={() => setError('')} className="mb-4" />
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
