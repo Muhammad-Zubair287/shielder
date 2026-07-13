@@ -49,6 +49,9 @@ export const API_ENDPOINTS = {
     TRUSTED_DEVICE_REVOKE: (token: string) => `auth/trusted-devices/${token}`,
     TRUSTED_DEVICE_STATUS: 'auth/trusted-device/status',
     CHANGE_PASSWORD: 'auth/change-password',
+    SIGNUP_INITIATE: 'auth/signup/initiate',
+    SIGNUP_VERIFY_OTP: 'auth/signup/verify-otp',
+    SIGNUP_RESEND_OTP: 'auth/signup/resend-otp',
   },
   // Users
   USERS: {

@@ -115,6 +115,43 @@ router.post(
 );
 
 /**
+ * POST /api/auth/signup/initiate
+ * Step 1: Validate data, send OTP. User NOT created yet.
+ */
+router.post(
+  '/signup/initiate',
+  rateLimitAuth({
+    maxRequests: 5,
+    windowMinutes: 10,
+    identifierFn: (req) => (req.body?.email as string)?.toLowerCase() || req.ip || 'unknown',
+  }),
+  validate(authValidation.initiateRegistration),
+  authController.initiateRegistration
+);
+
+/**
+ * POST /api/auth/signup/verify-otp
+ * Step 2: Verify OTP → create user account.
+ */
+router.post(
+  '/signup/verify-otp',
+  rateLimitAuth({ maxRequests: 10, windowMinutes: 15 }),
+  validate(authValidation.verifyRegistrationOtp),
+  authController.verifyRegistrationOtp
+);
+
+/**
+ * POST /api/auth/signup/resend-otp
+ * Resend registration OTP.
+ */
+router.post(
+  '/signup/resend-otp',
+  rateLimitAuth({ maxRequests: 5, windowMinutes: 15 }),
+  validate(authValidation.resendRegistrationOtp),
+  authController.resendRegistrationOtp
+);
+
+/**
  * POST /api/auth/resend-verification
  * Resend email verification link
  * Rate limit: 3 requests per hour per IP

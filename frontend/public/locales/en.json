@@ -2000,5 +2000,21 @@
   "quot.yourMessage": "Your Message",
   "quot.adminReply": "Admin Reply",
 
-  "myQuotations.adminReply": "Admin Reply"
+  "myQuotations.adminReply": "Admin Reply",
+
+  "regOtpTitle": "Verify Your Email",
+  "regOtpSubtitle": "We sent a 6-digit code to",
+  "regOtpEnterCode": "Enter verification code",
+  "regOtpResend": "Resend code",
+  "regOtpResendIn": "Resend in",
+  "regOtpSeconds": "s",
+  "regOtpVerify": "Verify & Create Account",
+  "regOtpVerifying": "Verifying...",
+  "regOtpChangeEmail": "Change Email",
+  "regOtpBackToSignup": "Back to Sign Up",
+  "regOtpExpired": "Code expired. Please request a new one.",
+  "regOtpSuccess": "Account created! Please log in.",
+  "regOtpCodeRequired": "Please enter the 6-digit code",
+  "regOtpInvalidFormat": "Code must be 6 digits",
+  "regOtpDidntReceive": "Didn't receive the code?"
 }

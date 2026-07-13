@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/auth.store';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ROUTES } from '@/utils/constants';
-import type { RegisterRequest } from '@/types';
 import { MultiStepRegistrationForm } from '@/components/auth/MultiStepRegistrationForm';
+import authService from '@/services/auth.service';
+import toast from 'react-hot-toast';
 
 export const dynamic = 'force-dynamic';
 
 export default function RegisterPage() {
-  const { register, isSubmitting } = useAuth();
   const { isAuthenticated, user, isLoading } = useAuthStore();
   const { t, isRTL } = useLanguage();
   const router = useRouter();
   const redirectHandled = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isLoading || redirectHandled.current) return;
@@ -47,19 +47,29 @@ export default function RegisterPage() {
     password: string;
     confirmPassword: string;
   }) => {
-    redirectHandled.current = true;
+    try {
+      setIsSubmitting(true);
+      const result = await authService.initiateRegistration({
+        fullName:    data.fullName,
+        email:       data.email,
+        phoneNumber: data.phoneNumber,
+        address:     data.address,
+        location:    data.location,
+        companyName: data.companyName,
+        password:    data.password,
+      });
 
-    const payload: RegisterRequest = {
-      fullName: data.fullName,
-      email: data.email,
-      phoneNumber: data.phoneNumber,
-      address: data.address,
-      location: data.location,
-      companyName: data.companyName,
-      password: data.password,
-    };
+      // Store session token for OTP page
+      sessionStorage.setItem('reg_session_token', result.registrationSessionToken);
+      sessionStorage.setItem('reg_email', result.email);
 
-    await register(payload);
+      router.push('/verify-registration');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Registration failed';
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

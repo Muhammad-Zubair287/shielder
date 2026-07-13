@@ -36,6 +36,9 @@ import type {
   ChangeVerificationEmailRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
+  InitiateRegistrationRequest,
+  VerifyRegistrationOtpRequest,
+  ResendRegistrationOtpRequest,
 } from './auth.types';
 
 type SanitizedAuthUser = {
@@ -77,6 +80,10 @@ export class AuthService {
   private static readonly VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
   private static readonly EMAIL_VERIFICATION_SESSION_EXPIRY_MINUTES = 15;
   private static readonly EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
+  private static readonly REGISTRATION_OTP_EXPIRY_MINUTES = 10;
+  private static readonly REGISTRATION_OTP_MAX_ATTEMPTS = 5;
+  private static readonly REGISTRATION_OTP_MAX_RESENDS = 3;
+  private static readonly REGISTRATION_OTP_RESEND_COOLDOWN_SECONDS = 60;
 
   private static hasUsableEmailConfig(): boolean {
     const provider = (env.EMAIL_PROVIDER || 'smtp').toLowerCase();
@@ -371,6 +378,265 @@ export class AuthService {
       logger.error('Registration error:', error);
       throw error;
     }
+  }
+
+  /**
+   * STEP 1 — INITIATE REGISTRATION
+   * Validate all data, send OTP, store pending registration.
+   * NO user is created here.
+   */
+  static async initiateRegistration(
+    data: InitiateRegistrationRequest,
+    locale: string = 'en'
+  ): Promise<{ registrationSessionToken: string; email: string; expiresInMinutes: number }> {
+    // Sanitize
+    data.fullName    = sanitizeString(data.fullName);
+    data.address     = sanitizeString(data.address);
+    data.companyName = sanitizeString(data.companyName as string);
+    data.location    = sanitizeString(data.location as string);
+    data.phoneNumber = sanitizeString(data.phoneNumber);
+
+    const email = data.email.toLowerCase().trim();
+
+    // Reject if email already has an active account
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && !existing.deletedAt) {
+      throw new ConflictError(t('auth.registrationEmailExists', locale));
+    }
+
+    // Validate password strength against admin-configured rules
+    await this.validatePasswordWithSettings(data.password);
+
+    // Clean up any previous pending registration for this email
+    await prisma.pendingRegistration.deleteMany({ where: { email } });
+
+    // Hash password immediately so we never store plaintext
+    const passwordHash = await bcrypt.hash(data.password, this.SALT_ROUNDS);
+
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Session token returned to client to identify this pending registration
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+
+    const expiresAt = new Date(Date.now() + this.REGISTRATION_OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await prisma.pendingRegistration.create({
+      data: {
+        sessionToken,
+        email,
+        passwordHash,
+        fullName:          data.fullName,
+        phoneNumber:       data.phoneNumber,
+        address:           data.address,
+        location:          data.location || null,
+        companyName:       data.companyName || null,
+        preferredLanguage: data.preferredLanguage || 'en',
+        otpHash,
+        expiresAt,
+      },
+    });
+
+    // Send OTP email (blocking — we want to know if it fails before returning)
+    const emailSent = await emailService.sendRegistrationOtpEmail(
+      email,
+      data.fullName,
+      otp,
+      this.REGISTRATION_OTP_EXPIRY_MINUTES
+    );
+
+    if (!emailSent) {
+      // Roll back pending registration if email delivery failed
+      await prisma.pendingRegistration.delete({ where: { sessionToken } }).catch(() => {});
+      throw new BadRequestError('Unable to send verification email. Please try again later.');
+    }
+
+    logger.info(`Registration OTP sent to ${email}`);
+
+    // Periodically clean up expired records (non-blocking)
+    void this.cleanupExpiredPendingRegistrations();
+
+    return {
+      registrationSessionToken: sessionToken,
+      email,
+      expiresInMinutes: this.REGISTRATION_OTP_EXPIRY_MINUTES,
+    };
+  }
+
+  /**
+   * STEP 2 — VERIFY REGISTRATION OTP
+   * On success: create user, mark email verified, return success message.
+   */
+  static async verifyRegistrationOtp(
+    data: VerifyRegistrationOtpRequest,
+    locale: string = 'en'
+  ): Promise<void> {
+    const pending = await prisma.pendingRegistration.findUnique({
+      where: { sessionToken: data.registrationSessionToken },
+    });
+
+    if (!pending) {
+      throw new BadRequestError(t('auth.registrationSessionNotFound', locale));
+    }
+
+    // Expired?
+    if (new Date() > pending.expiresAt) {
+      await prisma.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
+      throw new BadRequestError(t('auth.registrationOtpExpired', locale));
+    }
+
+    // Too many attempts?
+    if (pending.otpAttempts >= this.REGISTRATION_OTP_MAX_ATTEMPTS) {
+      throw new BadRequestError(t('auth.registrationOtpMaxAttempts', locale));
+    }
+
+    // Verify OTP
+    const valid = await bcrypt.compare(data.code.trim(), pending.otpHash);
+
+    if (!valid) {
+      const newAttempts = pending.otpAttempts + 1;
+      await prisma.pendingRegistration.update({
+        where: { id: pending.id },
+        data: { otpAttempts: newAttempts },
+      });
+
+      const remaining = this.REGISTRATION_OTP_MAX_ATTEMPTS - newAttempts;
+      if (remaining <= 0) {
+        throw new BadRequestError(t('auth.registrationOtpMaxAttempts', locale));
+      }
+      throw new BadRequestError(
+        t('auth.registrationOtpInvalid', locale) +
+        ' ' + t('auth.registrationOtpAttemptsLeft', locale).replace('{{count}}', String(remaining))
+      );
+    }
+
+    // OTP valid — double-check email isn't taken (race condition guard)
+    const emailTaken = await prisma.user.findUnique({ where: { email: pending.email } });
+    if (emailTaken && !emailTaken.deletedAt) {
+      await prisma.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
+      throw new ConflictError(t('auth.registrationEmailExists', locale));
+    }
+
+    // Create user + profile atomically
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email:            pending.email,
+          passwordHash:     pending.passwordHash,
+          role:             'USER',
+          status:           'ACTIVE',
+          emailVerified:    true,
+          emailVerifiedAt:  new Date(),
+          verificationStatus: 'VERIFIED',
+          requiresEmailReverification: false,
+          profile: {
+            create: {
+              fullName:          pending.fullName,
+              phoneNumber:       pending.phoneNumber,
+              address:           pending.address,
+              location:          pending.location,
+              companyName:       pending.companyName,
+              preferredLanguage: pending.preferredLanguage,
+            },
+          },
+        },
+      });
+
+      // Audit log (non-critical)
+      await tx.auditLog.create({
+        data: {
+          userId:     user.id,
+          action:     'USER_REGISTERED',
+          entityType: 'USER',
+          entityId:   user.id,
+        },
+      }).catch(() => {});
+
+      // Delete pending registration
+      await tx.pendingRegistration.delete({ where: { id: pending.id } });
+    });
+
+    logger.info(`Registration completed for ${pending.email}`);
+  }
+
+  /**
+   * RESEND REGISTRATION OTP
+   */
+  static async resendRegistrationOtp(
+    data: ResendRegistrationOtpRequest,
+    locale: string = 'en'
+  ): Promise<{ email: string; expiresInMinutes: number }> {
+    const pending = await prisma.pendingRegistration.findUnique({
+      where: { sessionToken: data.registrationSessionToken },
+    });
+
+    if (!pending) {
+      throw new BadRequestError(t('auth.registrationSessionNotFound', locale));
+    }
+
+    if (new Date() > pending.expiresAt) {
+      await prisma.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
+      throw new BadRequestError(t('auth.registrationSessionNotFound', locale));
+    }
+
+    // Resend cooldown
+    if (pending.lastResendAt) {
+      const secondsSinceLast = (Date.now() - pending.lastResendAt.getTime()) / 1000;
+      if (secondsSinceLast < this.REGISTRATION_OTP_RESEND_COOLDOWN_SECONDS) {
+        const wait = Math.ceil(this.REGISTRATION_OTP_RESEND_COOLDOWN_SECONDS - secondsSinceLast);
+        throw new TooManyRequestsError(
+          t('auth.registrationResendCooldown', locale).replace('{{seconds}}', String(wait))
+        );
+      }
+    }
+
+    // Max resends
+    if (pending.resendCount >= this.REGISTRATION_OTP_MAX_RESENDS) {
+      throw new TooManyRequestsError(t('auth.registrationResendMaxReached', locale));
+    }
+
+    // Generate new OTP and reset attempts + extend expiry
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + this.REGISTRATION_OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await prisma.pendingRegistration.update({
+      where: { id: pending.id },
+      data: {
+        otpHash,
+        otpAttempts: 0,
+        resendCount: pending.resendCount + 1,
+        lastResendAt: new Date(),
+        expiresAt,
+      },
+    });
+
+    const emailSent = await emailService.sendRegistrationOtpEmail(
+      pending.email,
+      pending.fullName,
+      otp,
+      this.REGISTRATION_OTP_EXPIRY_MINUTES
+    );
+
+    if (!emailSent) {
+      throw new BadRequestError('Unable to send verification email. Please try again later.');
+    }
+
+    logger.info(`Registration OTP resent to ${pending.email} (resend #${pending.resendCount + 1})`);
+
+    return { email: pending.email, expiresInMinutes: this.REGISTRATION_OTP_EXPIRY_MINUTES };
+  }
+
+  /**
+   * Cleanup expired pending registrations (run after each initiate call)
+   */
+  private static async cleanupExpiredPendingRegistrations(): Promise<void> {
+    try {
+      await prisma.pendingRegistration.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+      });
+    } catch { /* non-critical */ }
   }
 
   /**

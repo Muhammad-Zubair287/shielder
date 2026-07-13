@@ -30,6 +30,9 @@ import type {
   ResetPasswordRequest,
   ChangePasswordRequest,
   DeviceInfo,
+  InitiateRegistrationRequest,
+  VerifyRegistrationOtpRequest,
+  ResendRegistrationOtpRequest,
 } from './auth.types';
 
 const getCookieValue = (cookieHeader: string | undefined, cookieName: string): string | undefined => {
@@ -700,6 +703,56 @@ class AuthController {
     res.status(200).json({
       success: true,
       message: t('auth.emailUpdatedVerificationSent', req.locale),
+      data: result,
+    });
+  });
+
+  /**
+   * POST /api/auth/signup/initiate
+   * Step 1: Validate data, send OTP. User NOT created yet.
+   */
+  initiateRegistration = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const locale = (req as any).locale || 'en';
+    const data: InitiateRegistrationRequest = req.body;
+
+    const result = await AuthService.initiateRegistration(data, locale);
+
+    res.status(200).json({
+      success: true,
+      message: t('auth.registrationOtpSent', locale).replace('{{email}}', result.email),
+      data: result,
+    });
+  });
+
+  /**
+   * POST /api/auth/signup/verify-otp
+   * Step 2: Verify OTP → create user → mark email verified.
+   */
+  verifyRegistrationOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const locale = (req as any).locale || 'en';
+    const data: VerifyRegistrationOtpRequest = req.body;
+
+    await AuthService.verifyRegistrationOtp(data, locale);
+
+    res.status(200).json({
+      success: true,
+      message: t('auth.registrationOtpVerified', locale),
+    });
+  });
+
+  /**
+   * POST /api/auth/signup/resend-otp
+   * Resend OTP with rate limiting.
+   */
+  resendRegistrationOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const locale = (req as any).locale || 'en';
+    const data: ResendRegistrationOtpRequest = req.body;
+
+    const result = await AuthService.resendRegistrationOtp(data, locale);
+
+    res.status(200).json({
+      success: true,
+      message: t('auth.registrationResendSuccess', locale).replace('{{email}}', result.email),
       data: result,
     });
   });

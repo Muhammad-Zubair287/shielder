@@ -2001,5 +2001,21 @@
   "quot.yourMessage": "رسالتك",
   "quot.adminReply": "رد المسؤول",
 
-  "myQuotations.adminReply": "رد المسؤول"
+  "myQuotations.adminReply": "رد المسؤول",
+
+  "regOtpTitle": "تحقق من بريدك الإلكتروني",
+  "regOtpSubtitle": "أرسلنا رمزاً مكوناً من 6 أرقام إلى",
+  "regOtpEnterCode": "أدخل رمز التحقق",
+  "regOtpResend": "إعادة الإرسال",
+  "regOtpResendIn": "إعادة الإرسال بعد",
+  "regOtpSeconds": "ث",
+  "regOtpVerify": "تحقق وإنشاء الحساب",
+  "regOtpVerifying": "جارٍ التحقق...",
+  "regOtpChangeEmail": "تغيير البريد الإلكتروني",
+  "regOtpBackToSignup": "العودة إلى التسجيل",
+  "regOtpExpired": "انتهت صلاحية الرمز. يرجى طلب رمز جديد.",
+  "regOtpSuccess": "تم إنشاء الحساب! يرجى تسجيل الدخول.",
+  "regOtpCodeRequired": "يرجى إدخال الرمز المكون من 6 أرقام",
+  "regOtpInvalidFormat": "يجب أن يتكون الرمز من 6 أرقام",
+  "regOtpDidntReceive": "لم تستلم الرمز؟"
 }

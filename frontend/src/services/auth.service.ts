@@ -64,6 +64,44 @@ class AuthService {
   }
 
   /**
+   * Initiate OTP-based registration (Step 1 — no user created)
+   */
+  async initiateRegistration(data: {
+    email: string;
+    password: string;
+    fullName: string;
+    phoneNumber: string;
+    address: string;
+    location?: string;
+    companyName?: string;
+    preferredLanguage?: string;
+  }): Promise<{ registrationSessionToken: string; email: string; expiresInMinutes: number }> {
+    const res = await apiClient.post(API_ENDPOINTS.AUTH.SIGNUP_INITIATE, data, { timeout: 120000 });
+    return res.data.data;
+  }
+
+  /**
+   * Verify registration OTP and create the user account (Step 2)
+   */
+  async verifyRegistrationOtp(registrationSessionToken: string, code: string): Promise<{ message: string }> {
+    const res = await apiClient.post(API_ENDPOINTS.AUTH.SIGNUP_VERIFY_OTP, {
+      registrationSessionToken,
+      code,
+    });
+    return res.data;
+  }
+
+  /**
+   * Resend registration OTP
+   */
+  async resendRegistrationOtp(registrationSessionToken: string): Promise<{ message: string; data: { email: string; expiresInMinutes: number } }> {
+    const res = await apiClient.post(API_ENDPOINTS.AUTH.SIGNUP_RESEND_OTP, {
+      registrationSessionToken,
+    });
+    return res.data;
+  }
+
+  /**
    * Login user
    */
   async login(data: LoginRequest): Promise<AuthResponse> {

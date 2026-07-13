@@ -236,4 +236,56 @@ export const authValidation = {
     }),
     newEmail: emailSchema,
   }),
+
+  /**
+   * Initiate registration (Step 1 — sends OTP, no user created)
+   */
+  initiateRegistration: Joi.object({
+    email: emailSchema,
+    password: passwordSchema,
+    fullName: sharedValidationSchemas.textNoHtml
+      .max(100)
+      .pattern(/^[\p{L}\s.'\-]{2,100}$/u)
+      .required()
+      .messages({
+        'any.required': 'Full name is required',
+        'string.pattern.base': 'Invalid full name format',
+      }),
+    phoneNumber: Joi.string()
+      .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
+      .required()
+      .messages({
+        'any.required': 'Phone number is required',
+        'string.pattern.base': 'Please provide a valid phone number',
+      }),
+    address: sharedValidationSchemas.textNoHtml.max(255).required().messages({
+      'any.required': 'Address is required',
+    }),
+    location:          sharedValidationSchemas.textNoHtml.max(255).optional(),
+    companyName:       sharedValidationSchemas.textNoHtml.max(100).optional(),
+    preferredLanguage: Joi.string().valid('en', 'ar').default('en'),
+  }).unknown(false),
+
+  /**
+   * Verify registration OTP (Step 2 — creates user)
+   */
+  verifyRegistrationOtp: Joi.object({
+    registrationSessionToken: Joi.string().required().messages({
+      'any.required': 'Session token is required',
+    }),
+    code: Joi.string().length(6).pattern(/^\d{6}$/).required().messages({
+      'any.required': 'Verification code is required',
+      'string.length': 'Code must be 6 digits',
+      'string.pattern.base': 'Code must be numeric',
+    }),
+  }),
+
+  /**
+   * Resend registration OTP
+   */
+  resendRegistrationOtp: Joi.object({
+    registrationSessionToken: Joi.string().required().messages({
+      'any.required': 'Session token is required',
+    }),
+  }),
 };

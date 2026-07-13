@@ -979,3 +979,26 @@ model Application {
   @@index([platform])
   @@map("applications")
 }
+
+model PendingRegistration {
+  id                String    @id @default(uuid())
+  sessionToken      String    @unique @map("session_token")
+  email             String
+  passwordHash      String    @map("password_hash")
+  fullName          String    @map("full_name")
+  phoneNumber       String    @map("phone_number")
+  address           String
+  location          String?
+  companyName       String?   @map("company_name")
+  preferredLanguage String    @default("en") @map("preferred_language")
+  otpHash           String    @map("otp_hash")
+  otpAttempts       Int       @default(0) @map("otp_attempts")
+  resendCount       Int       @default(0) @map("resend_count")
+  lastResendAt      DateTime? @map("last_resend_at")
+  expiresAt         DateTime  @map("expires_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("pending_registrations")
+}

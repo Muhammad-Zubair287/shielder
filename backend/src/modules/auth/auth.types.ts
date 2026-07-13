@@ -161,6 +161,35 @@ export interface AuthResponse {
 }
 
 /**
+ * Initiate Registration Request (Step 1 — pre-OTP)
+ */
+export interface InitiateRegistrationRequest {
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber: string;
+  address: string;
+  location?: string;
+  companyName?: string;
+  preferredLanguage?: string;
+}
+
+/**
+ * Verify Registration OTP Request (Step 2 — confirms OTP, creates user)
+ */
+export interface VerifyRegistrationOtpRequest {
+  registrationSessionToken: string;
+  code: string;
+}
+
+/**
+ * Resend Registration OTP Request
+ */
+export interface ResendRegistrationOtpRequest {
+  registrationSessionToken: string;
+}
+
+/**
  * User Session
  */
 export interface UserSession {
