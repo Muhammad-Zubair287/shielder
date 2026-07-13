@@ -11,7 +11,7 @@ type BackRule = {
 
 const BACK_RULES: BackRule[] = [
   { prefix: '/products/', fallback: '/products' },
-  { prefix: '/my-quotation/', fallback: '/my-quotation' },
+
   { prefix: '/order-confirmation/', fallback: '/my-orders' },
   { prefix: '/reset-password/', fallback: '/login' },
   { prefix: '/verify-email/', fallback: '/login' },

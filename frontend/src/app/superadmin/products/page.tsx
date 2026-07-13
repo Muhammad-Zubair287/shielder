@@ -34,6 +34,7 @@ import { resolveProductDescription, resolveProductName, translateSpecKey } from 
 import { ApiErrorResponse } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 
 // --- Types ---
 interface Product {
@@ -289,6 +290,8 @@ const ProductManagement = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useSyncRefetch(fetchData, 'products');
 
   // Close menu on click outside
   useEffect(() => {

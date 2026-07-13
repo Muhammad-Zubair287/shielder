@@ -80,6 +80,17 @@ body {
   font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
 }
 
+/* Remove native number-input spinners globally — custom +/- buttons are used instead */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

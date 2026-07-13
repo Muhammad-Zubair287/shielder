@@ -15,6 +15,17 @@ import { quotationService } from './quotation.service';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { AuthRequest } from '@/types/global';
 import { t } from '@/common/i18n';
+import { emitToUser, emitToRole } from '@/modules/realtime/socket.service';
+import { prisma } from '@/config/database';
+
+async function findUserIdByEmail(email: string): Promise<string | null> {
+  try {
+    const user = await prisma.user.findFirst({ where: { email }, select: { id: true } });
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export class QuotationController {
 
@@ -158,6 +169,8 @@ export class QuotationController {
         const userId = req.user!.id;
         const quotation = await quotationService.createQuotation(req.body, userId);
         res.status(201).json({ success: true, data: quotation });
+        void emitToRole('ADMIN', 'quotation:created', { id: quotation.id, quotationNumber: quotation.quotationNumber });
+        void emitToRole('SUPER_ADMIN', 'quotation:created', { id: quotation.id, quotationNumber: quotation.quotationNumber });
     });
 
     /**
@@ -209,6 +222,11 @@ export class QuotationController {
         const userId = req.user!.id;
         const quotation = await quotationService.updateQuotation(req.params.id as string, req.body, userId);
         res.json({ success: true, data: quotation });
+        const payload = { id: quotation.id, quotationNumber: quotation.quotationNumber, status: quotation.status };
+        void emitToRole('ADMIN', 'quotation:updated', payload);
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', payload);
+        const customerId = (quotation as any).createdById ? await findUserIdByEmail((quotation as any).customerEmail) : null;
+        if (customerId) void emitToUser(customerId, 'quotation:updated', payload);
     });
 
     /**
@@ -231,6 +249,8 @@ export class QuotationController {
         const userId = req.user!.id;
         const result = await quotationService.deleteQuotation(req.params.id as string, userId);
         res.json({ success: true, data: result });
+        void emitToRole('ADMIN', 'quotation:updated', { id: req.params.id });
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', { id: req.params.id });
     });
 
     /**
@@ -254,6 +274,11 @@ export class QuotationController {
         const { adminReply } = req.body as { adminReply?: string };
         const quotation = await quotationService.sendQuotation(req.params.id as string, userId, adminReply);
         res.json({ success: true, data: quotation, message: t('quotation.sent', req.locale) });
+        const payload = { id: quotation.id, quotationNumber: quotation.quotationNumber, status: quotation.status };
+        void emitToRole('ADMIN', 'quotation:updated', payload);
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', payload);
+        const customerId = await findUserIdByEmail((quotation as any).customerEmail);
+        if (customerId) void emitToUser(customerId, 'quotation:updated', payload);
     });
 
     /**
@@ -276,6 +301,11 @@ export class QuotationController {
         const userId = req.user!.id;
         const quotation = await quotationService.approveQuotation(req.params.id as string, userId);
         res.json({ success: true, data: quotation, message: t('quotation.approved', req.locale) });
+        const payload = { id: quotation.id, quotationNumber: quotation.quotationNumber, status: quotation.status };
+        void emitToRole('ADMIN', 'quotation:updated', payload);
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', payload);
+        const customerId = await findUserIdByEmail((quotation as any).customerEmail);
+        if (customerId) void emitToUser(customerId, 'quotation:updated', payload);
     });
 
     /**
@@ -308,6 +338,11 @@ export class QuotationController {
         const { reason } = req.body;
         const quotation = await quotationService.rejectQuotation(req.params.id as string, reason, userId);
         res.json({ success: true, data: quotation, message: t('quotation.rejected', req.locale) });
+        const payload = { id: quotation.id, quotationNumber: quotation.quotationNumber, status: quotation.status };
+        void emitToRole('ADMIN', 'quotation:updated', payload);
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', payload);
+        const customerId = await findUserIdByEmail((quotation as any).customerEmail);
+        if (customerId) void emitToUser(customerId, 'quotation:updated', payload);
     });
 
     /**
@@ -330,6 +365,12 @@ export class QuotationController {
         const userId = req.user!.id;
         const result = await quotationService.convertToOrder(req.params.id as string, userId);
         res.status(201).json({ success: true, data: result, message: t('quotation.converted', req.locale) });
+        const quotation = (result as any).quotation ?? result;
+        const payload = { id: quotation.id, quotationNumber: quotation.quotationNumber, status: quotation.status };
+        void emitToRole('ADMIN', 'quotation:updated', payload);
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', payload);
+        const customerId = await findUserIdByEmail((quotation as any).customerEmail);
+        if (customerId) void emitToUser(customerId, 'quotation:updated', payload);
     });
 
     /**
@@ -361,6 +402,11 @@ export class QuotationController {
         const { expiryDate } = req.body;
         const quotation = await quotationService.reactivateExpired(req.params.id as string, expiryDate, userId);
         res.json({ success: true, data: quotation, message: t('quotation.reactivated', req.locale) });
+        const payload = { id: quotation.id, quotationNumber: quotation.quotationNumber, status: quotation.status };
+        void emitToRole('ADMIN', 'quotation:updated', payload);
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', payload);
+        const customerId = await findUserIdByEmail((quotation as any).customerEmail);
+        if (customerId) void emitToUser(customerId, 'quotation:updated', payload);
     });
 
     /**
@@ -393,6 +439,8 @@ export class QuotationController {
     expireStale = asyncHandler(async (req: Request, res: Response) => {
         const result = await quotationService.expireStaleQuotations();
         res.json({ success: true, data: result, message: t('quotation.expired', req.locale, { count: result.expired }) });
+        void emitToRole('ADMIN', 'quotation:updated', { expired: result.expired });
+        void emitToRole('SUPER_ADMIN', 'quotation:updated', { expired: result.expired });
     });
 }
 

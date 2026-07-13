@@ -45,6 +45,10 @@ export type RealtimeEvent =
   | 'subcategory:created'
   | 'subcategory:updated'
   | 'subcategory:deleted'
+  // Admin — user management
+  | 'user:created'
+  | 'user:updated'
+  | 'user:deleted'
   // Notifications
   | 'notification:new'
   // Settings / public content

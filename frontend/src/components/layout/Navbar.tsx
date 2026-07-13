@@ -23,14 +23,22 @@ export const Navbar = () => {
   // Dynamic Title Logic
   const getPageTitle = (path: string) => {
     if (path === '/superadmin' || path === '/admin' || path === '/dashboard') return 'Dashboard Overview';
-    
+
     const parts = path.split('/').filter(Boolean);
-    const lastPart = parts[parts.length - 1];
-    
-    if (!lastPart) return 'Dashboard';
-    
-    // Formatting: users -> Users, order-details -> Order Details
-    return lastPart
+
+    // If the last segment looks like a UUID or numeric ID, use the parent segment as context
+    const uuidRe = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+    const isId = (s: string) => uuidRe.test(s) || /^\d+$/.test(s);
+
+    let labelPart = parts[parts.length - 1];
+    if (isId(labelPart) && parts.length >= 2) {
+      const parent = parts[parts.length - 2];
+      // singularize simple plurals: orders→Order, products→Product, quotations→Quotation
+      const singular = parent.endsWith('s') ? parent.slice(0, -1) : parent;
+      return singular.charAt(0).toUpperCase() + singular.slice(1).replace(/-/g, ' ') + ' Details';
+    }
+
+    return labelPart
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 import SARSymbol from '@/components/SARSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -35,16 +36,18 @@ export default function ViewQuotationPage() {
     const [reactivateDate, setReactivateDate] = useState('');
     const [showReactivateModal, setShowReactivateModal] = useState(false);
 
-    const fetchQuotation = async () => {
+    const fetchQuotation = useCallback(async () => {
         try {
             setLoading(true);
             const res = await quotationService.getById(id as string);
             setQuotation(res.data.data);
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
-    };
+    }, [id]);
 
-    useEffect(() => { fetchQuotation(); }, [id]);
+    useSyncRefetch(fetchQuotation, 'quotations');
+
+    useEffect(() => { fetchQuotation(); }, [fetchQuotation]);
 
     const handleAction = async (action: string) => {
         try {
@@ -130,41 +133,58 @@ export default function ViewQuotationPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:shadow-none print:border-none">
                 {/* Document Header */}
                 <div className="bg-shielder-dark p-8 text-white print:p-6">
-                    <div className="flex justify-between items-start">
+                    <div className={`flex justify-between items-start ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <div>
                             <h2 className="text-3xl font-black tracking-widest uppercase">SHIELDER</h2>
-                            <p className="text-white/60 text-sm mt-1">Inventory Management System</p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-white/60 text-xs uppercase font-bold tracking-widest">Quotation</p>
-                            <p className="text-2xl font-black mt-1">{quotation.quotationNumber}</p>
-                            <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>{quotation.status}</span>
+                        <div className={isRTL ? 'text-left' : 'text-right'}>
+                            <p className="text-white/60 text-xs uppercase font-bold tracking-widest">{t('quotView.quotation')}</p>
+                            <p className="text-2xl font-black mt-1"><span dir="ltr" className="inline-block">{quotation.quotationNumber}</span></p>
+                            <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-black uppercase ${STATUS_COLORS[quotation.status]}`}>
+                                {t(`myQuotations.status.${quotation.status?.toLowerCase()}`) || quotation.status}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Details Grid */}
                 <div className="p-8 print:p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Bill To</p>
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 ${isRTL ? 'direction-rtl' : ''}`}>
+                        <div className={isRTL ? 'md:order-2 text-right' : ''}>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">{t('quotView.billTo')}</p>
                             <p className="font-black text-shielder-dark text-lg">{quotation.customerName}</p>
-                            {quotation.companyName && <p className="text-gray-500 text-sm">{quotation.companyName}</p>}
-                            {quotation.customerEmail && <p className="text-gray-500 text-sm">{quotation.customerEmail}</p>}
-                            {quotation.customerPhone && <p className="text-gray-500 text-sm">{quotation.customerPhone}</p>}
-                            {quotation.customerAddress && <p className="text-gray-500 text-sm mt-1">{quotation.customerAddress}</p>}
+                            {quotation.companyName && (
+                                <p className="text-gray-500 text-sm mt-1">
+                                    <span className="font-semibold text-gray-600">{t('quotView.companyName')}: </span>{quotation.companyName}
+                                </p>
+                            )}
+                            {quotation.customerEmail && (
+                                <p className="text-gray-500 text-sm">
+                                    <span className="font-semibold text-gray-600">{t('quotView.email')}: </span>{quotation.customerEmail}
+                                </p>
+                            )}
+                            {quotation.customerPhone && (
+                                <p className="text-gray-500 text-sm">
+                                    <span className="font-semibold text-gray-600">{t('quotView.phone')}: </span>{quotation.customerPhone}
+                                </p>
+                            )}
+                            {quotation.customerAddress && (
+                                <p className="text-gray-500 text-sm mt-1">
+                                    <span className="font-semibold text-gray-600">{t('quotView.address')}: </span>{quotation.customerAddress}
+                                </p>
+                            )}
                         </div>
-                        <div className="space-y-2 md:text-right">
-                            <div className="flex md:justify-end gap-6 text-sm">
-                                <span className="text-gray-400 font-medium">Date:</span>
+                        <div className={`space-y-2 ${isRTL ? 'md:order-1 text-left' : 'md:text-right'}`}>
+                            <div className={`flex gap-6 text-sm ${isRTL ? '' : 'md:justify-end'}`}>
+                                <span className="text-gray-400 font-medium">{t('quotView.date')}:</span>
                                 <span className="font-bold text-gray-700">{format(new Date(quotation.quotationDate || quotation.createdAt), 'MMM dd, yyyy')}</span>
                             </div>
-                            <div className="flex md:justify-end gap-6 text-sm">
-                                <span className="text-gray-400 font-medium">Expiry:</span>
+                            <div className={`flex gap-6 text-sm ${isRTL ? '' : 'md:justify-end'}`}>
+                                <span className="text-gray-400 font-medium">{t('quotView.expiry')}:</span>
                                 <span className={`font-bold ${quotation.status === 'EXPIRED' ? 'text-red-500' : 'text-orange-500'}`}>{format(new Date(quotation.expiryDate), 'MMM dd, yyyy')}</span>
                             </div>
-                            <div className="flex md:justify-end gap-6 text-sm">
-                                <span className="text-gray-400 font-medium">Created By:</span>
+                            <div className={`flex gap-6 text-sm ${isRTL ? '' : 'md:justify-end'}`}>
+                                <span className="text-gray-400 font-medium">{t('quotView.createdBy')}:</span>
                                 <span className="font-bold text-gray-700">{quotation.createdBy?.profile?.fullName || quotation.createdBy?.email || '—'}</span>
                             </div>
                         </div>
@@ -175,23 +195,23 @@ export default function ViewQuotationPage() {
                         <table className="w-full text-sm border-collapse">
                             <thead>
                                 <tr className="bg-gray-50 border-y border-gray-100">
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">#</th>
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Product</th>
-                                    <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Qty</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Unit Price</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Discount</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Total</th>
+                                    <th className={`${isRTL ? 'text-right' : 'text-left'} px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400`}>#</th>
+                                    <th className={`${isRTL ? 'text-right' : 'text-left'} px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400`}>{t('quotView.product')}</th>
+                                    <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">{t('quotView.qty')}</th>
+                                    <th className={`${isRTL ? 'text-left' : 'text-right'} px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400`}>{t('quotView.unitPrice')}</th>
+                                    <th className={`${isRTL ? 'text-left' : 'text-right'} px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400`}>{t('quotView.discount')}</th>
+                                    <th className={`${isRTL ? 'text-left' : 'text-right'} px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400`}>{t('quotView.total')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {quotation.items?.map((item: any, idx: number) => (
                                     <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                        <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
-                                        <td className="px-4 py-3 font-medium text-gray-700">{item.productName}</td>
+                                        <td className={`px-4 py-3 text-gray-400 text-xs ${isRTL ? 'text-right' : 'text-left'}`}>{idx + 1}</td>
+                                        <td className={`px-4 py-3 font-medium text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>{item.productName}</td>
                                         <td className="px-4 py-3 text-center text-gray-600">{item.quantity}</td>
-                                        <td className="px-4 py-3 text-right text-gray-600"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.unitPrice).toFixed(2)}</span></td>
-                                        <td className="px-4 py-3 text-right text-green-600">-<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.discount || 0).toFixed(2)}</span></td>
-                                        <td className="px-4 py-3 text-right font-black text-shielder-dark"><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.totalPrice).toFixed(2)}</span></td>
+                                        <td className={`px-4 py-3 text-gray-600 ${isRTL ? 'text-left' : 'text-right'}`}><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.unitPrice).toFixed(2)}</span></td>
+                                        <td className={`px-4 py-3 text-green-600 ${isRTL ? 'text-left' : 'text-right'}`}>-<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.discount || 0).toFixed(2)}</span></td>
+                                        <td className={`px-4 py-3 font-black text-shielder-dark ${isRTL ? 'text-left' : 'text-right'}`}><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(item.totalPrice).toFixed(2)}</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -199,13 +219,13 @@ export default function ViewQuotationPage() {
                     </div>
 
                     {/* Totals */}
-                    <div className="flex justify-end mb-8">
+                    <div className={`flex mb-8 ${isRTL ? 'justify-start' : 'justify-end'}`}>
                         <div className="w-72 space-y-2 text-sm">
-                            <div className="flex justify-between text-gray-500"><span>Subtotal</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.subtotal).toFixed(2)}</span></div>
-                            <div className="flex justify-between text-green-600"><span>Discount</span><span>-<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.discount).toFixed(2)}</span></span></div>
-                            <div className="flex justify-between text-gray-500"><span>Tax</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.tax).toFixed(2)}</span></div>
+                            <div className="flex justify-between text-gray-500"><span>{t('quotView.subtotal')}</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.subtotal).toFixed(2)}</span></div>
+                            <div className="flex justify-between text-green-600"><span>{t('quotView.discount')}</span><span>-<span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.discount).toFixed(2)}</span></span></div>
+                            <div className="flex justify-between text-gray-500"><span>{t('quotView.tax')}</span><span className="inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.tax).toFixed(2)}</span></div>
                             <div className="flex justify-between font-black text-shielder-dark text-base border-t border-gray-200 pt-2">
-                                <span>GRAND TOTAL</span>
+                                <span>{t('quotView.grandTotal')}</span>
                                 <span className="text-shielder-primary text-xl inline-flex items-center gap-0.5"><SARSymbol />{Number(quotation.total).toFixed(2)}</span>
                             </div>
                         </div>
@@ -214,15 +234,15 @@ export default function ViewQuotationPage() {
                     {/* Notes & Terms */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {quotation.notes && (
-                            <div className="p-4 bg-orange-50 border-l-4 border-shielder-primary rounded-r-xl">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Notes</p>
-                                <p className="text-sm text-gray-600">{quotation.notes}</p>
+                            <div className={`p-4 bg-orange-50 rounded-xl ${isRTL ? 'border-r-4' : 'border-l-4'} border-shielder-primary ${isRTL ? 'rounded-l-xl' : 'rounded-r-xl'}`}>
+                                <p className={`text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('quotView.notes')}</p>
+                                <p className={`text-sm text-gray-600 ${isRTL ? 'text-right' : ''}`}>{quotation.notes}</p>
                             </div>
                         )}
                         {quotation.terms && (
-                            <div className="p-4 bg-blue-50 border-l-4 border-shielder-secondary rounded-r-xl">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Terms & Conditions</p>
-                                <p className="text-sm text-gray-600">{quotation.terms}</p>
+                            <div className={`p-4 bg-blue-50 rounded-xl ${isRTL ? 'border-r-4' : 'border-l-4'} border-shielder-secondary ${isRTL ? 'rounded-l-xl' : 'rounded-r-xl'}`}>
+                                <p className={`text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('quotView.termsAndConditions')}</p>
+                                <p className={`text-sm text-gray-600 ${isRTL ? 'text-right' : ''}`}>{quotation.terms}</p>
                             </div>
                         )}
                     </div>
@@ -231,11 +251,11 @@ export default function ViewQuotationPage() {
                     <div className="mt-12 grid grid-cols-2 gap-12 border-t border-gray-100 pt-8">
                         <div>
                             <div className="h-12 border-b-2 border-gray-200 mb-2" />
-                            <p className="text-xs text-gray-400 font-medium">Authorized Signature</p>
+                            <p className="text-xs text-gray-400 font-medium">{t('quotView.authorizedSignature')}</p>
                         </div>
                         <div>
                             <div className="h-12 border-b-2 border-gray-200 mb-2" />
-                            <p className="text-xs text-gray-400 font-medium">Customer Acceptance</p>
+                            <p className="text-xs text-gray-400 font-medium">{t('quotView.customerAcceptance')}</p>
                         </div>
                     </div>
                 </div>
@@ -243,7 +263,7 @@ export default function ViewQuotationPage() {
 
             {/* Activity Timeline */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:hidden">
-                <h3 className="text-sm font-black uppercase tracking-widest text-shielder-dark mb-4 flex items-center gap-2"><Activity size={16} />Activity Timeline</h3>
+                <h3 className={`text-sm font-black uppercase tracking-widest text-shielder-dark mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}><Activity size={16} />{t('quotView.activityTimeline')}</h3>
                 <div className="space-y-3">
                     {(quotation.activities || []).map((act: any) => (
                         <div key={act.id} className="flex items-start gap-3">

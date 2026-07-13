@@ -39,6 +39,9 @@ type RealtimeEvent =
   | 'subcategory:created'
   | 'subcategory:updated'
   | 'subcategory:deleted'
+  | 'user:created'
+  | 'user:updated'
+  | 'user:deleted'
   | 'notification:new'
   | 'settings:updated'
   | 'privacy-policy:updated';
@@ -60,6 +63,9 @@ const EVENT_QUERY_MAP: Partial<Record<RealtimeEvent, string[]>> = {
   'subcategory:created':['subcategories'],
   'subcategory:updated':['subcategories'],
   'subcategory:deleted':['subcategories'],
+  'user:created':       ['superadmin-users-list', 'superadmin-users-stats'],
+  'user:updated':       ['superadmin-users-list', 'superadmin-users-stats'],
+  'user:deleted':       ['superadmin-users-list', 'superadmin-users-stats'],
   'notification:new':   ['notifications'],
   'settings:updated':   ['settings'],
   'privacy-policy:updated': ['privacy-policy'],
@@ -80,6 +86,9 @@ const EVENT_MODULE_MAP: Partial<Record<RealtimeEvent, string>> = {
   'subcategory:created':'subcategories',
   'subcategory:updated':'subcategories',
   'subcategory:deleted':'subcategories',
+  'user:created':       'users',
+  'user:updated':       'users',
+  'user:deleted':       'users',
 };
 
 export function useRealtimeSync(): void {

@@ -22,6 +22,7 @@ import PDFDocument from 'pdfkit';
 import { customerQuotationRepository } from './customer-quotation.repository';
 import NotificationService from '../notification/notification.service';
 import { CustomerQuotationBasketService } from '../customer-quotation-basket/customer-quotation-basket.service';
+import { emitToUser, emitToRole } from '@/modules/realtime/socket.service';
 
 type RequestedQuotationItem = {
   productId: string;
@@ -129,7 +130,7 @@ export class CustomerQuotationController {
   static async generate(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;
-      const lang   = req.user!.preferredLanguage || req.locale || 'en';
+      const lang   = req.locale || req.user!.preferredLanguage || 'en';
 
       const { companyName, vatNumber, address, products, items, notes } = req.body;
       
@@ -222,11 +223,17 @@ export class CustomerQuotationController {
 
       const sanitizedNotes = typeof notes === 'string' ? notes.trim() : '';
 
+      const userProfile = await prisma.userProfile.findUnique({
+        where: { userId },
+        select: { fullName: true },
+      });
+      const resolvedCustomerName = userProfile?.fullName?.trim() || req.user!.email;
+
       const quotation = await prisma.quotation.create({
         data: {
           quotationNumber,
           status: QuotationStatus.PENDING,
-          customerName:    req.user!.email,
+          customerName:    resolvedCustomerName,
           customerEmail:   req.user!.email,
           companyName:     companyName.trim(),
           customerAddress: normalizedAddress,
@@ -311,6 +318,9 @@ export class CustomerQuotationController {
           items:     enrichedItems,
         },
       });
+      void emitToUser(userId, 'quotation:created', { id: quotation.id, quotationNumber: quotation.quotationNumber });
+      void emitToRole('ADMIN', 'quotation:created', { id: quotation.id, quotationNumber: quotation.quotationNumber, customerEmail: req.user!.email });
+      void emitToRole('SUPER_ADMIN', 'quotation:created', { id: quotation.id, quotationNumber: quotation.quotationNumber, customerEmail: req.user!.email });
     } catch (err) {
       next(err);
     }
@@ -344,7 +354,7 @@ export class CustomerQuotationController {
       if (!quotation) throw new NotFoundError(t('customerQuotation.notFound', req.locale));
       if (quotation.createdById !== userId) throw new NotFoundError(t('customerQuotation.notFound', req.locale));
 
-      const lang = req.user!.preferredLanguage || req.locale || 'en';
+      const lang = req.locale || req.user!.preferredLanguage || 'en';
       const enrichedItems = quotation.items.map((item) => {
         const translation =
           item.product.translations.find((t) => t.locale === lang) ||
@@ -363,11 +373,14 @@ export class CustomerQuotationController {
       // Extract vatNumber from notes
       const vatNumber = quotation.notes?.replace('VAT: ', '') || '';
 
+      const statusLabel = t(`quotationStatus.${quotation.status}`, lang);
+
       res.json({
         success: true,
         data: {
           ...quotation,
           vatNumber,
+          statusLabel,
           shipping: 0,
           items: enrichedItems,
         },
@@ -715,6 +728,9 @@ export class CustomerQuotationController {
         data: updated,
         message: t('customerQuotation.acceptSuccess', req.locale),
       });
+      void emitToUser(userId, 'quotation:updated', { id: updated.id, status: updated.status });
+      void emitToRole('ADMIN', 'quotation:updated', { id: updated.id, status: updated.status, customerEmail: req.user!.email });
+      void emitToRole('SUPER_ADMIN', 'quotation:updated', { id: updated.id, status: updated.status, customerEmail: req.user!.email });
     } catch (err) {
       next(err);
     }
@@ -780,6 +796,9 @@ export class CustomerQuotationController {
         data: updated,
         message: t('customerQuotation.rejectSuccess', req.locale),
       });
+      void emitToUser(userId, 'quotation:updated', { id: updated.id, status: updated.status });
+      void emitToRole('ADMIN', 'quotation:updated', { id: updated.id, status: updated.status, customerEmail: req.user!.email });
+      void emitToRole('SUPER_ADMIN', 'quotation:updated', { id: updated.id, status: updated.status, customerEmail: req.user!.email });
     } catch (err) {
       next(err);
     }

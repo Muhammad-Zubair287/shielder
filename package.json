@@ -9,7 +9,11 @@
     "test:backend:matrix": "cd backend && npm test -- src/modules/auth/__tests__/auth.test.ts src/modules/auth/__tests__/auth.security.test.ts src/modules/order/__tests__/order.checkout.integration.test.ts src/modules/order/__tests__/order.admin-actions.integration.test.ts src/modules/quotation/__tests__/quotation.notifications.integration.test.ts src/modules/customer-quotation/__tests__/customer-quotation.workflow.integration.test.ts src/modules/inventory/product/__tests__/product.security.integration.test.ts src/modules/inventory/product/__tests__/product.moderation.test.ts --runInBand --silent"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "pdfkit": "^0.17.2",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
   }
 }

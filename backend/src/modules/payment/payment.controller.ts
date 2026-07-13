@@ -12,6 +12,16 @@ import { t } from '@/common/i18n';
 
 const paymentService = new PaymentService();
 
+const normalizePayment = (req: Request, payment: any) => {
+  if (!payment) return payment;
+  const locale = (req as any).locale || 'en';
+  return {
+    ...payment,
+    statusLabel: payment.status ? t(`paymentStatus.${payment.status}`, locale) : undefined,
+    methodLabel: payment.method ? t(`paymentMethod.${payment.method}`, locale) : undefined,
+  };
+};
+
 export class PaymentController {
   /**
    * @swagger
@@ -116,7 +126,7 @@ export class PaymentController {
       const payment = await paymentService.getPaymentById(id as string);
       res.status(200).json({
         success: true,
-        data: payment,
+        data: normalizePayment(req, payment),
       });
     } catch (error) {
       next(error);
@@ -157,7 +167,7 @@ export class PaymentController {
       res.status(201).json({
         success: true,
         message: t('payment.recorded', req.locale),
-        data: payment,
+        data: normalizePayment(req, payment),
       });
     } catch (error) {
       next(error);
@@ -201,7 +211,7 @@ export class PaymentController {
       res.status(200).json({
         success: true,
         message: t('payment.refunded', req.locale),
-        data: payment,
+        data: normalizePayment(req, payment),
       });
     } catch (error) {
       next(error);

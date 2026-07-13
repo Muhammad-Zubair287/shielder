@@ -16,6 +16,15 @@ import { asyncHandler } from '@/common/utils/helpers';
 import { AuthRequest } from '@/types/global';
 import { t } from '@/common/i18n';
 
+const normalizeNotification = (req: AuthRequest, n: any) => {
+  if (!n) return n;
+  const locale = (req as any).locale || 'en';
+  return {
+    ...n,
+    typeLabel: n.type ? t(`notificationType.${n.type}`, locale) : undefined,
+  };
+};
+
 class NotificationController {
   /**
    * @swagger
@@ -125,6 +134,9 @@ class NotificationController {
       success: true,
       message: 'Notifications retrieved successfully',
       ...result,
+      notifications: Array.isArray(result.notifications)
+        ? result.notifications.map((n: any) => normalizeNotification(req, n))
+        : result.notifications,
     });
     return;
   });
@@ -178,7 +190,7 @@ class NotificationController {
 
     return res.status(200).json({
       success: true,
-      data
+      data: Array.isArray(data) ? data.map((n: any) => normalizeNotification(req, n)) : data,
     });
   });
 

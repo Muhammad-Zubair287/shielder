@@ -6,6 +6,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole, canManageRole } from '../constants/roles';
 import { ApiError } from '../errors/api.error';
+import { t } from '@/common/i18n';
 
 /**
  * Require specific roles
@@ -13,16 +14,14 @@ import { ApiError } from '../errors/api.error';
 export const requireRoles = (...allowedRoles: UserRole[]) => {
   return (req: Request, _res: Response, next: NextFunction) => {
     const user = req.user;
+    const locale = (req as any).locale || 'en';
 
     if (!user) {
-      throw new ApiError('Authentication required', 401);
+      throw new ApiError(t('common.authRequired', locale), 401);
     }
 
     if (!allowedRoles.includes(user.role as UserRole)) {
-      throw new ApiError(
-        `Access denied. Required role(s): ${allowedRoles.join(', ')}`,
-        403
-      );
+      throw new ApiError(t('common.accessDenied', locale), 403);
     }
 
     next();
@@ -54,9 +53,10 @@ export const canManageUser = (
 ) => {
   const currentUser = req.user;
   const targetRole = req.body.role as UserRole;
+  const locale = (req as any).locale || 'en';
 
   if (!currentUser) {
-    throw new ApiError('Authentication required', 401);
+    throw new ApiError(t('common.authRequired', locale), 401);
   }
 
   // If no role change, allow admins to proceed
@@ -66,10 +66,7 @@ export const canManageUser = (
 
   // Validate if current user can manage target role
   if (!canManageRole(currentUser.role as UserRole, targetRole)) {
-    throw new ApiError(
-      'You cannot manage users with this role',
-      403
-    );
+    throw new ApiError(t('common.cannotManageRole', locale), 403);
   }
 
   next();
@@ -85,6 +82,7 @@ export const preventRoleEscalation = (
 ) => {
   const currentUser = req.user;
   const newRole = req.body.role as UserRole;
+  const locale = (req as any).locale || 'en';
 
   if (!newRole) {
     return next();
@@ -92,10 +90,7 @@ export const preventRoleEscalation = (
 
   // Only Super Admin can change roles
   if (currentUser?.role !== UserRole.SUPER_ADMIN) {
-    throw new ApiError(
-      'Only Super Admin can change user roles',
-      403
-    );
+    throw new ApiError(t('common.onlySuperAdminRole', locale), 403);
   }
 
   next();
@@ -111,16 +106,14 @@ export const restrictAdminToUsers = (
   next: NextFunction
 ) => {
   const currentUser = req.user;
+  const locale = (req as any).locale || 'en';
 
   if (currentUser?.role === UserRole.ADMIN) {
     // Force role to USER for Admin operations
     if (req.body.role && req.body.role !== UserRole.USER) {
-      throw new ApiError(
-        'Admins can only manage USER accounts',
-        403
-      );
+      throw new ApiError(t('common.adminUsersOnly', locale), 403);
     }
-    
+
     // Auto-set role to USER if not specified
     if (!req.body.role) {
       req.body.role = UserRole.USER;

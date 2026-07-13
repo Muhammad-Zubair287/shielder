@@ -2,17 +2,19 @@
 
 import React, { useEffect, useState } from 'react';
 import SARSymbol from '@/components/SARSymbol';
-import { 
-  ArrowLeft, 
-  Printer, 
-  Package, 
-  User, 
-  MapPin, 
-  CreditCard, 
-  Phone, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Printer,
+  Package,
+  User,
+  MapPin,
+  CreditCard,
+  Phone,
   Mail,
   Box,
   ChevronRight,
+  ChevronLeft,
   ShieldCheck,
   Truck,
   XCircle,
@@ -90,21 +92,21 @@ export default function OrderDetailPage() {
     <div className="space-y-8 pb-20" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Back & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-4">
-          <Link 
-            href="/superadmin/orders" 
+        <div className="flex items-center gap-4">
+          <Link
+            href="/superadmin/orders"
             className="p-2 hover:bg-gray-100 rounded-xl transition-all"
           >
-            <ArrowLeft className="text-gray-600" size={24} />
+            {isRTL ? <ArrowRight className="text-gray-600" size={24} /> : <ArrowLeft className="text-gray-600" size={24} />}
           </Link>
           <div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               <h1 className="text-2xl font-black text-gray-900">{order.orderNumber}</h1>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                order.status === 'DELIVERED' ? 'bg-green-100 text-green-700 border-green-200' : 
+                order.status === 'DELIVERED' ? 'bg-green-100 text-green-700 border-green-200' :
                 order.status === 'CANCELLED' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-blue-100 text-blue-700 border-blue-200'
               }`}>
-                {order.status}
+                {order.statusLabel || order.status}
               </span>
               {isPickupOrder && (
                 <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border bg-amber-100 text-amber-800 border-amber-200">
@@ -116,28 +118,28 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button 
+        <div className="flex items-center gap-3">
+          <button
             onClick={() => window.print()}
-            className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-sm"
+            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-sm"
           >
             <Printer size={18} />
             <span>{t('printInvoice')}</span>
           </button>
-          
+
           {order.status !== 'DELIVERED' && order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
             <div className="relative group">
-              <button className="bg-[#FF6B35] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#FF6B35]/20 flex items-center space-x-2 transition-all active:scale-95 hover:bg-[#FF5722]">
+              <button className="bg-[#FF6B35] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#FF6B35]/20 flex items-center gap-2 transition-all active:scale-95 hover:bg-[#FF5722]">
                 <span>{t('updateStatus')}</span>
-                <ChevronRight size={16} />
+                {isRTL ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
                 {availableStatuses.filter(stat => stat !== order.status).map(stat => (
-                  <button 
+                  <button
                     key={stat}
                     onClick={() => updateStatus(stat)}
                     disabled={stat === order.status}
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-shielder-primary transition-colors disabled:opacity-50"
+                    className="w-full text-start px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-shielder-primary transition-colors disabled:opacity-50"
                   >
                     Mark as {stat.charAt(0) + stat.slice(1).toLowerCase()}
                   </button>
@@ -154,13 +156,13 @@ export default function OrderDetailPage() {
           {/* Items Table */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Package className="text-shielder-primary" size={20} />
                 <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">{t('orderedItems')}</h2>
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full border-collapse">
                 <thead className="bg-gray-50/50">
                   <tr>
                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('productCol')}</th>
@@ -170,10 +172,10 @@ export default function OrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {order.items?.map((item: any) => (
+                  {order.orderItems?.map((item: any) => (
                     <tr key={item.id} className="group">
                       <td className="px-6 py-5">
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center gap-4">
                           <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                             {item.product?.mainImage ? (
                               <img src={getImageUrl(item.product.mainImage) || ''} alt="Product" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = '/images/landing/factory-1.png'; }} />
@@ -216,7 +218,7 @@ export default function OrderDetailPage() {
 
           {/* Activity Timeline */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center space-x-2">
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
               <Truck size={20} className="text-shielder-secondary" />
               <span>{t('orderActivity')}</span>
             </h2>
@@ -239,7 +241,7 @@ export default function OrderDetailPage() {
                     <ShieldCheck size={12} />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-sm">{t('orderStatusUpdatedMsg')} {order.status}</p>
+                    <p className="font-bold text-gray-900 text-sm">{t('orderStatusUpdatedMsg')} {order.statusLabel || order.status}</p>
                     <p className="text-xs text-gray-400 font-medium">{new Date(order.updatedAt).toLocaleString()}</p>
                   </div>
                 </div>
@@ -289,8 +291,8 @@ export default function OrderDetailPage() {
         <div className="space-y-8">
           {/* Customer Info */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6">
-             <div className="flex items-center space-x-3 pb-4 border-b border-gray-50">
-                <div className="w-12 h-12 bg-shielder-primary/10 text-shielder-primary rounded-2xl flex items-center justify-center">
+             <div className="flex items-center gap-3 pb-4 border-b border-gray-50">
+                <div className="w-12 h-12 bg-shielder-primary/10 text-shielder-primary rounded-2xl flex items-center justify-center shrink-0">
                     <User size={24} />
                 </div>
                 <div>
@@ -300,15 +302,15 @@ export default function OrderDetailPage() {
              </div>
 
              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                    <Mail className="text-gray-400 mt-0.5" size={16} />
+                <div className="flex items-start gap-3">
+                    <Mail className="text-gray-400 mt-0.5 shrink-0" size={16} />
                     <div>
                         <p className="text-xs font-bold text-gray-400">{t('emailAddress')}</p>
                         <p className="text-sm font-bold text-gray-700">{order.user?.email}</p>
                     </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                    <Phone className="text-gray-400 mt-0.5" size={16} />
+                <div className="flex items-start gap-3">
+                    <Phone className="text-gray-400 mt-0.5 shrink-0" size={16} />
                     <div>
                         <p className="text-xs font-bold text-gray-400">{t('phoneCol')}</p>
                         <p className="text-sm font-bold text-gray-700">{order.phoneNumber || order.user?.profile?.phoneNumber || 'N/A'}</p>
@@ -318,7 +320,7 @@ export default function OrderDetailPage() {
           </div>
 
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-            <h3 className="flex items-center space-x-2 text-sm font-black text-gray-900 uppercase tracking-widest">
+            <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 uppercase tracking-widest">
                 <MapPin size={16} className="text-shielder-primary" />
                 <span>{t('shippingAddress')}</span>
             </h3>
@@ -329,7 +331,7 @@ export default function OrderDetailPage() {
 
           {isPickupOrder && (
             <div className="bg-white rounded-3xl border border-amber-200 shadow-sm p-6 space-y-4">
-              <h3 className="flex items-center space-x-2 text-sm font-black text-amber-800 uppercase tracking-widest">
+              <h3 className="flex items-center gap-2 text-sm font-black text-amber-800 uppercase tracking-widest">
                 <MapPin size={16} className="text-amber-600" />
                 <span>{t('orders.pickupInformation')}</span>
               </h3>
@@ -341,14 +343,14 @@ export default function OrderDetailPage() {
           )}
 
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-             <h3 className="flex items-center space-x-2 text-sm font-black text-gray-900 uppercase tracking-widest">
+             <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 uppercase tracking-widest">
                 <CreditCard size={16} className="text-shielder-secondary" />
                 <span>{t('paymentInfo')}</span>
             </h3>
             <div className={`p-4 rounded-2xl border ${order.paymentStatus === 'PAID' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
                 <p className="text-xs font-bold text-gray-400 uppercase">Method: <span className="text-gray-900">{order.paymentMethod || 'Manual'}</span></p>
                 <div className="flex items-center justify-between mt-1">
-                    <p className={`text-sm font-black ${order.paymentStatus === 'PAID' ? 'text-green-700' : 'text-red-700'}`}>{order.paymentStatus}</p>
+                    <p className={`text-sm font-black ${order.paymentStatus === 'PAID' ? 'text-green-700' : 'text-red-700'}`}>{order.paymentStatusLabel || order.paymentStatus}</p>
                 </div>
             </div>
           </div>

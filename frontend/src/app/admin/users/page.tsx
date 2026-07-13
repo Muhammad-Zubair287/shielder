@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/auth.store';
 import adminService from '@/services/admin.service';
 import UsersTable from './UsersTable';
 import type { AdminUser, UserFilters, UserPagination } from './types';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 
 export default function AdminUsersPage() {
   const { t, isRTL, locale } = useLanguage();
@@ -99,6 +100,8 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.role === 'ADMIN') fetchUsers();
   }, [authLoading, isAuthenticated, user, fetchUsers]);
+
+  useSyncRefetch(fetchUsers, 'users');
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   function handleFilterChange(key: keyof UserFilters, value: string) {

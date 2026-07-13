@@ -50,6 +50,8 @@ const resolvePublicImageUrl = (req: Request, imagePath?: string | null): string 
 const normalizeOrder = (req: Request, order: any) => {
   if (!order) return order;
 
+  const locale = (req as any).locale || 'en';
+
   const orderItems = Array.isArray(order.orderItems)
     ? order.orderItems.map((item: any) => {
         const product = item.product ? {
@@ -82,6 +84,9 @@ const normalizeOrder = (req: Request, order: any) => {
     ...order,
     orderId: order.id,
     orderType: order.deliveryType,
+    statusLabel: order.status ? t(`orderStatus.${order.status}`, locale) : undefined,
+    paymentStatusLabel: order.paymentStatus ? t(`paymentStatus.${order.paymentStatus}`, locale) : undefined,
+    deliveryTypeLabel: order.deliveryType ? t(`deliveryType.${order.deliveryType}`, locale) : undefined,
     warehouse: order.deliveryType === 'PICKUP' && order.warehouse ? {
       name: order.warehouse.name,
       address: order.warehouse.address,
@@ -89,6 +94,7 @@ const normalizeOrder = (req: Request, order: any) => {
       country: order.warehouse.country,
     } : undefined,
     orderItems,
+    user: order.users ?? undefined,
   };
 };
 

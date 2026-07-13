@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import SARSymbol from '@/components/SARSymbol';
@@ -49,6 +50,8 @@ export default function AllQuotationsPage() {
             setSummary(res.data || {});
         } catch (e) { console.error(e); }
     };
+
+    useSyncRefetch(fetchQuotations, 'quotations');
 
     useEffect(() => { fetchQuotations(); fetchAnalytics(); }, [fetchQuotations]);
 

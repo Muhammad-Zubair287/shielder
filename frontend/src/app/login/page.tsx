@@ -295,7 +295,14 @@ function LoginPageContent() {
         <div className="w-full md:flex-[0_0_46%] md:-ml-14 relative bg-white rounded-[2rem] shadow-2xl md:rounded-[2rem] p-8 md:p-12 flex flex-col md:min-h-[600px]">
           {/* Back Button */}
           <button
-            onClick={() => window.history.length > 1 ? router.back() : router.push(ROUTES.HOME)}
+            onClick={() => {
+              const prevRoute = typeof window !== 'undefined' ? sessionStorage.getItem('prev_app_route') : null;
+              if (prevRoute) {
+                router.back();
+              } else {
+                router.push(ROUTES.HOME);
+              }
+            }}
             className={`absolute top-5 z-10 ${isRTL ? 'right-8' : 'left-8'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors`}
             aria-label={isRTL ? 'Back to previous page' : 'Back to previous page'}
           >

@@ -11,6 +11,7 @@ import {
   Plus,
   Filter,
   Calendar,
+  ChevronDown,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -217,33 +218,41 @@ export default function AdminOrdersPage() {
               name="status"
               value={filters.status}
               onChange={handleFilterChange}
-              className={`py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-8'}`}
+              className={`py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] ${isRTL ? 'pr-9 pl-8' : 'pl-9 pr-8'}`}
             >
               <option value="">{t('allStatuses')}</option>
               <option value="PENDING">{t('orderPending')}</option>
-              <option value="READY_FOR_PICKUP">{t('orderReadyForPickup')}</option>
               <option value="CONFIRMED">{t('orderConfirmed')}</option>
               <option value="PROCESSING">{t('orderProcessing')}</option>
+              <option value="READY_FOR_PICKUP">{t('orderReadyForPickup')}</option>
               <option value="SHIPPED">{t('orderShipped')}</option>
               <option value="DELIVERED">{t('orderDelivered')}</option>
               <option value="COMPLETED">{t('orderCompleted')}</option>
+              <option value="REFUNDED">{t('orderRefunded')}</option>
               <option value="CANCELLED">{t('orderCancelled')}</option>
             </select>
+            <ChevronDown size={13} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'left-3' : 'right-3'}`} />
           </div>
 
           {/* Payment status filter */}
-          <select
-            name="paymentStatus"
-            value={filters.paymentStatus}
-            onChange={handleFilterChange}
-            className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]"
-          >
-            <option value="">{t('allPaymentStatuses')}</option>
-            <option value="PAID">{t('payPaid')}</option>
-            <option value="UNPAID">{t('payUnpaid')}</option>
-            <option value="PARTIAL">{t('payPartial')}</option>
-            <option value="REFUNDED">{t('payRefunded')}</option>
-          </select>
+          <div className="relative">
+            <select
+              name="paymentStatus"
+              value={filters.paymentStatus}
+              onChange={handleFilterChange}
+              className="px-4 py-2.5 pr-8 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]"
+            >
+              <option value="">{t('allPaymentStatuses')}</option>
+              <option value="PAID">{t('payPaid')}</option>
+              <option value="UNPAID">{t('payUnpaid')}</option>
+              <option value="PENDING">{t('payPending')}</option>
+              <option value="PARTIALLY_PAID">{t('payPartiallyPaid')}</option>
+              <option value="PARTIALLY_REFUNDED">{t('payPartiallyRefunded')}</option>
+              <option value="REFUNDED">{t('payRefunded')}</option>
+              <option value="FAILED">{t('payFailed')}</option>
+            </select>
+            <ChevronDown size={13} className={`absolute top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none ${isRTL ? 'left-3' : 'right-3'}`} />
+          </div>
 
           {/* Date range */}
           <div className={`flex items-center gap-1.5 ${isRTL ? 'flex-row-reverse' : ''}`}>

@@ -354,9 +354,9 @@ export default function ProductDetailPage() {
                       −
                     </button>
                     <input
-                      type="number"
-                      min={1}
-                      max={maxQuantity ?? undefined}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={quantity}
                       aria-label="Quantity"
                       onChange={e => setQuantity(normalizeQuantity(parseInt(e.target.value) || 1))}

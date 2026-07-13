@@ -15,6 +15,7 @@ import SessionTimeoutWatcher from '@/components/providers/SessionTimeoutWatcher'
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { CrossTabSyncProvider } from '@/components/providers/CrossTabSyncProvider';
+import { RouteTracker } from '@/components/providers/RouteTracker';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 const cairo = Cairo({ subsets: ['arabic', 'latin'], variable: '--font-cairo', display: 'swap' });
@@ -78,6 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <CurrencyProvider>
                 <CartProvider>
                   <QuotationProvider>
+                  <RouteTracker />
                   {children}
                   <LocalizedToaster />
                   </QuotationProvider>

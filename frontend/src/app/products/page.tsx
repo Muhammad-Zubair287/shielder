@@ -344,7 +344,7 @@ function ProductDetailModal({
                         className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors">
                         <Minus size={14} />
                       </button>
-                      <input type="number" min={1} value={qty}
+                      <input type="text" inputMode="numeric" pattern="[0-9]*" value={qty}
                         aria-label="Quantity"
                         onChange={e => setQty(clampQuantity(parseInt(e.target.value) || 1))}
                         className="w-16 text-center border border-gray-200 rounded-xl py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D1637]/20 focus:border-[#0D1637]" />

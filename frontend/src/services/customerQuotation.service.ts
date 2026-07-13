@@ -38,6 +38,7 @@ export interface QuotationResult {
   id: string;
   quotationNumber: string;
   status: string;
+  statusLabel: string;
   companyName: string;
   customerAddress: string;
   customerEmail: string;

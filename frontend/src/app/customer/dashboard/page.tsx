@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { orderService } from '@/services/order.service';
 import customerQuotationService from '@/services/customerQuotation.service';
 import { DASHBOARD_LABELS } from '@/constants/ui.constants';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 import {
   DashboardActivityItem,
   DashboardOrder,
@@ -39,11 +40,7 @@ export default function CustomerDashboard() {
     })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const [ordersData, quotationsData] = await Promise.all([
@@ -68,7 +65,12 @@ export default function CustomerDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+
+  useSyncRefetch(fetchDashboardData, 'orders');
+  useSyncRefetch(fetchDashboardData, 'quotations');
 
   const getStatusBadgeColor = (status: string) => {
     const statusMap: Record<string, string> = {

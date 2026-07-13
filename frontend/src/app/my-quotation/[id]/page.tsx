@@ -8,7 +8,7 @@
  * Fully RTL-aware and mobile-responsive.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ import LandingNavbar from '@/app/home/_components/LandingNavbar';
 import LandingFooter from '@/app/home/_components/LandingFooter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import customerQuotationService, { QuotationResult } from '@/services/customerQuotation.service';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 
 const PLACEHOLDER = '/images/landing/factory-1.png';
 
@@ -91,19 +92,21 @@ export default function MyQuotationPage() {
 
   // ── Load quotation ──────────────────────────────────────────────────────────
 
-  useEffect(() => {
+  const loadQuotation = useCallback(async () => {
     if (!id) return;
-    (async () => {
-      try {
-        const data = await customerQuotationService.getById(id);
-        setQuotation(data);
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    try {
+      const data = await customerQuotationService.getById(id);
+      setQuotation(data);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => { loadQuotation(); }, [loadQuotation]);
+
+  useSyncRefetch(loadQuotation, 'quotations');
 
   // ── Download PDF ────────────────────────────────────────────────────────────
 
@@ -173,13 +176,13 @@ export default function MyQuotationPage() {
       <main className="flex-1 pt-[120px] pb-24 sm:pb-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
 
-          {/* Back */}
+          {/* Back → My Quotations — no flex-row-reverse: dir="rtl" on page naturally puts arrow (1st) on right */}
           <Link
-            href="/products"
-            className={`inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0D1637] mb-6 transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+            href="/my-quotations"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0D1637] mb-6 transition-colors"
           >
             <BackArrow size={16} />
-            {t('quot.backToProducts')}
+            {t('back')}
           </Link>
 
           {loading && <Skeleton />}
@@ -188,8 +191,8 @@ export default function MyQuotationPage() {
             <div className="text-center py-20">
               <FileText size={48} className="mx-auto text-gray-300 mb-4" />
               <p className="text-lg font-bold text-gray-700">{t('quot.notFound')}</p>
-              <Link href="/products" className="mt-4 inline-block text-[#0205A6] text-sm font-semibold hover:underline">
-                {t('quot.backToProducts')}
+              <Link href="/my-quotations" className="mt-4 inline-block text-[#0205A6] text-sm font-semibold hover:underline">
+                {t('back')}
               </Link>
             </div>
           )}
@@ -206,11 +209,12 @@ export default function MyQuotationPage() {
                     </div>
                     <h1 className="text-lg font-bold text-white">{t('quot.previewTitle')}</h1>
                   </div>
+                  {/* dir="ltr" keeps # and digits together regardless of page direction */}
                   <p className={`text-sm text-[#0205A6] font-bold ${isRTL ? 'text-right' : ''}`}>
-                    #{quotation.quotationNumber}
+                    <span dir="ltr" className="inline-block">#{quotation.quotationNumber}</span>
                   </p>
                   <p className={`text-xs text-white/80 mt-1 ${isRTL ? 'text-right' : ''}`}>
-                    {t('quot.statusLabel')}: {quotation.status}
+                    {t('quot.statusLabel')}: {t(`myQuotations.status.${quotation.status?.toLowerCase()}`) || quotation.status}
                   </p>
                 </div>
 
@@ -292,8 +296,8 @@ export default function MyQuotationPage() {
                       key={idx}
                       className={`grid grid-cols-12 gap-2 items-center py-4 ${isRTL ? 'text-right' : ''}`}
                     >
-                      {/* Product info */}
-                      <div className={`col-span-12 sm:col-span-5 flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      {/* Product info — dir="rtl" on parent handles image/text order */}
+                      <div className="col-span-12 sm:col-span-5 flex items-center gap-3">
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                           <Image
                             src={getImageUrl(item.thumbnail) ?? PLACEHOLDER}
@@ -327,17 +331,18 @@ export default function MyQuotationPage() {
                 </div>
 
                 {/* ── Totals ──────────────────────────────────────────────── */}
-                <div className="mt-5 pt-5 border-t border-gray-100">
-                  <div className={`flex flex-col gap-2 ${isRTL ? 'items-start' : 'items-end'}`}>
+                {/* justify-end (LTR) / justify-start (RTL) both push the block to the right edge */}
+                <div className={`mt-5 pt-5 border-t border-gray-100 flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
+                  <div className="flex flex-col gap-2">
 
-                    {/* Subtotal */}
-                    <div className={`flex gap-16 text-sm text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    {/* Subtotal — dir="rtl" on page puts label (1st) RIGHT, amount (2nd) LEFT */}
+                    <div className="flex gap-16 text-sm text-gray-600">
                       <span className={`w-28 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.subtotal')}</span>
                       <span className="font-semibold text-gray-900">{fmt(quotation.subtotal)}</span>
                     </div>
 
                     {/* Shipping */}
-                    <div className={`flex gap-16 text-sm text-gray-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className="flex gap-16 text-sm text-gray-600">
                       <span className={`w-28 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.shipping')}</span>
                       <span className="font-semibold text-gray-900">{t('quot.free')}</span>
                     </div>
@@ -346,7 +351,7 @@ export default function MyQuotationPage() {
                     <div className="w-56 border-t border-dashed border-gray-300 my-1" />
 
                     {/* Total */}
-                    <div className={`flex gap-16 text-base ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className="flex gap-16 text-base">
                       <span className={`w-28 font-bold text-gray-900 ${isRTL ? 'text-start' : 'text-right'}`}>{t('quot.total')}</span>
                       <span className="font-bold text-[#0D1637] text-lg">{fmt(quotation.total)}</span>
                     </div>

@@ -25,10 +25,12 @@ const parseOptionalNumberQuery = (value: unknown): number | undefined => {
 const normalizeProductResponse = (req: Request, product: any) => {
   if (!product) return product;
 
+  const locale = (req as any).locale || 'en';
   const updatedAt = product.updatedAt || product.updated_at || product.createdAt || product.created_at;
 
   return {
     ...product,
+    statusLabel: product.status ? t(`productStatus.${product.status}`, locale) : undefined,
     mainImage: resolvePublicProductImageUrl(req, product.mainImage, updatedAt),
     attachments: Array.isArray(product.attachments)
       ? product.attachments.map((attachment: any) => ({

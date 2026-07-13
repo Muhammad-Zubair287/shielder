@@ -21,6 +21,7 @@ import { UserRole } from '../../common/constants/roles';
 import { emailService } from '../../common/services/email.service';
 import { logger } from '../../common/logger/logger';
 import { t } from '@/common/i18n';
+import { emitToRole } from '@/modules/realtime/socket.service';
 
 export class AdminController {
   /**
@@ -144,6 +145,9 @@ export class AdminController {
 
       const user = await adminService.createUser(req.body, createdBy, adminRole);
 
+      void emitToRole('ADMIN', 'user:created', { userId: user.id });
+      void emitToRole('SUPER_ADMIN', 'user:created', { userId: user.id });
+
       res.status(201).json({
         success: true,
         message: t('admin.userCreated', req.locale),
@@ -188,6 +192,9 @@ export class AdminController {
 
       const user = await adminService.updateUser(String(id), req.body, updatedBy, adminRole);
 
+      void emitToRole('ADMIN', 'user:updated', { userId: user.id });
+      void emitToRole('SUPER_ADMIN', 'user:updated', { userId: user.id });
+
       res.json({
         success: true,
         message: t('admin.userUpdated', req.locale),
@@ -210,6 +217,9 @@ export class AdminController {
       const updatedBy = req.user?.id!;
 
       const user = await adminService.updateUserStatus(String(id), isActive, updatedBy, adminRole);
+
+      void emitToRole('ADMIN', 'user:updated', { userId: user.id });
+      void emitToRole('SUPER_ADMIN', 'user:updated', { userId: user.id });
 
       res.json({
         success: true,
@@ -259,6 +269,9 @@ export class AdminController {
       const deletedBy = req.user?.id!;
 
       const result = await adminService.deleteUser(String(id), deletedBy, adminRole);
+
+      void emitToRole('ADMIN', 'user:deleted', { userId: id });
+      void emitToRole('SUPER_ADMIN', 'user:deleted', { userId: id });
 
       res.json({
         success: true,

@@ -16,12 +16,11 @@ import {
   Loader2,
   RefreshCcw,
   FileText,
-  ShoppingBag,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  ChevronRight,
+
 } from 'lucide-react';
 import { format } from 'date-fns';
 import LandingNavbar from '@/app/home/_components/LandingNavbar';
@@ -32,6 +31,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import quotationService from '@/services/quotation.service';
 import toast from 'react-hot-toast';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -99,7 +99,6 @@ export default function MyQuotationsPage() {
   const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, limit: 10, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [convertingId, setConvertingId] = useState<string | null>(null);
 
   const fetchQuotations = useCallback(async (page = 1) => {
     setRefreshing(true);
@@ -117,27 +116,11 @@ export default function MyQuotationsPage() {
     }
   }, [pagination.limit, t]);
 
+  useSyncRefetch(fetchQuotations, 'quotations');
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) fetchQuotations(1);
   }, [authLoading, isAuthenticated, fetchQuotations]);
-
-  const handleConvertToOrder = useCallback(async (quotationId: string) => {
-    setConvertingId(quotationId);
-    try {
-      const response = await quotationService.convertToOrder(quotationId);
-      toast.success(t('myQuotations.convertedToOrder') || 'Quotation converted to order');
-      // Redirect to the new order
-      if (response?.data?.id) {
-        router.push(`/order-confirmation/${response.data.id}`);
-      } else {
-        fetchQuotations(pagination.page);
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || t('myQuotations.conversionError') || 'Failed to convert quotation');
-    } finally {
-      setConvertingId(null);
-    }
-  }, [router, fetchQuotations, pagination.page, t]);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
@@ -207,7 +190,6 @@ export default function MyQuotationsPage() {
                   const itemCount = quotation.items?.length ?? 0;
                   const status = (quotation.status || '').toUpperCase();
                   const isExpired = status === 'EXPIRED';
-                  const canConvert = status === 'APPROVED' && !quotation.convertedOrderId;
                   let dateStr = '';
                   try { 
                     dateStr = format(new Date(quotation.createdAt), 'dd MMM yyyy'); 
@@ -236,7 +218,7 @@ export default function MyQuotationsPage() {
                             {t('myQuotations.quotationNumber') || 'Quotation'}
                           </p>
                           <p className="text-sm font-bold text-gray-900 tracking-wide">
-                            #{quotation.quotationNumber}
+                            <span dir="ltr" className="inline-block">#{quotation.quotationNumber}</span>
                           </p>
                         </div>
                         <div className={`flex items-center gap-2 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -275,18 +257,11 @@ export default function MyQuotationsPage() {
                         </div>
                       </div>
 
-                      {/* Bottom row */}
-                      <div className={`flex items-center justify-between px-5 py-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      {/* Bottom row — price only; single View CTA is in Quick actions below */}
+                      <div className={`flex items-center px-5 py-3 ${isRTL ? 'justify-end' : 'justify-start'}`}>
                         <span className="font-bold text-[#0D1637] text-sm flex items-center gap-0.5">
                           <SARSymbol />{Number(quotation.total).toFixed(2)}
                         </span>
-                        <Link
-                          href={`/my-quotation/${quotation.id}`}
-                          className="inline-flex items-center gap-1 text-[#0205A6] hover:text-[#0204c0] text-sm font-semibold transition-colors"
-                        >
-                          {t('myQuotations.viewDetails') || 'View'}
-                          <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
-                        </Link>
                       </div>
 
                       {/* Quick actions */}
@@ -298,18 +273,6 @@ export default function MyQuotationsPage() {
                           <FileText size={13} />
                           {t('myQuotations.viewDetails') || 'View'}
                         </Link>
-
-                        {canConvert && (
-                          <button
-                            type="button"
-                            onClick={() => handleConvertToOrder(quotation.id)}
-                            disabled={convertingId === quotation.id}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            <ShoppingBag size={13} className={convertingId === quotation.id ? 'animate-spin' : ''} />
-                            {t('myQuotations.convertToOrder') || 'Convert to Order'}
-                          </button>
-                        )}
 
                         {quotation.convertedOrderId && (
                           <Link

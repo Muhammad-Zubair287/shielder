@@ -11,6 +11,7 @@ import quotationService from '@/services/quotation.service';
 import { format } from 'date-fns';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import SARSymbol from '@/components/SARSymbol';
+import { useSyncRefetch } from '@/hooks/useSyncRefetch';
 
 const STATUS_COLORS: Record<string, string> = {
     PENDING: 'bg-amber-100 text-amber-700 border-amber-200',
@@ -61,6 +62,8 @@ export default function AdminQuotationsPage() {
     };
 
     useEffect(() => { fetchQuotations(); fetchAnalytics(); }, [fetchQuotations]);
+
+    useSyncRefetch(fetchQuotations, 'quotations');
 
     const handleAction = async (action: string, id: string) => {
         try {

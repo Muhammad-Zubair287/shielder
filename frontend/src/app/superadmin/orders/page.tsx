@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Search, 
-  Eye, 
-  CheckCircle2, 
-  Clock, 
-  XCircle, 
-  RefreshCcw, 
-  TrendingUp, 
-  Package
+import {
+  Search,
+  Eye,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  RefreshCcw,
+  TrendingUp,
+  Package,
+  ChevronDown,
 } from 'lucide-react';
 import { orderService } from '@/services/order.service';
 import Link from 'next/link';
@@ -100,15 +101,38 @@ export default function OrdersPage() {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  const statusColors: any = {
-    PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  const statusColors: Record<string, string> = {
+    PENDING:          'bg-yellow-100 text-yellow-800 border-yellow-200',
     READY_FOR_PICKUP: 'bg-amber-100 text-amber-800 border-amber-200',
-    CONFIRMED: 'bg-blue-100 text-blue-800 border-blue-200',
-    PROCESSING: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-    SHIPPED: 'bg-purple-100 text-purple-800 border-purple-200',
-    DELIVERED: 'bg-green-100 text-green-800 border-green-200',
-    COMPLETED: 'bg-green-100 text-green-800 border-green-200',
-    CANCELLED: 'bg-red-100 text-red-800 border-red-200'
+    CONFIRMED:        'bg-blue-100 text-blue-800 border-blue-200',
+    PROCESSING:       'bg-indigo-100 text-indigo-800 border-indigo-200',
+    SHIPPED:          'bg-purple-100 text-purple-800 border-purple-200',
+    DELIVERED:        'bg-green-100 text-green-800 border-green-200',
+    COMPLETED:        'bg-green-100 text-green-800 border-green-200',
+    REFUNDED:         'bg-gray-100 text-gray-700 border-gray-200',
+    CANCELLED:        'bg-red-100 text-red-800 border-red-200',
+  };
+
+  const orderStatusLabel: Record<string, string> = {
+    PENDING:          t('orderPending'),
+    CONFIRMED:        t('orderConfirmed'),
+    PROCESSING:       t('orderProcessing'),
+    READY_FOR_PICKUP: t('orderReadyForPickup'),
+    SHIPPED:          t('orderShipped'),
+    DELIVERED:        t('orderDelivered'),
+    COMPLETED:        t('orderCompleted'),
+    REFUNDED:         t('orderRefunded'),
+    CANCELLED:        t('orderCancelled'),
+  };
+
+  const paymentStatusLabel: Record<string, string> = {
+    PAID:                t('payPaid'),
+    UNPAID:              t('payUnpaid'),
+    PENDING:             t('payPending'),
+    PARTIALLY_PAID:      t('payPartiallyPaid'),
+    PARTIALLY_REFUNDED:  t('payPartiallyRefunded'),
+    REFUNDED:            t('payRefunded'),
+    FAILED:              t('payFailed'),
   };
 
   return (
@@ -180,33 +204,44 @@ export default function OrdersPage() {
             />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <select 
-              name="status"
-              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none text-sm font-medium appearance-none"
-              value={filters.status}
-              onChange={handleFilterChange}
-            >
-              <option value="">{t('allStatuses')}</option>
-              <option value="PENDING">{t('pending')}</option>
-              <option value="READY_FOR_PICKUP">{t('orderReadyForPickup')}</option>
-              <option value="CONFIRMED">{t('orderConfirmed')}</option>
-              <option value="PROCESSING">{t('processing')}</option>
-              <option value="SHIPPED">{t('shipped')}</option>
-              <option value="DELIVERED">{t('delivered')}</option>
-              <option value="COMPLETED">{t('orderCompleted')}</option>
-              <option value="CANCELLED">{t('cancelled')}</option>
-            </select>
-            <select 
-              name="paymentStatus"
-              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none text-sm font-medium appearance-none"
-              value={filters.paymentStatus}
-              onChange={handleFilterChange}
-            >
-              <option value="">{t('allPaymentStatuses')}</option>
-              <option value="PAID">{t('payPaid')}</option>
-              <option value="UNPAID">{t('payUnpaid')}</option>
-              <option value="REFUNDED">{t('payRefunded')}</option>
-            </select>
+            <div className="relative">
+              <select
+                name="status"
+                className="w-full appearance-none px-4 py-2.5 pr-9 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none text-sm font-medium"
+                value={filters.status}
+                onChange={handleFilterChange}
+              >
+                <option value="">{t('allStatuses')}</option>
+                <option value="PENDING">{t('orderPending')}</option>
+                <option value="CONFIRMED">{t('orderConfirmed')}</option>
+                <option value="PROCESSING">{t('orderProcessing')}</option>
+                <option value="READY_FOR_PICKUP">{t('orderReadyForPickup')}</option>
+                <option value="SHIPPED">{t('orderShipped')}</option>
+                <option value="DELIVERED">{t('orderDelivered')}</option>
+                <option value="COMPLETED">{t('orderCompleted')}</option>
+                <option value="REFUNDED">{t('orderRefunded')}</option>
+                <option value="CANCELLED">{t('orderCancelled')}</option>
+              </select>
+              <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
+            <div className="relative">
+              <select
+                name="paymentStatus"
+                className="w-full appearance-none px-4 py-2.5 pr-9 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none text-sm font-medium"
+                value={filters.paymentStatus}
+                onChange={handleFilterChange}
+              >
+                <option value="">{t('allPaymentStatuses')}</option>
+                <option value="PAID">{t('payPaid')}</option>
+                <option value="UNPAID">{t('payUnpaid')}</option>
+                <option value="PENDING">{t('payPending')}</option>
+                <option value="PARTIALLY_PAID">{t('payPartiallyPaid')}</option>
+                <option value="PARTIALLY_REFUNDED">{t('payPartiallyRefunded')}</option>
+                <option value="REFUNDED">{t('payRefunded')}</option>
+                <option value="FAILED">{t('payFailed')}</option>
+              </select>
+              <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
             <input 
               type="date"
               name="dateFrom"
@@ -274,7 +309,7 @@ export default function OrdersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-1.5">
                         <Package size={14} className="text-gray-400" />
-                        <span className="text-xs font-bold text-gray-600">{order._count?.items || 0} Products</span>
+                        <span className="text-xs font-bold text-gray-600">{order._count?.orderItems ?? 0} {t('productsLabel')}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-shielder-dark">
@@ -300,12 +335,12 @@ export default function OrdersPage() {
                         order.paymentStatus === 'REFUNDED' ? 'bg-gray-100 text-gray-700 border-gray-200' :
                         'bg-yellow-50 text-yellow-700 border-yellow-100'
                       }`}>
-                        {order.paymentStatus}
+                        {paymentStatusLabel[order.paymentStatus] || order.paymentStatus}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${statusColors[order.status]}`}>
-                        {order.status}
+                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter border ${statusColors[order.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                        {orderStatusLabel[order.status] || order.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
