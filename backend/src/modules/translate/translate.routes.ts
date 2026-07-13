@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { translate } from '@vitalets/google-translate-api';
 import { authenticate } from '@/modules/auth/auth.middleware';
 import { requireRoles } from '@/common/middleware/rbac.middleware';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/common/constants/roles';
 
 const router = Router();
 
