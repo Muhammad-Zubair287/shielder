@@ -43,7 +43,7 @@ export default function AdminTwoFactorPage() {
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('admin_2fa_user_id');
     if (!storedUserId) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     setUserId(storedUserId);
@@ -81,7 +81,7 @@ export default function AdminTwoFactorPage() {
   const handleBackToLogin = () => {
     sessionStorage.removeItem('admin_2fa_user_id');
     sessionStorage.removeItem('admin_otp_session_token');
-    router.push('/login');
+    router.replace('/login');
   };
 
   const errorMessage = localError || error || '';

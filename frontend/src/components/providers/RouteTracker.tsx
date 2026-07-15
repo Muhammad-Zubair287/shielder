@@ -4,15 +4,31 @@ import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
 const KEY = 'prev_app_route';
+const AUTH_ROUTES = new Set([
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/forgot-password/verify',
+  '/forgot-password/reset',
+  '/reset-password',
+  '/verify-email',
+  '/verify-registration',
+  '/admin/admin-2fa',
+  '/superadmin/superadmin-2fa',
+]);
+
+function isAuthRoute(pathname: string): boolean {
+  return Array.from(AUTH_ROUTES).some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
 
 /**
  * Tracks in-app SPA navigation in sessionStorage.
  *
  * On hard page load / direct URL access: clears the flag (mount effect, empty deps).
- * On SPA navigation:                     writes the previous path (pathname effect).
+ * On SPA navigation into auth pages:      writes the last non-auth path.
  *
  * The login page back button reads this flag:
- *   - flag present  → navigated within the app  → router.back()
+ *   - flag present  → navigated within the app  → router.replace(flag)
  *   - flag absent   → direct URL / hard refresh → router.push('/')
  */
 export function RouteTracker() {
@@ -29,7 +45,9 @@ export function RouteTracker() {
   // because prevPathRef starts as null).
   useEffect(() => {
     if (prevPathRef.current !== null && prevPathRef.current !== pathname) {
-      sessionStorage.setItem(KEY, prevPathRef.current);
+      if (isAuthRoute(pathname) && !isAuthRoute(prevPathRef.current) && !pathname.startsWith('/api')) {
+        sessionStorage.setItem(KEY, prevPathRef.current);
+      }
     }
     prevPathRef.current = pathname;
   }, [pathname]);

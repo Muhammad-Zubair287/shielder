@@ -20,7 +20,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
 
@@ -29,11 +29,11 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       if (!roles.includes(user.role)) {
         // Redirect to the correct panel based on actual role
         if (user.role === 'SUPER_ADMIN') {
-          router.push('/superadmin/dashboard');
+          router.replace('/superadmin/dashboard');
         } else if (user.role === 'ADMIN') {
-          router.push('/admin/dashboard');
+          router.replace('/admin/dashboard');
         } else {
-          router.push('/');
+          router.replace('/');
         }
       }
     }

@@ -143,14 +143,18 @@ export default function VerifyRegistrationPage() {
     <div className={`min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10 ${isRTL ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-sm p-8 relative">
         {/* Back */}
-        <Link
-          href="/register"
-          onClick={() => { sessionStorage.removeItem('reg_session_token'); sessionStorage.removeItem('reg_email'); }}
+        <button
+          type="button"
+          onClick={() => {
+            sessionStorage.removeItem('reg_session_token');
+            sessionStorage.removeItem('reg_email');
+            router.replace('/register');
+          }}
           className={`absolute top-6 ${isRTL ? 'right-6' : 'left-6'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg`}
         >
           <BackArrow className="w-4 h-4" />
           <span>{t('regOtpBackToSignup')}</span>
-        </Link>
+        </button>
 
         {/* Header */}
         <div className="text-center mt-8 mb-8">
@@ -234,13 +238,17 @@ export default function VerifyRegistrationPage() {
 
         {/* Change email */}
         <div className="text-center mt-4 pt-4 border-t border-gray-100">
-          <Link
-            href="/register"
-            onClick={() => { sessionStorage.removeItem('reg_session_token'); sessionStorage.removeItem('reg_email'); }}
+          <button
+            type="button"
+            onClick={() => {
+              sessionStorage.removeItem('reg_session_token');
+              sessionStorage.removeItem('reg_email');
+              router.replace('/register');
+            }}
             className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
           >
             {t('regOtpChangeEmail')}
-          </Link>
+          </button>
         </div>
       </div>
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
@@ -96,9 +95,13 @@ export default function RegisterPage() {
 
         <div className="text-center mt-8 text-sm text-gray-600">
           {t('alreadyHaveAccount')}{' '}
-          <Link href={ROUTES.LOGIN} className="text-[#004A99] font-semibold hover:text-[#0D2F8C]">
+          <button
+            type="button"
+            onClick={() => router.replace(ROUTES.LOGIN)}
+            className="text-[#004A99] font-semibold hover:text-[#0D2F8C]"
+          >
             {t('signIn')}
-          </Link>
+          </button>
         </div>
       </div>
     </div>

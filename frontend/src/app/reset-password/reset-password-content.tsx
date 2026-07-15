@@ -42,7 +42,7 @@ export function ResetPasswordContent() {
     try {
       await authService.resetPassword(token || '', password);
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.replace('/login'), 2000);
     } catch (err: unknown) {
       const message =
         typeof err === 'object' &&

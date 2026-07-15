@@ -43,7 +43,7 @@ export default function SuperAdminTwoFactorPage() {
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('superadmin_2fa_user_id');
     if (!storedUserId) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     setUserId(storedUserId);
@@ -81,7 +81,7 @@ export default function SuperAdminTwoFactorPage() {
   const handleBackToLogin = () => {
     sessionStorage.removeItem('superadmin_2fa_user_id');
     sessionStorage.removeItem('superadmin_otp_session_token');
-    router.push('/login');
+    router.replace('/login');
   };
 
   const errorMessage = localError || error || '';

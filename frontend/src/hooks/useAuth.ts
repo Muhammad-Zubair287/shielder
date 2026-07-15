@@ -162,7 +162,7 @@ export const useAuth = () => {
       setLoading(true);
       await storeLogout();
       toast.success(t('logoutSuccess'));
-      router.push(ROUTES.LOGIN);
+      router.replace(ROUTES.LOGIN);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

@@ -258,7 +258,7 @@ apiClient.interceptors.response.use(
         const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
         const isPublicPage = currentPath === '/login' || currentPath === '/register';
         if (typeof window !== 'undefined' && hadToken && !url.includes('auth/me') && !isPublicPage) {
-          window.location.href = '/login?expired=true';
+          window.location.replace('/login?expired=true');
         }
 
         return Promise.reject(refreshError);

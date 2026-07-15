@@ -284,7 +284,7 @@ export function VerifyEmailContent() {
                 {t('auth.tryAgain')}
               </button>
             )}
-            <Link href="/login" className="text-blue-600 hover:underline font-semibold">
+            <Link href="/login" replace className="text-blue-600 hover:underline font-semibold">
               {t('backToLogin')}
             </Link>
           </>

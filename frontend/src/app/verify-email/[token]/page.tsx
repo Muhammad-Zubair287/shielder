@@ -95,7 +95,7 @@ export default function VerifyEmailTokenPage() {
             </div>
             <h2 className="text-2xl font-bold text-red-600 mb-2">{t('verificationFailed')}</h2>
             <p className="text-slate-600 mb-6">{errorMessage}</p>
-            <Link href="/login" className="text-blue-600 hover:underline font-semibold">
+            <Link href="/login" replace className="text-blue-600 hover:underline font-semibold">
               {t('backToLogin')}
             </Link>
           </>

@@ -297,11 +297,11 @@ function LoginPageContent() {
           <button
             onClick={() => {
               const prevRoute = typeof window !== 'undefined' ? sessionStorage.getItem('prev_app_route') : null;
-              if (prevRoute) {
-                router.back();
-              } else {
-                router.push(ROUTES.HOME);
-              }
+              const safeRoute = prevRoute && !prevRoute.startsWith('/login') && !prevRoute.startsWith('/register')
+                ? prevRoute
+                : ROUTES.HOME;
+
+              router.replace(safeRoute);
             }}
             className={`absolute top-5 z-10 ${isRTL ? 'right-8' : 'left-8'} inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors`}
             aria-label={isRTL ? 'Back to previous page' : 'Back to previous page'}
