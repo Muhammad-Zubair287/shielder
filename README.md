@@ -84,7 +84,7 @@ npm run dev                        # http://localhost:3000
 
 ### Super Admin Panel
 - Admin user management (create / suspend / delete admins)
-- Company settings, privacy policy, about us
+- Company settings, privacy policy, terms & conditions, about us
 - Platform-wide analytics
 
 ### Real-time Sync (Socket.IO)
@@ -102,6 +102,13 @@ npm run dev                        # http://localhost:3000
 - Language preference stored per-user in the database
 - All content entities (Product, Category, Subcategory) store bilingual translations natively
 - Dynamic navbar titles detect UUIDs/IDs in URLs and show human-readable labels (e.g. `Order Details`)
+
+### Terms & Conditions Management
+- Public-facing terms & conditions page at `/terms-and-conditions`
+- Bilingual content (English + Arabic) stored in database
+- Super Admin can update terms via API: `PUT /api/admin/terms-and-conditions`
+- Public can view terms: `GET /api/terms-and-conditions`
+- Last updated timestamp displayed on public page
 
 ## Tech Stack
 

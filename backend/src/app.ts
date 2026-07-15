@@ -34,6 +34,7 @@ import epgRoutes from './modules/payment/epg.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import privacyPolicyRoutes from './modules/privacy-policy/privacy-policy.routes';
+import termsAndConditionsRoutes from './modules/terms-and-conditions/terms-and-conditions.routes';
 import quotationRoutes from './modules/quotation/quotation.routes';
 import customerQuotationRoutes from './modules/customer-quotation/customer-quotation.routes';
 import customerQuotationBasketRoutes from './modules/customer-quotation-basket/customer-quotation-basket.routes';
@@ -236,6 +237,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/reports`, reportsRoutes);
     app.use(`${prefix}/settings`, settingsRoutes);
     app.use(`${prefix}/privacy-policy`, privacyPolicyRoutes);
+    app.use(`${prefix}/terms-and-conditions`, termsAndConditionsRoutes);
     app.use(`${prefix}/quotations`, quotationRoutes);
     app.use(`${prefix}/customer-quotations`, customerQuotationRoutes);
     app.use(`${prefix}/customer/quotation-basket`, customerQuotationBasketRoutes);

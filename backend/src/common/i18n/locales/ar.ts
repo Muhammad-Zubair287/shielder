@@ -227,6 +227,10 @@ export const ar: Record<string, string> = {
   'privacyPolicy.updateSuccess': 'تم تحديث سياسة الخصوصية بنجاح.',
   'privacyPolicy.notFound':      'سياسة الخصوصية غير موجودة.',
 
+  // ── Terms and Conditions ───────────────────────────────────────────────────
+  'termsAndConditions.updateSuccess': 'تم تحديث الشروط والأحكام بنجاح.',
+  'termsAndConditions.notFound':      'الشروط والأحكام غير موجودة.',
+
   // ── Super Admin ────────────────────────────────────────────────────────────
   'superAdmin.userCreated':     'تم إنشاء المستخدم بنجاح.',
   'superAdmin.userUpdated':     'تم تحديث المستخدم بنجاح.',

@@ -27,6 +27,7 @@ export default function LandingFooter() {
     { label: t('landingFooterNews') || 'News', href: '/news' },
     { label: t('landingFooterContactUS') || 'Contact', href: '/contact' },
     { label: t('landingFooterPrivacy') || 'Privacy Policy', href: '/privacy-policy' },
+    { label: t('landingFooterTerms') || 'Terms & Conditions', href: '/terms-and-conditions' },
   ];
 
   const resourceLinks = [
@@ -155,8 +156,8 @@ export default function LandingFooter() {
                 <Link href="/privacy-policy" className="text-white/60 text-xs hover:text-white transition-colors">
                   {t('landingFooterPrivacyPolicy') || 'Privacy Policy'}
                 </Link>
-                <Link href="#" className="text-white/60 text-xs hover:text-white transition-colors">
-                  {t('landingFooterTermsOfUse') || 'Terms of Use'}
+                <Link href="/terms-and-conditions" className="text-white/60 text-xs hover:text-white transition-colors">
+                  {t('landingFooterTerms') || 'Terms & Conditions'}
                 </Link>
                 <Link href="#" className="text-white/60 text-xs hover:text-white transition-colors">
                   {t('landingFooterSitemap') || 'Sitemap'}

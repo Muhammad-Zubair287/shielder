@@ -69,10 +69,17 @@ export default function LandingNavbar() {
     { label: t('landingNavLogin'), href: '/login' },
   ];
 
+  // Terms & Conditions link (hidden but preserved for functionality)
+  const termsAndConditionsLink = {
+    label: t('termsAndConditions') || 'Terms & Conditions',
+    href: '/terms-and-conditions'
+  };
+
   // Old navbar items (hidden but kept for functionality)
   const hiddenNavLinks = [
     { label: t('landingNavRequestQuote'), href: '/generate-quotation' },
     { label: t('landingNavPrivacy'), href: '/privacy-policy' },
+    { label: t('termsAndConditions') || 'Terms & Conditions', href: '/terms-and-conditions' },
   ];
 
   const profileDisplayName = user?.profile?.fullName?.trim() || user?.email || t('profile.viewProfile');

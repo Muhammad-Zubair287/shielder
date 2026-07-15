@@ -227,6 +227,10 @@ export const en: Record<string, string> = {
   'privacyPolicy.updateSuccess': 'Privacy policy updated successfully.',
   'privacyPolicy.notFound':      'Privacy policy not found.',
 
+  // ── Terms and Conditions ───────────────────────────────────────────────────
+  'termsAndConditions.updateSuccess': 'Terms and conditions updated successfully.',
+  'termsAndConditions.notFound':      'Terms and conditions not found.',
+
   // ── Super Admin ────────────────────────────────────────────────────────────
   'superAdmin.userCreated':      'User created successfully.',
   'superAdmin.userUpdated':      'User updated successfully.',
