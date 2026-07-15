@@ -32,6 +32,7 @@ export default function SubcategoryFormModal({
 }: Props) {
   const { t, isRTL, locale } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [form, setForm] = React.useState<SubcategoryFormData>(EMPTY);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
@@ -107,6 +108,9 @@ export default function SubcategoryFormModal({
     if (!form.categoryId) errs.categoryId = t('categoryIdRequired');
     if (!form.nameEn.trim()) errs.nameEn = t('subNameEnRequired');
     setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     return Object.keys(errs).length === 0;
   };
 
@@ -145,6 +149,7 @@ export default function SubcategoryFormModal({
         err?.response?.data?.message ||
           t(mode === 'create' ? 'subcategoryCreateFailed' : 'subcategoryUpdateFailed')
       );
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
     }
@@ -184,7 +189,7 @@ export default function SubcategoryFormModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
 
           {/* ── Image Upload ── */}
           <div>

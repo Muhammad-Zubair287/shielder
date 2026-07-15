@@ -35,7 +35,7 @@ export const PROFILE_UPDATE_FIELDS = [
 export const profileValidation = {
   updateProfile: Joi.object({
     email: Joi.string().trim().email().optional(),
-    fullName: sharedValidationSchemas.textNoHtml.max(100).optional(),
+    fullName: sharedValidationSchemas.fullName.optional(),
     phoneNumber: Joi.string()
       .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
       .optional()

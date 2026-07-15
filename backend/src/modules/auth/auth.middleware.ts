@@ -10,6 +10,8 @@ import { AuthRequest } from '../../types/global';
 import { logger } from '../../common/logger/logger';
 import { UserRole } from '../../types/rbac.types';
 import { prisma } from '@/config/database';
+import { tokenBlacklistService } from '@/common/services/token-blacklist.service';
+import { t } from '@/common/i18n';
 
 const verifyEmailStatusInternal = async (
   req: AuthRequest,
@@ -21,6 +23,18 @@ const verifyEmailStatusInternal = async (
       throw new UnauthorizedError('User not authenticated');
     }
 
+    const locale = req.locale ?? 'en';
+
+    // ── 1. JTI blacklist check (Redis — O(1), no DB round-trip) ──────────────
+    // If the token was explicitly revoked on logout it will be in Redis.
+    if (req.user.jti) {
+      const revoked = await tokenBlacklistService.isBlacklisted(req.user.jti);
+      if (revoked) {
+        throw new UnauthorizedError(t('auth.tokenRevoked', locale));
+      }
+    }
+
+    // ── 2. DB check — user existence, soft-delete, active status ─────────────
     const dbUser = await prisma.user.findUnique({
       where: { id: req.user.userId },
       select: {
@@ -37,13 +51,15 @@ const verifyEmailStatusInternal = async (
     });
 
     if (!dbUser || dbUser.deletedAt || !dbUser.isActive) {
-      throw new UnauthorizedError('Invalid or expired token');
+      throw new UnauthorizedError(t('auth.tokenRevoked', locale));
     }
 
+    // ── 3. tokenVersion check — catches logoutAll and Redis-fallback logouts ──
     if ((req.user.tokenVersion ?? 0) !== dbUser.tokenVersion) {
-      throw new UnauthorizedError('Token has already been invalidated');
+      throw new UnauthorizedError(t('auth.tokenRevoked', locale));
     }
 
+    // ── 4. Email verification check (USER role only) ──────────────────────────
     if (
       req.user.role === 'USER' &&
       (!dbUser.emailVerified ||
@@ -82,7 +98,7 @@ export const authenticate = async (
     // Verify token
     const payload = verifyAccessToken(token);
 
-    // Attach user to request
+    // Attach user + token metadata to request
     req.user = {
       id: payload.userId,
       userId: payload.userId,
@@ -90,6 +106,8 @@ export const authenticate = async (
       role: payload.role as UserRole,
       tokenVersion: payload.tokenVersion ?? 0,
       preferredLanguage: payload.preferredLanguage,
+      jti: payload.jti,
+      tokenExp: payload.exp,
     };
 
     await verifyEmailStatusInternal(req, _res, next);

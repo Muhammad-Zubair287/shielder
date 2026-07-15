@@ -19,6 +19,8 @@ declare global {
         role: UserRole;
         tokenVersion?: number;
         preferredLanguage?: string;
+        jti?: string;       // JWT ID — used for blacklisting on logout
+        tokenExp?: number;  // JWT exp (unix timestamp) — used to compute blacklist TTL
       };
       /** Normalised locale set by languageMiddleware — 'en' | 'ar' */
       locale: string;
@@ -37,6 +39,8 @@ export interface AuthRequest extends Request {
     role: UserRole;
     tokenVersion?: number;
     preferredLanguage?: string;
+    jti?: string;
+    tokenExp?: number;
   };
 }
 

@@ -120,6 +120,56 @@ export const sharedValidationSchemas = {
       'string.max': 'Name must not exceed 100 characters',
     }),
 
+  /**
+   * Full name field for user profiles.
+   * Accepts Unicode letters, spaces, hyphens, and apostrophes.
+   * Rejects numeric-only input, HTML/JS injection, and special characters.
+   */
+  fullName: Joi.string()
+    .trim()
+    .min(2)
+    .max(100)
+    .custom((value, helpers) => {
+      if (/<[^>]+>/.test(value) || /javascript:\s*/i.test(value) || /on\w+\s*=/.test(value)) {
+        return helpers.error('fullName.lettersOnly');
+      }
+      // Must contain at least one Unicode letter; only letters, spaces, hyphens, apostrophes allowed
+      if (!/^(?=.*[\p{L}])[\p{L}\s'\-]+$/u.test(value)) {
+        return helpers.error('fullName.lettersOnly');
+      }
+      return value;
+    }, 'Full name validation')
+    .messages({
+      'string.empty':        'Full name is required.',
+      'string.min':          'Full name must be at least {{#limit}} characters.',
+      'string.max':          'Full name must not exceed {{#limit}} characters.',
+      'fullName.lettersOnly': 'Full name should contain only letters and spaces.',
+    }),
+
+  /**
+   * Name field for inventory entities (Category, Subcategory, Product).
+   * Requires at least one Unicode letter — rejects numeric-only values.
+   * Allows letters, digits, spaces, and common punctuation.
+   * Blocks HTML/JS injection.
+   */
+  inventoryName: Joi.string()
+    .trim()
+    .max(100)
+    .custom((value, helpers) => {
+      if (!value) return value;
+      if (/<[^>]+>/.test(value) || /javascript:\s*/i.test(value) || /on\w+\s*=/.test(value)) {
+        return helpers.error('inventoryName.invalid');
+      }
+      if (!/[\p{L}]/u.test(value)) {
+        return helpers.error('inventoryName.invalid');
+      }
+      return value;
+    }, 'Inventory name validation')
+    .messages({
+      'string.empty': 'Name is required.',
+      'inventoryName.invalid': 'Name must contain valid alphabetic characters and cannot be numbers only.',
+    }),
+
   superAdminName: Joi.string()
     .trim()
     .max(25)

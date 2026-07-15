@@ -205,6 +205,7 @@ const ProductManagement = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [translating, setTranslating] = useState(false);
 
   const productName = useCallback((product: Product) => {
@@ -480,6 +481,7 @@ const ProductManagement = () => {
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nameEn.trim() || !formData.categoryId || !formData.subcategoryId || !formData.price || !formData.stock) {
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return toast.error(t('superadminProducts.fillRequiredFields'));
     }
 
@@ -549,6 +551,7 @@ const ProductManagement = () => {
       const error = err as ApiErrorResponse;
       const firstValidationError = error.response?.data?.errors?.[0]?.message;
       toast.error(firstValidationError || error.response?.data?.message || t('superadminProducts.saveFailed'));
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setFormLoading(false);
     }
@@ -1260,7 +1263,7 @@ const ProductManagement = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateOrUpdate} className="overflow-y-auto px-8 py-8 md:px-10 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
+            <form ref={formRef} onSubmit={handleCreateOrUpdate} className="overflow-y-auto px-8 py-8 md:px-10 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
               <div className="space-y-8">
                 {/* Image Section */}
                 <div className="flex flex-col items-center justify-center">

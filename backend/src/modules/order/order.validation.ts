@@ -3,7 +3,6 @@ import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
 export const orderValidation = {
   createOrder: Joi.object({
-    userId: Joi.string().uuid().required(),
     deliveryType: Joi.string().valid('DELIVERY', 'PICKUP').default('DELIVERY'),
     warehouseId: Joi.when('deliveryType', {
       is: 'PICKUP',

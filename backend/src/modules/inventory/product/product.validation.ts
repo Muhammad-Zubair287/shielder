@@ -3,7 +3,7 @@ import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
 const productTranslationSchema = Joi.object({
   locale: Joi.string().required().length(2),
-  name: sharedValidationSchemas.textNoHtml.required().trim().max(200),
+  name: sharedValidationSchemas.inventoryName.required().trim().max(200),
   description: sharedValidationSchemas.textNoHtml.optional().trim().max(5000),
 });
 

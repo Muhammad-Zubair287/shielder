@@ -64,23 +64,57 @@ export const JOI_ERROR_KEY_MAP: Record<string, string> = {
   'any.only':            'validation.invalidEnum',
   'boolean.base':        'validation.booleanBase',
   'object.unknown':      'validation.unknownField',
+  'fullName.lettersOnly':   'validation.fullNameInvalid',
+  'inventoryName.invalid':  'validation.invalidInventoryName',
 };
 
 /**
  * Translate a single Joi ValidationErrorItem into a localized message string.
  * Uses the error type code when a mapping exists; falls back to the
  * original Joi message (already in English) otherwise.
+ * 
+ * For custom validators, checks if the message is an i18n key (format: 'namespace.key')
+ * and translates it if found.
  */
 export function translateJoiError(
   detail: { type: string; message: string; context?: Record<string, any> },
   locale: string,
 ): string {
   const key = JOI_ERROR_KEY_MAP[detail.type];
-  if (!key) return detail.message; // no mapping → return Joi's English message as-is
+  if (key) {
+    // Standard Joi type with a mapping
+    const params: Record<string, string | number> = {};
+    if (detail.context?.limit !== undefined) params.limit = detail.context.limit;
+    if (detail.context?.label)              params.label = detail.context.label;
+    return t(key, locale, params);
+  }
+  
+  // For custom validators, check if the embedded message is an i18n key.
+  if (detail.type === 'any.custom') {
+    const customMessage =
+      typeof detail.context?.message === 'string'
+        ? detail.context.message
+        : detail.message;
 
-  const params: Record<string, string | number> = {};
-  if (detail.context?.limit !== undefined) params.limit = detail.context.limit;
-  if (detail.context?.label)              params.label = detail.context.label;
+    const isI18nKey =
+      typeof customMessage === 'string' &&
+      customMessage.includes('.') &&
+      !customMessage.includes('<') &&
+      !customMessage.includes('>') &&
+      !customMessage.includes(';');
 
-  return t(key, locale, params);
+    if (isI18nKey) {
+      const translated = t(customMessage, locale);
+      if (translated !== customMessage) {
+        return translated;
+      }
+    }
+
+    if (typeof customMessage === 'string' && customMessage) {
+      return customMessage;
+    }
+  }
+  
+  // Fallback: return the original message as-is
+  return detail.message;
 }

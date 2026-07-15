@@ -6,6 +6,13 @@ import prisma from '@/config/database';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/common/errors/api.error';
 import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
+import { t } from '@/common/i18n';
+import {
+  sanitizeMaybeString,
+  validateGeneralSettings,
+  validatePaymentSettings,
+  validateSecurityField,
+} from '@/common/security/validation.security';
 
 class SettingsService {
   private cachedCurrency: string | null = null;
@@ -83,7 +90,8 @@ class SettingsService {
     userId: string,
     section: string,
     data: Record<string, unknown>,
-    ipAddress?: string
+    ipAddress?: string,
+    locale: string = 'en'
   ) {
     const oldSettings = await prisma.systemSettings.findUnique({
       where: { id: 'CURRENT' }
@@ -96,6 +104,46 @@ class SettingsService {
     // Capture snapshot before major changes if versioning is required
     // In this simplified version, we'll create a snapshot for every update to allow rollback
     await this.createSnapshot(userId, 'Auto-snapshot before updating ' + section, oldSettings);
+
+    const sanitizedData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      sanitizedData[key] = typeof value === 'string' ? sanitizeMaybeString(value) : value;
+    }
+
+    if (section === 'payment') {
+      const paymentValidation = validatePaymentSettings(sanitizedData);
+      if (!paymentValidation.isValid) {
+        throw new BadRequestError(t(paymentValidation.errors[0] || 'settings.invalidPaymentApiKey', locale));
+      }
+    }
+
+    if (section === 'general') {
+      const generalValidation = validateGeneralSettings(sanitizedData);
+      if (!generalValidation.isValid) {
+        throw new BadRequestError(t(generalValidation.errors[0] || 'settings.invalidCompanyName', locale));
+      }
+    }
+
+    for (const sensitiveField of [
+      'paymentGatewayApiKey',
+      'paymentGatewaySecretKey',
+      'paymentWebhookUrl',
+      'companyName',
+      'companyNameEn',
+      'companyNameAr',
+      'companyEmail',
+      'companyPhone',
+      'companyAddress',
+      'companyLocationEn',
+      'companyLocationAr',
+    ]) {
+      if (sensitiveField in sanitizedData && sanitizedData[sensitiveField] !== null && sanitizedData[sensitiveField] !== undefined && sanitizedData[sensitiveField] !== '') {
+        const validation = validateSecurityField(sensitiveField, sanitizedData[sensitiveField]);
+        if (!validation.isValid) {
+          throw new BadRequestError(t(validation.errors[0] || 'settings.maliciousContentDetected', locale));
+        }
+      }
+    }
 
     // Filter input data to only include valid Prisma SystemSettings fields to avoid schema errors.
     // E.g., fields like favicon that aren't physically in the schema.prisma SystemSettings model.
@@ -114,9 +162,9 @@ class SettingsService {
     ];
 
     const prismaUpdateData: Record<string, any> = {};
-    for (const key of Object.keys(data)) {
+    for (const key of Object.keys(sanitizedData)) {
       if (systemSettingsFields.includes(key)) {
-        prismaUpdateData[key] = data[key];
+        prismaUpdateData[key] = sanitizedData[key];
       }
     }
 
@@ -133,23 +181,23 @@ class SettingsService {
     // behavior while preserving explicit per-product overrides.
     if (
       section === 'notification' &&
-      typeof data.lowStockThreshold === 'number' &&
+      typeof sanitizedData.lowStockThreshold === 'number' &&
       typeof oldSettings.lowStockThreshold === 'number' &&
-      data.lowStockThreshold !== oldSettings.lowStockThreshold
+      sanitizedData.lowStockThreshold !== oldSettings.lowStockThreshold
     ) {
       await prisma.product.updateMany({
         where: {
           minimumStockThreshold: oldSettings.lowStockThreshold,
         },
         data: {
-          minimumStockThreshold: data.lowStockThreshold,
+          minimumStockThreshold: sanitizedData.lowStockThreshold as number,
         },
       });
     }
 
     // Log individual changes to Audit Log
-    for (const key in data) {
-      if (oldSettings[key as keyof typeof oldSettings] !== data[key]) {
+    for (const key in sanitizedData) {
+      if (oldSettings[key as keyof typeof oldSettings] !== sanitizedData[key]) {
         const jsonValue = (value: unknown): Prisma.InputJsonValue | null => {
           if (value === null || value === undefined) return null;
           if (value instanceof Date) return value.toISOString();
@@ -171,7 +219,7 @@ class SettingsService {
         const changePayload: Prisma.InputJsonObject = {
           field: key,
           old: jsonValue(oldSettings[key as keyof typeof oldSettings]) ?? null,
-          new: jsonValue(data[key]) ?? null,
+          new: jsonValue(sanitizedData[key]) ?? null,
         };
 
         await prisma.auditLog.create({

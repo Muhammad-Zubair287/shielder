@@ -116,6 +116,7 @@ export default function SubcategoryManagementPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Fetch Data
   const fetchData = useCallback(async () => {
@@ -210,6 +211,7 @@ export default function SubcategoryManagementPage() {
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create subcategory');
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setFormLoading(false);
     }
@@ -236,6 +238,7 @@ export default function SubcategoryManagementPage() {
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update subcategory');
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setFormLoading(false);
     }
@@ -616,7 +619,7 @@ export default function SubcategoryManagementPage() {
               </button>
             </div>
             
-            <form onSubmit={showAddModal ? handleCreateSubcategory : handleUpdateSubcategory} className="flex-1 overflow-y-auto">
+            <form ref={formRef} onSubmit={showAddModal ? handleCreateSubcategory : handleUpdateSubcategory} className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-5">
               {/* Image Upload */}
               <div className="flex flex-col items-center">

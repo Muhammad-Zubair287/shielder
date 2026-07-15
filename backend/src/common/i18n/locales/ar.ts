@@ -36,8 +36,10 @@ export const ar: Record<string, string> = {
   'validation.passwordCommon': 'كلمة المرور شائعة جداً. يرجى اختيار كلمة مرور أقوى.',
   'validation.passwordMax':    'يجب ألا تتجاوز كلمة المرور {{limit}} حرفاً.',
   'validation.invalidPhone':   'يرجى تقديم رقم هاتف صالح (مثل: 05XXXXXXXX أو +966 5X XXX XXXX).',
-  'validation.htmlNotAllowed': 'محتوى HTML غير مسموح به.',
-  'validation.invalidName':    'صيغة الاسم غير صالحة.',
+  'validation.htmlNotAllowed':   'محتوى HTML غير مسموح به.',
+  'validation.invalidName':      'صيغة الاسم غير صالحة.',
+  'validation.fullNameInvalid':      'يجب أن يحتوي الاسم الكامل على أحرف ومسافات فقط.',
+  'validation.invalidInventoryName': 'يجب أن يحتوي الاسم على أحرف أبجدية صحيحة ولا يمكن أن يكون أرقاماً فقط.',
 
   // ── Authentication ─────────────────────────────────────────────────────────
   'auth.registerSuccessAutoVerified':    'تم التسجيل بنجاح. تم التحقق من حسابك تلقائياً.',
@@ -86,6 +88,7 @@ export const ar: Record<string, string> = {
   'auth.registrationEmailExists':        'يوجد حساب مسجل بهذا البريد الإلكتروني. يرجى تسجيل الدخول.',
   'auth.registrationValidationFailed':   'يرجى تصحيح الأخطاء والمحاولة مرة أخرى.',
   'auth.registrationOtpAttemptsLeft':    'متبقي {{count}} محاولة.',
+  'auth.tokenRevoked':                   'غير مصرح. يرجى تسجيل الدخول مجدداً.',
 
   // ── Profile ────────────────────────────────────────────────────────────────
   'profile.updateSuccess':      'تم تحديث الملف الشخصي بنجاح.',
@@ -190,6 +193,28 @@ export const ar: Record<string, string> = {
   'settings.logoUploaded':    'تم رفع شعار الشركة بنجاح.',
   'settings.backupTriggered': 'تم تشغيل النسخ الاحتياطي بنجاح.',
   'settings.notFound':        'الإعدادات غير موجودة.',
+
+  // ── Settings Security Validation (Payment Gateway & Credentials) ──────────────
+  'settings.invalidPaymentApiKey':              'مفتاح بوابة الدفع غير صالح. يرجى تقديم مفتاح صحيح.',
+  'settings.invalidPaymentSecretKey':           'مفتاح السر لبوابة الدفع غير صالح. يرجى تقديم مفتاح صحيح.',
+  'settings.invalidPaymentWebhookUrl':          'عنوان URL لـ webhook الدفع غير صالح. يرجى تقديم عنوان URL صحيح.',
+  'settings.paymentCredentialsContainMalicious': 'بيانات اعتماد بوابة الدفع تحتوي على أحرف غير صالحة أو محتوى ضار.',
+  'settings.invalidSmtpHost':                   'خادم SMTP غير صالح. يرجى تقديم اسم مضيف صحيح.',
+  'settings.invalidSmtpUsername':               'اسم مستخدم SMTP غير صالح. يرجى تقديم اسم مستخدم صحيح.',
+  'settings.invalidSmtpPassword':               'كلمة مرور SMTP غير صالحة. يرجى تقديم كلمة مرور صحيحة.',
+  'settings.invalidCompanyName':                'اسم الشركة غير صالح. يرجى استخدام الأحرف والأرقام والمسافات والعلامات الترقيمية الشائعة فقط.',
+  'settings.invalidCompanyEmail':               'بريد الشركة غير صالح. يرجى تقديم بريد إلكتروني صحيح.',
+  'settings.invalidCompanyPhone':               'هاتف الشركة غير صالح. يرجى تقديم رقم هاتف صحيح.',
+  'settings.invalidCompanyAddress':             'عنوان الشركة غير صالح. يرجى استخدام الأحرف والأرقام والمسافات والعلامات الترقيمية الشائعة فقط.',
+  'settings.invalidApiKey':                     'مفتاح API غير صالح. يرجى تقديم مفتاح صحيح يحتوي على أحرف وأرقام وشرطات وعلامات تسطير ونقاط فقط.',
+  'settings.invalidApiSecret':                  'سر API غير صالح. يرجى تقديم سر صحيح يحتوي على أحرف وأرقام وشرطات وعلامات تسطير ونقاط فقط.',
+  'settings.invalidWebhookSecret':              'سر webhook غير صالح. يرجى تقديم سر صحيح يحتوي على أحرف وأرقام وشرطات وعلامات تسطير ونقاط فقط.',
+  'settings.credentialsTooShort':               'يجب أن تكون بيانات الاعتماد {{minLength}} حرفاً على الأقل.',
+  'settings.credentialsTooLong':                'يجب أن لا تتجاوز بيانات الاعتماد {{maxLength}} حرفاً.',
+  'settings.sqlInjectionDetected':              'تم اكتشاف إدخال غير صالح. يرجى التأكد من أن جميع الحقول تحتوي على أحرف صحيحة فقط.',
+  'settings.scriptInjectionDetected':           'تم اكتشاف إدخال غير صالح. محتوى HTML والبرامج النصية غير مسموحة.',
+  'settings.maliciousContentDetected':          'القيمة المتوفرة تحتوي على محتوى غير صالح أو قد يكون ضاراً.',
+  'settings.fieldContainsSpecialChars':         'الحقل يحتوي على أحرف خاصة غير مسموحة. يرجى استخدام أحرف وأرقام وشرطات وعلامات تسطير ونقاط فقط.',
 
   // ── Application ────────────────────────────────────────────────────────────
   'application.createSuccess': 'تم إنشاء التطبيق بنجاح.',

@@ -19,6 +19,7 @@ import {
   TooManyRequestsError,
 } from '@/common/errors/api.error';
 import { AuditService } from '@/common/services/audit.service';
+import { tokenBlacklistService } from '@/common/services/token-blacklist.service';
 import { sanitizeString } from '@/common/security/sanitizer';
 import { logger } from '@/common/logger/logger';
 import { validatePasswordStrength as validatePasswordStrengthUtil } from '@/common/utils/password.utils';
@@ -991,15 +992,46 @@ export class AuthService {
   /**
    * 4️⃣ LOGOUT
    */
-  static async logout(userId: string, refreshToken: string): Promise<void> {
+  static async logout(
+    userId: string,
+    refreshToken: string,
+    accessTokenJti?: string,
+    accessTokenExp?: number,
+  ): Promise<void> {
     try {
-      // Revoke specific refresh token
+      // ── 1. Revoke the refresh token ───────────────────────────────────────
       const tokenHash = TokenService.hashToken(refreshToken);
       await TokenService.revokeToken(tokenHash, 'logout');
 
-      // Fire-and-forget audit log
-      this.createAuditLog(userId, 'LOGOUT', 'User logged out');
+      // ── 2. Immediately invalidate the access token ────────────────────────
+      // Primary: blacklist the JTI in Redis so the authenticate middleware
+      // rejects it instantly on the next request (O(1), no DB write).
+      let accessTokenInvalidated = false;
 
+      if (accessTokenJti && accessTokenExp) {
+        const remainingTtl = accessTokenExp - Math.floor(Date.now() / 1000);
+        if (remainingTtl > 0) {
+          accessTokenInvalidated = await tokenBlacklistService.blacklist(accessTokenJti, remainingTtl);
+        } else {
+          accessTokenInvalidated = true; // already expired — nothing to do
+        }
+      }
+
+      // Fallback: if Redis is unavailable (blacklist returned false) or the token
+      // has no JTI (issued before this fix), increment tokenVersion so the DB
+      // tokenVersion check in the middleware rejects all outstanding access tokens.
+      // This logs out all active sessions for this user — acceptable as a fallback.
+      if (!accessTokenInvalidated) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { tokenVersion: { increment: 1 } },
+        });
+        logger.warn(
+          `logout: Redis unavailable or no JTI — incremented tokenVersion for user ${userId} to ensure immediate token invalidation`,
+        );
+      }
+
+      this.createAuditLog(userId, 'LOGOUT', 'User logged out');
       logger.info(`User logged out: ${userId}`);
     } catch (error) {
       logger.error('Logout error:', error);

@@ -1,5 +1,5 @@
 import { prisma } from '@/config/database';
-import { BadRequestError, ConflictError } from '@/common/errors/api.error';
+import { BadRequestError, ConflictError, NotFoundError } from '@/common/errors/api.error';
 import { category_spec_templates } from '@prisma/client';
 import crypto from 'crypto';
 
@@ -16,6 +16,11 @@ export class SpecTemplateService {
 
     if (!categoryId || !specKey || typeof data.isRequired !== 'boolean') {
       throw new BadRequestError('Required fields are missing');
+    }
+
+    const categoryExists = await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
+    if (!categoryExists) {
+      throw new NotFoundError('Category not found.');
     }
 
     // Check if duplicate spec_key for this category/subcategory
@@ -44,6 +49,11 @@ export class SpecTemplateService {
   }
 
   async getByCategory(categoryId: string, subcategoryId?: string | null): Promise<category_spec_templates[]> {
+    const categoryExists = await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
+    if (!categoryExists) {
+      throw new NotFoundError('Category not found.');
+    }
+
     return await prisma.category_spec_templates.findMany({
       where: {
         category_id: categoryId,
@@ -57,9 +67,12 @@ export class SpecTemplateService {
   }
 
   async delete(id: string): Promise<category_spec_templates> {
-    return await prisma.category_spec_templates.delete({
-      where: { id },
-    });
+    try {
+      return await prisma.category_spec_templates.delete({ where: { id } });
+    } catch (err: any) {
+      if (err?.code === 'P2025') throw new NotFoundError('Specification template not found.');
+      throw err;
+    }
   }
 
   async update(id: string, data: Partial<category_spec_templates>): Promise<category_spec_templates> {

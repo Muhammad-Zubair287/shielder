@@ -135,9 +135,11 @@ export class OrderController {
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const authReq = req as AuthRequest;
+
+      // userId is never accepted from the request body — always resolved from the JWT.
       const payload = {
         ...req.body,
-        userId: authReq.user?.role === 'USER' ? authReq.user.id : (req.body.userId || authReq.user?.id),
+        userId: authReq.user!.id,
       };
 
       const order = await orderService.createOrder(payload);

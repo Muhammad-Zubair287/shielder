@@ -36,8 +36,10 @@ export const en: Record<string, string> = {
   'validation.passwordCommon': 'Password is too common. Please choose a stronger password.',
   'validation.passwordMax':    'Password must be at most {{limit}} characters.',
   'validation.invalidPhone':   'Please provide a valid phone number (e.g. 05XXXXXXXX or +966 5X XXX XXXX).',
-  'validation.htmlNotAllowed': 'HTML content is not allowed.',
-  'validation.invalidName':    'Invalid name format.',
+  'validation.htmlNotAllowed':   'HTML content is not allowed.',
+  'validation.invalidName':      'Invalid name format.',
+  'validation.fullNameInvalid':      'Full name should contain only letters and spaces.',
+  'validation.invalidInventoryName': 'Name must contain valid alphabetic characters and cannot be numbers only.',
 
   // ── Authentication ─────────────────────────────────────────────────────────
   'auth.registerSuccessAutoVerified':    'Registration successful. Your account has been auto-verified.',
@@ -86,6 +88,7 @@ export const en: Record<string, string> = {
   'auth.registrationEmailExists':        'An account with this email already exists. Please log in.',
   'auth.registrationValidationFailed':   'Please correct the errors and try again.',
   'auth.registrationOtpAttemptsLeft':    '{{count}} attempt(s) remaining.',
+  'auth.tokenRevoked':                   'Unauthorized. Please log in again.',
 
   // ── Profile ────────────────────────────────────────────────────────────────
   'profile.updateSuccess':      'Profile updated successfully.',
@@ -190,6 +193,28 @@ export const en: Record<string, string> = {
   'settings.logoUploaded':   'Company logo uploaded successfully.',
   'settings.backupTriggered':'Backup triggered successfully.',
   'settings.notFound':       'Settings not found.',
+
+  // ── Settings Security Validation (Payment Gateway & Credentials) ──────────────
+  'settings.invalidPaymentApiKey':              'Invalid payment gateway API key. Please provide a valid key.',
+  'settings.invalidPaymentSecretKey':           'Invalid payment gateway secret key. Please provide a valid key.',
+  'settings.invalidPaymentWebhookUrl':          'Invalid payment webhook URL. Please provide a valid HTTPS URL.',
+  'settings.paymentCredentialsContainMalicious': 'Payment gateway credentials contain invalid characters or malicious content.',
+  'settings.invalidSmtpHost':                   'Invalid SMTP host. Please provide a valid hostname.',
+  'settings.invalidSmtpUsername':               'Invalid SMTP username. Please provide a valid username.',
+  'settings.invalidSmtpPassword':               'Invalid SMTP password. Please provide a valid password.',
+  'settings.invalidCompanyName':                'Invalid company name. Please use only letters, numbers, spaces, and common punctuation.',
+  'settings.invalidCompanyEmail':               'Invalid company email. Please provide a valid email address.',
+  'settings.invalidCompanyPhone':               'Invalid company phone. Please provide a valid phone number.',
+  'settings.invalidCompanyAddress':             'Invalid company address. Please use only letters, numbers, spaces, and common punctuation.',
+  'settings.invalidApiKey':                     'Invalid API key. Please provide a valid key containing only alphanumeric characters, hyphens, underscores, and dots.',
+  'settings.invalidApiSecret':                  'Invalid API secret. Please provide a valid secret containing only alphanumeric characters, hyphens, underscores, and dots.',
+  'settings.invalidWebhookSecret':              'Invalid webhook secret. Please provide a valid secret containing only alphanumeric characters, hyphens, underscores, and dots.',
+  'settings.credentialsTooShort':               'Credentials must be at least {{minLength}} characters long.',
+  'settings.credentialsTooLong':                'Credentials must not exceed {{maxLength}} characters.',
+  'settings.sqlInjectionDetected':              'Invalid input detected. Please ensure all fields contain only valid characters.',
+  'settings.scriptInjectionDetected':           'Invalid input detected. HTML and scripting content is not allowed.',
+  'settings.maliciousContentDetected':          'The provided value contains invalid or potentially malicious content.',
+  'settings.fieldContainsSpecialChars':         'Field contains special characters that are not allowed. Please use only alphanumeric characters, hyphens, underscores, and dots.',
 
   // ── Application ────────────────────────────────────────────────────────────
   'application.createSuccess':  'Application created successfully.',

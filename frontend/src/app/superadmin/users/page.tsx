@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-  Users, 
-  Search, 
-  Mail, 
+import {
+  Users,
+  Search,
+  Mail,
   UserCheck,
   UserX,
   RefreshCcw,
@@ -17,6 +17,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import adminService from '@/services/admin.service';
 import { toast } from 'react-hot-toast';
@@ -25,6 +27,7 @@ import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { getImageUrl } from '@/utils/helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { broadcastSync } from '@/lib/crossTabSync';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 type UserFormErrors = {
   email?: string;
@@ -75,6 +78,7 @@ export default function UserManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [formErrors, setFormErrors] = useState<UserFormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
   const queryClient = useQueryClient();
 
   // Form state
@@ -159,6 +163,7 @@ export default function UserManagement() {
       });
     }
     setFormErrors({});
+    setShowPassword(false);
     setIsModalOpen(true);
   };
 
@@ -572,34 +577,56 @@ export default function UserManagement() {
                 )}
               </div>
 
-              {!editingUser && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('password')}</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                    <input 
-                      type="password" 
-                      required
-                      placeholder="Enter password"
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
-                      value={formData.password}
-                      onChange={(e) => {
-                        setFormData({...formData, password: e.target.value});
-                        setFormErrors((prev) => ({ ...prev, password: undefined }));
-                      }}
-                    />
-                  </div>
-                  {Array.isArray(formErrors.password) && formErrors.password.length > 0 && (
-                    <div className="space-y-1">
-                      {formErrors.password.map((message, index) => (
-                        <p key={`password-error-${index}`} className="text-[11px] text-red-500 font-medium">
-                          {message}
-                        </p>
-                      ))}
-                    </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    {t('password')}
+                  </label>
+                  {editingUser && (
+                    <span className="text-[10px] text-gray-400 italic">
+                      Leave blank to keep current password
+                    </span>
                   )}
                 </div>
-              )}
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required={!editingUser}
+                    placeholder={editingUser ? 'Enter new password (optional)' : 'Enter password'}
+                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
+                    value={formData.password}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      setFormErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                {/* Password strength meter — shows as soon as user starts typing */}
+                {formData.password.length > 0 && (
+                  <PasswordStrengthMeter password={formData.password} showRequirements />
+                )}
+
+                {/* API validation errors */}
+                {Array.isArray(formErrors.password) && formErrors.password.length > 0 && (
+                  <div className="space-y-1 mt-1">
+                    {formErrors.password.map((message, index) => (
+                      <p key={`password-error-${index}`} className="text-[11px] text-red-500 font-medium">
+                        {message}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">

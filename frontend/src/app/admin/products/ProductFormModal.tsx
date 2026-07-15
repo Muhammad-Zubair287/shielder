@@ -25,6 +25,9 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
   const [submitting, setSubmitting] = useState(false);
   const [translating, setTranslating] = useState(false);
 
+  // Scroll to top of form on error
+  const formRef = useRef<HTMLFormElement>(null);
+
   // Image upload
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -217,6 +220,9 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
     if (!form.minimumStockThreshold || isNaN(threshold) || threshold < 0)
       errs.minimumStockThreshold = t('productThresholdRequired');
     setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     return Object.keys(errs).length === 0;
   };
 
@@ -323,6 +329,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
         err?.response?.data?.message ||
           t(mode === 'create' ? 'productCreateFailed' : 'productUpdateFailed')
       );
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
     }
@@ -372,7 +379,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
         </div>
 
         {/* ── Form ── */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
 
           {/* ── Product Image ── */}
           <div>

@@ -4,6 +4,7 @@
  */
 
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { env } from './env';
 import { UserRole } from '../types/rbac.types';
 
@@ -11,20 +12,24 @@ import { UserRole } from '../types/rbac.types';
  * JWT Payload Interface
  */
 export interface JWTPayload {
+  jti: string;        // unique token ID — used for per-token blacklisting on logout
   userId: string;
   email: string;
   role: UserRole;
   tokenVersion: number;
   preferredLanguage?: string;
+  exp?: number;       // standard JWT claim — populated by jsonwebtoken on sign/verify
 }
 
 /**
- * Generates an access token
+ * Generates an access token — embeds a unique jti for blacklisting on logout.
  */
-export const generateAccessToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, env.jwt.secret, {
-    expiresIn: env.jwt.expiresIn as string,
-  } as jwt.SignOptions);
+export const generateAccessToken = (payload: Omit<JWTPayload, 'jti' | 'exp'>): string => {
+  return jwt.sign(
+    { ...payload, jti: crypto.randomUUID() },
+    env.jwt.secret,
+    { expiresIn: env.jwt.expiresIn as string } as jwt.SignOptions,
+  );
 };
 
 /**

@@ -230,7 +230,7 @@ class AuthController {
       return;
     }
 
-    await AuthService.logout(userId, refreshToken);
+    await AuthService.logout(userId, refreshToken, req.user!.jti, req.user!.tokenExp);
 
     res.status(200).json({
       success: true,

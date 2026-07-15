@@ -72,20 +72,22 @@ class RedisCacheService {
     }
   }
 
-  async setJson<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
+  async setJson<T>(key: string, value: T, ttlSeconds: number): Promise<boolean> {
     if (!(await this.ensureClient()) || !this.client) {
-      return;
+      return false;
     }
 
     try {
       await this.client.set(key, JSON.stringify(value), {
         EX: ttlSeconds,
       });
+      return true;
     } catch (error) {
       logger.warn('Redis setJson failed; cache write skipped.', {
         key,
         message: error instanceof Error ? error.message : 'Unknown error',
       });
+      return false;
     }
   }
 

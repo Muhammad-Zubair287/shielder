@@ -85,7 +85,8 @@ class SettingsController {
           req.user?.id as string,
           'general',
           { companyLogo: logoPath },
-          req.ip || ''
+          req.ip || '',
+          req.locale
         );
         res.json({ success: true, message: t('settings.logoUploaded', req.locale), data: serializeSettings({ companyLogo: logoPath }) });
       })
@@ -165,7 +166,7 @@ class SettingsController {
       }
     }
 
-    const data = await SettingsService.updateSettings(userId, section, updatePayload, ipAddress);
+    const data = await SettingsService.updateSettings(userId, section, updatePayload, ipAddress, req.locale);
     res.json({ success: true, message: t('settings.updateSuccess', req.locale), data: serializeSettings(data) });
   });
 

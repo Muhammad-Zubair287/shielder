@@ -103,6 +103,7 @@ export default function CategoryManagementPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Fetch Data
   const fetchData = useCallback(async () => {
@@ -185,6 +186,7 @@ export default function CategoryManagementPage() {
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('categoryCreateFailed'));
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setFormLoading(false);
     }
@@ -210,6 +212,7 @@ export default function CategoryManagementPage() {
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('categoryUpdateFailed'));
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setFormLoading(false);
     }
@@ -574,7 +577,7 @@ export default function CategoryManagementPage() {
               </button>
             </div>
             
-            <form onSubmit={showAddModal ? handleCreateCategory : handleUpdateCategory} className="flex-1 overflow-y-auto">
+            <form ref={formRef} onSubmit={showAddModal ? handleCreateCategory : handleUpdateCategory} className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-5">
               {/* Image Upload */}
               <div className="flex flex-col items-center">
