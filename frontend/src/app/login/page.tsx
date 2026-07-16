@@ -30,10 +30,14 @@ function LoginPageContent() {
       sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       sessionStorage.removeItem(STORAGE_KEYS.USER);
+      sessionStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+      sessionStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
       // Also clear legacy localStorage tokens
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+      localStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
       try {
         import('@/store/auth.store').then(({ useAuthStore }) => {
           useAuthStore.getState().setUser(null);

@@ -66,9 +66,13 @@ export const useAuth = () => {
         sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         sessionStorage.removeItem(STORAGE_KEYS.USER);
+        sessionStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+        sessionStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+        localStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
       }
 
       const response = await authService.login(data);

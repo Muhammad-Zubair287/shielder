@@ -51,6 +51,8 @@ const clearAuthSession = () => {
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.USER);
+  localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+  localStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
 };
 
 const forceLogoutIfSessionExpired = () => {

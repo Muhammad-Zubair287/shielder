@@ -8,6 +8,7 @@ import type { User } from '@/types';
 import authService from '@/services/auth.service';
 import { broadcastSync } from '@/lib/crossTabSync';
 import { disconnectSocket } from '@/lib/socket';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 interface AuthState {
   user: User | null;
@@ -87,6 +88,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
       broadcastSync({ type: 'AUTH_LOGOUT' });
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Clear session timeout data to prevent stale session checks
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+        sessionStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
+        localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+        localStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
+      }
     }
   },
 
