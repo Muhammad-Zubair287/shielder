@@ -62,6 +62,8 @@ export interface ChangePasswordRequest {
 }
 
 export interface AuthResponse {
+  /** Localized message returned by the authentication API. */
+  message?: string;
   user?: User;
   tokens?: {
     accessToken: string;

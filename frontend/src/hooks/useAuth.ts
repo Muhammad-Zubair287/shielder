@@ -128,7 +128,7 @@ export const useAuth = () => {
       }
 
       setUser(response.user);
-      toast.success(t('loginSuccess'), { duration: LOGIN_TOAST_DURATION_MS });
+      toast.success(response.message || t('loginSuccess'), { duration: LOGIN_TOAST_DURATION_MS });
 
       // Redirect based on role
       if (role === 'SUPER_ADMIN') {
@@ -164,9 +164,11 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       setLoading(true);
-      await storeLogout();
-      toast.success(t('logoutSuccess'));
-      router.replace(ROUTES.LOGIN);
+      const clearedCurrentSession = await storeLogout();
+      if (clearedCurrentSession) {
+        toast.success(t('logoutSuccess'));
+        router.replace(ROUTES.LOGIN);
+      }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

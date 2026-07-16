@@ -14,7 +14,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ROUTES, VALIDATION_RULES, STORAGE_KEYS } from '@/utils/constants';
 import type { LoginRequest } from '@/types';
 import toast from 'react-hot-toast';
-import { validateLoginForm } from '@/services/validation.service';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PASSWORD_REQUIREMENTS } from '@/utils/password';
 import authService from '@/services/auth.service';
@@ -161,32 +160,10 @@ function LoginPageContent() {
   };
 
   /**
-   * Validate form
-   */
-  const validate = (): boolean => {
-    const newErrors: Partial<LoginRequest> = {};
-    const validationErrors = validateLoginForm(formData);
-
-    validationErrors.forEach((err) => {
-      if (err.field === 'email') {
-        newErrors.email = !formData.email ? t('emailRequired') : t('invalidEmail');
-      }
-      if (err.field === 'password') {
-        newErrors.password = t('passwordRequired');
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  /**
    * Handle form submission
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validate()) return;
 
     setAuthError(null);
     redirectHandled.current = true;
@@ -469,4 +446,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

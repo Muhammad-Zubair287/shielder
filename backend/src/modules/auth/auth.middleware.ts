@@ -20,7 +20,7 @@ const verifyEmailStatusInternal = async (
 ): Promise<void> => {
   try {
     if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
+      throw new UnauthorizedError(t('auth.tokenRevoked', req.locale ?? 'en'));
     }
 
     const locale = req.locale ?? 'en';
@@ -90,7 +90,7 @@ export const authenticate = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('No token provided');
+      throw new UnauthorizedError(t('auth.tokenRevoked', req.locale ?? 'en'));
     }
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
@@ -114,12 +114,10 @@ export const authenticate = async (
   } catch (error) {
     logger.error('Authentication error', error);
 
-    if (error instanceof UnauthorizedError) {
-      next(error);
-      return;
-    }
-
-    next(new UnauthorizedError('Invalid or expired token'));
+    // Token library errors are intentionally locale-agnostic. Convert every
+    // authentication failure at the HTTP boundary so all clients receive the
+    // selected-language API message.
+    next(new UnauthorizedError(t('auth.tokenRevoked', req.locale ?? 'en')));
   }
 };
 
@@ -130,11 +128,11 @@ export const authorize = (...allowedRoles: string[]) => {
   return (req: AuthRequest, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
-        throw new UnauthorizedError('User not authenticated');
+        throw new UnauthorizedError(t('auth.tokenRevoked', req.locale ?? 'en'));
       }
 
       if (!allowedRoles.includes(req.user.role)) {
-        throw new ForbiddenError('You do not have permission to access this resource');
+        throw new ForbiddenError(t('common.forbidden', req.locale ?? 'en'));
       }
 
       next();

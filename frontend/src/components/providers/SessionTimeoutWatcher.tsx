@@ -60,8 +60,12 @@ export default function SessionTimeoutWatcher() {
   const expireSession = async () => {
     clearSessionExpiryState();
     toast.error(t('auth.sessionExpiredLoginAgain'), { duration: 3000 });
-    await logout();
-    router.replace('/login?expired=true');
+    const clearedCurrentSession = await logout();
+    // A user may have completed a new login while this timeout's logout call
+    // was pending.  In that case neither clear state nor navigate away.
+    if (clearedCurrentSession) {
+      router.replace('/login?expired=true');
+    }
   };
 
   const scheduleTimeout = () => {

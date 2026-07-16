@@ -22,7 +22,7 @@ interface AuthActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   initialize: () => void;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -75,8 +75,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: async () => {
+    let clearedCurrentSession = false;
     try {
-      await authService.logout();
+      clearedCurrentSession = await authService.logout();
+      // Do not let an older timeout/logout completion overwrite a session
+      // that was successfully established while its request was in flight.
+      if (!clearedCurrentSession) return false;
       set({
         user: null,
         isAuthenticated: false,
@@ -86,11 +90,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
       disconnectSocket();
       // Tell every other open tab to log out too
       broadcastSync({ type: 'AUTH_LOGOUT' });
+      return true;
     } catch (error) {
       console.error('Logout error:', error);
+      return false;
     } finally {
       // Clear session timeout data to prevent stale session checks
-      if (typeof window !== 'undefined') {
+      if (clearedCurrentSession && typeof window !== 'undefined') {
         sessionStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
         sessionStorage.removeItem(STORAGE_KEYS.SESSION_TIMEOUT_MS);
         localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);

@@ -802,9 +802,10 @@ export class AuthService {
             };
 
             // ⚠️ SECURITY: Revoke all previous tokens to prevent token reuse
-            const revokeOldPromise = TokenService.revokeAllUserTokens(user.id, 'login_with_trusted_device').catch(err =>
-              logger.warn('Failed to revoke old tokens on trusted device login:', err)
-            );
+            // Revoke before issuing the new refresh token. Running these in
+            // parallel can let updateMany revoke the newly-created token,
+            // producing a login that appears successful but cannot persist.
+            await TokenService.revokeAllUserTokens(user.id, 'login_with_trusted_device');
 
             const userUpdatePromise = prisma.user.update({
               where: { id: user.id },
@@ -818,7 +819,7 @@ export class AuthService {
 
             const tokenPromise = TokenService.generateTokenPair(tokenPayload, deviceInfo);
 
-            const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise, revokeOldPromise]);
+            const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise]);
 
             AuditService.log({
               userId: user.id,
@@ -853,9 +854,9 @@ export class AuthService {
 
       // ⚠️ SECURITY: Revoke all previous tokens from older logins to prevent token reuse
       // This ensures that once a user logs in again, old tokens become invalid
-      const revokeOldPromise = TokenService.revokeAllUserTokens(user.id, 'new_login').catch(err =>
-        logger.warn('Failed to revoke old tokens on login:', err)
-      );
+      // This must finish before generateTokenPair stores the new refresh token.
+      // Otherwise the bulk revocation races the insert and may revoke it.
+      await TokenService.revokeAllUserTokens(user.id, 'new_login');
 
       // Reset failed attempts and update last login in parallel with token generation.
       const userUpdatePromise = prisma.user.update({
@@ -870,7 +871,7 @@ export class AuthService {
 
       const tokenPromise = TokenService.generateTokenPair(tokenPayload, deviceInfo);
 
-      const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise, revokeOldPromise]);
+      const [_, tokens] = await Promise.all([userUpdatePromise, tokenPromise]);
 
       // Fire-and-forget audit log — do not await; keeps login response fast
       AuditService.log({

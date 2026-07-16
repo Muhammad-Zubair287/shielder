@@ -114,7 +114,12 @@ class AuthService {
         }
       );
 
-      const authData = response.data.data!;
+      const authData = {
+        ...response.data.data!,
+        // Keep the API message with the auth result.  The API is the source of
+        // truth for messages because mobile and web must show identical copy.
+        message: response.data.message,
+      };
 
       // Only store auth data if 2FA is not required (i.e., we have valid tokens)
       if (
@@ -311,15 +316,18 @@ class AuthService {
   /**
    * Logout user
    */
-  async logout(): Promise<void> {
+  async logout(): Promise<boolean> {
+    // A timeout/logout request can finish after a new login.  Capture the
+    // session it belongs to so its finally block never removes the new tokens.
+    const accessToken = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const refreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     try {
-      const refreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, { refreshToken });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       // Clear local storage
-      this.clearAuthData();
+      return this.clearAuthDataIfCurrent(accessToken, refreshToken);
     }
   }
 
@@ -468,7 +476,16 @@ class AuthService {
   /**
    * Clear authentication data from localStorage
    */
-  private clearAuthData(): void {
+  private clearAuthDataIfCurrent(accessToken: string | null, refreshToken: string | null): boolean {
+    // Another session superseded this one while its logout request was in
+    // flight.  It owns the storage now and must not be cleared.
+    if (
+      sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) !== accessToken ||
+      sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== refreshToken
+    ) {
+      return false;
+    }
+
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.USER);
@@ -477,6 +494,7 @@ class AuthService {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
+    return true;
   }
 
   /**
