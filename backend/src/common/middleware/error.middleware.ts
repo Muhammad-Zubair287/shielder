@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { ApiError, ValidationError } from '../errors/api.error';
+import { ApiError, ValidationError, TooManyRequestsError } from '../errors/api.error';
 import { logger } from '../logger/logger';
 import { env } from '../../config/env';
 import { t } from '../i18n';
@@ -14,6 +14,7 @@ interface ErrorResponse {
   message: string;
   errors?: any[];
   stack?: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -64,6 +65,9 @@ export const errorHandler = (
 
   const response: ErrorResponse = { success: false, message };
   if (errors) response.errors = errors;
+  if (err instanceof TooManyRequestsError && err.data) {
+    Object.assign(response, err.data);
+  }
 
   logger.error(`Error ID: ${errorId} - ${message}`, err, {
     statusCode,

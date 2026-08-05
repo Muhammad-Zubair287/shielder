@@ -23,9 +23,11 @@ import profileService from '@/services/profile.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/auth.store';
-import { validateProfileUpdate } from '@/utils/profile.validation';
+import { validateProfileUpdate, PROFILE_LIMITS } from '@/utils/profile.validation';
+import { hasUnsafeContent, isInvalidFullName } from '@/utils/security';
 import { toast } from 'react-hot-toast';
 import { broadcastSync } from '@/lib/crossTabSync';
+import { filterPhoneInput, PHONE_REGEX } from '@/utils/phoneUtils';
 
 /**
  * Profile form data interface
@@ -128,19 +130,32 @@ export const ProfileForm = () => {
     return result.isValid;
   };
 
+  const validateFieldRealtime = (name: string, value: string): string => {
+    if (name === 'fullName') {
+      if (!value.trim()) return t('nameRequired');
+      if (isInvalidFullName(value)) return t('validation.fullNameInvalid');
+      if (value.length > PROFILE_LIMITS.fullName) return t('validation.maxLength');
+    }
+    if (name === 'phone' && value) {
+      if (!PHONE_REGEX.test(value.trim()) || !/[0-9]/.test(value)) return t('invalidPhone');
+    }
+    if (name === 'location' && value) {
+      if (hasUnsafeContent(value)) return t('validation.invalidText');
+      if (value.length > PROFILE_LIMITS.location) return t('validation.maxLength');
+    }
+    if (name === 'address' && value) {
+      if (hasUnsafeContent(value)) return t('validation.invalidText');
+      if (value.length > PROFILE_LIMITS.address) return t('validation.maxLength');
+    }
+    return '';
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    const newValue = name === 'phone' ? filterPhoneInput(value) : value;
+    setFormData(prev => ({ ...prev, [name]: newValue }));
+    const err = validateFieldRealtime(name, newValue);
+    setErrors(prev => ({ ...prev, [name]: err }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -225,6 +240,7 @@ export const ProfileForm = () => {
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
+              maxLength={PROFILE_LIMITS.fullName}
               placeholder={t('profile.fullNamePlaceholder')}
               className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
                 errors.fullName ? 'border-red-500 focus:ring-red-500' : ''
@@ -278,6 +294,7 @@ export const ProfileForm = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
+              maxLength={PROFILE_LIMITS.phone}
               placeholder={t('profile.phonePlaceholder')}
               className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${
                 errors.phone ? 'border-red-500 focus:ring-red-500' : ''
@@ -304,10 +321,17 @@ export const ProfileForm = () => {
               name="location"
               value={formData.location}
               onChange={handleChange}
+              maxLength={PROFILE_LIMITS.location}
               placeholder={t('profile.locationPlaceholder')}
-              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'}`}
+              className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right pl-4 pr-10' : 'pl-10'} ${errors.location ? 'border-red-500' : ''}`}
             />
           </div>
+          {errors.location && (
+            <div className="flex items-center gap-1 mt-1 text-red-600 dark:text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {errors.location}
+            </div>
+          )}
         </div>
 
         {/* Address */}
@@ -319,10 +343,17 @@ export const ProfileForm = () => {
             name="address"
             value={formData.address}
             onChange={handleChange}
+            maxLength={PROFILE_LIMITS.address}
             placeholder={t('profile.addressPlaceholder')}
             rows={3}
-            className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right' : ''}`}
+            className={`w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:text-white transition-colors ${isRTL ? 'text-right' : ''} ${errors.address ? 'border-red-500' : ''}`}
           />
+          {errors.address && (
+            <div className="flex items-center gap-1 mt-1 text-red-600 dark:text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {errors.address}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

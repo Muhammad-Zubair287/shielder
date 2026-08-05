@@ -23,6 +23,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { orderService } from '@/services/order.service';
 import adminService from '@/services/admin.service';
 import { getImageUrl } from '@/utils/helpers';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 import type { OrderFormItem, CustomerOption, ProductOption } from '../types';
 
 const TAX_RATE = 0.1;
@@ -380,7 +381,8 @@ export default function CreateOrderPage() {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => setPhoneNumber(filterPhoneInput(e.target.value))}
+                  maxLength={20}
                   placeholder={t('phonePh')}
                   className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]"
                   dir="ltr"

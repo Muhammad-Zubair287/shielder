@@ -23,6 +23,7 @@ import profileService from '@/services/profile.service';
 import { handleApiError } from '@/services/api.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validatePassword } from '@/utils/password';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
@@ -262,6 +263,7 @@ export default function ProfilePage() {
                         type="text"
                         value={profileForm.fullName}
                         onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))}
+                        maxLength={100}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-shielder-primary"
                         placeholder="Enter your name"
                       />
@@ -271,7 +273,8 @@ export default function ProfilePage() {
                       <input
                         type="tel"
                         value={profileForm.phoneNumber}
-                        onChange={(event) => setProfileForm((current) => ({ ...current, phoneNumber: event.target.value }))}
+                        onChange={(event) => setProfileForm((current) => ({ ...current, phoneNumber: filterPhoneInput(event.target.value) }))}
+                        maxLength={20}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-shielder-primary"
                         placeholder="Enter your phone number"
                       />

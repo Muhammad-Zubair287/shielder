@@ -47,6 +47,8 @@ import cartService from '@/services/cart.service';
 import { warehouseService, type Warehouse as WarehouseType } from '@/services/warehouse.service';
 import { getImageUrl } from '@/utils/helpers';
 import { broadcastSync } from '@/lib/crossTabSync';
+import { filterPhoneInput } from '@/utils/phoneUtils';
+import { hasUnsafeContent } from '@/utils/security';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -261,13 +263,17 @@ function CheckoutPageInner() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const limit = LIMITS[name as keyof typeof LIMITS];
-    setForm(prev => ({ ...prev, [name]: limit ? value.slice(0, limit) : value }));
+    const newValue = name === 'phoneNumber' ? filterPhoneInput(value) : (limit ? value.slice(0, limit) : value);
+    setForm(prev => ({ ...prev, [name]: newValue }));
   };
 
   // ── Validation
   const validate = (): boolean => {
     if (!form.customerName.trim()) {
       toast.error(t('checkout.errorName')); return false;
+    }
+    if (hasUnsafeContent(form.customerName)) {
+      toast.error(t('validation.invalidText')); return false;
     }
     if (form.customerName.trim().length > LIMITS.name) {
       toast.error(t('checkout.errorNameTooLong')); return false;
@@ -278,8 +284,14 @@ function CheckoutPageInner() {
     if (deliveryType === 'DELIVERY' && !form.shippingAddress.trim()) {
       toast.error(t('checkout.errorAddress')); return false;
     }
+    if (deliveryType === 'DELIVERY' && hasUnsafeContent(form.shippingAddress)) {
+      toast.error(t('validation.invalidText')); return false;
+    }
     if (deliveryType === 'DELIVERY' && form.shippingAddress.trim().length > LIMITS.address) {
       toast.error(t('checkout.errorAddressTooLong')); return false;
+    }
+    if (form.notes && hasUnsafeContent(form.notes)) {
+      toast.error(t('validation.invalidText')); return false;
     }
     if (deliveryType === 'PICKUP' && !warehouseId) {
       toast.error(t('checkout.errorWarehouse')); return false;

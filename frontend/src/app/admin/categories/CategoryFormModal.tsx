@@ -7,6 +7,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import adminService from '@/services/admin.service';
 import type { Category, CategoryFormData } from './types';
 import { getImageUrl } from '@/utils/helpers';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const LIMITS = FIELD_LIMITS.category;
 
 interface Props {
   mode: 'create' | 'edit';
@@ -47,9 +50,24 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
     }
   }, [mode, category]);
 
+  const validateField = (field: keyof CategoryFormData, value: string): string => {
+    if (field === 'nameEn') {
+      if (!value.trim()) return t('nameEnRequired');
+      if (value.length > LIMITS.nameEn) return t('validation.maxLength');
+    }
+    if (field === 'nameAr' && value.length > LIMITS.nameAr) return t('validation.maxLength');
+    if (field === 'descriptionEn' && value.length > LIMITS.descriptionEn) return t('validation.maxLength');
+    if (field === 'descriptionAr' && value.length > LIMITS.descriptionAr) return t('validation.maxLength');
+    return '';
+  };
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!formData.nameEn.trim()) errs.nameEn = t('nameEnRequired');
+    else if (formData.nameEn.length > LIMITS.nameEn) errs.nameEn = t('validation.maxLength');
+    if (formData.nameAr.length > LIMITS.nameAr) errs.nameAr = t('validation.maxLength');
+    if (formData.descriptionEn.length > LIMITS.descriptionEn) errs.descriptionEn = t('validation.maxLength');
+    if (formData.descriptionAr.length > LIMITS.descriptionAr) errs.descriptionAr = t('validation.maxLength');
     if (mode === 'create' && !imageFile) errs.image = t('imageRequired');
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -107,7 +125,12 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
 
   const set = (field: keyof CategoryFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => { const e = { ...prev }; delete e[field]; return e; });
+    if (typeof value === 'string') {
+      const err = validateField(field, value);
+      setErrors((prev) => ({ ...prev, [field]: err }));
+    } else {
+      setErrors((prev) => { const e = { ...prev }; delete e[field]; return e; });
+    }
   };
 
   return (
@@ -191,6 +214,7 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
                 type="text"
                 value={formData.nameEn}
                 onChange={(e) => set('nameEn', e.target.value)}
+                maxLength={LIMITS.nameEn}
                 placeholder="e.g. Earthmoving Equipment"
                 className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#5B5FC7] focus:bg-white focus:outline-none transition-all text-sm font-medium ${
                   errors.nameEn ? 'border-red-400' : 'border-gray-200'
@@ -208,9 +232,11 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
                 rows={2}
                 value={formData.descriptionEn}
                 onChange={(e) => set('descriptionEn', e.target.value)}
+                maxLength={LIMITS.descriptionEn}
                 placeholder="English description..."
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B5FC7] focus:bg-white focus:outline-none transition-all text-sm font-medium resize-none"
+                className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#5B5FC7] focus:bg-white focus:outline-none transition-all text-sm font-medium resize-none ${errors.descriptionEn ? 'border-red-400' : 'border-gray-200'}`}
               />
+              {errors.descriptionEn && <p className="text-red-500 text-xs mt-1">{errors.descriptionEn}</p>}
             </div>
 
             {/* Arabic separator */}
@@ -231,9 +257,11 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
                     type="text"
                     value={formData.nameAr}
                     onChange={(e) => set('nameAr', e.target.value)}
+                    maxLength={LIMITS.nameAr}
                     placeholder="مثال: معدات الحفر"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6B35] focus:bg-white focus:outline-none transition-all text-sm font-medium"
+                    className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#FF6B35] focus:bg-white focus:outline-none transition-all text-sm font-medium ${errors.nameAr ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {errors.nameAr && <p className="text-red-500 text-xs mt-1 text-right">{errors.nameAr}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 text-right">
@@ -243,9 +271,11 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
                     rows={2}
                     value={formData.descriptionAr}
                     onChange={(e) => set('descriptionAr', e.target.value)}
+                    maxLength={LIMITS.descriptionAr}
                     placeholder="وصف الفئة بالعربية..."
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6B35] focus:bg-white focus:outline-none transition-all text-sm font-medium resize-none"
+                    className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#FF6B35] focus:bg-white focus:outline-none transition-all text-sm font-medium resize-none ${errors.descriptionAr ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {errors.descriptionAr && <p className="text-red-500 text-xs mt-1 text-right">{errors.descriptionAr}</p>}
                 </div>
               </div>
             </div>

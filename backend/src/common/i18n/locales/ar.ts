@@ -37,6 +37,7 @@ export const ar: Record<string, string> = {
   'validation.passwordMax':    'يجب ألا تتجاوز كلمة المرور {{limit}} حرفاً.',
   'validation.invalidPhone':   'يرجى تقديم رقم هاتف صالح (مثل: 05XXXXXXXX أو +966 5X XXX XXXX).',
   'validation.htmlNotAllowed':   'محتوى HTML غير مسموح به.',
+  'validation.invalidText':      'يرجى إدخال نص صالح بدون محتوى غير آمن.',
   'validation.invalidName':      'صيغة الاسم غير صالحة.',
   'validation.fullNameInvalid':      'يجب أن يحتوي الاسم الكامل على أحرف ومسافات فقط.',
   'validation.invalidInventoryName': 'يجب أن يحتوي الاسم على أحرف أبجدية صحيحة ولا يمكن أن يكون أرقاماً فقط.',
@@ -88,6 +89,10 @@ export const ar: Record<string, string> = {
   'auth.registrationEmailExists':        'يوجد حساب مسجل بهذا البريد الإلكتروني. يرجى تسجيل الدخول.',
   'auth.registrationValidationFailed':   'يرجى تصحيح الأخطاء والمحاولة مرة أخرى.',
   'auth.registrationOtpAttemptsLeft':    'متبقي {{count}} محاولة.',
+  'auth.forgotPasswordOtpNotFound':      'لم يتم العثور على رمز تحقق نشط. يرجى طلب رمز جديد.',
+  'auth.forgotPasswordOtpExpired':       'انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد.',
+  'auth.forgotPasswordOtpInvalid':       'رمز التحقق غير صحيح. متبقي {{count}} محاولة.',
+  'auth.forgotPasswordOtpMaxAttempts':   'تجاوزت عدد المحاولات المسموح بها. يرجى طلب رمز تحقق جديد.',
   'auth.tokenRevoked':                   'غير مصرح. يرجى تسجيل الدخول مجدداً.',
 
   // ── Profile ────────────────────────────────────────────────────────────────

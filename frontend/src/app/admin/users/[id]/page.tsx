@@ -35,6 +35,7 @@ import StatusBadge from '../StatusBadge';
 import ConfirmModal from '../ConfirmModal';
 import type { AdminUser } from '../types';
 import { VALIDATION_RULES } from '@/utils/constants';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 
 function formatDate(dateStr: string | null | undefined, locale: string) {
   if (!dateStr) return '—';
@@ -371,7 +372,7 @@ export default function UserDetailPage({
                 <input
                   type="tel"
                   value={editForm.phoneNumber}
-                  onChange={(e) => setEditForm((p) => ({ ...p, phoneNumber: e.target.value }))}
+                  onChange={(e) => setEditForm((p) => ({ ...p, phoneNumber: filterPhoneInput(e.target.value) }))}
                   className={`h-11 text-sm border rounded-xl bg-gray-50 outline-none px-4 transition-all ${editErrors.phoneNumber ? 'border-red-400' : 'border-gray-200 focus:border-[#5B5FC7]/50'}`}
                   dir="ltr"
                 />

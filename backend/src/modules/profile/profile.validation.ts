@@ -36,12 +36,7 @@ export const profileValidation = {
   updateProfile: Joi.object({
     email: Joi.string().trim().email().optional(),
     fullName: sharedValidationSchemas.fullName.optional(),
-    phoneNumber: Joi.string()
-      .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
-      .optional()
-      .messages({
-        'string.pattern.base': 'Please provide a valid phone number (e.g. 05XXXXXXXX or +966 5X XXX XXXX)',
-      }),
+    phoneNumber: sharedValidationSchemas.phone,
     address: sharedValidationSchemas.textNoHtml.max(255).optional(),
       location: sharedValidationSchemas.textNoHtml.max(255).optional(),
     profileImage: profileImageSchema.allow(null).optional(),

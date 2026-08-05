@@ -115,11 +115,12 @@ export const createApp = (): Application => {
     // JSON parse error handler - catches SyntaxError from malformed JSON/URL-encoded bodies
     app.use(jsonParseErrorHandler);
 
-  // Sanitization middleware: reject obvious HTML/JS and normalize strings
-  app.use(sanitizationMiddleware);
-
   // Language middleware
   app.use(languageMiddleware);
+
+  // Security input boundary: locale-aware rejection of HTML/JS/SQL payloads
+  // plus allowlist sanitization for the explicit rich-text CMS fields.
+  app.use(sanitizationMiddleware);
 
   // HTTP request logging (development only)
   if (env.isDevelopment) {

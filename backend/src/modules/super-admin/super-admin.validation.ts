@@ -13,7 +13,7 @@ export const superAdminValidation = {
     email: Joi.string().email().required(),
     password: sharedValidationSchemas.password,
     fullName: sharedValidationSchemas.superAdminName.optional(),
-    phoneNumber: sharedValidationSchemas.superAdminPhone.optional(),
+    phoneNumber: sharedValidationSchemas.phone,
     role: Joi.string().valid(...Object.values(UserRole)).required(),
   }),
 
@@ -38,10 +38,7 @@ export const superAdminValidation = {
     email: sharedValidationSchemas.email.optional(),
     password: sharedValidationSchemas.password.optional(),
     fullName: sharedValidationSchemas.textNoHtml.optional(),
-    phoneNumber: Joi.string().trim().min(1).messages({
-      'string.empty': 'Phone number cannot be empty',
-      'string.min': 'Phone number cannot be empty',
-    }).optional(),
+    phoneNumber: sharedValidationSchemas.phone,
     role: Joi.string().valid(...Object.values(UserRole)).optional(),
     isActive: Joi.boolean().optional(),
     status: Joi.string().valid(...Object.values(UserStatus)).optional(),

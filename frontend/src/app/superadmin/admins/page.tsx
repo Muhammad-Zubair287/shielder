@@ -29,6 +29,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import UnifiedPagination from '@/components/ui/UnifiedPagination';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { validatePassword } from '@/utils/password';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 
 // --- Types ---
 interface Admin {
@@ -670,6 +671,7 @@ export default function AdminManagementPage() {
                     required
                     className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.fullName ? 'border-red-500' : 'border-gray-200'}`}
                     placeholder={t('enterName')}
+                    maxLength={100}
                     value={formData.fullName}
                     onChange={(e) => handleAddInputChange('fullName', e.target.value)}
                   />
@@ -683,8 +685,9 @@ export default function AdminManagementPage() {
                     type="tel"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
                     placeholder="+966 50 000 0000"
+                    maxLength={20}
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    onChange={(e) => setFormData({...formData, phoneNumber: filterPhoneInput(e.target.value)})}
                   />
                 </div>
               </div>
@@ -722,6 +725,7 @@ export default function AdminManagementPage() {
                       required
                       className={`w-full px-4 pr-11 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.password ? 'border-red-500' : 'border-gray-200'}`}
                       placeholder="••••••••"
+                      maxLength={128}
                       value={formData.password}
                       onChange={(e) => handleAddInputChange('password', e.target.value)}
                     />
@@ -749,6 +753,7 @@ export default function AdminManagementPage() {
                       required
                       className={`w-full px-4 pr-11 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm ${addFormErrors.confirmPassword ? 'border-red-500' : 'border-gray-200'}`}
                       placeholder="••••••••"
+                      maxLength={128}
                       value={formData.confirmPassword}
                       onChange={(e) => handleAddInputChange('confirmPassword', e.target.value)}
                     />
@@ -816,6 +821,7 @@ export default function AdminManagementPage() {
                   required
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
                   placeholder="Enter full name"
+                  maxLength={100}
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                 />
@@ -837,6 +843,7 @@ export default function AdminManagementPage() {
                   type="tel"
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm"
                   placeholder="+966..."
+                  maxLength={20}
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                 />
@@ -900,6 +907,7 @@ export default function AdminManagementPage() {
                     rows={3}
                     value={suspensionReason}
                     onChange={(e) => setSuspensionReason(e.target.value)}
+                    maxLength={500}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0205A6] focus:bg-white focus:outline-none transition-all text-sm resize-none"
                     placeholder="e.g. misconduct, inactivity, policy violation"
                   />

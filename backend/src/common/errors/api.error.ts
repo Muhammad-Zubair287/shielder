@@ -69,8 +69,10 @@ export class ConflictError extends ApiError {
  * Too Many Requests Error (429)
  */
 export class TooManyRequestsError extends ApiError {
-  constructor(message: string = 'Too many requests') {
+  public data?: Record<string, unknown>;
+  constructor(message: string = 'Too many requests', data?: Record<string, unknown>) {
     super(message, 429);
+    this.data = data;
   }
 }
 

@@ -391,15 +391,16 @@ model AuditLog {
 }
 
 model TwoFactorOTP {
-  id        String   @id @default(uuid())
-  userId    String   @unique @map("user_id")
-  code      String
-  method    String   @default("EMAIL")
-  attempts  Int      @default(0)
-  expiresAt DateTime @map("expires_at")
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  userId      String    @unique @map("user_id")
+  code        String
+  method      String    @default("EMAIL")
+  attempts    Int       @default(0)
+  expiresAt   DateTime  @map("expires_at")
+  lockedUntil DateTime? @map("locked_until")
+  used        Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
   @@index([used])

@@ -51,6 +51,12 @@ function validateVAT(vat: string): boolean {
   return /^\d{10,20}$/.test(vat.replace(/\s|-/g, ''));
 }
 
+const UNSAFE_RE = /[\u0000-\u001F\u007F]|<[^>]+>|javascript:\s*|on\w+\s*=|(?:'|")\s*(?:or|and)\s*(?:'|")?\s*(?:\d+|true)|\b(?:union\s+select|drop\s+table|delete\s+from|insert\s+into|update\s+\w+\s+set)\b/i;
+
+function hasUnsafeContent(value: string): boolean {
+  return UNSAFE_RE.test(value);
+}
+
 // ── Controller ────────────────────────────────────────────────────────────────
 
 export class CustomerQuotationController {
@@ -157,9 +163,19 @@ export class CustomerQuotationController {
       // ── Validate inputs ────────────────────────────────────────────────────
 
       if (!companyName?.trim()) throw new BadRequestError(t('customerQuotation.companyRequired', req.locale));
+      if (hasUnsafeContent(companyName)) throw new BadRequestError(t('validation.invalidText', req.locale));
+      if (companyName.trim().length > 100) throw new BadRequestError(t('validation.stringMax', req.locale, { limit: 100 }));
+
       if (!vatNumber?.trim())   throw new BadRequestError(t('customerQuotation.vatRequired', req.locale));
       if (!validateVAT(vatNumber)) throw new BadRequestError(t('customerQuotation.vatInvalid', req.locale));
+
       if (!normalizedAddress)   throw new BadRequestError(t('customerQuotation.addressRequired', req.locale));
+      if (hasUnsafeContent(normalizedAddress)) throw new BadRequestError(t('validation.invalidText', req.locale));
+      if (normalizedAddress.length > 200) throw new BadRequestError(t('validation.stringMax', req.locale, { limit: 200 }));
+
+      if (typeof notes === 'string' && notes.trim() && hasUnsafeContent(notes))
+        throw new BadRequestError(t('validation.invalidText', req.locale));
+
       if (!Array.isArray(requestedItems) || requestedItems.length === 0)
         throw new BadRequestError(t('customerQuotation.productRequired', req.locale));
 

@@ -54,6 +54,7 @@ export const JOI_ERROR_KEY_MAP: Record<string, string> = {
   'number.positive':     'validation.numberMin',
   'string.base':         'validation.stringBase',
   'string.pattern.base': 'validation.invalidFormat',
+  'string.invalid':      'validation.invalidFormat',
   'string.uri':          'validation.invalidUrl',
   'string.guid':         'validation.invalidUUID',
   'string.uuid':         'validation.invalidUUID',
@@ -66,6 +67,8 @@ export const JOI_ERROR_KEY_MAP: Record<string, string> = {
   'object.unknown':      'validation.unknownField',
   'fullName.lettersOnly':   'validation.fullNameInvalid',
   'inventoryName.invalid':  'validation.invalidInventoryName',
+  'phone.invalid':          'validation.invalidPhone',
+  'contact.nameInvalid':    'validation.invalidName',
 };
 
 /**

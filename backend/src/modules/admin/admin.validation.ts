@@ -18,7 +18,7 @@ export const adminValidation = {
     }),
     password: sharedValidationSchemas.password,
     fullName: Joi.string().optional(),
-    phoneNumber: Joi.string().optional(),
+    phoneNumber: sharedValidationSchemas.phone,
     companyName: Joi.string().optional(),
   }),
 
@@ -28,7 +28,7 @@ export const adminValidation = {
   updateUser: Joi.object({
     email: Joi.string().email().optional(),
     fullName: Joi.string().optional(),
-    phoneNumber: Joi.string().optional(),
+    phoneNumber: sharedValidationSchemas.phone,
     companyName: Joi.string().optional(),
     status: Joi.string()
       .valid(...Object.values(UserStatus))

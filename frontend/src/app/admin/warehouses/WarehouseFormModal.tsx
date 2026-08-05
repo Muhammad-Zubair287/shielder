@@ -5,6 +5,9 @@ import { X } from 'lucide-react';
 import { warehouseService, Warehouse } from '@/services/warehouse.service';
 import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const LIMITS = FIELD_LIMITS.warehouse;
 
 type Props = {
   mode: 'create' | 'edit';
@@ -16,6 +19,7 @@ type Props = {
 export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess }: Props) {
   const { isRTL } = useLanguage();
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     name: '',
     address: '',
@@ -38,13 +42,49 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
     }
   }, [warehouse]);
 
+  const setField = (key: keyof typeof form, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (typeof value === 'string') {
+      const err = validateField(key as string, value);
+      setErrors((prev) => ({ ...prev, [key]: err }));
+    }
+  };
+
+  const validateField = (key: string, value: string): string => {
+    if (key === 'name') {
+      if (!value.trim()) return 'Name is required.';
+      if (value.length > LIMITS.name) return `Maximum ${LIMITS.name} characters allowed`;
+    }
+    if (key === 'city') {
+      if (!value.trim()) return 'City is required.';
+      if (value.length > LIMITS.city) return `Maximum ${LIMITS.city} characters allowed`;
+    }
+    if (key === 'country') {
+      if (!value.trim()) return 'Country is required.';
+      if (value.length > LIMITS.country) return `Maximum ${LIMITS.country} characters allowed`;
+    }
+    if (key === 'address') {
+      if (!value.trim()) return 'Address is required.';
+      if (value.length > LIMITS.address) return `Maximum ${LIMITS.address} characters allowed`;
+    }
+    return '';
+  };
+
+  const validateAll = (): boolean => {
+    const errs: Record<string, string> = {};
+    const fields: Array<keyof typeof form> = ['name', 'city', 'country', 'address'];
+    fields.forEach((key) => {
+      const err = validateField(key, String(form[key]));
+      if (err) errs[key] = err;
+    });
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name.trim() || !form.address.trim() || !form.city.trim() || !form.country.trim()) {
-      toast.error('Please complete all required fields.');
-      return;
-    }
+    if (!validateAll()) return;
 
     try {
       setSaving(true);
@@ -94,44 +134,47 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
 
         <form onSubmit={onSubmit} className="space-y-4 px-6 py-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label className="space-y-1.5">
-              <span className="text-sm font-semibold text-gray-700">Name</span>
+            <div className="space-y-1.5">
+              <span className="text-sm font-semibold text-gray-700">Name <span className="text-red-500">*</span></span>
               <input
                 value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35]"
+                onChange={(e) => setField('name', e.target.value)}
+                maxLength={LIMITS.name}
+                className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35] ${errors.name ? 'border-red-400' : 'border-gray-200'}`}
                 placeholder="Main Warehouse"
-                required
               />
-            </label>
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+            </div>
 
-            <label className="space-y-1.5">
-              <span className="text-sm font-semibold text-gray-700">City</span>
+            <div className="space-y-1.5">
+              <span className="text-sm font-semibold text-gray-700">City <span className="text-red-500">*</span></span>
               <input
                 value={form.city}
-                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35]"
+                onChange={(e) => setField('city', e.target.value)}
+                maxLength={LIMITS.city}
+                className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35] ${errors.city ? 'border-red-400' : 'border-gray-200'}`}
                 placeholder="Riyadh"
-                required
               />
-            </label>
+              {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+            </div>
 
-            <label className="space-y-1.5">
-              <span className="text-sm font-semibold text-gray-700">Country</span>
+            <div className="space-y-1.5">
+              <span className="text-sm font-semibold text-gray-700">Country <span className="text-red-500">*</span></span>
               <input
                 value={form.country}
-                onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35]"
+                onChange={(e) => setField('country', e.target.value)}
+                maxLength={LIMITS.country}
+                className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35] ${errors.country ? 'border-red-400' : 'border-gray-200'}`}
                 placeholder="Saudi Arabia"
-                required
               />
-            </label>
+              {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country}</p>}
+            </div>
 
             <label className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={form.isActive}
-                onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+                onChange={(e) => setField('isActive', e.target.checked)}
               />
               <span className="text-sm font-medium text-gray-700">Active</span>
             </label>
@@ -140,22 +183,23 @@ export default function WarehouseFormModal({ mode, warehouse, onClose, onSuccess
               <input
                 type="checkbox"
                 checked={form.isMain}
-                onChange={(e) => setForm((prev) => ({ ...prev, isMain: e.target.checked }))}
+                onChange={(e) => setField('isMain', e.target.checked)}
               />
               <span className="text-sm font-medium text-gray-700">Main Warehouse</span>
             </label>
           </div>
 
-          <label className="space-y-1.5 block">
-            <span className="text-sm font-semibold text-gray-700">Address</span>
+          <div className="space-y-1.5">
+            <span className="text-sm font-semibold text-gray-700">Address <span className="text-red-500">*</span></span>
             <textarea
               value={form.address}
-              onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-              className="min-h-[96px] w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35]"
+              onChange={(e) => setField('address', e.target.value)}
+              maxLength={LIMITS.address}
+              className={`min-h-[96px] w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35] ${errors.address ? 'border-red-400' : 'border-gray-200'}`}
               placeholder="Warehouse full address"
-              required
             />
-          </label>
+            {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+          </div>
 
           <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
             <button

@@ -9,6 +9,9 @@ import settingsService from '@/services/settings.service';
 import type { Product, ProductFormData, DropdownOption } from './types';
 import { EMPTY_PRODUCT_FORM } from './types';
 import { getImageUrl } from '@/utils/helpers';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const PLIMITS = FIELD_LIMITS.product;
 
 interface Props {
   mode: 'create' | 'edit';
@@ -193,14 +196,35 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
   };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+  const TEXT_LIMITS: Partial<Record<keyof ProductFormData, number>> = {
+    nameEn: PLIMITS.nameEn,
+    nameAr: PLIMITS.nameAr,
+    descriptionEn: PLIMITS.descriptionEn,
+    descriptionAr: PLIMITS.descriptionAr,
+    sku: PLIMITS.sku,
+    filterNumber: PLIMITS.filterNumber,
+    alternateNumbers: PLIMITS.alternateNumbers,
+    filterType: PLIMITS.filterType,
+    material: PLIMITS.material,
+    dimensions: PLIMITS.dimensions,
+  };
+
   const set = (field: keyof ProductFormData, value: any) => {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
-      // Reset subcategoryId when category changes
       if (field === 'categoryId') next.subcategoryId = '';
       return next;
     });
-    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+    if (typeof value === 'string') {
+      const max = TEXT_LIMITS[field];
+      if (max && value.length > max) {
+        setErrors((prev) => ({ ...prev, [field]: t('validation.maxLength') }));
+      } else {
+        setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+      }
+    } else {
+      setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+    }
   };
 
   const optionLabel = (o: DropdownOption) =>
@@ -514,6 +538,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                 type="text"
                 value={form.nameEn}
                 onChange={(e) => set('nameEn', e.target.value)}
+                maxLength={PLIMITS.nameEn}
                 placeholder="e.g. Industrial Filter Pump"
                 dir="ltr"
                 className={inputClass(!!errors.nameEn)}
@@ -531,10 +556,12 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                 rows={2}
                 value={form.descriptionEn}
                 onChange={(e) => set('descriptionEn', e.target.value)}
+                maxLength={PLIMITS.descriptionEn}
                 placeholder="Short description in English..."
                 dir="ltr"
-                className={inputClass(false) + ' resize-none'}
+                className={inputClass(!!errors.descriptionEn) + ' resize-none'}
               />
+              {errors.descriptionEn && <p className="text-red-500 text-xs mt-1">{errors.descriptionEn}</p>}
             </div>
           </div>
 
@@ -563,10 +590,12 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                 type="text"
                 value={form.nameAr}
                 onChange={(e) => set('nameAr', e.target.value)}
+                maxLength={PLIMITS.nameAr}
                 placeholder="مثال: مضخة فلتر صناعية"
                 dir="rtl"
-                className={inputClass(false)}
+                className={inputClass(!!errors.nameAr)}
               />
+              {errors.nameAr && <p className="text-red-500 text-xs mt-1 text-right">{errors.nameAr}</p>}
             </div>
 
             <div>
@@ -577,10 +606,12 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                 rows={2}
                 value={form.descriptionAr}
                 onChange={(e) => set('descriptionAr', e.target.value)}
+                maxLength={PLIMITS.descriptionAr}
                 placeholder="وصف مختصر بالعربية..."
                 dir="rtl"
-                className={inputClass(false) + ' resize-none'}
+                className={inputClass(!!errors.descriptionAr) + ' resize-none'}
               />
+              {errors.descriptionAr && <p className="text-red-500 text-xs mt-1 text-right">{errors.descriptionAr}</p>}
             </div>
           </div>
 
@@ -598,8 +629,10 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                 value={form.sku}
                 onChange={(e) => set('sku', e.target.value)}
                 placeholder="e.g. SKU-001"
-                className={inputClass(false)}
+                maxLength={PLIMITS.sku}
+                className={inputClass(!!errors.sku)}
               />
+              {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -674,8 +707,10 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                   value={form.filterNumber}
                   onChange={(e) => set('filterNumber', e.target.value)}
                   placeholder="e.g. FN-AF-001"
-                  className={inputClass(false)}
+                  maxLength={PLIMITS.filterNumber}
+                  className={inputClass(!!errors.filterNumber)}
                 />
+                {errors.filterNumber && <p className="text-red-500 text-xs mt-1">{errors.filterNumber}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Filter Type</label>
@@ -684,8 +719,10 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                   value={form.filterType}
                   onChange={(e) => set('filterType', e.target.value)}
                   placeholder="e.g. Air Filter"
-                  className={inputClass(false)}
+                  maxLength={PLIMITS.filterType}
+                  className={inputClass(!!errors.filterType)}
                 />
+                {errors.filterType && <p className="text-red-500 text-xs mt-1">{errors.filterType}</p>}
               </div>
             </div>
 
@@ -696,8 +733,10 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                 value={form.alternateNumbers}
                 onChange={(e) => set('alternateNumbers', e.target.value)}
                 placeholder="e.g. AF001, AIR-001, 123456  (comma-separated)"
-                className={inputClass(false)}
+                maxLength={PLIMITS.alternateNumbers}
+                className={inputClass(!!errors.alternateNumbers)}
               />
+              {errors.alternateNumbers && <p className="text-red-500 text-xs mt-1">{errors.alternateNumbers}</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -708,8 +747,10 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                   value={form.material}
                   onChange={(e) => set('material', e.target.value)}
                   placeholder="e.g. Synthetic"
-                  className={inputClass(false)}
+                  maxLength={PLIMITS.material}
+                  className={inputClass(!!errors.material)}
                 />
+                {errors.material && <p className="text-red-500 text-xs mt-1">{errors.material}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Dimensions</label>
@@ -718,8 +759,10 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
                   value={form.dimensions}
                   onChange={(e) => set('dimensions', e.target.value)}
                   placeholder="e.g. 250mm x 150mm x 50mm"
-                  className={inputClass(false)}
+                  maxLength={PLIMITS.dimensions}
+                  className={inputClass(!!errors.dimensions)}
                 />
+                {errors.dimensions && <p className="text-red-500 text-xs mt-1">{errors.dimensions}</p>}
               </div>
             </div>
           </div>

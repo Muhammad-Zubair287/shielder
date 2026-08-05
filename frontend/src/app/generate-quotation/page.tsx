@@ -22,10 +22,13 @@ import { useAuthStore } from '@/store/auth.store';
 import customerQuotationService, { QuotationProduct } from '@/services/customerQuotation.service';
 import { getImageUrl } from '@/utils/helpers';
 import SARSymbol from '@/components/SARSymbol';
+import { hasUnsafeContent } from '@/utils/security';
 
 const PLACEHOLDER = '/images/landing/factory-1.png';
 const SESSION_KEY = 'quotation_products';
 const BASKET_KEY = 'quotation_basket';
+
+const FIELD_LIMITS = { companyName: 100, address: 200 } as const;
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -43,22 +46,40 @@ interface FormErrors {
 
 function validate(form: FormState, t: (k: string) => string): FormErrors {
   const errors: FormErrors = {};
-  if (!form.companyName.trim()) errors.companyName = t('quot.companyRequired');
-  if (!form.vatNumber.trim())   errors.vatNumber   = t('quot.vatRequired');
-  else if (!/^\d{10,20}$/.test(form.vatNumber.replace(/[\s-]/g, '')))
+
+  if (!form.companyName.trim()) {
+    errors.companyName = t('quot.companyRequired');
+  } else if (hasUnsafeContent(form.companyName)) {
+    errors.companyName = t('validation.invalidText');
+  } else if (form.companyName.length > FIELD_LIMITS.companyName) {
+    errors.companyName = t('quot.companyNameTooLong');
+  }
+
+  if (!form.vatNumber.trim()) {
+    errors.vatNumber = t('quot.vatRequired');
+  } else if (!/^\d{10,20}$/.test(form.vatNumber.replace(/[\s-]/g, ''))) {
     errors.vatNumber = t('quot.vatInvalid');
-  if (!form.address.trim())     errors.address     = t('quot.addressRequired');
+  }
+
+  if (!form.address.trim()) {
+    errors.address = t('quot.addressRequired');
+  } else if (hasUnsafeContent(form.address)) {
+    errors.address = t('validation.invalidText');
+  } else if (form.address.length > FIELD_LIMITS.address) {
+    errors.address = t('quot.addressTooLong');
+  }
+
   return errors;
 }
 
 // ── Field Component ───────────────────────────────────────────────────────────
 
 function Field({
-  label, placeholder, value, onChange, error, type = 'text', isRTL, rows,
+  label, placeholder, value, onChange, error, type = 'text', isRTL, rows, maxLength,
 }: {
   label: string; placeholder: string; value: string;
   onChange: (v: string) => void; error?: string;
-  type?: string; isRTL: boolean; rows?: number;
+  type?: string; isRTL: boolean; rows?: number; maxLength?: number;
 }) {
   const base = `w-full border rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400
     focus:outline-none focus:ring-2 transition-colors
@@ -78,6 +99,7 @@ function Field({
           onChange={e => onChange(e.target.value)}
           className={`${base} resize-none`}
           dir={isRTL ? 'rtl' : 'ltr'}
+          maxLength={maxLength}
         />
       ) : (
         <input
@@ -87,6 +109,7 @@ function Field({
           onChange={e => onChange(e.target.value)}
           className={base}
           dir={isRTL ? 'rtl' : 'ltr'}
+          maxLength={maxLength}
         />
       )}
       {error && (
@@ -335,6 +358,7 @@ export default function GenerateQuotationPage() {
                   onChange={set('companyName')}
                   error={errors.companyName}
                   isRTL={isRTL}
+                  maxLength={FIELD_LIMITS.companyName}
                 />
                 <Field
                   label={t('quot.vatNumber')}
@@ -352,6 +376,7 @@ export default function GenerateQuotationPage() {
                   error={errors.address}
                   isRTL={isRTL}
                   rows={3}
+                  maxLength={FIELD_LIMITS.address}
                 />
 
                 {/* Actions */}

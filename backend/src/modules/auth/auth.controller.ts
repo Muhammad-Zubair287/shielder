@@ -298,7 +298,7 @@ class AuthController {
   sendForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ForgotPasswordSendOtpRequest = req.body;
 
-    await AuthService.sendForgotPasswordOtp(data);
+    await AuthService.sendForgotPasswordOtp(data, req.locale);
 
     // Always return success (don't reveal if email exists)
     res.status(200).json({
@@ -314,7 +314,7 @@ class AuthController {
   resendForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ForgotPasswordSendOtpRequest = req.body;
 
-    await AuthService.resendForgotPasswordOtp(data);
+    await AuthService.resendForgotPasswordOtp(data, req.locale);
 
     // Always return success (don't reveal if email exists)
     res.status(200).json({
@@ -330,7 +330,7 @@ class AuthController {
   verifyForgotPasswordOtp = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data: ForgotPasswordVerifyOtpRequest = req.body;
 
-    const result = await AuthService.verifyForgotPasswordOtp(data);
+    const result = await AuthService.verifyForgotPasswordOtp(data, req.locale);
 
     res.status(200).json({
       success: true,

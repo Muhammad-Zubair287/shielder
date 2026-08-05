@@ -28,6 +28,7 @@ import { getImageUrl } from '@/utils/helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { broadcastSync } from '@/lib/crossTabSync';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 
 type UserFormErrors = {
   email?: string;
@@ -498,10 +499,11 @@ export default function UserManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('name')}</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     placeholder="Enter name"
+                    maxLength={100}
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
                     value={formData.fullName}
                     onChange={(e) => {
@@ -515,13 +517,14 @@ export default function UserManagement() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('phone')}</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Phone number"
+                    maxLength={20}
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary"
                     value={formData.phoneNumber}
                     onChange={(e) => {
-                      setFormData({...formData, phoneNumber: e.target.value});
+                      setFormData({...formData, phoneNumber: filterPhoneInput(e.target.value)});
                       setFormErrors((prev) => ({ ...prev, phoneNumber: undefined }));
                     }}
                   />
@@ -563,6 +566,7 @@ export default function UserManagement() {
                       type="email"
                       required
                       disabled={!!editingUser}
+                      maxLength={254}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-shielder-primary disabled:opacity-50"
                       value={formData.email}
                       onChange={(e) => {

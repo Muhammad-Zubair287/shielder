@@ -388,6 +388,7 @@ export default function SuperAdminApplicationsPage() {
                   value={form.applicationName}
                   onChange={(e) => setForm((f) => ({ ...f, applicationName: e.target.value }))}
                   required
+                  maxLength={255}
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35]"
                 />
               </div>
@@ -432,6 +433,7 @@ export default function SuperAdminApplicationsPage() {
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={3}
+                  maxLength={2000}
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-[#FF6B35] resize-none"
                 />
               </div>

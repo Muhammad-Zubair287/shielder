@@ -11,12 +11,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { AuthAlert } from './AuthAlert';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthMeter } from './PasswordStrengthMeter';
-import { PASSWORD_REQUIREMENTS } from '@/utils/password';
 import {
   MultiStepRegistrationData,
   MultiStepRegistrationErrors,
+  REGISTRATION_TEXT_LIMITS,
+  validateRegistrationField,
   validateRegistrationStep,
 } from './multi-step-registration.validation';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 
 type FormData = MultiStepRegistrationData;
 type FormErrors = MultiStepRegistrationErrors;
@@ -50,23 +52,38 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    const nextData = {
+      ...formData,
+      [name]: name === 'phoneNumber' ? filterPhoneInput(value) : value,
+    } as FormData;
+    setFormData(nextData);
+    const error = validateRegistrationField(name as keyof FormData, value, nextData, t);
+    setErrors(prev => ({
       ...prev,
-      [name]: value,
+      [name]: error || '',
     }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+  };
+
+  const handleFieldBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const error = validateRegistrationField(name as keyof FormData, value, formData, t);
+    setErrors(prev => ({ ...prev, [name]: error || '' }));
   };
 
   const validateStep = (currentStep: 1 | 2 | 3): boolean => {
     const newErrors = validateRegistrationStep(currentStep, formData, t);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const validateAllSteps = (): boolean => {
+    const allErrors = {
+      ...validateRegistrationStep(1, formData, t),
+      ...validateRegistrationStep(2, formData, t),
+      ...validateRegistrationStep(3, formData, t),
+    };
+    setErrors(allErrors);
+    return Object.keys(allErrors).length === 0;
   };
 
   const handleNext = () => {
@@ -85,7 +102,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateStep(3)) {
+    if (validateAllSteps()) {
       setApiError(null);
       try {
         await onSubmit(formData);
@@ -141,6 +158,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               name="fullName"
               value={formData.fullName}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
+              maxLength={REGISTRATION_TEXT_LIMITS.fullName}
               placeholder={t('enterName')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.fullName ? 'border-red-500' : 'border-gray-300'
@@ -160,6 +179,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               name="email"
               value={formData.email}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
+              maxLength={REGISTRATION_TEXT_LIMITS.email}
               placeholder={t('emailPlaceholder')}
               dir="ltr"
               className={`input-ltr w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
@@ -180,6 +201,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
+              maxLength={REGISTRATION_TEXT_LIMITS.phoneNumber}
               placeholder="05XXXXXXXX or +966 5X XXX XXXX"
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
@@ -199,6 +222,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               name="address"
               value={formData.address}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
+              maxLength={REGISTRATION_TEXT_LIMITS.address}
               placeholder={t('enterAddress')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.address ? 'border-red-500' : 'border-gray-300'
@@ -218,6 +243,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               name="location"
               value={formData.location}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
+              maxLength={REGISTRATION_TEXT_LIMITS.location}
               placeholder={t('profile.locationPlaceholder')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.location ? 'border-red-500' : 'border-gray-300'
@@ -242,6 +269,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               name="companyName"
               value={formData.companyName}
               onChange={handleInputChange}
+              onBlur={handleFieldBlur}
+              maxLength={REGISTRATION_TEXT_LIMITS.companyName}
               placeholder={t('enterCompany')}
               className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:border-gray-600 ${
                 errors.companyName ? 'border-red-500' : 'border-gray-300'
@@ -268,9 +297,10 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             name="password"
             value={formData.password}
             onChange={handleInputChange}
+            onBlur={handleFieldBlur}
             error={errors.password}
             required
-            maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
+            maxLength={REGISTRATION_TEXT_LIMITS.password}
             placeholder={t('passwordPlaceholder')}
             forceLTR
           />
@@ -287,15 +317,16 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleInputChange}
+            onBlur={handleFieldBlur}
             error={errors.confirmPassword}
             required
-            maxLength={PASSWORD_REQUIREMENTS.MAX_LENGTH}
+            maxLength={REGISTRATION_TEXT_LIMITS.password}
             placeholder={t('confirmPasswordPlaceholder')}
             forceLTR
           />
 
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <p className="text-sm text-green-900 dark:text-green-200">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-sm text-blue-900 dark:text-blue-200">
               🔒 {t('createAccountDesc')}
             </p>
           </div>
@@ -328,7 +359,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? t('creating') : t('createAccountBtn')}
           </button>

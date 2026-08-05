@@ -21,6 +21,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStore } from '@/store/auth.store';
 import adminService from '@/services/admin.service';
 import { VALIDATION_RULES } from '@/utils/constants';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const U = FIELD_LIMITS.user;
 
 interface FormState {
   fullName: string;
@@ -81,17 +84,27 @@ export default function CreateUserPage() {
 
     if (!form.fullName.trim())
       errs.fullName = t('fieldRequired');
+    else if (form.fullName.length > U.fullName)
+      errs.fullName = t('validation.maxLength');
 
     if (!form.email.trim())
       errs.email = t('fieldRequired');
+    else if (form.email.length > U.email)
+      errs.email = t('validation.maxLength');
     else if (!VALIDATION_RULES.EMAIL_REGEX.test(form.email))
       errs.email = t('invalidEmail');
 
-    if (form.phoneNumber && !VALIDATION_RULES.PHONE_REGEX.test(form.phoneNumber))
-      errs.phoneNumber = t('invalidPhone');
+    if (form.phoneNumber) {
+      if (form.phoneNumber.length > U.phoneNumber)
+        errs.phoneNumber = t('validation.maxLength');
+      else if (!VALIDATION_RULES.PHONE_REGEX.test(form.phoneNumber))
+        errs.phoneNumber = t('invalidPhone');
+    }
 
     if (!form.password)
       errs.password = t('fieldRequired');
+    else if (form.password.length > U.password)
+      errs.password = t('validation.maxLength');
     else if (form.password.length < VALIDATION_RULES.PASSWORD_MIN_LENGTH)
       errs.password = t('passwordTooShort');
     else if (!VALIDATION_RULES.PASSWORD_REGEX.test(form.password))
@@ -152,6 +165,7 @@ export default function CreateUserPage() {
     onChange,
     required = false,
     suffix,
+    maxLength,
   }: {
     id: keyof FormState;
     label: string;
@@ -163,6 +177,7 @@ export default function CreateUserPage() {
     onChange: (v: string) => void;
     required?: boolean;
     suffix?: React.ReactNode;
+    maxLength?: number;
   }) {
     return (
       <div className="flex flex-col gap-1.5">
@@ -184,6 +199,7 @@ export default function CreateUserPage() {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
+            maxLength={maxLength}
             dir={id === 'fullNameAr' ? 'rtl' : isRTL ? 'rtl' : 'ltr'}
             className={`w-full h-11 text-sm text-gray-800 bg-gray-50 border rounded-xl outline-none transition-all
               ${error ? 'border-red-400 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-[#5B5FC7]/50 focus:ring-2 focus:ring-[#5B5FC7]/10'}
@@ -246,6 +262,7 @@ export default function CreateUserPage() {
                   placeholder={t('fullNameEnPh')}
                   error={errors.fullName}
                   onChange={(v) => set('fullName', v)}
+                  maxLength={U.fullName}
                   required
                 />
                 <Field
@@ -255,6 +272,7 @@ export default function CreateUserPage() {
                   value={form.fullNameAr}
                   placeholder={t('fullNameArPh')}
                   onChange={(v) => set('fullNameAr', v)}
+                  maxLength={U.fullName}
                 />
                 <Field
                   id="email"
@@ -265,6 +283,7 @@ export default function CreateUserPage() {
                   placeholder={t('emailPlaceholderName')}
                   error={errors.email}
                   onChange={(v) => set('email', v)}
+                  maxLength={U.email}
                   required
                 />
                 <Field
@@ -276,6 +295,7 @@ export default function CreateUserPage() {
                   placeholder={t('phonePh')}
                   error={errors.phoneNumber}
                   onChange={(v) => set('phoneNumber', v)}
+                  maxLength={U.phoneNumber}
                 />
                 <div className="sm:col-span-2">
                   <Field
@@ -285,6 +305,7 @@ export default function CreateUserPage() {
                     value={form.companyName}
                     placeholder={t('companyNamePh')}
                     onChange={(v) => set('companyName', v)}
+                    maxLength={U.companyName}
                   />
                 </div>
               </div>
@@ -305,6 +326,7 @@ export default function CreateUserPage() {
                   placeholder={t('passwordPlaceholderMin')}
                   error={errors.password}
                   onChange={(v) => set('password', v)}
+                  maxLength={U.password}
                   required
                   suffix={
                     <button
@@ -326,6 +348,7 @@ export default function CreateUserPage() {
                   placeholder={t('confirmPasswordPh')}
                   error={errors.confirmPassword}
                   onChange={(v) => set('confirmPassword', v)}
+                  maxLength={U.password}
                   required
                   suffix={
                     <button

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/auth.service';
+import { LockoutError } from '@/services/api.service';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validateForgotPasswordEmail } from '@/services/validation/auth.validation';
 import { AuthAlert } from '@/components/auth/AuthAlert';
@@ -13,38 +14,54 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
+  const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const update = () => {
+      const left = Math.max(0, Math.ceil((lockedUntil.getTime() - Date.now()) / 1000));
+      setLockSecondsLeft(left);
+      if (left === 0) setLockedUntil(null);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  const lockMinutesLeft = Math.ceil(lockSecondsLeft / 60);
+  const isLocked = lockSecondsLeft > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked || loading) return;
     setError('');
     setLoading(true);
-
     try {
       const validationError = validateForgotPasswordEmail(email);
       if (validationError) {
         setError(validationError);
         return;
       }
-
       await authService.sendForgotPasswordOtp(email);
       router.replace(`/forgot-password/verify?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
-          'string'
-          ? (err as { response: { data: { message: string } } }).response.data.message
-          : t('errors.forgot Password Failed');
-      setError(message);
+      if (err instanceof LockoutError) {
+        setLockedUntil(new Date(err.lockedUntil));
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : t('errors.forgotPasswordFailed'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white px-4 py-8 flex items-start justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div
+      className="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white px-4 py-8 flex items-start justify-center"
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       <div className="w-full max-w-sm pt-2">
         <div className={`mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
           <div className="inline-flex items-center gap-2 text-slate-900 font-extrabold tracking-[0.18em] text-xs">
@@ -61,6 +78,12 @@ export default function ForgotPasswordPage() {
             <AuthAlert type="error" message={error} onDismiss={() => setError('')} className="mb-4" />
           )}
 
+          {isLocked && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-center">
+              {t('auth.otpLockoutCountdown').replace('{{minutes}}', String(lockMinutesLeft))}
+            </p>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
@@ -72,15 +95,16 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t('enterEmail')}
+                maxLength={254}
                 dir="ltr"
-                className="input-ltr w-full h-11 px-4 border border-slate-300 rounded-full focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none text-sm"
-                disabled={loading}
+                className="input-ltr w-full h-11 px-4 border border-slate-300 rounded-full focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none text-sm disabled:bg-gray-50 disabled:cursor-not-allowed"
+                disabled={loading || isLocked}
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isLocked}
               className="w-full h-11 bg-[#004A99] text-white rounded-full font-semibold hover:bg-[#0D2F8C] disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {loading ? t('sending') : t('submit')}

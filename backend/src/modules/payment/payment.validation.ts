@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { PaymentMethod } from '@prisma/client';
+import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
 /**
  * Custom Joi validation for amount field
@@ -52,7 +53,7 @@ export const recordPaymentSchema = Joi.object({
       'string.base': 'Transaction ID must be a string'
     }),
   
-  notes: Joi.string()
+  notes: sharedValidationSchemas.textNoHtml
     .optional()
     .allow(null, '')
     .trim()
@@ -67,7 +68,7 @@ export const recordPaymentSchema = Joi.object({
 });
 
 export const refundPaymentSchema = Joi.object({
-  notes: Joi.string().optional().allow(''),
+  notes: sharedValidationSchemas.textNoHtml.optional().allow(''),
 });
 
 export const getPaymentsFilterSchema = Joi.object({

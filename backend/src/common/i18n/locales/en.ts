@@ -37,6 +37,7 @@ export const en: Record<string, string> = {
   'validation.passwordMax':    'Password must be at most {{limit}} characters.',
   'validation.invalidPhone':   'Please provide a valid phone number (e.g. 05XXXXXXXX or +966 5X XXX XXXX).',
   'validation.htmlNotAllowed':   'HTML content is not allowed.',
+  'validation.invalidText':      'Please enter valid text without unsafe characters.',
   'validation.invalidName':      'Invalid name format.',
   'validation.fullNameInvalid':      'Full name should contain only letters and spaces.',
   'validation.invalidInventoryName': 'Name must contain valid alphabetic characters and cannot be numbers only.',
@@ -88,6 +89,10 @@ export const en: Record<string, string> = {
   'auth.registrationEmailExists':        'An account with this email already exists. Please log in.',
   'auth.registrationValidationFailed':   'Please correct the errors and try again.',
   'auth.registrationOtpAttemptsLeft':    '{{count}} attempt(s) remaining.',
+  'auth.forgotPasswordOtpNotFound':      'No active OTP found. Please request a new one.',
+  'auth.forgotPasswordOtpExpired':       'OTP has expired. Please request a new one.',
+  'auth.forgotPasswordOtpInvalid':       'Invalid OTP. {{count}} attempt(s) remaining.',
+  'auth.forgotPasswordOtpMaxAttempts':   'Too many incorrect attempts. Please request a new OTP.',
   'auth.tokenRevoked':                   'Unauthorized. Please log in again.',
 
   // ── Profile ────────────────────────────────────────────────────────────────

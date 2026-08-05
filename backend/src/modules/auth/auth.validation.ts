@@ -26,26 +26,13 @@ export const authValidation = {
   register: Joi.object({
     email: emailSchema,
     password: passwordSchema,
-    fullName: sharedValidationSchemas.textNoHtml
-      .max(100)
-      .pattern(/^[\p{L}\s.'\-]{2,100}$/u)
-      .required()
-      .messages({
-        'any.required': 'Full name is required',
-        'string.pattern.base': 'Invalid full name format',
-      }),
-    phoneNumber: Joi.string()
-      .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
-      .required()
-      .messages({
-        'any.required': 'Phone number is required',
-        'string.pattern.base': 'Please provide a valid phone number (e.g. 05XXXXXXXX or +966 5X XXX XXXX)',
-      }),
-    address: sharedValidationSchemas.textNoHtml.max(255).required().messages({
+    fullName: sharedValidationSchemas.fullName.max(50).required(),
+    phoneNumber: sharedValidationSchemas.phoneRequired,
+    address: sharedValidationSchemas.textNoHtml.max(150).required().messages({
       'any.required': 'Address is required',
     }),
-    location: sharedValidationSchemas.textNoHtml.max(255).optional(),
-    companyName: sharedValidationSchemas.textNoHtml.max(100).optional(),
+    location: sharedValidationSchemas.textNoHtml.max(150).required(),
+    companyName: sharedValidationSchemas.textNoHtml.max(50).required(),
     role: Joi.string().valid('ADMIN', 'USER').default('USER'),
     preferredLanguage: Joi.string().valid('en', 'ar').default('en'),
   }).unknown(false), // STRICT: Blocks old fields like firstName, lastName, locale
@@ -243,26 +230,13 @@ export const authValidation = {
   initiateRegistration: Joi.object({
     email: emailSchema,
     password: passwordSchema,
-    fullName: sharedValidationSchemas.textNoHtml
-      .max(100)
-      .pattern(/^[\p{L}\s.'\-]{2,100}$/u)
-      .required()
-      .messages({
-        'any.required': 'Full name is required',
-        'string.pattern.base': 'Invalid full name format',
-      }),
-    phoneNumber: Joi.string()
-      .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
-      .required()
-      .messages({
-        'any.required': 'Phone number is required',
-        'string.pattern.base': 'Please provide a valid phone number',
-      }),
-    address: sharedValidationSchemas.textNoHtml.max(255).required().messages({
+    fullName: sharedValidationSchemas.fullName.max(50).required(),
+    phoneNumber: sharedValidationSchemas.phoneRequired,
+    address: sharedValidationSchemas.textNoHtml.max(150).required().messages({
       'any.required': 'Address is required',
     }),
-    location:          sharedValidationSchemas.textNoHtml.max(255).optional(),
-    companyName:       sharedValidationSchemas.textNoHtml.max(100).optional(),
+    location:          sharedValidationSchemas.textNoHtml.max(150).required(),
+    companyName:       sharedValidationSchemas.textNoHtml.max(50).required(),
     preferredLanguage: Joi.string().valid('en', 'ar').default('en'),
   }).unknown(false),
 

@@ -1,17 +1,15 @@
 /**
  * Two-Factor Authentication Service
- * OTP generation, verification, and management
+ * OTP generation, verification, and management with lockout protection
  */
 
 import crypto from 'crypto';
 import { prisma } from '@/config/database';
 import { emailService } from '@/common/services/email.service';
 import { logger } from '@/common/logger/logger';
-import { BadRequestError, UnauthorizedError } from '@/common/errors/api.error';
+import { BadRequestError, TooManyRequestsError } from '@/common/errors/api.error';
+import { t } from '@/common/i18n';
 
-/**
- * OTP Configuration
- */
 export const OTP_CONFIG = {
   LENGTH: 6,
   NUMERIC_ONLY: true,
@@ -20,22 +18,14 @@ export const OTP_CONFIG = {
   RATE_LIMIT_MINUTES: 15,
 } as const;
 
-/**
- * 2FA Service Class
- */
 export class TwoFactorService {
-  /**
-   * Generate OTP (6-digit numeric code)
-   */
   static generateOTP(length: number = OTP_CONFIG.LENGTH): string {
     if (OTP_CONFIG.NUMERIC_ONLY) {
-      // Generate numeric-only OTP
       return crypto
         .randomInt(0, Math.pow(10, length))
         .toString()
         .padStart(length, '0');
     }
-    // Generate alphanumeric OTP
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let otp = '';
     for (let i = 0; i < length; i++) {
@@ -45,38 +35,38 @@ export class TwoFactorService {
   }
 
   /**
-   * Create OTP record for user
+   * Create OTP. Throws TooManyRequestsError if the user has an active lockout.
    */
-  static async createOTP(userId: string, method: 'EMAIL' | 'SMS' = 'EMAIL'): Promise<{
-    otp: string;
-    expiresAt: Date;
-  }> {
+  static async createOTP(
+    userId: string,
+    method: 'EMAIL' | 'SMS' = 'EMAIL',
+    locale: string = 'en',
+  ): Promise<{ otp: string; expiresAt: Date }> {
     try {
-      // Delete any existing OTP for this user
-      await prisma.twoFactorOTP.deleteMany({
-        where: { userId },
-      });
+      // Check for active lockout before deleting existing OTP
+      const existing = await prisma.twoFactorOTP.findUnique({ where: { userId } });
+      if (existing?.lockedUntil && existing.lockedUntil > new Date()) {
+        const minutesRemaining = Math.ceil(
+          (existing.lockedUntil.getTime() - Date.now()) / 60_000,
+        );
+        throw new TooManyRequestsError(
+          t('common.rateLimitMinutes', locale, { minutes: minutesRemaining }),
+          { lockedUntil: existing.lockedUntil.toISOString() },
+        );
+      }
 
-      // Generate OTP
+      // Delete any existing OTP (not locked)
+      await prisma.twoFactorOTP.deleteMany({ where: { userId } });
+
       const otp = this.generateOTP();
-      
-      // Calculate expiry time
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + OTP_CONFIG.EXPIRY_MINUTES);
 
-      // Store OTP
       await prisma.twoFactorOTP.create({
-        data: {
-          userId,
-          code: otp,
-          method,
-          expiresAt,
-          attempts: 0,
-        },
+        data: { userId, code: otp, method, expiresAt, attempts: 0 },
       });
 
       logger.info(`OTP created for user ${userId} via ${method}`);
-
       return { otp, expiresAt };
     } catch (error) {
       logger.error('Error creating OTP:', error);
@@ -84,13 +74,7 @@ export class TwoFactorService {
     }
   }
 
-  /**
-   * Send OTP to user email
-   */
-  static async sendOTPEmail(
-    email: string,
-    otp: string
-  ): Promise<void> {
+  static async sendOTPEmail(email: string, otp: string): Promise<void> {
     try {
       const html = `
         <h2>Your Two-Factor Authentication Code</h2>
@@ -98,17 +82,14 @@ export class TwoFactorService {
         <p>This code will expire in ${OTP_CONFIG.EXPIRY_MINUTES} minutes.</p>
         <p>If you didn't request this code, please ignore this email.</p>
       `;
-
       const sent = await emailService.sendEmail({
         to: email,
         subject: 'Your Two-Factor Authentication Code',
         html,
       });
-
       if (!sent) {
         throw new BadRequestError('Unable to deliver OTP email. Please try again later.');
       }
-
       logger.info(`OTP email sent to ${email}`);
     } catch (error) {
       logger.error('Error sending OTP email:', error);
@@ -117,56 +98,71 @@ export class TwoFactorService {
   }
 
   /**
-   * Verify OTP
+   * Verify OTP with attempt tracking and lockout.
    */
   static async verifyOTP(
     userId: string,
-    code: string
+    code: string,
+    locale: string = 'en',
   ): Promise<boolean> {
     try {
-      // Get OTP record
-      const otpRecord = await prisma.twoFactorOTP.findUnique({
-        where: { userId },
-      });
+      const otpRecord = await prisma.twoFactorOTP.findUnique({ where: { userId } });
 
       if (!otpRecord) {
-        throw new BadRequestError('No OTP found. Please request a new one.');
+        throw new BadRequestError(t('auth.forgotPasswordOtpNotFound', locale));
       }
 
-      // Check if OTP expired
-      if (new Date() > otpRecord.expiresAt) {
-        // Delete expired OTP
-        await prisma.twoFactorOTP.delete({
-          where: { userId },
-        });
-        throw new BadRequestError('OTP expired. Please request a new one.');
-      }
-
-      // Check attempt limit
-      if (otpRecord.attempts >= OTP_CONFIG.MAX_ATTEMPTS) {
-        throw new UnauthorizedError(
-          `Too many failed attempts. Please request a new OTP.`
+      // Check active lockout first
+      if (otpRecord.lockedUntil && otpRecord.lockedUntil > new Date()) {
+        const minutesRemaining = Math.ceil(
+          (otpRecord.lockedUntil.getTime() - Date.now()) / 60_000,
         );
+        throw new TooManyRequestsError(
+          t('common.rateLimitMinutes', locale, { minutes: minutesRemaining }),
+          { lockedUntil: otpRecord.lockedUntil.toISOString() },
+        );
+      }
+
+      // Check if OTP is expired
+      if (new Date() > otpRecord.expiresAt) {
+        await prisma.twoFactorOTP.delete({ where: { userId } });
+        throw new BadRequestError(t('auth.forgotPasswordOtpExpired', locale));
+      }
+
+      // Check attempt limit (handles edge case of expired lockout but high attempts)
+      if (otpRecord.attempts >= OTP_CONFIG.MAX_ATTEMPTS) {
+        throw new BadRequestError(t('auth.forgotPasswordOtpMaxAttempts', locale));
       }
 
       // Verify OTP code
       if (otpRecord.code !== code) {
-        // Increment failed attempts
+        const newAttempts = otpRecord.attempts + 1;
+        let lockedUntil: Date | undefined;
+
+        if (newAttempts >= OTP_CONFIG.MAX_ATTEMPTS) {
+          lockedUntil = new Date(Date.now() + OTP_CONFIG.RATE_LIMIT_MINUTES * 60_000);
+        }
+
         await prisma.twoFactorOTP.update({
           where: { userId },
-          data: { attempts: otpRecord.attempts + 1 },
+          data: { attempts: newAttempts, ...(lockedUntil ? { lockedUntil } : {}) },
         });
 
-        throw new UnauthorizedError(
-          `Invalid OTP. ${OTP_CONFIG.MAX_ATTEMPTS - otpRecord.attempts - 1} attempts remaining.`
+        if (lockedUntil) {
+          throw new TooManyRequestsError(
+            t('common.rateLimitMinutes', locale, { minutes: OTP_CONFIG.RATE_LIMIT_MINUTES }),
+            { lockedUntil: lockedUntil.toISOString() },
+          );
+        }
+
+        const attemptsLeft = OTP_CONFIG.MAX_ATTEMPTS - newAttempts;
+        throw new BadRequestError(
+          t('auth.forgotPasswordOtpInvalid', locale, { count: attemptsLeft }),
         );
       }
 
-      // OTP verified - delete the record
-      await prisma.twoFactorOTP.delete({
-        where: { userId },
-      });
-
+      // OTP verified — delete the record
+      await prisma.twoFactorOTP.delete({ where: { userId } });
       logger.info(`OTP verified successfully for user ${userId}`);
       return true;
     } catch (error) {
@@ -175,21 +171,10 @@ export class TwoFactorService {
     }
   }
 
-  /**
-   * Check if user has 2FA enabled
-   */
   static async isTwoFactorEnabled(userId: string): Promise<boolean> {
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
-
-      if (!user) {
-        return false;
-      }
-
-      // 2FA is mandatory for ADMIN and SUPER_ADMIN
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+      if (!user) return false;
       return ['ADMIN', 'SUPER_ADMIN'].includes(user.role);
     } catch (error) {
       logger.error('Error checking 2FA status:', error);
@@ -197,20 +182,13 @@ export class TwoFactorService {
     }
   }
 
-  /**
-   * Get remaining OTP attempts
-   */
   static async getRemainingAttempts(userId: string): Promise<number> {
     try {
       const otpRecord = await prisma.twoFactorOTP.findUnique({
         where: { userId },
         select: { attempts: true },
       });
-
-      if (!otpRecord) {
-        return OTP_CONFIG.MAX_ATTEMPTS;
-      }
-
+      if (!otpRecord) return OTP_CONFIG.MAX_ATTEMPTS;
       return Math.max(0, OTP_CONFIG.MAX_ATTEMPTS - otpRecord.attempts);
     } catch (error) {
       logger.error('Error getting OTP attempts:', error);
@@ -218,19 +196,11 @@ export class TwoFactorService {
     }
   }
 
-  /**
-   * Cleanup expired OTPs (run periodically)
-   */
   static async cleanupExpiredOTPs(): Promise<number> {
     try {
       const result = await prisma.twoFactorOTP.deleteMany({
-        where: {
-          expiresAt: {
-            lt: new Date(),
-          },
-        },
+        where: { expiresAt: { lt: new Date() } },
       });
-
       logger.info(`Cleaned up ${result.count} expired OTPs`);
       return result.count;
     } catch (error) {

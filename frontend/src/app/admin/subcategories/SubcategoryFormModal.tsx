@@ -7,6 +7,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import adminService from '@/services/admin.service';
 import type { Subcategory, SubcategoryFormData, CategoryOption } from './types';
 import { getImageUrl } from '@/utils/helpers';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const LIMITS = FIELD_LIMITS.subcategory;
 
 interface Props {
   mode: 'create' | 'edit';
@@ -103,10 +106,25 @@ export default function SubcategoryFormModal({
   };
 
   // ── Validation ─────────────────────────────────────────────────────────────
+  const validateField = (field: keyof SubcategoryFormData, value: string): string => {
+    if (field === 'nameEn') {
+      if (!value.trim()) return t('subNameEnRequired');
+      if (value.length > LIMITS.nameEn) return t('validation.maxLength');
+    }
+    if (field === 'nameAr' && value.length > LIMITS.nameAr) return t('validation.maxLength');
+    if (field === 'descriptionEn' && value.length > LIMITS.descriptionEn) return t('validation.maxLength');
+    if (field === 'descriptionAr' && value.length > LIMITS.descriptionAr) return t('validation.maxLength');
+    return '';
+  };
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!form.categoryId) errs.categoryId = t('categoryIdRequired');
     if (!form.nameEn.trim()) errs.nameEn = t('subNameEnRequired');
+    else if (form.nameEn.length > LIMITS.nameEn) errs.nameEn = t('validation.maxLength');
+    if (form.nameAr.length > LIMITS.nameAr) errs.nameAr = t('validation.maxLength');
+    if (form.descriptionEn.length > LIMITS.descriptionEn) errs.descriptionEn = t('validation.maxLength');
+    if (form.descriptionAr.length > LIMITS.descriptionAr) errs.descriptionAr = t('validation.maxLength');
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
       formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -116,7 +134,12 @@ export default function SubcategoryFormModal({
 
   const set = (field: keyof SubcategoryFormData, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+    if (typeof value === 'string') {
+      const err = validateField(field, value);
+      setErrors((prev) => ({ ...prev, [field]: err }));
+    } else {
+      setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+    }
   };
 
   // ── Submit ─────────────────────────────────────────────────────────────────
@@ -278,6 +301,7 @@ export default function SubcategoryFormModal({
                 type="text"
                 value={form.nameEn}
                 onChange={(e) => set('nameEn', e.target.value)}
+                maxLength={LIMITS.nameEn}
                 placeholder="e.g. Laptops"
                 dir="ltr"
                 className={`w-full py-2.5 px-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm transition-all ${
@@ -296,10 +320,12 @@ export default function SubcategoryFormModal({
                 rows={2}
                 value={form.descriptionEn}
                 onChange={(e) => set('descriptionEn', e.target.value)}
+                maxLength={LIMITS.descriptionEn}
                 placeholder="Short description in English..."
                 dir="ltr"
-                className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm resize-none transition-all"
+                className={`w-full py-2.5 px-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm resize-none transition-all ${errors.descriptionEn ? 'border-red-400' : 'border-gray-200'}`}
               />
+              {errors.descriptionEn && <p className="text-red-500 text-xs mt-1">{errors.descriptionEn}</p>}
             </div>
           </div>
 
@@ -316,10 +342,12 @@ export default function SubcategoryFormModal({
                 type="text"
                 value={form.nameAr}
                 onChange={(e) => set('nameAr', e.target.value)}
+                maxLength={LIMITS.nameAr}
                 placeholder="مثال: أجهزة الكمبيوتر المحمولة"
                 dir="rtl"
-                className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm transition-all"
+                className={`w-full py-2.5 px-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm transition-all ${errors.nameAr ? 'border-red-400' : 'border-gray-200'}`}
               />
+              {errors.nameAr && <p className="text-red-500 text-xs mt-1 text-right">{errors.nameAr}</p>}
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -329,10 +357,12 @@ export default function SubcategoryFormModal({
                 rows={2}
                 value={form.descriptionAr}
                 onChange={(e) => set('descriptionAr', e.target.value)}
+                maxLength={LIMITS.descriptionAr}
                 placeholder="وصف مختصر بالعربية..."
                 dir="rtl"
-                className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm resize-none transition-all"
+                className={`w-full py-2.5 px-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B5FC7] text-sm resize-none transition-all ${errors.descriptionAr ? 'border-red-400' : 'border-gray-200'}`}
               />
+              {errors.descriptionAr && <p className="text-red-500 text-xs mt-1 text-right">{errors.descriptionAr}</p>}
             </div>
           </div>
 

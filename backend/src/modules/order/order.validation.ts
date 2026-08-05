@@ -16,13 +16,7 @@ export const orderValidation = {
       }),
       otherwise: sharedValidationSchemas.textNoHtml.max(200).allow('', null).optional(),
     }),
-    phoneNumber: Joi.string()
-      .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
-      .required()
-      .messages({
-        'any.required': 'Phone number is required',
-        'string.pattern.base': 'Please provide a valid phone number (e.g. 05XXXXXXXX or +966 5X XXX XXXX)',
-      }),
+    phoneNumber: sharedValidationSchemas.phoneRequired,
     customerName: sharedValidationSchemas.textNoHtml.min(2).max(100).required().messages({
       'any.required': 'Customer name is required',
       'string.min': 'Customer name must be at least 2 characters',

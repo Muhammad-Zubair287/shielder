@@ -340,6 +340,7 @@ function LoginPageContent() {
                          onFocus={() => prefetchRoute('/forgot-password')}
                          placeholder="example@gmail.com"
                          autoComplete="email"
+                         maxLength={254}
                          dir="ltr"
                          className={`input-ltr w-full py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} bg-white text-slate-900 placeholder:text-slate-400 border rounded-xl outline-none transition-all shadow-sm ${
                            errors.email ? 'border-red-500' : 'border-gray-300 focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]'

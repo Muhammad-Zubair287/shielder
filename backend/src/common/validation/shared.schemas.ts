@@ -16,6 +16,7 @@ export const sharedValidationSchemas = {
     .email({ tlds: { allow: false } })
     .lowercase()
     .trim()
+    .max(254)
     .required()
     .messages({
       'string.empty': 'Email is required',
@@ -39,12 +40,18 @@ export const sharedValidationSchemas = {
       return value;
     }, 'Password minimum length check')
     .custom((value, helpers) => {
-      if (value.length > 128) {
+      if (value.length > 32) {
         return helpers.error('password.maxLength');
       }
 
       return value;
     }, 'Password maximum length check')
+    .custom((value, helpers) => {
+      if (/<[^>]*>|javascript\s*:|on\w+\s*=|(?:'|\")\s*(?:or|and)\s*(?:'|\")?\s*(?:\d+|true)|\b(?:union\s+select|drop\s+table|delete\s+from|insert\s+into|update\s+\w+\s+set)\b|--|\/\*|\*\/|;/i.test(value)) {
+        return helpers.error('string.invalid');
+      }
+      return value;
+    }, 'Password injection check')
     .custom((value, helpers) => {
       if (isCommonWeakPassword(value)) {
         return helpers.error('password.common');
@@ -83,6 +90,7 @@ export const sharedValidationSchemas = {
     .required()
     .messages({
       'string.empty': 'Password is required',
+      'string.invalid': 'Password contains unsafe content',
       'password.minLength': passwordMessages.minLength,
       'password.maxLength': passwordMessages.maxLength,
       'password.uppercase': passwordMessages.uppercase,
@@ -100,9 +108,12 @@ export const sharedValidationSchemas = {
     .trim()
     .max(1024)
     .custom((value, helpers) => {
-      if (/<[^>]+>/.test(value)) return helpers.error('string.invalid', { message: 'HTML tags are not allowed' });
-      if (/javascript:\s*/i.test(value)) return helpers.error('string.invalid', { message: 'JavaScript URIs are not allowed' });
-      if (/on\w+\s*=/.test(value)) return helpers.error('string.invalid', { message: 'Event handlers are not allowed' });
+      if (/[\u0000-\u001F\u007F]/.test(value)) return helpers.error('string.invalid');
+      if (/<[^>]+>/.test(value)) return helpers.error('string.invalid');
+      if (/javascript:\s*/i.test(value)) return helpers.error('string.invalid');
+      if (/on\w+\s*=/.test(value)) return helpers.error('string.invalid');
+      if (/(?:'|\")\s*(?:or|and)\s*(?:'|\")?\s*(?:\d+|true)/i.test(value)) return helpers.error('string.invalid');
+      if (/\b(?:union\s+select|drop\s+table|delete\s+from|insert\s+into|update\s+\w+\s+set)\b/i.test(value)) return helpers.error('string.invalid');
       return value;
     }, 'No HTML/JS')
     .messages({
@@ -134,7 +145,7 @@ export const sharedValidationSchemas = {
         return helpers.error('fullName.lettersOnly');
       }
       // Must contain at least one Unicode letter; only letters, spaces, hyphens, apostrophes allowed
-      if (!/^(?=.*[\p{L}])[\p{L}\s'\-]+$/u.test(value)) {
+      if (!/^(?=.*[\p{L}])[\p{L}\s'’\-]+$/u.test(value)) {
         return helpers.error('fullName.lettersOnly');
       }
       return value;
@@ -179,6 +190,51 @@ export const sharedValidationSchemas = {
       'string.max': 'Name must contain letters only and cannot exceed 25 characters',
       'string.pattern.base': 'Name must contain letters only and cannot exceed 25 characters',
     }),
+
+  /**
+   * Unified phone number schema.
+   * Accepts: optional leading +, digits (0-9), and spaces for formatting.
+   * Rejects: letters, hyphens, parentheses, multiple + signs, all XSS/SQL payloads.
+   * Length: 7–20 characters.
+   */
+  phone: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      const trimmed = value.trim();
+      if (!trimmed) return helpers.error('string.empty');
+      if (!/^\+?[0-9 ]+$/.test(trimmed)) return helpers.error('phone.invalid');
+      if (!/[0-9]/.test(trimmed)) return helpers.error('phone.invalid');
+      const len = trimmed.length;
+      if (len < 7 || len > 20) return helpers.error('phone.invalid');
+      if (/  /.test(trimmed)) return helpers.error('phone.invalid');
+      return trimmed;
+    }, 'Phone number validation')
+    .messages({
+      'string.empty': 'Phone number is required.',
+      'any.required': 'Phone number is required.',
+      'phone.invalid': 'Please provide a valid phone number.',
+    })
+    .optional()
+    .allow('', null),
+
+  phoneRequired: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      const trimmed = value.trim();
+      if (!trimmed) return helpers.error('string.empty');
+      if (!/^\+?[0-9 ]+$/.test(trimmed)) return helpers.error('phone.invalid');
+      if (!/[0-9]/.test(trimmed)) return helpers.error('phone.invalid');
+      const len = trimmed.length;
+      if (len < 7 || len > 20) return helpers.error('phone.invalid');
+      if (/  /.test(trimmed)) return helpers.error('phone.invalid');
+      return trimmed;
+    }, 'Phone number validation')
+    .messages({
+      'string.empty': 'Phone number is required.',
+      'any.required': 'Phone number is required.',
+      'phone.invalid': 'Please provide a valid phone number.',
+    })
+    .required(),
 
   superAdminPhone: Joi.string()
     .trim()

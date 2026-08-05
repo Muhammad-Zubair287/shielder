@@ -7,6 +7,9 @@ import { toast } from 'react-hot-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import notificationService from '@/services/notification.service';
 import type { CreateNotificationPayload } from '@/services/notification.service';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const LIMITS = FIELD_LIMITS.notification;
 
 type TargetRole = 'CUSTOMER' | 'ADMIN' | null;
 
@@ -45,6 +48,26 @@ export default function NotificationForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const validateField = (field: keyof FormState, value: string): string => {
+    if (field === 'title') {
+      if (!value.trim()) return t('notifErrorTitleRequired');
+      if (value.length > LIMITS.title) return t('validation.maxLength');
+    }
+    if (field === 'titleAr') {
+      if (!value.trim()) return t('notifErrorTitleArRequired');
+      if (value.length > LIMITS.title) return t('validation.maxLength');
+    }
+    if (field === 'message') {
+      if (!value.trim()) return t('notifErrorMessageRequired');
+      if (value.length > LIMITS.message) return t('validation.maxLength');
+    }
+    if (field === 'messageAr') {
+      if (!value.trim()) return t('notifErrorMessageArRequired');
+      if (value.length > LIMITS.message) return t('validation.maxLength');
+    }
+    return '';
+  };
+
   const set = (field: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -53,17 +76,19 @@ export default function NotificationForm() {
       ? (raw === '' ? null : (raw as TargetRole))
       : raw;
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (typeof value === 'string') {
+      const err = validateField(field, value);
+      setErrors((prev) => ({ ...prev, [field]: err || undefined }));
     }
   };
 
   const validate = (): boolean => {
     const errs: FormErrors = {};
-    if (!form.title.trim()) errs.title = t('notifErrorTitleRequired');
-    if (!form.titleAr.trim()) errs.titleAr = t('notifErrorTitleArRequired');
-    if (!form.message.trim()) errs.message = t('notifErrorMessageRequired');
-    if (!form.messageAr.trim()) errs.messageAr = t('notifErrorMessageArRequired');
+    const err = (f: keyof FormState, v: string) => { const e = validateField(f, v); if (e) errs[f as keyof FormErrors] = e; };
+    err('title', form.title);
+    err('titleAr', form.titleAr);
+    err('message', form.message);
+    err('messageAr', form.messageAr);
     setErrors(errs);
     return !Object.keys(errs).length;
   };
@@ -112,6 +137,7 @@ export default function NotificationForm() {
               type="text"
               value={form.title}
               onChange={set('title')}
+              maxLength={LIMITS.title}
               placeholder={t('notifFormTitleEnPh')}
               dir="ltr"
               className={`w-full h-10 rounded-xl border px-3 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]/30 focus:border-[#5B5FC7] transition ${errors.title ? 'border-red-400' : 'border-gray-200'}`}
@@ -128,6 +154,7 @@ export default function NotificationForm() {
               type="text"
               value={form.titleAr}
               onChange={set('titleAr')}
+              maxLength={LIMITS.title}
               placeholder={t('notifFormTitleArPh')}
               dir="rtl"
               className={`w-full h-10 rounded-xl border px-3 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]/30 focus:border-[#5B5FC7] transition text-right ${errors.titleAr ? 'border-red-400' : 'border-gray-200'}`}
@@ -147,6 +174,7 @@ export default function NotificationForm() {
               rows={4}
               value={form.message}
               onChange={set('message')}
+              maxLength={LIMITS.message}
               placeholder={t('notifFormMessageEnPh')}
               dir="ltr"
               className={`w-full rounded-xl border px-3 py-2.5 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]/30 focus:border-[#5B5FC7] transition resize-none ${errors.message ? 'border-red-400' : 'border-gray-200'}`}
@@ -163,6 +191,7 @@ export default function NotificationForm() {
               rows={4}
               value={form.messageAr}
               onChange={set('messageAr')}
+              maxLength={LIMITS.message}
               placeholder={t('notifFormMessageArPh')}
               dir="rtl"
               className={`w-full rounded-xl border px-3 py-2.5 text-sm bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5FC7]/30 focus:border-[#5B5FC7] transition resize-none text-right ${errors.messageAr ? 'border-red-400' : 'border-gray-200'}`}

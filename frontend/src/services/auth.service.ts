@@ -3,7 +3,7 @@
  * Authentication-related API calls
  */
 
-import apiClient, { handleApiError } from './api.service';
+import apiClient, { handleApiError, LockoutError } from './api.service';
 import axios from 'axios';
 import { API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
 import type {
@@ -178,6 +178,12 @@ class AuthService {
     try {
       await apiClient.post(`${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}/send-otp`, { email }, { timeout: 120000 });
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        const data = error.response.data as { message?: string; lockedUntil?: string };
+        if (data?.lockedUntil) {
+          throw new LockoutError(data.message ?? 'Too many attempts', data.lockedUntil);
+        }
+      }
       throw new Error(handleApiError(error));
     }
   }
@@ -189,6 +195,12 @@ class AuthService {
     try {
       await apiClient.post(`${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}/resend-otp`, { email }, { timeout: 120000 });
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        const data = error.response.data as { message?: string; lockedUntil?: string };
+        if (data?.lockedUntil) {
+          throw new LockoutError(data.message ?? 'Too many attempts', data.lockedUntil);
+        }
+      }
       throw new Error(handleApiError(error));
     }
   }
@@ -205,6 +217,12 @@ class AuthService {
 
       return response.data.data!;
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        const resData = error.response.data as { message?: string; lockedUntil?: string };
+        if (resData?.lockedUntil) {
+          throw new LockoutError(resData.message ?? 'Too many attempts', resData.lockedUntil);
+        }
+      }
       throw new Error(handleApiError(error));
     }
   }

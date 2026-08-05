@@ -272,6 +272,19 @@ apiClient.interceptors.response.use(
 );
 
 /**
+ * Lockout Error
+ * Thrown when the backend returns a 429 with a lockedUntil timestamp.
+ */
+export class LockoutError extends Error {
+  public readonly lockedUntil: string; // ISO timestamp string
+  constructor(message: string, lockedUntil: string) {
+    super(message);
+    this.name = 'LockoutError';
+    this.lockedUntil = lockedUntil;
+  }
+}
+
+/**
  * API Error Handler
  */
 export const handleApiError = (error: unknown): string => {

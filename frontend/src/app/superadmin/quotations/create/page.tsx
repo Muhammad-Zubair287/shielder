@@ -7,6 +7,7 @@ import Link from 'next/link';
 import quotationService from '@/services/quotation.service';
 import SARSymbol from '@/components/SARSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 import { useProductSearch, type ProductSearchItem } from '@/hooks/useProductSearch';
 
 interface CartItem {
@@ -18,10 +19,21 @@ interface CartItem {
     totalPrice: number;
 }
 
+const QLIMITS = {
+    customerName: 100,
+    customerEmail: 254,
+    customerPhone: 20,
+    customerAddress: 200,
+    companyName: 100,
+    notes: 2000,
+    terms: 2000,
+};
+
 export default function CreateQuotationPage() {
     const { t, isRTL } = useLanguage();
     const router = useRouter();
     const [saving, setSaving] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     // Customer
     const [customerName, setCustomerName] = useState('');
@@ -42,6 +54,15 @@ export default function CreateQuotationPage() {
     const [overallDiscount, setOverallDiscount] = useState(0);
     const [notes, setNotes] = useState('');
     const [terms, setTerms] = useState('');
+
+    const setField = (key: keyof typeof QLIMITS, setter: (v: string) => void, value: string) => {
+        setter(value);
+        const limit = QLIMITS[key];
+        setFieldErrors(prev => ({
+            ...prev,
+            [key]: value.length > limit ? `Maximum ${limit} characters allowed` : '',
+        }));
+    };
 
     const addProduct = (product: ProductSearchItem) => {
         const exists = items.find(i => i.productId === product.id);
@@ -121,23 +142,59 @@ export default function CreateQuotationPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Name *</label>
-                        <input className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Customer full name" />
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none ${fieldErrors.customerName ? 'border-red-400' : 'border-gray-200'}`}
+                            value={customerName}
+                            onChange={e => setField('customerName', setCustomerName, e.target.value)}
+                            maxLength={QLIMITS.customerName}
+                            placeholder="Customer full name"
+                        />
+                        {fieldErrors.customerName && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerName}</p>}
                     </div>
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Email *</label>
-                        <input type="email" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="customer@example.com" />
+                        <input
+                            type="email"
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none ${fieldErrors.customerEmail ? 'border-red-400' : 'border-gray-200'}`}
+                            value={customerEmail}
+                            onChange={e => setField('customerEmail', setCustomerEmail, e.target.value)}
+                            maxLength={QLIMITS.customerEmail}
+                            placeholder="customer@example.com"
+                        />
+                        {fieldErrors.customerEmail && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerEmail}</p>}
                     </div>
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Phone</label>
-                        <input className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="+1 234 567 8900" />
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none ${fieldErrors.customerPhone ? 'border-red-400' : 'border-gray-200'}`}
+                            value={customerPhone}
+                            onChange={e => setField('customerPhone', setCustomerPhone, filterPhoneInput(e.target.value))}
+                            maxLength={QLIMITS.customerPhone}
+                            placeholder="+1 234 567 8900"
+                        />
+                        {fieldErrors.customerPhone && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerPhone}</p>}
                     </div>
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Company</label>
-                        <input className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Company name (optional)" />
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none ${fieldErrors.companyName ? 'border-red-400' : 'border-gray-200'}`}
+                            value={companyName}
+                            onChange={e => setField('companyName', setCompanyName, e.target.value)}
+                            maxLength={QLIMITS.companyName}
+                            placeholder="Company name (optional)"
+                        />
+                        {fieldErrors.companyName && <p className="text-red-500 text-xs mt-1">{fieldErrors.companyName}</p>}
                     </div>
                     <div className="md:col-span-2">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Address</label>
-                        <input className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} placeholder="Shipping / billing address" />
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none ${fieldErrors.customerAddress ? 'border-red-400' : 'border-gray-200'}`}
+                            value={customerAddress}
+                            onChange={e => setField('customerAddress', setCustomerAddress, e.target.value)}
+                            maxLength={QLIMITS.customerAddress}
+                            placeholder="Shipping / billing address"
+                        />
+                        {fieldErrors.customerAddress && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerAddress}</p>}
                     </div>
                 </div>
             </div>
@@ -258,11 +315,27 @@ export default function CreateQuotationPage() {
                     </div>
                     <div className="md:col-span-2">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Notes</label>
-                        <textarea rows={3} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none resize-none" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Internal notes for this quotation..." />
+                        <textarea
+                            rows={3}
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none resize-none ${fieldErrors.notes ? 'border-red-400' : 'border-gray-200'}`}
+                            value={notes}
+                            onChange={e => setField('notes', setNotes, e.target.value)}
+                            maxLength={QLIMITS.notes}
+                            placeholder="Internal notes for this quotation..."
+                        />
+                        {fieldErrors.notes && <p className="text-red-500 text-xs mt-1">{fieldErrors.notes}</p>}
                     </div>
                     <div className="md:col-span-2">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Terms & Conditions</label>
-                        <textarea rows={3} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none resize-none" value={terms} onChange={e => setTerms(e.target.value)} placeholder="Payment terms, delivery conditions, warranty..." />
+                        <textarea
+                            rows={3}
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-shielder-primary/20 focus:outline-none resize-none ${fieldErrors.terms ? 'border-red-400' : 'border-gray-200'}`}
+                            value={terms}
+                            onChange={e => setField('terms', setTerms, e.target.value)}
+                            maxLength={QLIMITS.terms}
+                            placeholder="Payment terms, delivery conditions, warranty..."
+                        />
+                        {fieldErrors.terms && <p className="text-red-500 text-xs mt-1">{fieldErrors.terms}</p>}
                     </div>
                 </div>
             </div>

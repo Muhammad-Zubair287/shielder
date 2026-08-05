@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Send, Trash2, Search, Loader2 } from 'lucide-react';
 import quotationService from '@/services/quotation.service';
 import SARSymbol from '@/components/SARSymbol';
+import { filterPhoneInput } from '@/utils/phoneUtils';
 
 interface CartItem {
     productId: string;
@@ -16,12 +17,23 @@ interface CartItem {
     totalPrice: number;
 }
 
+const QLIMITS = {
+    customerName: 100,
+    customerEmail: 254,
+    customerPhone: 20,
+    customerAddress: 200,
+    companyName: 100,
+    notes: 2000,
+    terms: 2000,
+};
+
 export default function EditQuotationPage() {
     const { id } = useParams();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [quotation, setQuotation] = useState<any>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     // Customer
     const [customerName, setCustomerName] = useState('');
@@ -100,6 +112,15 @@ export default function EditQuotationPage() {
         }));
     };
 
+    const setField = (key: keyof typeof QLIMITS, setter: (v: string) => void, value: string) => {
+        setter(value);
+        const limit = QLIMITS[key];
+        setFieldErrors(prev => ({
+            ...prev,
+            [key]: value.length > limit ? `Maximum ${limit} characters allowed` : '',
+        }));
+    };
+
     const subtotal = items.reduce((s, i) => s + i.totalPrice, 0);
     const taxableAmount = subtotal - overallDiscount;
     const taxAmount = taxableAmount * (taxRate / 100);
@@ -148,11 +169,57 @@ export default function EditQuotationPage() {
                     Customer Information
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" placeholder="Customer name *" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                    <input type="email" className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" placeholder="Email *" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} />
-                    <input className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
-                    <input className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" placeholder="Company" value={companyName} onChange={e => setCompanyName(e.target.value)} />
-                    <input className="md:col-span-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" placeholder="Address" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} />
+                    <div>
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none ${fieldErrors.customerName ? 'border-red-400' : 'border-gray-200'}`}
+                            placeholder="Customer name *"
+                            value={customerName}
+                            onChange={e => setField('customerName', setCustomerName, e.target.value)}
+                            maxLength={QLIMITS.customerName}
+                        />
+                        {fieldErrors.customerName && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerName}</p>}
+                    </div>
+                    <div>
+                        <input
+                            type="email"
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none ${fieldErrors.customerEmail ? 'border-red-400' : 'border-gray-200'}`}
+                            placeholder="Email *"
+                            value={customerEmail}
+                            onChange={e => setField('customerEmail', setCustomerEmail, e.target.value)}
+                            maxLength={QLIMITS.customerEmail}
+                        />
+                        {fieldErrors.customerEmail && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerEmail}</p>}
+                    </div>
+                    <div>
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none ${fieldErrors.customerPhone ? 'border-red-400' : 'border-gray-200'}`}
+                            placeholder="Phone"
+                            value={customerPhone}
+                            onChange={e => setField('customerPhone', setCustomerPhone, filterPhoneInput(e.target.value))}
+                            maxLength={QLIMITS.customerPhone}
+                        />
+                        {fieldErrors.customerPhone && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerPhone}</p>}
+                    </div>
+                    <div>
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none ${fieldErrors.companyName ? 'border-red-400' : 'border-gray-200'}`}
+                            placeholder="Company"
+                            value={companyName}
+                            onChange={e => setField('companyName', setCompanyName, e.target.value)}
+                            maxLength={QLIMITS.companyName}
+                        />
+                        {fieldErrors.companyName && <p className="text-red-500 text-xs mt-1">{fieldErrors.companyName}</p>}
+                    </div>
+                    <div className="md:col-span-2">
+                        <input
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none ${fieldErrors.customerAddress ? 'border-red-400' : 'border-gray-200'}`}
+                            placeholder="Address"
+                            value={customerAddress}
+                            onChange={e => setField('customerAddress', setCustomerAddress, e.target.value)}
+                            maxLength={QLIMITS.customerAddress}
+                        />
+                        {fieldErrors.customerAddress && <p className="text-red-500 text-xs mt-1">{fieldErrors.customerAddress}</p>}
+                    </div>
                 </div>
             </div>
 
@@ -212,8 +279,28 @@ export default function EditQuotationPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Expiry Date *</label><input type="date" min={today} value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" /></div>
-                    <div className="md:col-span-2"><label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Notes</label><textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none" /></div>
-                    <div className="md:col-span-2"><label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Terms & Conditions</label><textarea rows={2} value={terms} onChange={e => setTerms(e.target.value)} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none" /></div>
+                    <div className="md:col-span-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Notes</label>
+                        <textarea
+                            rows={2}
+                            value={notes}
+                            onChange={e => setField('notes', setNotes, e.target.value)}
+                            maxLength={QLIMITS.notes}
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm resize-none focus:outline-none ${fieldErrors.notes ? 'border-red-400' : 'border-gray-200'}`}
+                        />
+                        {fieldErrors.notes && <p className="text-red-500 text-xs mt-1">{fieldErrors.notes}</p>}
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Terms & Conditions</label>
+                        <textarea
+                            rows={2}
+                            value={terms}
+                            onChange={e => setField('terms', setTerms, e.target.value)}
+                            maxLength={QLIMITS.terms}
+                            className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm resize-none focus:outline-none ${fieldErrors.terms ? 'border-red-400' : 'border-gray-200'}`}
+                        />
+                        {fieldErrors.terms && <p className="text-red-500 text-xs mt-1">{fieldErrors.terms}</p>}
+                    </div>
                 </div>
             </div>
 

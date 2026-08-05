@@ -25,13 +25,7 @@ export const quotationValidation = {
             'string.email': 'Please provide a valid email address',
             'any.required': 'Customer email is required',
         }),
-        customerPhone: Joi.string()
-            .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
-            .allow('', null)
-            .optional()
-            .messages({
-                'string.pattern.base': 'Please provide a valid phone number',
-            }),
+        customerPhone: sharedValidationSchemas.phone,
         customerAddress: sharedValidationSchemas.textNoHtml.max(200).allow('', null).optional(),
         companyName: sharedValidationSchemas.textNoHtml.max(100).allow('', null).optional(),
         items: Joi.array().items(quotationItemSchema).min(1).required().messages({
@@ -58,13 +52,7 @@ export const quotationValidation = {
     update: Joi.object({
         customerName: sharedValidationSchemas.textNoHtml.min(2).max(100).optional(),
         customerEmail: Joi.string().email().optional(),
-        customerPhone: Joi.string()
-            .pattern(/^\+?[\d\s\-\(\)]{7,20}$|^(\+?966|0)5[0-9]{8}$/)
-            .allow('', null)
-            .optional()
-            .messages({
-                'string.pattern.base': 'Please provide a valid phone number',
-            }),
+        customerPhone: sharedValidationSchemas.phone,
         customerAddress: sharedValidationSchemas.textNoHtml.max(200).allow('', null).optional(),
         companyName: sharedValidationSchemas.textNoHtml.max(100).allow('', null).optional(),
         items: Joi.array().items(quotationItemSchema).min(1).optional(),

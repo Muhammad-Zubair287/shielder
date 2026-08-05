@@ -37,6 +37,16 @@ interface ValidationResult {
  *   console.log(result.errors); // { email: 'Invalid email' }
  * }
  */
+import { hasUnsafeContent, isInvalidFullName } from './security';
+
+export const PROFILE_LIMITS = {
+  fullName: 100,
+  phone: 20,
+  location: 255,
+  address: 255,
+  companyName: 100,
+} as const;
+
 export function validateProfileUpdate(data: {
   fullName: string;
   email: string;
@@ -46,21 +56,40 @@ export function validateProfileUpdate(data: {
 }): ValidationResult {
   const errors: Record<string, string> = {};
 
-  // Full name validation
   if (!data.fullName?.trim()) {
     errors.fullName = 'nameRequired';
+  } else if (isInvalidFullName(data.fullName)) {
+    errors.fullName = 'validation.fullNameInvalid';
+  } else if (data.fullName.length > PROFILE_LIMITS.fullName) {
+    errors.fullName = 'validation.maxLength';
   }
 
-  // Email validation
   if (!data.email?.trim()) {
     errors.email = 'emailRequired';
   } else if (!isValidEmail(data.email)) {
     errors.email = 'invalidEmail';
   }
 
-  // Phone validation (optional but must be valid length if provided)
-  if (data.phone && data.phone.trim().length < 7) {
-    errors.phone = 'profile.phoneMinLength';
+  if (data.phone) {
+    if (!isValidPhone(data.phone)) {
+      errors.phone = 'invalidPhone';
+    }
+  }
+
+  if (data.location) {
+    if (hasUnsafeContent(data.location)) {
+      errors.location = 'validation.invalidText';
+    } else if (data.location.length > PROFILE_LIMITS.location) {
+      errors.location = 'validation.maxLength';
+    }
+  }
+
+  if (data.address) {
+    if (hasUnsafeContent(data.address)) {
+      errors.address = 'validation.invalidText';
+    } else if (data.address.length > PROFILE_LIMITS.address) {
+      errors.address = 'validation.maxLength';
+    }
   }
 
   return {
@@ -189,7 +218,9 @@ export function isValidEmail(email: string): boolean {
  * }
  */
 export function isValidPhone(phone: string, minLength: number = 7): boolean {
-  return phone.trim().length >= minLength;
+  const trimmed = phone.trim();
+  if (trimmed.length < minLength) return false;
+  return /^\+?[0-9 ]{7,20}$/.test(trimmed) && /[0-9]/.test(trimmed);
 }
 
 /**

@@ -19,7 +19,11 @@ import {
   ContactSubmissionPayload,
 } from './contact.types';
 import contactService from '@/services/contact.service';
-import { validateContactForm } from '@/services/validation/contact.validation';
+import { validateContactForm, validateContactField } from '@/services/validation/contact.validation';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+import { filterPhoneInput } from '@/utils/phoneUtils';
+
+const CLIMITS = FIELD_LIMITS.contact;
 
 // ── Social icons (simple SVG) ─────────────────────────────────────────────────
 function TwitterIcon() {
@@ -118,8 +122,22 @@ export default function ContactPage() {
     return () => { mounted = false; };
   }, []);
 
-  const field = (key: keyof typeof form, value: string) =>
+  const field = (key: keyof typeof form, value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
+    const maxMap: Partial<Record<keyof typeof form, number>> = {
+      firstName: CLIMITS.firstName,
+      lastName: CLIMITS.lastName,
+      phone: CLIMITS.phone,
+      subject: CLIMITS.subject,
+      message: CLIMITS.message,
+    };
+    const error = validateContactField(key, value, maxMap[key], t as any);
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [key]: error }));
+    } else {
+      setFieldErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,13 +283,17 @@ export default function ContactPage() {
                     <label htmlFor="contact-first-name" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactFirstName')}</label>
                     <input id="contact-first-name" type="text" required placeholder={t('contactFirstNamePH')}
                       value={form.firstName} onChange={e => field('firstName', e.target.value)}
-                      className={inputCls} />
+                      maxLength={CLIMITS.firstName}
+                      className={`${inputCls} ${fieldErrors.firstName ? 'border-red-500' : ''}`} />
+                    {fieldErrors.firstName && <p className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</p>}
                   </div>
                   <div>
                     <label htmlFor="contact-last-name" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactLastName')}</label>
                     <input id="contact-last-name" type="text" required placeholder={t('contactLastNamePH')}
                       value={form.lastName} onChange={e => field('lastName', e.target.value)}
-                      className={inputCls} />
+                      maxLength={CLIMITS.lastName}
+                      className={`${inputCls} ${fieldErrors.lastName ? 'border-red-500' : ''}`} />
+                    {fieldErrors.lastName && <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>}
                   </div>
                 </div>
 
@@ -281,13 +303,17 @@ export default function ContactPage() {
                     <label htmlFor="contact-email" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactEmail')}</label>
                     <input id="contact-email" type="email" required placeholder={t('contactEmailPH')}
                       value={form.email} onChange={e => field('email', e.target.value)}
-                      className={inputCls} />
+                      maxLength={254}
+                      className={`${inputCls} ${fieldErrors.email ? 'border-red-500' : ''}`} />
+                    {fieldErrors.email && <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>}
                   </div>
                   <div>
                     <label htmlFor="contact-phone" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactPhone')}</label>
                     <input id="contact-phone" type="tel" placeholder={t('contactPhonePH')}
-                      value={form.phone} onChange={e => field('phone', e.target.value)}
-                      className={inputCls} />
+                      value={form.phone} onChange={e => field('phone', filterPhoneInput(e.target.value))}
+                      maxLength={CLIMITS.phone}
+                      className={`${inputCls} ${fieldErrors.phone ? 'border-red-500' : ''}`} />
+                    {fieldErrors.phone && <p className="text-red-500 text-xs mt-1">{fieldErrors.phone}</p>}
                   </div>
                 </div>
 
@@ -317,11 +343,13 @@ export default function ContactPage() {
                   <label htmlFor="contact-message" className="block text-xs font-semibold text-gray-700 mb-1">{t('contactMessage')}</label>
                   <textarea id="contact-message" required rows={4} placeholder={t('contactMessagePH')}
                     value={form.message} onChange={e => field('message', e.target.value)}
-                    maxLength={CONTACT_PAGE_LIMITS.MAX_MESSAGE_CHARACTERS}
-                    className={`${inputCls} resize-none`} />
-                  <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-                    <span>{fieldErrors.message || ''}</span>
-                    <span>{form.message.length}/{CONTACT_PAGE_LIMITS.MAX_MESSAGE_CHARACTERS}</span>
+                    maxLength={CLIMITS.message}
+                    className={`${inputCls} resize-none ${fieldErrors.message ? 'border-red-500' : ''}`} />
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span className={fieldErrors.message ? 'text-red-500' : 'text-gray-500'}>{fieldErrors.message || ''}</span>
+                    <span className={form.message.length >= CLIMITS.message ? 'text-red-500' : 'text-gray-500'}>
+                      {form.message.length}/{CLIMITS.message}
+                    </span>
                   </div>
                 </div>
 

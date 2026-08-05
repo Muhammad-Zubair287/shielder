@@ -3,10 +3,11 @@
  */
 
 import Joi from 'joi';
+import { sharedValidationSchemas } from '@/common/validation/shared.schemas';
 
 export const applicationValidation = {
   create: Joi.object({
-    applicationName: Joi.string().trim().min(1).max(255).required().messages({
+    applicationName: sharedValidationSchemas.textNoHtml.min(1).max(255).required().messages({
       'string.empty': 'Application name is required.',
       'any.required': 'Application name is required.',
     }),
@@ -18,15 +19,15 @@ export const applicationValidation = {
       'string.uri': 'Download URL must be a valid URL.',
       'any.required': 'Download URL is required.',
     }),
-    description: Joi.string().trim().max(2000).optional().allow(''),
+    description: sharedValidationSchemas.textNoHtml.max(2000).optional().allow(''),
     status: Joi.string().valid('ACTIVE', 'INACTIVE').optional(),
   }),
 
   update: Joi.object({
-    applicationName: Joi.string().trim().min(1).max(255).optional(),
+    applicationName: sharedValidationSchemas.textNoHtml.min(1).max(255).optional(),
     platform: Joi.string().valid('ANDROID', 'IOS').optional(),
     downloadUrl: Joi.string().uri().optional(),
-    description: Joi.string().trim().max(2000).optional().allow(''),
+    description: sharedValidationSchemas.textNoHtml.max(2000).optional().allow(''),
     status: Joi.string().valid('ACTIVE', 'INACTIVE').optional(),
   }),
 

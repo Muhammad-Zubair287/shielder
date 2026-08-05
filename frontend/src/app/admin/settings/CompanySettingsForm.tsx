@@ -9,6 +9,9 @@ import {
   FormSection, FormRow, TextInput, SaveBar,
 } from './FormComponents';
 import type { CompanyFormState } from './types';
+import { FIELD_LIMITS } from '@/constants/fieldLimits';
+
+const S = FIELD_LIMITS.settings;
 
 interface Props { settings: any; onSaved: () => void; }
 
@@ -86,9 +89,17 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.companyNameEn?.trim() && !form.companyName.trim()) e.companyNameEn = t('settingsErrorRequired');
+    if (form.companyNameEn && form.companyNameEn.length > S.companyName) e.companyNameEn = t('validation.maxLength');
+    if (form.companyNameAr && form.companyNameAr.length > S.companyName) e.companyNameAr = t('validation.maxLength');
+    if (form.companyName && form.companyName.length > S.companyName) e.companyName = t('validation.maxLength');
     if (form.companyEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.companyEmail)) {
       e.companyEmail = t('invalidEmail');
     }
+    if (form.companyEmail && form.companyEmail.length > S.companyEmail) e.companyEmail = t('validation.maxLength');
+    if (form.companyPhone && form.companyPhone.length > S.companyPhone) e.companyPhone = t('validation.maxLength');
+    if (form.companyAddress && form.companyAddress.length > S.companyAddress) e.companyAddress = t('validation.maxLength');
+    if (form.companyLocationEn && form.companyLocationEn.length > S.companyLocation) e.companyLocationEn = t('validation.maxLength');
+    if (form.companyLocationAr && form.companyLocationAr.length > S.companyLocation) e.companyLocationAr = t('validation.maxLength');
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -182,15 +193,18 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
             placeholder={t('settingsCompanyNameEnPh') || 'Enter company name in English'}
             error={!!errors.companyNameEn}
             dir="ltr"
+            maxLength={S.companyName}
           />
         </FormRow>
 
-        <FormRow label={t('settingsCompanyNameAr') || 'Company Name (Arabic)'}>
+        <FormRow label={t('settingsCompanyNameAr') || 'Company Name (Arabic)'} error={errors.companyNameAr}>
           <TextInput
             value={form.companyNameAr || ''}
             onChange={set('companyNameAr')}
             placeholder={t('settingsCompanyNameArPh') || 'ادخل اسم الشركة بالعربية'}
             dir="rtl"
+            maxLength={S.companyName}
+            error={!!errors.companyNameAr}
           />
         </FormRow>
 
@@ -200,6 +214,7 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
             onChange={set('companyName')}
             placeholder={t('settingsCompanyNamePh')}
             error={!!errors.companyName}
+            maxLength={S.companyName}
           />
         </FormRow>
 
@@ -212,41 +227,50 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
               placeholder="contact@company.com"
               error={!!errors.companyEmail}
               dir="ltr"
+              maxLength={S.companyEmail}
             />
           </FormRow>
-          <FormRow label={t('settingsCompanyPhone')}>
+          <FormRow label={t('settingsCompanyPhone')} error={errors.companyPhone}>
             <TextInput
               value={form.companyPhone}
               onChange={set('companyPhone')}
               placeholder="+966 5x xxx xxxx"
               dir="ltr"
+              maxLength={S.companyPhone}
+              error={!!errors.companyPhone}
             />
           </FormRow>
         </div>
 
-        <FormRow label={t('settingsCompanyLocationEn') || 'Company Location (English)'}>
+        <FormRow label={t('settingsCompanyLocationEn') || 'Company Location (English)'} error={errors.companyLocationEn}>
           <TextInput
             value={form.companyLocationEn || ''}
             onChange={set('companyLocationEn')}
             placeholder={t('settingsCompanyLocationEnPh') || 'Enter company location in English'}
             dir="ltr"
+            maxLength={S.companyLocation}
+            error={!!errors.companyLocationEn}
           />
         </FormRow>
 
-        <FormRow label={t('settingsCompanyLocationAr') || 'Company Location (Arabic)'}>
+        <FormRow label={t('settingsCompanyLocationAr') || 'Company Location (Arabic)'} error={errors.companyLocationAr}>
           <TextInput
             value={form.companyLocationAr || ''}
             onChange={set('companyLocationAr')}
             placeholder={t('settingsCompanyLocationArPh') || 'ادخل عنوان الشركة بالعربية'}
             dir="rtl"
+            maxLength={S.companyLocation}
+            error={!!errors.companyLocationAr}
           />
         </FormRow>
 
-        <FormRow label={t('settingsCompanyAddress')}>
+        <FormRow label={t('settingsCompanyAddress')} error={errors.companyAddress}>
           <TextInput
             value={form.companyAddress}
             onChange={set('companyAddress')}
             placeholder={t('settingsCompanyAddressPh')}
+            maxLength={S.companyAddress}
+            error={!!errors.companyAddress}
           />
         </FormRow>
       </FormSection>

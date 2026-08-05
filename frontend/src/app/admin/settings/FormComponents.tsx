@@ -66,6 +66,8 @@ export function TextInput({
   disabled = false,
   error = false,
   dir,
+  maxLength,
+  onBlur,
 }: {
   value: string | number;
   onChange: (v: string) => void;
@@ -74,6 +76,8 @@ export function TextInput({
   disabled?: boolean;
   error?: boolean;
   dir?: 'ltr' | 'rtl';
+  maxLength?: number;
+  onBlur?: () => void;
 }) {
   const { isRTL } = useLanguage();
   return (
@@ -81,8 +85,10 @@ export function TextInput({
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
       placeholder={placeholder}
       disabled={disabled}
+      maxLength={maxLength}
       dir={dir ?? (isRTL ? 'rtl' : 'ltr')}
       className={[
         'w-full h-10 rounded-xl border px-3 text-sm bg-white text-gray-800 placeholder-gray-400',

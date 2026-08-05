@@ -423,6 +423,7 @@ function renderGeneralTab(
               type="text"
               value={data.systemName}
               onChange={(e) => onChange('systemName', e.target.value)}
+              maxLength={255}
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
             />
           </div>
@@ -432,6 +433,7 @@ function renderGeneralTab(
               type="text"
               value={data.companyName}
               onChange={(e) => onChange('companyName', e.target.value)}
+              maxLength={255}
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
             />
           </div>
@@ -441,6 +443,7 @@ function renderGeneralTab(
               type="text"
               value={data.companyNameEn || ''}
               onChange={(e) => onChange('companyNameEn', e.target.value)}
+              maxLength={255}
               dir="ltr"
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
             />
@@ -451,6 +454,7 @@ function renderGeneralTab(
               type="text"
               value={data.companyNameAr || ''}
               onChange={(e) => onChange('companyNameAr', e.target.value)}
+              maxLength={255}
               dir="rtl"
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
             />
@@ -461,6 +465,7 @@ function renderGeneralTab(
               type="email"
               value={data.companyEmail}
               onChange={(e) => onChange('companyEmail', e.target.value)}
+              maxLength={254}
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
             />
           </div>
@@ -470,6 +475,7 @@ function renderGeneralTab(
               type="text"
               value={data.companyPhone}
               onChange={(e) => onChange('companyPhone', e.target.value)}
+              maxLength={50}
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent"
             />
           </div>
@@ -517,6 +523,7 @@ function renderGeneralTab(
               rows={4}
               value={data.companyAddress}
               onChange={(e) => onChange('companyAddress', e.target.value)}
+              maxLength={500}
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent resize-none"
             />
           </div>
@@ -526,6 +533,7 @@ function renderGeneralTab(
               rows={3}
               value={data.companyLocationEn || ''}
               onChange={(e) => onChange('companyLocationEn', e.target.value)}
+              maxLength={255}
               dir="ltr"
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent resize-none"
             />
@@ -536,6 +544,7 @@ function renderGeneralTab(
               rows={3}
               value={data.companyLocationAr || ''}
               onChange={(e) => onChange('companyLocationAr', e.target.value)}
+              maxLength={255}
               dir="rtl"
               className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-shielder-primary focus:border-transparent resize-none"
             />

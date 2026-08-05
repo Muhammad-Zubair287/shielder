@@ -1138,7 +1138,7 @@ export class AuthService {
   /**
    * Forgot password OTP: send OTP to email
    */
-  static async sendForgotPasswordOtp(data: ForgotPasswordSendOtpRequest): Promise<void> {
+  static async sendForgotPasswordOtp(data: ForgotPasswordSendOtpRequest, locale: string = 'en'): Promise<void> {
     try {
       const user = await prisma.user.findUnique({
         where: { email: data.email.toLowerCase() },
@@ -1162,7 +1162,7 @@ export class AuthService {
       }
 
       const { TwoFactorService } = await import('./twofa.service');
-      const { otp } = await TwoFactorService.createOTP(user.id, 'EMAIL');
+      const { otp } = await TwoFactorService.createOTP(user.id, 'EMAIL', locale);
       await TwoFactorService.sendOTPEmail(user.email, otp);
 
       await this.createAuditLog(user.id, 'PASSWORD_RESET_OTP_SENT', 'Forgot-password OTP sent');
@@ -1175,15 +1175,16 @@ export class AuthService {
   /**
    * Forgot password OTP: resend OTP to email
    */
-  static async resendForgotPasswordOtp(data: ForgotPasswordSendOtpRequest): Promise<void> {
-    await this.sendForgotPasswordOtp(data);
+  static async resendForgotPasswordOtp(data: ForgotPasswordSendOtpRequest, locale: string = 'en'): Promise<void> {
+    await this.sendForgotPasswordOtp(data, locale);
   }
 
   /**
    * Forgot password OTP: verify OTP and issue short-lived reset session token
    */
   static async verifyForgotPasswordOtp(
-    data: ForgotPasswordVerifyOtpRequest
+    data: ForgotPasswordVerifyOtpRequest,
+    locale: string = 'en'
   ): Promise<{ resetSessionToken: string; expiresInMinutes: number }> {
     try {
       const user = await prisma.user.findUnique({
@@ -1200,7 +1201,7 @@ export class AuthService {
       }
 
       const { TwoFactorService } = await import('./twofa.service');
-      await TwoFactorService.verifyOTP(user.id, data.code);
+      await TwoFactorService.verifyOTP(user.id, data.code, locale);
 
       const resetSessionToken = crypto.randomBytes(32).toString('hex');
       const resetTokenHash = crypto.createHash('sha256').update(resetSessionToken).digest('hex');
