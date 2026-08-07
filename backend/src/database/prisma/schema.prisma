@@ -998,7 +998,7 @@ model PendingRegistration {
   passwordHash      String    @map("password_hash")
   fullName          String    @map("full_name")
   phoneNumber       String    @map("phone_number")
-  address           String
+  address           String?
   location          String?
   companyName       String?   @map("company_name")
   preferredLanguage String    @default("en") @map("preferred_language")

@@ -17,6 +17,14 @@ const passwordSchema = sharedValidationSchemas.password;
 const emailSchema = sharedValidationSchemas.email;
 
 /**
+ * Optional signup text: empty (including whitespace-only) input is normalized
+ * away, while any provided value still receives the standard security and
+ * length validation from textNoHtml.
+ */
+const optionalSignupText = (maxLength: number) =>
+  sharedValidationSchemas.textNoHtml.max(maxLength).empty('').optional();
+
+/**
  * Auth Validation Schemas
  */
 export const authValidation = {
@@ -28,11 +36,9 @@ export const authValidation = {
     password: passwordSchema,
     fullName: sharedValidationSchemas.fullName.max(50).required(),
     phoneNumber: sharedValidationSchemas.phoneRequired,
-    address: sharedValidationSchemas.textNoHtml.max(150).required().messages({
-      'any.required': 'Address is required',
-    }),
-    location: sharedValidationSchemas.textNoHtml.max(150).required(),
-    companyName: sharedValidationSchemas.textNoHtml.max(50).required(),
+    address: optionalSignupText(150),
+    location: optionalSignupText(150),
+    companyName: optionalSignupText(50),
     role: Joi.string().valid('ADMIN', 'USER').default('USER'),
     preferredLanguage: Joi.string().valid('en', 'ar').default('en'),
   }).unknown(false), // STRICT: Blocks old fields like firstName, lastName, locale
@@ -232,11 +238,9 @@ export const authValidation = {
     password: passwordSchema,
     fullName: sharedValidationSchemas.fullName.max(50).required(),
     phoneNumber: sharedValidationSchemas.phoneRequired,
-    address: sharedValidationSchemas.textNoHtml.max(150).required().messages({
-      'any.required': 'Address is required',
-    }),
-    location:          sharedValidationSchemas.textNoHtml.max(150).required(),
-    companyName:       sharedValidationSchemas.textNoHtml.max(50).required(),
+    address:           optionalSignupText(150),
+    location:          optionalSignupText(150),
+    companyName:       optionalSignupText(50),
     preferredLanguage: Joi.string().valid('en', 'ar').default('en'),
   }).unknown(false),
 

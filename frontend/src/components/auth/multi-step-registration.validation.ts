@@ -38,12 +38,9 @@ const validateTextField = (
   t: (key: string) => string,
 ): string | undefined => {
   const trimmed = value.trim();
-  const requiredKey = field === 'fullName' ? 'nameRequired'
-    : field === 'address' ? 'addressRequired'
-    : field === 'location' ? 'locationRequired'
-    : 'companyRequired';
-
-  if (!trimmed) return t(requiredKey);
+  if (!trimmed) {
+    return field === 'fullName' ? t('nameRequired') : undefined;
+  }
   if (value.length > REGISTRATION_TEXT_LIMITS[field]) return t('validation.maxLength');
   if (hasUnsafeText(value)) return t('validation.invalidText');
 

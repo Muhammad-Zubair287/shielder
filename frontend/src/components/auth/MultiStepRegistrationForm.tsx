@@ -215,7 +215,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('address')} <span className="text-red-500">*</span>
+              {t('address')}
             </label>
             <input
               type="text"
@@ -236,7 +236,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('profile.location')} <span className="text-red-500">*</span>
+              {t('profile.location')}
             </label>
             <input
               type="text"
@@ -262,7 +262,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('company')} <span className="text-red-500">*</span>
+              {t('company')}
             </label>
             <input
               type="text"

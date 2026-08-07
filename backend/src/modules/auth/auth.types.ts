@@ -11,7 +11,7 @@ export interface RegisterRequest {
   password: string;
   fullName: string;
   phoneNumber: string;
-  address: string;
+  address?: string;
   location?: string;
   companyName?: string;
   role?: 'ADMIN' | 'USER';
@@ -168,7 +168,7 @@ export interface InitiateRegistrationRequest {
   password: string;
   fullName: string;
   phoneNumber: string;
-  address: string;
+  address?: string;
   location?: string;
   companyName?: string;
   preferredLanguage?: string;

@@ -52,9 +52,9 @@ export default function RegisterPage() {
         fullName:    data.fullName,
         email:       data.email,
         phoneNumber: data.phoneNumber,
-        address:     data.address,
-        location:    data.location,
-        companyName: data.companyName,
+        ...(data.address.trim() && { address: data.address.trim() }),
+        ...(data.location.trim() && { location: data.location.trim() }),
+        ...(data.companyName.trim() && { companyName: data.companyName.trim() }),
         password:    data.password,
       });
 

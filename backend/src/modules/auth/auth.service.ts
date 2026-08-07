@@ -175,7 +175,7 @@ export class AuthService {
     try {
       // Sanitize incoming free-text fields to ensure database never stores HTML/JS
       data.fullName = sanitizeString(data.fullName as string);
-      data.address = sanitizeString(data.address as string);
+      data.address = sanitizeString(data.address);
       data.companyName = sanitizeString(data.companyName as string);
       data.location = sanitizeString(data.location as string);
       if (typeof data.phoneNumber === 'string') {
@@ -284,7 +284,8 @@ export class AuthService {
               create: {
                 fullName: data.fullName || '',
                 phoneNumber: data.phoneNumber,
-                address: data.address,
+                address: data.address || null,
+                location: data.location || null,
                 companyName: data.companyName,
                 preferredLanguage: data.preferredLanguage || 'en',
               },
@@ -430,7 +431,7 @@ export class AuthService {
         passwordHash,
         fullName:          data.fullName,
         phoneNumber:       data.phoneNumber,
-        address:           data.address,
+        address:           data.address || null,
         location:          data.location || null,
         companyName:       data.companyName || null,
         preferredLanguage: data.preferredLanguage || 'en',

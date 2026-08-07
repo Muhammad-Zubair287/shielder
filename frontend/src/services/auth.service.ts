@@ -71,7 +71,7 @@ class AuthService {
     password: string;
     fullName: string;
     phoneNumber: string;
-    address: string;
+    address?: string;
     location?: string;
     companyName?: string;
     preferredLanguage?: string;
