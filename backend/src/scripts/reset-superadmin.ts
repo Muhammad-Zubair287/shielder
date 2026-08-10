@@ -18,7 +18,7 @@ const prisma = new PrismaClient();
  * - bcrypt.hash(password, 12) for any manual password updates
  */
 async function main() {
-  const email = 'superadmin@shielder.com';
+  const email = 'zubair.m1815@gmail.com';
   const password = 'Super@123';
   const hashedPassword = await bcrypt.hash(password, 12);
 

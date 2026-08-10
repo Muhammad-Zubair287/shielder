@@ -13,6 +13,7 @@
     "prisma:studio": "prisma studio --schema=./src/database/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=./src/database/prisma/schema.prisma",
     "seed:super-admin": "npx tsx src/scripts/seed-super-admin.ts",
+    "update:superadmin-email": "npx tsx src/scripts/update-superadmin-email.ts",
     "seed:test-data": "npx tsx src/scripts/seed-test-data.ts",
     "backfill:product-arabic": "npx tsx src/scripts/backfill-product-arabic-translations.ts",
     "migrate:product-images": "npx tsx src/scripts/migrate-product-image-paths.ts",
