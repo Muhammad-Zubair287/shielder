@@ -5,6 +5,7 @@ import { OrderStatus, PaymentStatus, StockChangeType, Prisma, NotificationType, 
 import NotificationService from '@/modules/notification/notification.service';
 import { StockAlertService } from '../inventory/stock-alert/stock-alert.service';
 import { inventoryService } from '../inventory/inventory.service';
+import { inventoryRepository } from '../inventory/inventory.repository';
 import { orderRepository } from './order.repository';
 import redisCacheService from '@/common/services/redis-cache.service';
 import { CACHE_KEYS } from '@/common/constants/cache-keys';
@@ -134,19 +135,20 @@ export class OrderService {
     return inventoryService.resolveWarehouseForOrder(deliveryType, pickupWarehouseId);
   }
 
-  private async reserveInventoryForItem(
+  /**
+   * Checkout / order-create stock gate only — never reserves or deducts.
+   */
+  private async assertInventoryAvailableForItem(
     tx: Prisma.TransactionClient,
     productId: string,
     warehouseId: string,
     orderedQuantity: number,
   ) {
-    const quantityToReserve = Math.max(0, Math.trunc(orderedQuantity));
-    if (quantityToReserve <= 0) {
+    const quantityToCheck = Math.max(0, Math.trunc(orderedQuantity));
+    if (quantityToCheck <= 0) {
       throw new BadRequestError('Invalid order quantity');
     }
 
-    // Ensure inventory record exists for this product-warehouse combination
-    // This prevents "no rows affected" errors when trying to reserve stock
     await tx.inventory.upsert({
       where: {
         productId_warehouseId: {
@@ -163,7 +165,201 @@ export class OrderService {
       update: {},
     });
 
-    await inventoryService.reserveStock(productId, warehouseId, quantityToReserve, tx);
+    await inventoryService.assertAvailableStock(productId, warehouseId, quantityToCheck, tx);
+  }
+
+  private async hasStockHistoryEntry(
+    tx: Prisma.TransactionClient,
+    orderId: string,
+    type: StockChangeType,
+  ): Promise<boolean> {
+    const existing = await tx.stock_history.findFirst({
+      where: { order_id: orderId, type },
+      select: { id: true },
+    });
+    return Boolean(existing);
+  }
+
+  /**
+   * Deduct inventory after verified payment success.
+   * Idempotent via stock_history ORDER_COMPLETED rows for this order.
+   * Does NOT touch reservedQuantity for normal checkout (legacy reservations are cleared in SQL).
+   */
+  async deductInventoryAfterPaymentSuccess(
+    orderId: string,
+    performedBy: string,
+    externalTx?: Prisma.TransactionClient,
+  ): Promise<'deducted' | 'already_deducted'> {
+    const run = async (tx: Prisma.TransactionClient) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          orderItems: {
+            include: {
+              product: {
+                include: {
+                  translations: { where: { locale: 'en' } },
+                },
+              },
+              variant: true,
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new NotFoundError('Order not found');
+      }
+
+      if (await this.hasStockHistoryEntry(tx, order.id, StockChangeType.ORDER_COMPLETED)) {
+        return 'already_deducted' as const;
+      }
+
+      const orderWarehouseId = await this.resolveOrderWarehouseId(
+        order.deliveryType as 'DELIVERY' | 'PICKUP',
+        order.warehouseId ?? undefined,
+      );
+
+      for (const item of order.orderItems) {
+        if (item.variantId && item.variant && item.variant.stock < item.quantity) {
+          throw new BadRequestError(
+            `Insufficient stock for variant "${item.variant.name}". Cannot confirm payment inventory.`,
+          );
+        }
+
+        await inventoryService.deductStockOnPayment(item.productId, orderWarehouseId, item.quantity, tx);
+
+        const productUpdate = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            stock: { gte: item.quantity },
+          },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        if (productUpdate.count === 0) {
+          const productName = item.product.translations[0]?.name || 'Product';
+          throw new BadRequestError(
+            `Insufficient stock for "${productName}". Cannot confirm payment inventory.`,
+          );
+        }
+
+        if (item.variantId) {
+          await tx.product_variants.update({
+            where: { id: item.variantId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+
+        const productName = item.product.translations[0]?.name || 'Product';
+        await tx.stock_history.create({
+          data: {
+            id: crypto.randomUUID(),
+            product_id: item.productId,
+            product_name: item.variantId ? `${productName} (${item.variant?.name})` : productName,
+            order_id: order.id,
+            quantity: -item.quantity,
+            type: StockChangeType.ORDER_COMPLETED,
+            performed_by: performedBy,
+            note: `Order ${order.orderNumber} payment verified — stock deducted`,
+          },
+        });
+
+        await StockAlertService.checkAndNotify(item.productId);
+      }
+
+      return 'deducted' as const;
+    };
+
+    if (externalTx) {
+      return run(externalTx);
+    }
+
+    return prisma.$transaction((tx) => run(tx), {
+      timeout: 15000,
+      maxWait: 5000,
+    });
+  }
+
+  /**
+   * Restore inventory once when cancelling/refunding an order that already had stock deducted.
+   * Idempotent via stock_history ORDER_CANCELLED rows.
+   */
+  private async restoreInventoryIfDeducted(
+    tx: Prisma.TransactionClient,
+    order: {
+      id: string;
+      orderNumber: string;
+      deliveryType: string;
+      warehouseId: string | null;
+      orderItems: Array<{
+        productId: string;
+        quantity: number;
+        variantId: string | null;
+        product: { translations: Array<{ name: string }> };
+        variant: { name: string } | null;
+      }>;
+    },
+    performedBy: string,
+  ): Promise<'restored' | 'already_restored' | 'not_deducted'> {
+    const wasDeducted = await this.hasStockHistoryEntry(tx, order.id, StockChangeType.ORDER_COMPLETED);
+    if (!wasDeducted) {
+      // Best-effort release of any legacy reservation from the old reserve-on-checkout model.
+      const orderWarehouseId = await this.resolveOrderWarehouseId(
+        order.deliveryType as 'DELIVERY' | 'PICKUP',
+        order.warehouseId ?? undefined,
+      );
+      for (const item of order.orderItems) {
+        await inventoryRepository.releaseReservedStock(
+          item.productId,
+          orderWarehouseId,
+          item.quantity,
+          tx,
+        );
+      }
+      return 'not_deducted';
+    }
+
+    if (await this.hasStockHistoryEntry(tx, order.id, StockChangeType.ORDER_CANCELLED)) {
+      return 'already_restored';
+    }
+
+    const orderWarehouseId = await this.resolveOrderWarehouseId(
+      order.deliveryType as 'DELIVERY' | 'PICKUP',
+      order.warehouseId ?? undefined,
+    );
+
+    for (const item of order.orderItems) {
+      await inventoryService.increaseStock(item.productId, orderWarehouseId, item.quantity, tx);
+
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { increment: item.quantity } },
+      });
+
+      if (item.variantId) {
+        await tx.product_variants.update({
+          where: { id: item.variantId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+
+      const productName = item.product.translations[0]?.name || 'Product';
+      await tx.stock_history.create({
+        data: {
+          id: crypto.randomUUID(),
+          product_id: item.productId,
+          product_name: item.variantId ? `${productName} (${item.variant?.name})` : productName,
+          order_id: order.id,
+          quantity: item.quantity,
+          type: StockChangeType.ORDER_CANCELLED,
+          performed_by: performedBy,
+          note: `Order ${order.orderNumber} cancelled/refunded. Stock restored.`,
+        },
+      });
+    }
+
+    return 'restored';
   }
 
   private static normalizeAttachments(product: any) {
@@ -231,7 +427,7 @@ export class OrderService {
   }
 
   /**
-   * Create a new order with stock deduction
+   * Create a new order with stock availability check (no reservation / no deduction).
    */
   async createOrder(data: CreateOrderInput) {
     const { userId, items, deliveryType: requestedDeliveryType, warehouseId, ...orderData } = data;
@@ -239,23 +435,20 @@ export class OrderService {
     // Apply safe defaults: DELIVERY is default if not specified
     const deliveryType = requestedDeliveryType || 'DELIVERY';
 
-    // STEP 1: Validate warehouse for PICKUP orders
-    let validatedWarehouseId: string | undefined = undefined;
+    // Resolve the single authoritative warehouse (pickup location / delivery inventory source).
+    // Client warehouseId is never trusted for inventory assignment.
+    const authoritativeWarehouseId = await this.resolveOrderWarehouseId(deliveryType, warehouseId);
     let pickupWarehouseSummary: string | undefined = undefined;
-    if (deliveryType === 'PICKUP') {
-      // PICKUP requires warehouseId
-      if (!warehouseId) {
-        throw new BadRequestError('warehouseId is required for PICKUP delivery type');
-      }
+    let validatedWarehouseId: string | undefined = undefined;
 
-      // Validate warehouse exists and is active
+    if (deliveryType === 'PICKUP') {
       const warehouse = await prisma.warehouse.findUnique({
-        where: { id: warehouseId },
-        select: { id: true, isActive: true, name: true }
+        where: { id: authoritativeWarehouseId },
+        select: { id: true, isActive: true, name: true },
       });
 
       if (!warehouse) {
-        throw new NotFoundError(`Warehouse with ID ${warehouseId} not found`);
+        throw new NotFoundError('Pickup warehouse not found');
       }
 
       if (!warehouse.isActive) {
@@ -263,9 +456,9 @@ export class OrderService {
       }
 
       validatedWarehouseId = warehouse.id;
-      pickupWarehouseSummary = `${warehouse.name}`;
+      pickupWarehouseSummary = warehouse.name;
     }
-    // For DELIVERY: warehouseId is ignored (remains undefined)
+    // For DELIVERY: order.warehouseId remains undefined; inventory still uses main warehouse.
 
     // Read configured default order status
     const { defaultOrderStatus, paymentMethodsEnabled } = await this.getOrderSettings();
@@ -280,12 +473,12 @@ export class OrderService {
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const reservationWarehouseId = await this.resolveOrderWarehouseId(deliveryType, validatedWarehouseId);
+      const stockWarehouseId = authoritativeWarehouseId;
       const initialStatus = orderData.status || (deliveryType === 'PICKUP'
         ? OrderStatus.READY_FOR_PICKUP
         : OrderStatus.PENDING);
 
-      // 1. Prepare order items and check basic existence
+      // 1. Prepare order items — check availability, never reserve/deduct
       const orderItemsData = [];
       
       for (const item of items) {
@@ -304,9 +497,12 @@ export class OrderService {
             where: { id: item.variantId }
           });
           if (!variant) throw new NotFoundError(`Variant with ID ${item.variantId} not found`);
+          if (variant.stock < item.quantity) {
+            throw new BadRequestError(`Insufficient stock for variant "${variant.name}"`);
+          }
         }
 
-        await this.reserveInventoryForItem(tx, item.productId, reservationWarehouseId, item.quantity);
+        await this.assertInventoryAvailableForItem(tx, item.productId, stockWarehouseId, item.quantity);
 
         orderItemsData.push({
           productId: item.productId,
@@ -317,7 +513,7 @@ export class OrderService {
         });
       }
 
-      // 2. Calculate financial details
+      // 2. Calculate financial details server-side (never trust client totals)
       const subtotal = orderItemsData.reduce((acc, item) => acc.add(item.totalPrice), new Prisma.Decimal(0));
       const taxRate = 0.1; // 10% tax for example, or get from config
       const tax = subtotal.mul(taxRate);
@@ -466,7 +662,8 @@ export class OrderService {
   }
 
   /**
-   * Update order status with stock management
+   * Update order status. Inventory deduction happens only on verified payment success,
+   * never on DELIVERED / COMPLETED / READY_FOR_PICKUP transitions.
    */
   async updateOrderStatus(id: string, data: { status?: OrderStatus, paymentStatus?: PaymentStatus, performedBy?: string }) {
     const order = await prisma.order.findUnique({
@@ -504,12 +701,14 @@ export class OrderService {
       data.paymentStatus === PaymentStatus.PAID &&
       autoCompleteOrderAfterPayment &&
       order.status !== OrderStatus.DELIVERED &&
+      order.status !== OrderStatus.COMPLETED &&
       order.status !== OrderStatus.CANCELLED
     ) {
-      data.status = OrderStatus.DELIVERED;
+      data.status = order.deliveryType === 'PICKUP' ? OrderStatus.READY_FOR_PICKUP : OrderStatus.DELIVERED;
     }
 
     const previousStatus = order.status;
+    const previousPaymentStatus = order.paymentStatus;
     const newStatus = data.status;
     const performedBy = data.performedBy || 'System/Admin';
 
@@ -522,113 +721,20 @@ export class OrderService {
     }
 
     const updatedOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const orderWarehouseId = await this.resolveOrderWarehouseId(
-        order.deliveryType as 'DELIVERY' | 'PICKUP',
-        order.warehouseId ?? undefined,
-      );
+      const becomingPaid =
+        data.paymentStatus === PaymentStatus.PAID && previousPaymentStatus !== PaymentStatus.PAID;
 
-      const completionStatuses = new Set<OrderStatus>([OrderStatus.DELIVERED, OrderStatus.COMPLETED]);
-      const wasAlreadyCompleted = completionStatuses.has(previousStatus);
-      const isMovingToCompleted = Boolean(newStatus && completionStatuses.has(newStatus));
-
-      // 1. Handle completion logic (DELIVERED / COMPLETED)
-      if (isMovingToCompleted && !wasAlreadyCompleted && newStatus) {
-        for (const item of order.orderItems) {
-          // Check stock for variant path (variant remains global for now).
-          if (item.variantId && item.variant) {
-            if (item.variant.stock < item.quantity) {
-              throw new BadRequestError(`Insufficient stock for variant "${item.variant.name}". Cannot complete this order.`);
-            }
-          }
-
-          // Consume reserved inventory from the order warehouse.
-          await inventoryService.consumeReservedStock(item.productId, orderWarehouseId, item.quantity, tx);
-
-          // Maintain legacy aggregate stock field for backward compatibility.
-          const productUpdate = await tx.product.updateMany({
-            where: {
-              id: item.productId,
-              stock: { gte: item.quantity },
-            },
-            data: { stock: { decrement: item.quantity } },
-          });
-
-          if (productUpdate.count === 0) {
-            const productName = item.product.translations[0]?.name || 'Product';
-            throw new BadRequestError(`Insufficient stock for "${productName}". Cannot complete this order.`);
-          }
-
-          // Keep existing variant stock logic intact.
-          if (item.variantId) {
-            await tx.product_variants.update({
-              where: { id: item.variantId },
-              data: { stock: { decrement: item.quantity } }
-            });
-          }
-
-          // Maintain Stock Log
-          const productName = item.product.translations[0]?.name || 'Product';
-          await tx.stock_history.create({
-            data: {
-              id: crypto.randomUUID(),
-              product_id: item.productId,
-              product_name: item.variantId ? `${productName} (${item.variant?.name})` : productName,
-              order_id: order.id,
-              quantity: -item.quantity,
-              type: StockChangeType.ORDER_COMPLETED,
-              performed_by: performedBy,
-              note: `Order ${order.orderNumber} marked as ${newStatus}`
-            }
-          });
-
-          // Trigger Low Stock Alert
-          await StockAlertService.checkAndNotify(item.productId);
-        }
+      // Verified payment success → deduct stock once (idempotent).
+      if (becomingPaid) {
+        await this.deductInventoryAfterPaymentSuccess(order.id, performedBy, tx);
       }
 
-      // 2. Handle cancellation paths.
-      if (newStatus === OrderStatus.CANCELLED && wasAlreadyCompleted) {
-        for (const item of order.orderItems) {
-          await inventoryService.increaseStock(item.productId, orderWarehouseId, item.quantity, tx);
-
-          // Restore Stock
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } }
-          });
-
-          if (item.variantId) {
-            await tx.product_variants.update({
-              where: { id: item.variantId },
-              data: { stock: { increment: item.quantity } }
-            });
-          }
-
-          // Log Action
-          const productName = item.product.translations[0]?.name || 'Product';
-          await tx.stock_history.create({
-            data: {
-              id: crypto.randomUUID(),
-              product_id: item.productId,
-              product_name: item.variantId ? `${productName} (${item.variant?.name})` : productName,
-              order_id: order.id,
-              quantity: item.quantity,
-              type: StockChangeType.ORDER_CANCELLED,
-              performed_by: performedBy,
-              note: `Order ${order.orderNumber} cancelled. Stock restored.`
-            }
-          });
-        }
+      // Cancellation / refund: restore only if stock was actually deducted for this order.
+      if (newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.REFUNDED) {
+        await this.restoreInventoryIfDeducted(tx, order, performedBy);
       }
 
-      // If order is cancelled before completion, release reservation only.
-      if (newStatus === OrderStatus.CANCELLED && !wasAlreadyCompleted) {
-        for (const item of order.orderItems) {
-          await inventoryService.releaseReservedStock(item.productId, orderWarehouseId, item.quantity, tx);
-        }
-      }
-
-      // 3. Update Order Status
+      // DELIVERED / COMPLETED / READY_FOR_PICKUP must never deduct stock again.
       return await tx.order.update({
         where: { id },
         data: {
@@ -665,6 +771,49 @@ export class OrderService {
     await this.invalidateDashboardCaches();
 
     return updatedOrder;
+  }
+
+  /**
+   * Public entry for cancel/refund paths that bypass updateOrderStatus.
+   * Restores stock once if it was deducted for this order.
+   */
+  async restoreInventoryForOrder(
+    orderId: string,
+    performedBy: string,
+    externalTx?: Prisma.TransactionClient,
+  ): Promise<'restored' | 'already_restored' | 'not_deducted'> {
+    const run = async (tx: Prisma.TransactionClient) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          orderItems: {
+            include: {
+              product: {
+                include: {
+                  translations: { where: { locale: 'en' } },
+                },
+              },
+              variant: true,
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new NotFoundError('Order not found');
+      }
+
+      return this.restoreInventoryIfDeducted(tx, order, performedBy);
+    };
+
+    if (externalTx) {
+      return run(externalTx);
+    }
+
+    return prisma.$transaction((tx) => run(tx), {
+      timeout: 15000,
+      maxWait: 5000,
+    });
   }
 
   /**

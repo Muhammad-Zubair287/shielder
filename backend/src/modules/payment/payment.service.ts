@@ -5,6 +5,9 @@ import { AuditService } from '../../common/services/audit.service';
 import { createPaginatedResponse, PaginationParams } from '../../common/utils/pagination';
 import NotificationService from '../notification/notification.service';
 import SettingsService from '../settings/settings.service';
+import { orderService } from '../order/order.service';
+import { epgService } from './epg.service';
+import { logger } from '../../common/logger/logger';
 
 export class PaymentService {
   private async getCurrency(): Promise<string> {
@@ -158,7 +161,7 @@ export class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment record not found');
+      throw new NotFoundError('payment.notFound');
     }
 
     return this.normalizePayment(payment);
@@ -192,37 +195,27 @@ export class PaymentService {
     
     // Validate amount is a proper number
     if (typeof data.amount !== 'number') {
-      throw new BadRequestError(
-        'Amount must be a valid number'
-      );
+      throw new BadRequestError('payment.amountInvalid');
     }
 
     // Check for NaN
     if (isNaN(data.amount)) {
-      throw new BadRequestError(
-        'Amount is not a valid number (NaN detected)'
-      );
+      throw new BadRequestError('payment.amountNotNumber');
     }
 
     // Check for Infinity
     if (!isFinite(data.amount)) {
-      throw new BadRequestError(
-        'Amount must be a finite number (not infinity)'
-      );
+      throw new BadRequestError('payment.amountNotFinite');
     }
 
     // Check amount is positive
     if (data.amount <= 0) {
-      throw new BadRequestError(
-        'Amount must be greater than zero'
-      );
+      throw new BadRequestError('payment.amountMustBePositive');
     }
 
     // Validate orderId is a valid UUID
     if (!data.orderId || typeof data.orderId !== 'string') {
-      throw new BadRequestError(
-        'Order ID must be a valid UUID'
-      );
+      throw new BadRequestError('payment.orderIdInvalid');
     }
 
     // ============================================
@@ -235,7 +228,7 @@ export class PaymentService {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError('payment.orderNotFound');
     }
 
     // ============================================
@@ -246,7 +239,7 @@ export class PaymentService {
     // Check if a PAID payment already exists for this order
     const existingPaidPayment = order.payments.find(p => p.status === PaymentStatus.PAID);
     if (existingPaidPayment) {
-      throw new ConflictError('Payment already recorded for this order');
+      throw new ConflictError('payment.alreadyRecorded');
     }
 
     // Prevent overpayment
@@ -258,17 +251,13 @@ export class PaymentService {
     
     // Type safety: ensure order.total is valid
     if (isNaN(orderTotal) || !isFinite(orderTotal)) {
-      throw new BadRequestError(
-        'Order has an invalid total amount'
-      );
+      throw new BadRequestError('payment.orderInvalidTotal');
     }
     
     const remainingBalance = orderTotal - alreadyPaid;
 
     if (data.amount > remainingBalance + 0.01) { // 0.01 for floating point safety
-      throw new BadRequestError(
-        `Payment amount ($${data.amount.toFixed(2)}) exceeds remaining balance ($${remainingBalance.toFixed(2)})`
-      );
+      throw new BadRequestError('payment.exceedsRemaining');
     }
 
     // Double Payment Prevention via Transaction ID (idempotency)
@@ -278,7 +267,7 @@ export class PaymentService {
         where: { transactionId: data.transactionId }
       });
       if (existing) {
-        throw new ConflictError('Transaction ID already exists');
+        throw new ConflictError('payment.transactionIdExists');
       }
     }
 
@@ -306,7 +295,16 @@ export class PaymentService {
         // If order was pending, move to confirmed or processing
         if (order.status === OrderStatus.PENDING) {
           newOrderStatus = OrderStatus.PROCESSING;
+        } else if (order.status === OrderStatus.READY_FOR_PICKUP) {
+          newOrderStatus = OrderStatus.CONFIRMED;
         }
+
+        // Verified full payment → deduct stock once (idempotent).
+        await orderService.deductInventoryAfterPaymentSuccess(
+          data.orderId,
+          data.recordedBy || 'ADMIN_PAYMENT',
+          tx,
+        );
       } else if (newTotalPaid > 0) {
         newPaymentStatus = PaymentStatus.PARTIALLY_PAID;
       }
@@ -354,7 +352,8 @@ export class PaymentService {
   }
 
   /**
-   * Process a refund
+   * Process a refund.
+   * For EPG card payments, attempts an actual gateway refund/void before updating DB state.
    */
   async processRefund(paymentId: string, userId: string, notes?: string) {
     const payment = await prisma.payment.findUnique({
@@ -363,11 +362,40 @@ export class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundError('Payment record not found');
+      throw new NotFoundError('payment.notFound');
     }
 
     if (payment.status === PaymentStatus.REFUNDED) {
-      throw new BadRequestError('Payment is already refunded');
+      throw new BadRequestError('payment.alreadyRefunded');
+    }
+
+    // Card / online gateway: reverse at EPG before local state change (gateway cannot join DB tx).
+    // Only when this payment was actually captured through EPG (session id present).
+    const isGatewayPayment =
+      payment.method === PaymentMethod.CREDIT_CARD ||
+      payment.method === PaymentMethod.DEBIT_CARD ||
+      payment.method === PaymentMethod.ONLINE_GATEWAY;
+
+    const epgSessionId =
+      (payment.order.notes?.match(/EPG_SESSION:([^\s|]+)/)?.[1] ?? '') ||
+      (payment.notes?.includes('EPG') ? (payment.transactionId || '') : '') ||
+      '';
+
+    if (isGatewayPayment && epgSessionId) {
+      const gatewayResult = await epgService.refundCapturedPayment({
+        sessionId: epgSessionId,
+        amount: Number(payment.amount),
+        orderNumber: payment.order.orderNumber,
+        reason: notes || 'Admin-initiated refund',
+      });
+
+      if (!gatewayResult.success) {
+        logger.error('[Payment] EPG refund failed before local refund', {
+          reason: gatewayResult.reason,
+          refundId: gatewayResult.refundId,
+        });
+        throw new BadRequestError('payment.gatewayRefundFailed');
+      }
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -379,9 +407,6 @@ export class PaymentService {
         }
       });
 
-      // Update Order Status to REFUNDED if this was the main payment
-      // For simplicity, if any payment is refunded, we might mark order as refunded 
-      // or check if total paid is now 0.
       const allPayments = await tx.payment.findMany({
         where: { orderId: payment.orderId }
       });
@@ -403,7 +428,11 @@ export class PaymentService {
         }
       });
 
-      // Audit Log
+      // Restore inventory once if it was deducted for this order (idempotent).
+      if (newPaymentStatus === PaymentStatus.REFUNDED) {
+        await orderService.restoreInventoryForOrder(payment.orderId, userId, tx);
+      }
+
       await AuditService.log({
         userId,
         action: 'PAYMENT_REFUNDED',
@@ -412,7 +441,6 @@ export class PaymentService {
         changes: { prevStatus: payment.status, newStatus: PaymentStatus.REFUNDED }
       });
 
-      // Trigger Notification
       await NotificationService.notify({
         type: NotificationType.REFUND_ISSUED,
         title: 'Refund Processed',

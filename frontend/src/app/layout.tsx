@@ -69,8 +69,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <DirSync />
         <NavigationProgress />
         <ThemeClientWrapper />
-        <SmartBackButton />
         <LanguageProvider>
+          <SmartBackButton />
           <AOSProvider>
             <QueryProvider>
               <CrossTabSyncProvider>

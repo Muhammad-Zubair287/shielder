@@ -1,6 +1,7 @@
 import { prisma } from '@/config/database';
 import { ApiError } from '@/common/errors/api.error';
 import { PaginationParams, createPaginatedResponse } from '@/common/utils/pagination';
+import { deleteStoredRefIfUnused } from '@/common/storage/storage-image.helper';
 
 export interface CategoryFilters {
   search?: string;
@@ -324,9 +325,11 @@ export class CategoryService {
       throw new ApiError('Cannot delete category with associated subcategories or products', 400);
     }
 
-    return await prisma.category.delete({
+    const deleted = await prisma.category.delete({
       where: { id },
     });
+    await deleteStoredRefIfUnused(category.image);
+    return deleted;
   }
 
   async bulkDelete(ids: string[]) {

@@ -180,7 +180,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
+      toast.error(t('upload.imageTooLarge'));
       return;
     }
     setImageFile(file);
@@ -338,7 +338,7 @@ export default function ProductFormModal({ mode, product, onClose, onSuccess }: 
           await adminService.uploadProductImage(productId, imageFile);
         } catch (imgErr: any) {
           // Product saved; just warn about image
-          toast.error('Product saved but image upload failed. Please retry from Edit.');
+          toast.error(t('product.imageUploadFailedAfterSave'));
           onSuccess();
           onClose();
           return;

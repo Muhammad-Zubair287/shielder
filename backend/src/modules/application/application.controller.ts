@@ -7,8 +7,12 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/common/middleware/error.middleware';
 import { applicationService } from './application.service';
 import { ApplicationPlatform, ApplicationStatus } from '@prisma/client';
-import path from 'path';
 import { t } from '@/common/i18n';
+import {
+  deleteStoredRefSafe,
+  replaceStoredImage,
+  storeUploadedImageFile,
+} from '@/common/storage/storage-image.helper';
 
 export class ApplicationController {
   /**
@@ -44,24 +48,33 @@ export class ApplicationController {
    * SUPER_ADMIN only — with optional file upload
    */
   createApplication = asyncHandler(async (req: Request, res: Response) => {
-    const imagePath = req.file
-      ? path.join('uploads', 'applications', req.file.filename).replace(/\\/g, '/')
-      : undefined;
+    let storedImageRef: string | undefined;
+    try {
+      if (req.file) {
+        const storedRef = await storeUploadedImageFile(req.file, 'applications');
+        storedImageRef = storedRef.replace(/^\/+/, '');
+      }
 
-    const app = await applicationService.create({
-      applicationName: req.body.applicationName,
-      platform: req.body.platform as ApplicationPlatform,
-      downloadUrl: req.body.downloadUrl,
-      description: req.body.description,
-      status: req.body.status as ApplicationStatus | undefined,
-      image: imagePath,
-    });
+      const app = await applicationService.create({
+        applicationName: req.body.applicationName,
+        platform: req.body.platform as ApplicationPlatform,
+        downloadUrl: req.body.downloadUrl,
+        description: req.body.description,
+        status: req.body.status as ApplicationStatus | undefined,
+        image: storedImageRef,
+      });
 
-    res.status(201).json({
-      success: true,
-      message: t('application.createSuccess', req.locale),
-      data: app,
-    });
+      res.status(201).json({
+        success: true,
+        message: t('application.createSuccess', req.locale),
+        data: app,
+      });
+    } catch (error) {
+      if (storedImageRef) {
+        await deleteStoredRefSafe(storedImageRef);
+      }
+      throw error;
+    }
   });
 
   /**
@@ -70,11 +83,29 @@ export class ApplicationController {
    */
   updateApplication = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+    const existing = await applicationService.findById(id);
 
     const updateData: Record<string, unknown> = { ...req.body };
 
     if (req.file) {
-      updateData.image = path.join('uploads', 'applications', req.file.filename).replace(/\\/g, '/');
+      await replaceStoredImage({
+        file: req.file,
+        scope: 'applications',
+        ownerId: String(id),
+        oldRef: existing.image,
+        updateDb: async (newRef) => {
+          updateData.image = newRef.replace(/^\/+/, '');
+          await applicationService.update(id, updateData as any);
+        },
+      });
+
+      const app = await applicationService.findById(id);
+      res.json({
+        success: true,
+        message: t('application.updateSuccess', req.locale),
+        data: app,
+      });
+      return;
     }
 
     const app = await applicationService.update(id, updateData as any);

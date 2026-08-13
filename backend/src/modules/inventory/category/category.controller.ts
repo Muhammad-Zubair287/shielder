@@ -10,6 +10,11 @@ import { categoryService } from './category.service';
 import { getPaginationParams } from '@/common/utils/pagination';
 import { emitToAll } from '@/modules/realtime/socket.service';
 import { t } from '@/common/i18n';
+import {
+  deleteStoredRefSafe,
+  replaceStoredImage,
+  storeUploadedImageFile,
+} from '@/common/storage/storage-image.helper';
 
 export class CategoryController {
   /**
@@ -21,12 +26,16 @@ export class CategoryController {
    *     security: [{ bearerAuth: [] }]
    */
   async create(req: Request, res: Response, next: NextFunction) {
+    let storedImageRef: string | undefined;
     try {
+      if (req.file) {
+        storedImageRef = await storeUploadedImageFile(req.file, 'categories');
+      }
+
       const data = {
         ...req.body,
-        image: req.file ? `/uploads/categories/${req.file.filename}` : undefined,
+        image: storedImageRef,
         isActive: req.body.isActive === 'true' || req.body.isActive === true,
-        // Bilingual fields forwarded as-is
         nameEn: req.body.nameEn,
         descriptionEn: req.body.descriptionEn,
         nameAr: req.body.nameAr,
@@ -36,6 +45,9 @@ export class CategoryController {
       emitToAll('category:created', { id: category.id });
       res.status(201).json({ success: true, data: category });
     } catch (error) {
+      if (storedImageRef) {
+        await deleteStoredRefSafe(storedImageRef);
+      }
       next(error);
     }
   }
@@ -103,17 +115,35 @@ export class CategoryController {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
+      const categoryId = String(req.params.id);
+      const existing = await categoryService.getById(categoryId, req.locale);
+
       const data = {
         ...req.body,
-        image: req.file ? `/uploads/categories/${req.file.filename}` : undefined,
         isActive: req.body.isActive !== undefined ? (req.body.isActive === 'true' || req.body.isActive === true) : undefined,
-        // Bilingual fields
         nameEn: req.body.nameEn,
         descriptionEn: req.body.descriptionEn,
         nameAr: req.body.nameAr,
         descriptionAr: req.body.descriptionAr,
       };
-      const category = await categoryService.update(String(req.params.id), data, req.locale);
+
+      if (req.file) {
+        await replaceStoredImage({
+          file: req.file,
+          scope: 'categories',
+          ownerId: categoryId,
+          oldRef: existing.image,
+          updateDb: async (newRef) => {
+            await categoryService.update(categoryId, { ...data, image: newRef }, req.locale);
+          },
+        });
+        const category = await categoryService.getById(categoryId, req.locale);
+        emitToAll('category:updated', { id: category.id });
+        res.json({ success: true, data: category });
+        return;
+      }
+
+      const category = await categoryService.update(categoryId, data, req.locale);
       emitToAll('category:updated', { id: category.id });
       res.json({ success: true, data: category });
     } catch (error) {

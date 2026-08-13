@@ -45,6 +45,7 @@ import inventoryAlertRoutes from './modules/inventory-alert/inventory-alert.rout
 import publicWarehouseRoutes from './modules/warehouse/public-warehouse.routes';
 import applicationRoutes from './modules/application/application.routes';
 import translateRoutes from './modules/translate/translate.routes';
+import { storageRouter } from './modules/storage/storage.routes';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerConfig } from './config/swagger';
@@ -128,9 +129,27 @@ export const createApp = (): Application => {
   }
 
   // Static files (served with long-lived cache in production)
+  // Private file paths under /uploads are blocked from unauthenticated access.
+  app.use('/uploads', (req, res, next) => {
+    // Stored private profile images live under `/uploads/profile/...`
+    if (req.path.startsWith('/profile/')) {
+      return res.status(404).end();
+    }
+
+    // Stored contact attachments live under `/uploads/contact/...`
+    if (req.path.startsWith('/contact/')) {
+      return res.status(404).end();
+    }
+
+    return next();
+  });
+
   for (const root of staticUploadRoots) {
     app.use('/uploads', express.static(root, {
       maxAge: env.isProduction ? '7d' : 0,
+      index: false,
+      redirect: false,
+      dotfiles: 'deny',
     }));
   }
 
@@ -151,6 +170,9 @@ export const createApp = (): Application => {
   for (const root of staticImageRoots) {
     app.use('/images', express.static(root, {
       maxAge: env.isProduction ? '7d' : 0,
+      index: false,
+      redirect: false,
+      dotfiles: 'deny',
     }));
   }
 
@@ -163,7 +185,13 @@ export const createApp = (): Application => {
       message: 'Shielder API is running',
       timestamp: new Date().toISOString(),
       environment: env.nodeEnv,
-      uploads: uploadsHealth,
+      uploads: {
+        provider: uploadsHealth.provider,
+        writable: uploadsHealth.writable,
+        exists: uploadsHealth.exists,
+        checkedAt: uploadsHealth.checkedAt,
+        // Do not expose absolute filesystem paths or internal errors.
+      },
     });
   });
 
@@ -243,6 +271,7 @@ export const createApp = (): Application => {
     app.use(`${prefix}/customer-quotations`, customerQuotationRoutes);
     app.use(`${prefix}/customer/quotation-basket`, customerQuotationBasketRoutes);
     app.use(`${prefix}/contact`, contactRoutes);
+    app.use(`${prefix}/storage`, storageRouter);
     app.use(`${prefix}/newsletter`, newsletterRoutes);
     app.use(`${prefix}/reviews`, productReviewRoutes);
     app.use(`${prefix}/warehouses`, publicWarehouseRoutes);

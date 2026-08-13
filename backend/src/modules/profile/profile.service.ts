@@ -68,7 +68,7 @@ export class ProfileService {
       });
 
       if (!hasUpdatableField) {
-        throw new BadRequestError('No fields provided to update');
+        throw new BadRequestError('profile.noFieldsToUpdate');
       }
 
       const normalizedEmail = data.email?.trim().toLowerCase();

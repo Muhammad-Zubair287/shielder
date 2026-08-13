@@ -69,8 +69,10 @@ export function validateContactForm(
   values: ContactFormValues,
   attachment: File | null,
   t?: (key: string) => string,
+  options?: { requireCaptcha?: boolean },
 ): ContactValidationError[] {
   const errors: ContactValidationError[] = [];
+  const requireCaptcha = options?.requireCaptcha !== false;
 
   const firstName = values.firstName.trim();
   if (!firstName) {
@@ -105,7 +107,7 @@ export function validateContactForm(
     });
   }
 
-  if (!values.captchaConfirmed) {
+  if (requireCaptcha && !values.captchaConfirmed) {
     errors.push({ field: 'captchaConfirmed', message: t?.('contactCaptchaRequired') ?? 'Please confirm you are not a robot.' });
   }
 

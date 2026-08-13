@@ -25,12 +25,14 @@ import { handleApiError } from '@/services/api.service';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/auth.store';
 import { getImageUrl } from '@/utils/helpers';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type TabType = 'overview' | 'security';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { setUser } = useAuthStore();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>(() =>
     searchParams.get('tab') === 'security' ? 'security' : 'overview'
@@ -59,11 +61,11 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be smaller than 2 MB');
+      toast.error(t('profile.imageMax2Mb'));
       return;
     }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Only JPEG, PNG or WebP files are allowed');
+      toast.error(t('profile.photoTypeInvalid'));
       return;
     }
     setIsUploadingPhoto(true);
@@ -73,9 +75,9 @@ export default function ProfilePage() {
       if (user && newImg) {
         setUser({ ...user, profile: { ...user.profile, profileImage: newImg } } as any);
       }
-      toast.success('Profile photo updated');
+      toast.success(t('profile.imageUpdatedSuccessfully'));
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to upload photo');
+      toast.error(err?.response?.data?.message ?? t('profile.photoUploadFailed'));
     } finally {
       setIsUploadingPhoto(false);
       if (photoInputRef.current) photoInputRef.current.value = '';

@@ -2,8 +2,11 @@ import { prisma } from '@/config/database';
 import { env } from '@/config/env';
 import { logger } from '@/common/logger/logger';
 import { BadRequestError } from '@/common/errors/api.error';
+import { storageService } from '@/common/storage/storage.service';
+import { validateImageBuffer } from '@/common/storage/image-validation.service';
 import NotificationService from '@/modules/notification/notification.service';
 import { NotificationType, UserRole } from '@prisma/client';
+import { isPhoneUserAgent } from './contact-device.util';
 
 const ALLOWED_FILE_TYPES = new Set([
   'application/pdf',
@@ -39,11 +42,6 @@ interface CaptchaVerificationResult {
 type JsonRecord = Record<string, unknown>;
 
 class ContactService {
-  private isPhoneClient(userAgent?: string): boolean {
-    if (!userAgent) return false;
-    return /android|iphone|ipad|ipod|mobile/i.test(userAgent);
-  }
-
   private async verifyCaptchaToken(token: string, remoteIp?: string): Promise<CaptchaVerificationResult> {
     const secret = env.contactCaptchaSecret;
 
@@ -96,17 +94,34 @@ class ContactService {
     }
   }
 
+  private getContactAttachmentExtension(mimeType: string): string | null {
+    switch (mimeType) {
+      case 'application/pdf':
+        return '.pdf';
+      case 'application/msword':
+        return '.doc';
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        return '.docx';
+      case 'image/png':
+        return '.png';
+      case 'image/jpeg':
+        return '.jpg';
+      default:
+        return null;
+    }
+  }
+
   private buildAttachmentMetadata(file?: Express.Multer.File): ContactAttachmentMetadata | null {
     if (!file) {
       return null;
     }
 
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      throw new BadRequestError('Attachment must be 5MB or smaller.');
+      throw new BadRequestError('storage.attachmentTooLarge');
     }
 
     if (!ALLOWED_FILE_TYPES.has(file.mimetype)) {
-      throw new BadRequestError('Attachment type is not supported.');
+      throw new BadRequestError('storage.attachmentInvalidType');
     }
 
     return {
@@ -122,22 +137,23 @@ class ContactService {
     userAgent?: string,
     file?: Express.Multer.File
   ): Promise<{ id: string }> {
-    const phoneClient = this.isPhoneClient(userAgent);
+    // CAPTCHA is mandatory for non-phone clients. Phone clients are detected from
+    // the request User-Agent only — never from a client-supplied body flag.
+    const phoneClient = isPhoneUserAgent(userAgent);
     const captchaToken = input.captchaToken?.trim();
 
     if (!phoneClient) {
       if (!captchaToken) {
-        throw new BadRequestError('Please confirm you are not a robot.');
+        throw new BadRequestError('contact.captchaRequired');
       }
 
       const captchaResult = await this.verifyCaptchaToken(captchaToken, remoteIp);
       if (!captchaResult.valid) {
-        throw new BadRequestError(captchaResult.reason || 'CAPTCHA verification failed.');
+        throw new BadRequestError('contact.captchaFailed');
       }
     }
 
     const attachment = this.buildAttachmentMetadata(file);
-
     const attachmentJson: JsonRecord | null = attachment
       ? {
           originalName: attachment.originalName,
@@ -156,66 +172,107 @@ class ContactService {
       attachment: attachmentJson,
     };
 
-    // Persist contact data for admin workflows while preserving existing AuditLog tracking.
-    const contact = await prisma.contact.create({
-      data: {
-        name: `${input.firstName} ${input.lastName}`.trim(),
-        email: input.email,
-        phone: input.phone || null,
-        subject: input.subject,
-        message: input.message,
-        fileUrl: attachment?.originalName || null,
-        status: 'PENDING',
-      },
-      select: {
-        id: true,
-      },
-    });
+    let storedAttachmentRef: string | null = null;
+    try {
+      // Persist contact data for admin workflows while preserving existing AuditLog tracking.
+      // Store the binary first; if DB write fails, delete the newly stored object.
+      if (file && attachment) {
+        let extension = this.getContactAttachmentExtension(attachment.mimeType);
+        let contentType = attachment.mimeType;
 
-    const record = await prisma.auditLog.create({
-      data: {
-        action: 'CONTACT_SUBMISSION',
-        entityType: 'CONTACT',
-        entityId: contact.id,
-        changes: changePayload as any,
-        ipAddress: remoteIp,
-        userAgent,
-      },
-    });
+        // Centralized magic-byte validation for images.
+        if (attachment.mimeType.startsWith('image/')) {
+          const kind = validateImageBuffer({
+            buffer: file.buffer as Buffer,
+            declaredMimeType: attachment.mimeType,
+            byteSize: file.size,
+            // Contact accepts only PNG/JPEG here (per ALLOWED_FILE_TYPES).
+            allowedMimeTypes: ['image/png', 'image/jpeg'],
+            maxBytes: MAX_ATTACHMENT_BYTES,
+          });
+          extension = kind.extension;
+          contentType = kind.mimeType;
+        }
 
-    // Notify all admins and super admins via in-app notification
-    void NotificationService.notify({
-      type: NotificationType.NEW_INQUIRY,
-      title: 'New Customer Inquiry',
-      message: `New inquiry from ${input.firstName} ${input.lastName}: ${input.subject}`,
-      module: 'CONTACT',
-      roleTarget: UserRole.SUPER_ADMIN,
-      global: true, // Also target super admins
-      relatedId: contact.id,
-      metadata: {
-        contactId: contact.id,
-        senderName: `${input.firstName} ${input.lastName}`,
-        subject: input.subject,
-      },
-      sendEmail: false, // External email disabled as per requirement
-    });
+        if (!extension) {
+          throw new BadRequestError('storage.attachmentInvalidType');
+        }
 
-    // Notify normal admins as well
-    void NotificationService.notify({
-      type: NotificationType.NEW_INQUIRY,
-      title: 'New Customer Inquiry',
-      message: `New inquiry from ${input.firstName} ${input.lastName}: ${input.subject}`,
-      module: 'CONTACT',
-      roleTarget: UserRole.ADMIN,
-      relatedId: contact.id,
-      metadata: {
-        contactId: contact.id,
-      },
-      sendEmail: false,
-    });
+        const stored = await storageService.storeFileFromBuffer({
+          scope: 'contactAttachments',
+          buffer: file.buffer as Buffer,
+          contentType,
+          extension,
+        });
+        storedAttachmentRef = stored.ref;
+      }
 
-    // Keep response shape unchanged; return a stable id for the submission.
-    return { id: record.id || contact.id };
+      const contact = await prisma.contact.create({
+        data: {
+          name: `${input.firstName} ${input.lastName}`.trim(),
+          email: input.email,
+          phone: input.phone || null,
+          subject: input.subject,
+          message: input.message,
+          fileUrl: storedAttachmentRef,
+          status: 'PENDING',
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const record = await prisma.auditLog.create({
+        data: {
+          action: 'CONTACT_SUBMISSION',
+          entityType: 'CONTACT',
+          entityId: contact.id,
+          changes: changePayload as any,
+          ipAddress: remoteIp,
+          userAgent,
+        },
+      });
+
+      // Notify all admins and super admins via in-app notification
+      void NotificationService.notify({
+        type: NotificationType.NEW_INQUIRY,
+        title: 'New Customer Inquiry',
+        message: `New inquiry from ${input.firstName} ${input.lastName}: ${input.subject}`,
+        module: 'CONTACT',
+        roleTarget: UserRole.SUPER_ADMIN,
+        global: true, // Also target super admins
+        relatedId: contact.id,
+        metadata: {
+          contactId: contact.id,
+          senderName: `${input.firstName} ${input.lastName}`,
+          subject: input.subject,
+        },
+        sendEmail: false, // External email disabled as per requirement
+      });
+
+      // Notify normal admins as well
+      void NotificationService.notify({
+        type: NotificationType.NEW_INQUIRY,
+        title: 'New Customer Inquiry',
+        message: `New inquiry from ${input.firstName} ${input.lastName}: ${input.subject}`,
+        module: 'CONTACT',
+        roleTarget: UserRole.ADMIN,
+        relatedId: contact.id,
+        metadata: {
+          contactId: contact.id,
+        },
+        sendEmail: false,
+      });
+
+      // Keep response shape unchanged; return a stable id for the submission.
+      return { id: record.id || contact.id };
+    } catch (error) {
+      if (storedAttachmentRef) {
+        // DB failure compensation: delete the newly stored object.
+        void storageService.deleteByRef(storedAttachmentRef);
+      }
+      throw error;
+    }
   }
 }
 

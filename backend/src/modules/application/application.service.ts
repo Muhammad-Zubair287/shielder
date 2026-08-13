@@ -6,6 +6,7 @@
 import { BadRequestError, NotFoundError } from '@/common/errors/api.error';
 import { prisma } from '@/config/database';
 import { ApplicationPlatform, ApplicationStatus } from '@prisma/client';
+import { deleteStoredRefIfUnused } from '@/common/storage/storage-image.helper';
 
 export interface ApplicationCreateInput {
   applicationName: string;
@@ -106,6 +107,7 @@ export class ApplicationService {
     const existing = await prisma.application.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError('Application not found.');
     await prisma.application.delete({ where: { id } });
+    await deleteStoredRefIfUnused(existing.image);
     return { id, deleted: true };
   }
 

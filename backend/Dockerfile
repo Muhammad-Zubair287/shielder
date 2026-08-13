@@ -46,6 +46,11 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/src/database/prisma ./src/database/prisma
 COPY --from=builder /app/images ./images
 
+# Local storage mode expects a persistent uploads volume in production.
+# Mount an external volume at /app/uploads (or set UPLOAD_PATH / STORAGE_PROVIDER=s3).
+RUN mkdir -p /app/uploads
+VOLUME ["/app/uploads"]
+
 # Remove hardcoded healthcheck to avoid port conflicts with Railway's assignment
 # Railway handles health monitoring natively
 

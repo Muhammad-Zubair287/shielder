@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
   Package,
@@ -12,8 +12,6 @@ import {
   Building2,
   CreditCard,
   Clock,
-  ArrowLeft,
-  ArrowRight,
   Loader2,
   AlertCircle,
   ShoppingBag,
@@ -30,6 +28,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { orderService } from '@/services/order.service';
 import { useCart } from '@/contexts/CartContext';
 import { getImageUrl } from '@/utils/helpers';
+import { useEpgCartClearOnce } from '@/hooks/useEpgCartClearOnce';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -117,21 +116,49 @@ export default function OrderConfirmationPage() {
   );
 }
 
+function EpgSuccessSideEffects({
+  orderId,
+  paymentSucceeded,
+  loading,
+  clearCart,
+}: {
+  orderId: string | undefined;
+  paymentSucceeded: boolean;
+  loading: boolean;
+  clearCart: (options?: { silent?: boolean }) => Promise<void>;
+}) {
+  const router = useRouter();
+  const qParams = useSearchParams();
+  const fromEPGQuery = qParams?.get('payment') === 'success';
+  const [epgRedirectHandled, setEpgRedirectHandled] = useState(false);
+
+  useEpgCartClearOnce({
+    orderId,
+    enabled: Boolean(fromEPGQuery && paymentSucceeded),
+    clearCart,
+  });
+
+  useEffect(() => {
+    if (!orderId || !fromEPGQuery || epgRedirectHandled || loading) return;
+    setEpgRedirectHandled(true);
+    router.replace(`/order-confirmation/${orderId}`, { scroll: false });
+  }, [orderId, fromEPGQuery, epgRedirectHandled, loading, router]);
+
+  return null;
+}
+
 function OrderConfirmationPageInner() {
   const { t, isRTL, locale } = useLanguage();
   const { clearCart } = useCart();
   const { id }  = useParams<{ id: string }>();
-  const qParams = useSearchParams();
-  const fromEPG = qParams?.get('payment') === 'success';
 
   const [order,   setOrder]   = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
 
-  useEffect(() => {
-    if (fromEPG) clearCart().catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromEPG]);
+  // Authoritative success comes from the order record — never from the URL alone.
+  const paymentSucceeded =
+    (order?.paymentStatus || '').toUpperCase() === 'PAID';
 
   useEffect(() => {
     if (!id) return;
@@ -146,7 +173,7 @@ function OrderConfirmationPageInner() {
       });
   }, [id, t]);
 
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const showPaymentSuccessHeader = paymentSucceeded;
 
   if (loading) {
     return (
@@ -193,6 +220,14 @@ function OrderConfirmationPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Suspense fallback={null}>
+        <EpgSuccessSideEffects
+          orderId={id}
+          paymentSucceeded={paymentSucceeded}
+          loading={loading}
+          clearCart={clearCart}
+        />
+      </Suspense>
       <LandingNavbar />
 
       <main className="flex-1 pt-[120px] pb-16">
@@ -204,7 +239,7 @@ function OrderConfirmationPageInner() {
               <CheckCircle2 size={40} className="text-green-500" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {fromEPG ? t('orderConfirmation.paymentSuccess') : t('orderConfirmation.orderPlaced')}
+              {showPaymentSuccessHeader ? t('orderConfirmation.paymentSuccess') : t('orderConfirmation.orderPlaced')}
             </h1>
             <p className="text-gray-500 mt-2 text-sm">{t('orderConfirmation.subtitle')}</p>
           </div>

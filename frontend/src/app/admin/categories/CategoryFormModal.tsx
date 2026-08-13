@@ -77,10 +77,10 @@ export default function CategoryFormModal({ mode, category, onClose, onSuccess }
     const file = e.target.files?.[0];
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      return toast.error('Only JPG, PNG and WEBP are allowed');
+      return toast.error(t('upload.invalidImageType'));
     }
     if (file.size > 5 * 1024 * 1024) {
-      return toast.error('Image size must be less than 5MB');
+      return toast.error(t('upload.imageTooLarge'));
     }
     setImageFile(file);
     const reader = new FileReader();

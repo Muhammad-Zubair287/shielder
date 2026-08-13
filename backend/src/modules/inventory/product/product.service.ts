@@ -4,7 +4,12 @@ import { AttachmentType, Prisma, ProductStatus } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
 import { translate } from '@vitalets/google-translate-api';
-import { copyExistingImageToUploads, saveDataUrlToUploads } from '@/common/services/product-image.service';
+import { deleteProductImageByRef } from '@/common/services/product-image.service';
+import {
+  deleteStoredRefIfUnused,
+  resolveAndStoreBulkProductImage,
+} from '@/common/storage/storage-image.helper';
+import { detectImageKindFromMagicBytes } from '@/common/storage/image-validation.service';
 
 /** Translate a string to Arabic. Returns undefined if translation fails or produces non-Arabic output. */
 async function toArabic(text: string): Promise<string | undefined> {
@@ -664,8 +669,10 @@ export class ProductService {
   }
 
   async delete(id: string) {
-    await this.getById(id);
-    return await prisma.product.delete({ where: { id } });
+    const product = await this.getById(id);
+    const deleted = await prisma.product.delete({ where: { id } });
+    await deleteStoredRefIfUnused(product.mainImage);
+    return deleted;
   }
 
   async bulkDelete(ids: string[]) {
@@ -964,7 +971,8 @@ export class ProductService {
 
     // ── Extract embedded images from the xlsx (floating images anchored to cells) ──
     // xlsx files are ZIP archives; images live in xl/media/ and anchors in xl/drawings/
-    const embeddedImages = new Map<number, string>(); // 0-based Excel row → base64 data URL
+    // Store raw buffers — magic-byte validation happens before StorageService persistence.
+    const embeddedImages = new Map<number, Buffer>(); // 0-based Excel row → image bytes
     try {
       const zip = new AdmZip(buffer);
       const drawingEntries = zip
@@ -981,8 +989,6 @@ export class ProductService {
 
         // Build rId → media path map from each drawing rels file
         const relMap = new Map<string, string>();
-        // Some generators output Relationship attributes as Id="..." Target="...",
-        // others as Target="..." Id="...". Parse per-tag to support both orders.
         const relTagRegex = /<Relationship\b[^>]*>/g;
         let relTagMatch;
         while ((relTagMatch = relTagRegex.exec(relXml)) !== null) {
@@ -994,44 +1000,38 @@ export class ProductService {
           const rId = rIdMatch[1];
           const target = targetMatch[1];
           let normalizedTarget = target;
-          // Normalize all path formats to xl/media/... format
           if (normalizedTarget.startsWith('../')) {
             normalizedTarget = normalizedTarget.replace(/^\.\.\//, 'xl/');
           } else if (normalizedTarget.startsWith('/xl/')) {
-            // Already has /xl/ prefix (absolute ZIP path)
-            normalizedTarget = normalizedTarget.substring(1); // Remove leading /
+            normalizedTarget = normalizedTarget.substring(1);
           } else if (normalizedTarget.startsWith('/')) {
-            normalizedTarget = normalizedTarget.substring(1); // Remove leading /
+            normalizedTarget = normalizedTarget.substring(1);
           } else if (!normalizedTarget.startsWith('xl/')) {
             normalizedTarget = `xl/drawings/${normalizedTarget}`;
           }
+          // Refuse zip-slip style media targets.
+          if (normalizedTarget.includes('..') || normalizedTarget.includes('\0')) continue;
           relMap.set(rId, normalizedTarget);
         }
 
-        // Parse each anchor block: get the FROM row and the blip rId
-        // Handle both namespaced (xdr:) and non-namespaced XML formats (different Excel versions/generators)
         const anchorRegex = /<\/?(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)[\s\S]*?<\/(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)>/g;
         let anchorMatch;
         while ((anchorMatch = anchorRegex.exec(drawingXml)) !== null) {
           const block = anchorMatch[0];
-          // Match both <xdr:row> and <row> formats - look for row number in from block
           const rowMatch = block.match(/(?:<xdr:from>|<from>)[\s\S]*?(?:<xdr:row>|<row>)(\d+)(?:<\/xdr:row>|<\/row>)/);
-          // Match r:embed with optional xdr: namespace
           const rIdMatch = block.match(/(?:xdr:)?r:embed="([^"]+)"|r:embed="([^"]+)"/);
           if (rowMatch && rIdMatch) {
-            const excelRow = parseInt(rowMatch[1]); // 0-based (0 = header row)
-            const rId = rIdMatch[1] || rIdMatch[2]; // Get whichever group matched
+            const excelRow = parseInt(rowMatch[1], 10);
+            const rId = rIdMatch[1] || rIdMatch[2];
             const mediaPath = relMap.get(rId);
             if (mediaPath) {
               const imgEntry = zip.getEntry(mediaPath);
               if (imgEntry) {
                 const imgBuffer = imgEntry.getData();
-                const ext = mediaPath.split('.').pop()?.toLowerCase() || 'png';
-                const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
-                  : ext === 'png' ? 'image/png'
-                  : ext === 'gif' ? 'image/gif'
-                  : ext === 'webp' ? 'image/webp' : 'image/png';
-                embeddedImages.set(excelRow, `data:${mime};base64,${imgBuffer.toString('base64')}`);
+                // Only keep buffers that look like real images (magic bytes).
+                if (detectImageKindFromMagicBytes(imgBuffer)) {
+                  embeddedImages.set(excelRow, imgBuffer);
+                }
               }
             }
           }
@@ -1092,33 +1092,7 @@ export class ProductService {
         const rawImage: string | undefined = asString(getRowValue(row, 'Image')) || undefined;
         // Embedded Excel images are often small previews; prefer Image column path/URL when provided.
         // excelRow is 0-based; row 0 = header, so data row i (0-based) sits at excelRow i+1.
-        const embeddedDataUrl = embeddedImages.get(i + 1);
-
-        // Normalise image path: bare filename -> full relative path
-        let mainImage: string | undefined;
-        if (rawImage) {
-          const normalizedRaw = rawImage.replace(/\\/g, '/').replace(/^\.\//, '').trim();
-          if (
-            normalizedRaw.startsWith('http://') ||
-            normalizedRaw.startsWith('https://') ||
-            normalizedRaw.startsWith('/') ||
-            normalizedRaw.startsWith('images/')
-          ) {
-            mainImage = normalizedRaw;
-          } else {
-            // Preserve original filename casing/spaces; frontend encodes URL segments safely.
-            const justFile = normalizedRaw.split('/').pop()!;
-              mainImage = `uploads/products/${justFile}`;
-          }
-        }
-
-        // Fallback to embedded image only if no Image column value is provided.
-        if (!mainImage) {
-          mainImage = embeddedDataUrl;
-          if (embeddedDataUrl) {
-            embeddedImageRows.push(rowNum);
-          }
-        }
+        const embeddedBuffer = embeddedImages.get(i + 1);
 
         // Validations
         if (!name || isNaN(price) || isNaN(stock)) {
@@ -1182,57 +1156,73 @@ export class ProductService {
           }
         });
 
-        await prisma.$transaction(async (tx) => {
-          const createdProduct = await tx.product.create({
-            data: {
-              sku,
-              price,
-              stock,
-              minimumStockThreshold: minStock,
-              categoryId,
-              subcategoryId,
-              warehouseId: defaultWarehouseId,
-              brandId,
-              mainImage,
-              filterNumber,
-              alternateNumbers,
-              filterType,
-              material,
-              dimensions,
-              status: ProductStatus.PUBLISHED, // Auto-approve bulk uploads for now as they come from SuperAdmin
-              translations: {
-                create: [
-                  { locale: 'en', name, description },
-                  { locale: 'ar', name: nameAr, description: descriptionAr || description }
-                ]
-              },
-              specifications: specifications.length > 0 ? {
-                create: specifications
-              } : undefined
+        let storedImageRef: string | null = null;
+        try {
+          if (rawImage || embeddedBuffer) {
+            if (!rawImage && embeddedBuffer) {
+              embeddedImageRows.push(rowNum);
             }
-          });
 
-          // If mainImage is an embedded data URL, persist it into uploads and update the product
-          if (mainImage && typeof mainImage === 'string') {
             try {
-              let migrated: string | null = null;
-              if (mainImage.startsWith('data:')) {
-                migrated = saveDataUrlToUploads(mainImage, createdProduct.id);
-              } else if (mainImage.startsWith('images/') || mainImage.startsWith('images/products-images/') || !/^(https?:\/\/|uploads\/)/i.test(mainImage)) {
-                migrated = copyExistingImageToUploads(mainImage, createdProduct.id);
+              storedImageRef = await resolveAndStoreBulkProductImage({
+                rawImage,
+                embeddedBuffer: rawImage ? undefined : embeddedBuffer,
+                ownerId: `bulk-row-${rowNum}`,
+              }) || null;
+            } catch (imageError) {
+              // Prefer Image column; if it fails and an embedded image exists, fall back once.
+              if (rawImage && embeddedBuffer) {
+                embeddedImageRows.push(rowNum);
+                storedImageRef = await resolveAndStoreBulkProductImage({
+                  embeddedBuffer,
+                  ownerId: `bulk-row-${rowNum}`,
+                }) || null;
+              } else {
+                throw imageError;
               }
-
-              if (migrated) {
-                await tx.product.update({ where: { id: createdProduct.id }, data: { mainImage: migrated } });
-              }
-            } catch (err) {
-              // Ignore copy/save errors for bulk import but record a warning
-              results.warnings.push(`Row ${rowNum}: failed to persist image for product ${sku || name}`);
             }
           }
 
-          await this.ensureMainWarehouseInventory(tx, createdProduct.id, stock, defaultWarehouseId);
-        });
+          const finalMainImage = storedImageRef || undefined;
+
+          await prisma.$transaction(async (tx) => {
+            const createdProduct = await tx.product.create({
+              data: {
+                sku,
+                price,
+                stock,
+                minimumStockThreshold: minStock,
+                categoryId,
+                subcategoryId,
+                warehouseId: defaultWarehouseId,
+                brandId,
+                mainImage: finalMainImage,
+                filterNumber,
+                alternateNumbers,
+                filterType,
+                material,
+                dimensions,
+                status: ProductStatus.PUBLISHED,
+                translations: {
+                  create: [
+                    { locale: 'en', name, description },
+                    { locale: 'ar', name: nameAr, description: descriptionAr || description },
+                  ],
+                },
+                specifications: specifications.length > 0 ? {
+                  create: specifications,
+                } : undefined,
+              },
+            });
+
+            await this.ensureMainWarehouseInventory(tx, createdProduct.id, stock, defaultWarehouseId);
+          });
+        } catch (err: unknown) {
+          if (storedImageRef) {
+            await deleteProductImageByRef(storedImageRef);
+          }
+          throw err;
+        }
 
         results.success++;
       } catch (err: unknown) {

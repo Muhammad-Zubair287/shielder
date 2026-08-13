@@ -10,6 +10,11 @@ import { subcategoryService } from './subcategory.service';
 import { getPaginationParams } from '@/common/utils/pagination';
 import { emitToAll } from '@/modules/realtime/socket.service';
 import { t } from '@/common/i18n';
+import {
+  deleteStoredRefSafe,
+  replaceStoredImage,
+  storeUploadedImageFile,
+} from '@/common/storage/storage-image.helper';
 
 export class SubcategoryController {
   /**
@@ -21,11 +26,15 @@ export class SubcategoryController {
    *     security: [{ bearerAuth: [] }]
    */
   async create(req: Request, res: Response, next: NextFunction) {
+    let storedImageRef: string | undefined;
     try {
-      const image = req.file ? `/uploads/categories/${req.file.filename}` : undefined;
+      if (req.file) {
+        storedImageRef = await storeUploadedImageFile(req.file, 'categories');
+      }
+
       const subcategory = await subcategoryService.create({
         ...req.body,
-        image,
+        image: storedImageRef,
         isActive: req.body.isActive === 'true' || req.body.isActive === true,
         nameEn: req.body.nameEn,
         descriptionEn: req.body.descriptionEn,
@@ -35,6 +44,9 @@ export class SubcategoryController {
       emitToAll('subcategory:created', { id: subcategory.id });
       res.status(201).json({ success: true, data: subcategory });
     } catch (error) {
+      if (storedImageRef) {
+        await deleteStoredRefSafe(storedImageRef);
+      }
       next(error);
     }
   }
@@ -106,16 +118,35 @@ export class SubcategoryController {
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const image = req.file ? `/uploads/categories/${req.file.filename}` : undefined;
-      const subcategory = await subcategoryService.update(String(req.params.id), {
+      const subcategoryId = String(req.params.id);
+      const existing = await subcategoryService.getById(subcategoryId, req.locale);
+
+      const data = {
         ...req.body,
-        image,
         isActive: req.body.isActive !== undefined ? (req.body.isActive === 'true' || req.body.isActive === true) : undefined,
         nameEn: req.body.nameEn,
         descriptionEn: req.body.descriptionEn,
         nameAr: req.body.nameAr,
         descriptionAr: req.body.descriptionAr,
-      }, req.locale);
+      };
+
+      if (req.file) {
+        await replaceStoredImage({
+          file: req.file,
+          scope: 'categories',
+          ownerId: subcategoryId,
+          oldRef: existing.image,
+          updateDb: async (newRef) => {
+            await subcategoryService.update(subcategoryId, { ...data, image: newRef }, req.locale);
+          },
+        });
+        const subcategory = await subcategoryService.getById(subcategoryId, req.locale);
+        emitToAll('subcategory:updated', { id: subcategory.id });
+        res.json({ success: true, data: subcategory });
+        return;
+      }
+
+      const subcategory = await subcategoryService.update(subcategoryId, data, req.locale);
       emitToAll('subcategory:updated', { id: subcategory.id });
       res.json({ success: true, data: subcategory });
     } catch (error) {

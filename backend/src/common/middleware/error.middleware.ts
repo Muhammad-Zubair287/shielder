@@ -34,7 +34,9 @@ export const errorHandler = (
 
   if (err instanceof ApiError) {
     statusCode = err.statusCode;
-    message = err.message; // already localised by the controller/service that threw it
+    // Translate message keys (e.g. payment.gatewayUnavailable) when present
+    const translated = t(err.message, locale);
+    message = translated !== err.message ? translated : err.message;
 
     if (err instanceof ValidationError) {
       errors = err.errors;

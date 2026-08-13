@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
@@ -49,6 +49,7 @@ import { getImageUrl } from '@/utils/helpers';
 import { broadcastSync } from '@/lib/crossTabSync';
 import { filterPhoneInput } from '@/utils/phoneUtils';
 import { hasUnsafeContent } from '@/utils/security';
+import { usePaymentQueryToast } from '@/hooks/usePaymentQueryToast';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ const SHIPPING_COST = 0;
 const TAX_RATE       = 0.1;
 
 const LIMITS = { name: 100, phone: 20, address: 200, notes: 500 } as const;
+const MIN_ADDRESS_LENGTH = 5;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -90,7 +92,7 @@ function MethodCard({
         ${selected
           ? 'border-[#0205A6] bg-blue-50'
           : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}
-        ${isRTL ? 'flex-row-reverse text-right' : 'text-start'}`}
+        ${isRTL ? 'text-right' : 'text-start'}`}
     >
       <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center
         ${selected ? 'bg-[#0205A6] text-white' : 'bg-gray-100 text-gray-500'}`}>
@@ -122,11 +124,10 @@ function SummaryRow({ label, value, bold }: { label: string; value: React.ReactN
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 function CheckoutPageInner() {
-  const { t, isRTL, locale } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { cart, loading: cartLoading, clearCart, refreshCart } = useCart();
   const router  = useRouter();
-  const params  = useSearchParams();
 
   // ── Auth guard
   useEffect(() => {
@@ -137,29 +138,31 @@ function CheckoutPageInner() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // ── Warn when returning from a failed EPG payment
+  // ── Fetch the single pickup warehouse/shop (no multi-warehouse selection)
   useEffect(() => {
-    if (params?.get('payment') === 'failed') {
-      toast.error(t('checkout.paymentFailed'));
-    }
-  }, [params, t]);
-
-  // ── Fetch warehouses (for PICKUP delivery)
-  useEffect(() => {
-    const fetchWarehouses = async () => {
+    const fetchPickupWarehouse = async () => {
       try {
         setWarehousesLoading(true);
         const res = await warehouseService.listActiveForCheckout();
-        setWarehouses(res?.data || []);
+        const active: WarehouseType[] = res?.data || [];
+        // Prefer main warehouse; otherwise first active warehouse from backend.
+        const pickup =
+          active.find((w) => w.isMain && w.isActive) ||
+          active.find((w) => w.isActive) ||
+          active[0] ||
+          null;
+        setPickupWarehouse(pickup);
+        setWarehouseId(pickup?.id ?? null);
       } catch (err) {
-        console.error('Failed to load warehouses:', err);
-        // Silently fail - user can still use delivery
+        console.error('Failed to load pickup warehouse:', err);
+        setPickupWarehouse(null);
+        setWarehouseId(null);
       } finally {
         setWarehousesLoading(false);
       }
     };
-    
-    fetchWarehouses();
+
+    fetchPickupWarehouse();
   }, []);
 
   // ── Form state
@@ -172,10 +175,10 @@ function CheckoutPageInner() {
   const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod>('CASH');
   const [deliveryType, setDeliveryType]     = useState<DeliveryType>('DELIVERY');
   const [warehouseId, setWarehouseId]       = useState<string | null>(null);
-  const [warehouses, setWarehouses]         = useState<WarehouseType[]>([]);
+  const [pickupWarehouse, setPickupWarehouse] = useState<WarehouseType | null>(null);
   const [warehousesLoading, setWarehousesLoading] = useState(false);
 
-  const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId) || null;
+  const selectedWarehouse = pickupWarehouse;
 
   const warehouseCountryLine = (() => {
     if (!selectedWarehouse?.country?.trim()) return 'SAUDI ARABIA';
@@ -193,53 +196,15 @@ function CheckoutPageInner() {
       ].filter((line): line is string => Boolean(line))
     : [];
 
-  const pickupNoAddressText = (() => {
-    const value = t('checkout.pickupNoShippingAddress');
-    if (!value || value === 'checkout.pickupNoShippingAddress') {
-      return locale === 'ar'
-        ? 'لا يلزم إدخال عنوان شحن عند اختيار الاستلام من المستودع.'
-        : 'No shipping address is needed for pickup orders.';
-    }
-    return value;
-  })();
+  const pickupNoAddressText = t('checkout.pickupNoShippingAddress');
 
-  const pickupWarehouseNoteText = (() => {
-    const value = t('checkout.pickupWarehouseNote');
-    if (!value || value === 'checkout.pickupWarehouseNote') {
-      return locale === 'ar'
-        ? 'سيتم استلام الطلب من المستودع الذي اخترته.'
-        : 'Your order will be collected from the selected warehouse.';
-    }
-    return value;
-  })();
+  const pickupWarehouseNoteText = t('checkout.pickupWarehouseNote');
 
-  const cashMethodTitle = (() => {
-    if (deliveryType === 'PICKUP') {
-      const value = t('checkout.methodCashPickup');
-      if (!value || value === 'checkout.methodCashPickup') {
-        return locale === 'ar'
-          ? 'الدفع عند الاستلام من المستودع'
-          : 'Cash on Pickup';
-      }
-      return value;
-    }
+  const cashMethodTitle =
+    deliveryType === 'PICKUP' ? t('checkout.methodCashPickup') : t('checkout.methodCash');
 
-    return t('checkout.methodCash');
-  })();
-
-  const cashMethodDescription = (() => {
-    if (deliveryType === 'PICKUP') {
-      const value = t('checkout.methodCashPickupDesc');
-      if (!value || value === 'checkout.methodCashPickupDesc') {
-        return locale === 'ar'
-          ? 'ادفع نقدًا عند استلام طلبك من المستودع.'
-          : 'Pay in cash when you collect your order from the warehouse.';
-      }
-      return value;
-    }
-
-    return t('checkout.methodCashDesc');
-  })();
+  const cashMethodDescription =
+    deliveryType === 'PICKUP' ? t('checkout.methodCashPickupDesc') : t('checkout.methodCashDesc');
   const [submitting, setSubmitting]         = useState(false);
 
   // Pre-fill name when user loads
@@ -283,6 +248,9 @@ function CheckoutPageInner() {
     }
     if (deliveryType === 'DELIVERY' && !form.shippingAddress.trim()) {
       toast.error(t('checkout.errorAddress')); return false;
+    }
+    if (deliveryType === 'DELIVERY' && form.shippingAddress.trim().length < MIN_ADDRESS_LENGTH) {
+      toast.error(t('checkout.errorAddressTooShort')); return false;
     }
     if (deliveryType === 'DELIVERY' && hasUnsafeContent(form.shippingAddress)) {
       toast.error(t('validation.invalidText')); return false;
@@ -400,7 +368,7 @@ function CheckoutPageInner() {
             <Link
               href="/cart"
               className="p-2 text-gray-600 hover:text-[#123C9C] hover:bg-blue-50 rounded-lg transition-colors"
-              aria-label="back"
+              aria-label={t('back')}
             >
               <BackArrow size={22} />
             </Link>
@@ -417,7 +385,7 @@ function CheckoutPageInner() {
 
                 {/* Delivery Method */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Warehouse size={18} className="text-[#0205A6]" />
                     {t('checkout.deliveryMethod')}
                   </h2>
@@ -427,8 +395,7 @@ function CheckoutPageInner() {
                     <label className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors
                       ${deliveryType === 'DELIVERY'
                         ? 'border-[#0205A6] bg-blue-50'
-                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}
-                      ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}`}>
                       <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         deliveryType === 'DELIVERY' ? 'border-[#0205A6]' : 'border-gray-300'
                       }`}>
@@ -452,8 +419,7 @@ function CheckoutPageInner() {
                     <label className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors
                       ${deliveryType === 'PICKUP'
                         ? 'border-[#0205A6] bg-blue-50'
-                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}
-                      ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}`}>
                       <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         deliveryType === 'PICKUP' ? 'border-[#0205A6]' : 'border-gray-300'
                       }`}>
@@ -473,50 +439,33 @@ function CheckoutPageInner() {
                       </div>
                     </label>
 
-                    {/* Warehouse Selector (only show when PICKUP selected) */}
+                    {/* Pickup location (single warehouse/shop — no multi-select) */}
                     {deliveryType === 'PICKUP' && (
                       <div className="mt-4">
-                        <label htmlFor="warehouse-select" className={`block text-sm font-medium text-gray-700 mb-2 ${isRTL ? 'text-right' : 'text-start'}`}>
-                          {t('checkout.selectWarehouse')} <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="warehouse-select"
-                            value={warehouseId || ''}
-                            onChange={(e) => setWarehouseId(e.target.value || null)}
-                            disabled={warehousesLoading || warehouses.length === 0}
-                            className={`w-full border border-gray-200 rounded-xl py-3 px-3 text-sm text-gray-900
-                              bg-white focus:outline-none focus:ring-2 focus:ring-[#0205A6] focus:border-transparent
-                              disabled:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400
-                              ${isRTL ? 'text-right' : 'text-start'}`}
-                          >
-                            <option value="">
-                              {warehousesLoading
-                                ? t('checkout.loadingWarehouses')
-                                : warehouses.length === 0
-                                  ? (locale === 'ar' ? 'لا توجد مستودعات متاحة حالياً للاستلام' : 'No pickup warehouses available right now')
-                                  : t('checkout.selectWarehousePlaceholder')}
-                            </option>
-                            {warehouses.map(warehouse => (
-                              <option key={warehouse.id} value={warehouse.id}>
-                                {warehouse.name} {warehouse.city && `- ${warehouse.city}`}
-                              </option>
-                            ))}
-                          </select>
-                          {!warehouseId && deliveryType === 'PICKUP' && (
-                            <div className={`flex items-start gap-2 mt-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                              <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
-                              <p className={`text-xs text-red-600 ${isRTL ? 'text-right' : 'text-start'}`}>
-                                {t('checkout.warehouseRequired')}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                        <p className={`text-sm font-medium text-gray-700 mb-2 ${isRTL ? 'text-right' : 'text-start'}`}>
+                          {t('checkout.pickupLocation')}
+                        </p>
+
+                        {warehousesLoading && (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Loader2 size={14} className="animate-spin" />
+                            {t('checkout.loadingWarehouses')}
+                          </div>
+                        )}
+
+                        {!warehousesLoading && !selectedWarehouse && (
+                          <div className="flex items-start gap-2">
+                            <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+                            <p className={`text-xs text-red-600 ${isRTL ? 'text-right' : 'text-start'}`}>
+                              {t('checkout.warehouseUnavailable')}
+                            </p>
+                          </div>
+                        )}
 
                         {selectedWarehouse && warehouseAddressLines.length > 0 && (
-                          <div className={`mt-3 rounded-xl border border-blue-100 bg-blue-50 p-4 ${isRTL ? 'text-right' : 'text-start'}`}>
+                          <div className={`rounded-xl border border-blue-100 bg-blue-50 p-4 ${isRTL ? 'text-right' : 'text-start'}`}>
                             <p className="text-xs font-semibold tracking-wide text-blue-800 uppercase mb-2">
-                              {locale === 'ar' ? 'عنوان المستودع للاستلام' : 'Pickup Warehouse Address'}
+                              {t('checkout.pickupAddress')}
                             </p>
                             <address className="not-italic text-sm text-blue-900 leading-6 whitespace-pre-line">
                               {warehouseAddressLines.map((line, index) => (
@@ -525,6 +474,7 @@ function CheckoutPageInner() {
                                 </span>
                               ))}
                             </address>
+                            <p className="text-xs text-blue-700 mt-3">{pickupWarehouseNoteText}</p>
                           </div>
                         )}
                       </div>
@@ -534,9 +484,9 @@ function CheckoutPageInner() {
 
                 {/* Shipping Information */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <MapPin size={18} className="text-[#0205A6]" />
-                    {deliveryType === 'PICKUP' ? t('checkout.customerInfo') || 'Customer Information' : t('checkout.shippingInfo')}
+                    {deliveryType === 'PICKUP' ? t('checkout.customerInfo') : t('checkout.shippingInfo')}
                   </h2>
 
                   <div className="space-y-4">
@@ -650,7 +600,7 @@ function CheckoutPageInner() {
 
                 {/* Payment Method */}
                 <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <CreditCard size={18} className="text-[#0205A6]" />
                     {t('checkout.paymentMethod')}
                   </h2>
@@ -687,7 +637,7 @@ function CheckoutPageInner() {
 
                   {/* EPG security notice */}
                   {paymentMethod === 'CREDIT_CARD' && (
-                    <div className={`mt-4 flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
                       <AlertCircle size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
                       <p className={`text-xs text-blue-700 leading-relaxed ${isRTL ? 'text-right' : 'text-start'}`}>
                         {t('checkout.epgSecurityNote')}
@@ -700,7 +650,7 @@ function CheckoutPageInner() {
               {/* ── Right column: order summary ─────────────────────────── */}
               <div className="lg:col-span-2 mt-6 lg:mt-0">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
-                  <h2 className={`text-base font-bold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <ShoppingBag size={18} className="text-[#0205A6]" />
                     {t('checkout.orderSummary')}
                     <span className="text-[#0205A6] font-normal text-sm">({cart.items.length})</span>
@@ -713,7 +663,7 @@ function CheckoutPageInner() {
                       return (
                         <div
                           key={item.id}
-                          className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}
+                          className="flex items-center gap-3"
                         >
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                             <Image src={img} alt={item.product.name} fill className="object-cover" sizes="48px" />
@@ -766,7 +716,7 @@ function CheckoutPageInner() {
                     {submitting ? (
                       <><Loader2 size={18} className="animate-spin" />{t('checkout.processing')}</>
                     ) : (
-                      <>{isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}Checkout</>
+                      <>{isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}{t('checkout.title')}</>
                     )}
                   </button>
 
@@ -786,14 +736,23 @@ function CheckoutPageInner() {
   );
 }
 
+function CheckoutPaymentQueryToast() {
+  const { t } = useLanguage();
+  usePaymentQueryToast({
+    paymentParam: 'failed',
+    fallbackMessageKey: 'checkout.paymentFailed',
+    resolveMessage: t,
+  });
+  return null;
+}
+
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#0205A6]" size={36} />
-      </div>
-    }>
+    <>
+      <Suspense fallback={null}>
+        <CheckoutPaymentQueryToast />
+      </Suspense>
       <CheckoutPageInner />
-    </Suspense>
+    </>
   );
 }

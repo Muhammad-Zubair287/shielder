@@ -136,6 +136,9 @@ export const API_ENDPOINTS = {
   EPG: {
     INITIALIZE: 'epg/initialize',
     CALLBACK:   'epg/callback',
+    MOCK_SESSION: (sessionId: string) => `epg/mock/session/${sessionId}`,
+    MOCK_TRIGGER: 'epg/mock/trigger',
+    PROVIDER: 'epg/provider',
   },
   // Admin User Management
   ADMIN_USERS: {

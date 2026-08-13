@@ -9,10 +9,11 @@ import { Request, Response, NextFunction } from 'express';
 import { productService } from './product.service';
 import { ProductStatus } from '@prisma/client';
 import {
-  deleteProductImageTempFile,
+  deleteProductImageByRef,
   resolvePublicProductImageUrl,
   storeProductImageFile,
 } from '@/common/services/product-image.service';
+import { deleteStoredRefIfUnused } from '@/common/storage/storage-image.helper';
 import { emitToAll } from '@/modules/realtime/socket.service';
 import { t } from '@/common/i18n';
 
@@ -338,6 +339,7 @@ export class ProductController {
    *     security: [{ bearerAuth: [] }]
    */
   async uploadImage(req: Request, res: Response, next: NextFunction) {
+    let storedRef: string | null = null;
     try {
       if (!req.file) {
         res.status(400).json({ success: false, message: t('product.noImageFile', req.locale) });
@@ -345,58 +347,43 @@ export class ProductController {
       }
 
       const productId = String(req.params.id);
+      const existing = await productService.getById(productId);
+      const oldImageRef = existing?.mainImage || null;
+
       const storedImage = await storeProductImageFile(req.file, productId);
-      const storageProvider = storedImage.provider;
-      const imageUrl = storedImage.path;
+      storedRef = storedImage.path;
 
-      console.log(`[ImageUpload] Starting upload for product ${productId}`);
-      console.log(`[ImageUpload] File: ${req.file.filename}, Size: ${req.file.size} bytes`);
-      console.log(`[ImageUpload] Storage provider: ${storageProvider}`);
-
-      // Update database with new mainImage path AND refresh updatedAt timestamp
-      // CRITICAL: updatedAt must change so cache-busting ?v= parameter updates
-      const product = await productService.update(productId, { 
-        mainImage: imageUrl,
-        // Force Prisma to set a NEW timestamp for cache-busting
+      const product = await productService.update(productId, {
+        mainImage: storedRef,
         updatedAt: new Date(),
       });
 
-      console.log(`[ImageUpload] Database updated for product ${productId}`);
-      console.log(`[ImageUpload] Stored path: ${product.mainImage}`);
-      console.log(`[ImageUpload] Updated timestamp: ${product.updatedAt?.toISOString()}`);
-
-      // Verify the update actually persisted
       if (!product.mainImage) {
-        console.error(`[ImageUpload] CRITICAL ERROR: mainImage is null after DB update for ${productId}`);
-        res.status(500).json({ 
-          success: false, 
-          message: t('product.dbUpdateFailed', req.locale)
+        if (storedRef) {
+          await deleteProductImageByRef(storedRef);
+        }
+        res.status(500).json({
+          success: false,
+          message: t('product.dbUpdateFailed', req.locale),
         });
         return;
       }
 
-      if (product.mainImage !== imageUrl) {
-        console.warn(`[ImageUpload] Path mismatch for ${productId}. Expected: ${imageUrl}, Got: ${product.mainImage}`);
-      }
+      await deleteStoredRefIfUnused(oldImageRef);
 
-      const versionedUrl = resolvePublicProductImageUrl(req, imageUrl, product.updatedAt);
-      console.log(`[ImageUpload] Response URL: ${versionedUrl}`);
+      const versionedUrl = resolvePublicProductImageUrl(req, storedRef, product.updatedAt);
 
       res.json({
         success: true,
         data: {
           mainImage: versionedUrl,
           product: normalizeProductResponse(req, product),
-          storageProvider,
         },
       });
-
-      if (storageProvider === 's3') {
-        deleteProductImageTempFile(req.file);
-      }
     } catch (error) {
-      deleteProductImageTempFile(req.file);
-      console.error(`[ImageUpload] Exception:`, error);
+      if (storedRef) {
+        await deleteProductImageByRef(storedRef);
+      }
       next(error);
     }
   }

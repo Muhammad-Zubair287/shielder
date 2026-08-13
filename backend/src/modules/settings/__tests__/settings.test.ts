@@ -1,6 +1,11 @@
 /// <reference types="jest" />
 import request = require('supertest');
 
+const VALID_PNG_BUFFER = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  0x00, 0x00, 0x00, 0x0d,
+]);
+
 const mockSystemSettings = {
   id: 'CURRENT',
   systemName: 'Shielder',
@@ -172,14 +177,14 @@ describe('System Settings API', () => {
       const response = await request(app)
         .put('/api/settings/general')
         .set('Authorization', `Bearer ${accessToken}`)
-        .attach('companyLogo', Buffer.from('fake png file data'), 'test-logo.png')
+        .attach('companyLogo', VALID_PNG_BUFFER, { filename: 'test-logo.png', contentType: 'image/png' })
         .field('companyName', 'Test Shielder Corp')
         .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeDefined();
       expect(response.body.data.companyLogo).toBeDefined();
-      expect(response.body.data.companyLogo).toMatch(/^https:\/\/my-custom-test-domain\.com\/uploads\/companyLogo-/);
+      expect(response.body.data.companyLogo).toMatch(/^https:\/\/my-custom-test-domain\.com\/uploads\/file-/);
       expect(response.body.data.companyName).toBe('Test Shielder Corp');
     });
 
@@ -187,11 +192,11 @@ describe('System Settings API', () => {
       const response = await request(app)
         .put('/api/settings/general')
         .set('Authorization', `Bearer ${accessToken}`)
-        .attach('logo', Buffer.from('fake png file data'), 'logo.png')
+        .attach('logo', VALID_PNG_BUFFER, { filename: 'logo.png', contentType: 'image/png' })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.companyLogo).toMatch(/^https:\/\/my-custom-test-domain\.com\/uploads\/logo-/);
+      expect(response.body.data.companyLogo).toMatch(/^https:\/\/my-custom-test-domain\.com\/uploads\/file-/);
     });
   });
 

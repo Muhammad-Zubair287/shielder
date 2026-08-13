@@ -18,7 +18,7 @@ const profileImageUpload = multer({
     if (getAllowedProfileImageMimeTypes().includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new BadRequestError('Invalid file type. Only JPG, JPEG, PNG and WEBP are allowed.'));
+      cb(new BadRequestError('storage.imageInvalidType'));
     }
   },
 });
@@ -31,7 +31,7 @@ const handleProfileImageUpload = (req: Request, res: Response, next: NextFunctio
     }
 
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
-      next(new BadRequestError('Profile image must be 5MB or smaller.'));
+      next(new BadRequestError('storage.imageTooLarge'));
       return;
     }
 
@@ -67,7 +67,7 @@ const rejectEmptyProfileUpdate = (req: any, _res: any, next: any) => {
   });
 
   if (!hasAllowedField) {
-    next(new BadRequestError('No fields provided to update'));
+    next(new BadRequestError('profile.noFieldsToUpdate'));
     return;
   }
 

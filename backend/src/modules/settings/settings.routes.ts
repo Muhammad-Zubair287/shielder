@@ -68,7 +68,6 @@ router.put(
   upload.fields([
     { name: 'companyLogo', maxCount: 1 },
     { name: 'logo', maxCount: 1 },
-    { name: 'favicon', maxCount: 1 },
   ]),
   validate(settingsValidation.updateGeneral),
   SettingsController.updateSettings

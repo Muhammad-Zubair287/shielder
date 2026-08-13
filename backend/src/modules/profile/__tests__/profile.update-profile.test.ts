@@ -56,7 +56,7 @@ describe('PUT /api/profile', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('No fields provided to update');
+    expect(response.body.message).toBe('No fields provided to update.');
     expect(updateProfileMock).not.toHaveBeenCalled();
   });
 
@@ -67,7 +67,7 @@ describe('PUT /api/profile', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('No fields provided to update');
+    expect(response.body.message).toBe('No fields provided to update.');
     expect(updateProfileMock).not.toHaveBeenCalled();
   });
 
@@ -124,7 +124,7 @@ describe('PUT /api/profile', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('No fields provided to update');
+    expect(response.body.message).toBe('No fields provided to update.');
     expect(updateProfileMock).not.toHaveBeenCalled();
   });
 
@@ -135,7 +135,7 @@ describe('PUT /api/profile', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toContain('Profile image must be a URL/path');
+    expect(response.body.message).toContain('URL/path');
     expect(updateProfileMock).not.toHaveBeenCalled();
   });
 
@@ -155,9 +155,10 @@ describe('PUT /api/profile', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body.imageUrl).toBe('/uploads/profile/user-1-new.jpg');
-    expect(response.body.data.profileImage).toBe('/uploads/profile/user-1-new.jpg');
+    expect(response.body.imageUrl).toMatch(/\/api\/storage\/private\//);
+    expect(response.body.data.profileImage).toMatch(/\/api\/storage\/private\//);
     expect(JSON.stringify(response.body)).not.toContain('data:image');
+    expect(JSON.stringify(response.body)).not.toContain('/uploads/profile/user-1-new.jpg');
     expect(updateProfileMock).toHaveBeenCalledWith(
       'user-1',
       { profileImage: '/uploads/profile/user-1-new.jpg' },

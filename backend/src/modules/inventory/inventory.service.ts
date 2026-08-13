@@ -24,40 +24,53 @@ export class InventoryService {
       }
     }
 
-    const mainWarehouse = await inventoryRepository.findMainWarehouseByName();
-    if (!mainWarehouse) {
+    const flaggedMain = await inventoryRepository.findMainWarehouseFlagged();
+    if (flaggedMain) {
+      return flaggedMain.id;
+    }
+
+    const namedMain = await inventoryRepository.findMainWarehouseByName();
+    if (namedMain?.isActive) {
+      return namedMain.id;
+    }
+
+    const firstActive = await inventoryRepository.findFirstActiveWarehouse();
+    if (!firstActive) {
       throw new NotFoundError('Main Warehouse not found');
     }
 
-    if (!mainWarehouse.isActive) {
-      throw new BadRequestError('Main Warehouse is inactive');
-    }
-
-    return mainWarehouse.id;
+    return firstActive.id;
   }
 
+  /**
+   * Single physical shop/warehouse used for both delivery inventory and pickup location.
+   * Client-supplied warehouse IDs are ignored for mutation safety — the authoritative
+   * warehouse is always resolved server-side.
+   */
   async resolveWarehouseForOrder(
-    deliveryType: 'DELIVERY' | 'PICKUP',
-    pickupWarehouseId?: string,
+    _deliveryType: 'DELIVERY' | 'PICKUP',
+    _pickupWarehouseId?: string,
   ): Promise<string> {
-    if (deliveryType === 'PICKUP') {
-      if (!pickupWarehouseId) {
-        throw new BadRequestError('warehouseId is required for PICKUP delivery type');
-      }
+    return this.resolveMainWarehouseId();
+  }
 
-      const warehouse = await inventoryRepository.findWarehouseById(pickupWarehouseId);
-      if (!warehouse) {
-        throw new NotFoundError(`Warehouse with ID ${pickupWarehouseId} not found`);
-      }
-
-      if (!warehouse.isActive) {
-        throw new BadRequestError(`Warehouse "${warehouse.name}" is not active`);
-      }
-
-      return warehouse.id;
+  async assertAvailableStock(
+    productId: string,
+    warehouseId: string,
+    quantity: number,
+    db?: DB,
+  ): Promise<void> {
+    const normalizedQuantity = this.normalizeQuantity(quantity);
+    if (normalizedQuantity <= 0) {
+      throw new BadRequestError('Quantity must be greater than 0');
     }
 
-    return this.resolveMainWarehouseId();
+    const inventory = await inventoryRepository.findByProductWarehouse(productId, warehouseId, db);
+    const available = (inventory?.quantity ?? 0) - (inventory?.reservedQuantity ?? 0);
+
+    if (available < normalizedQuantity) {
+      throw new BadRequestError('Insufficient stock');
+    }
   }
 
   async upsertStock(productId: string, warehouseId: string, quantity: number) {
@@ -122,6 +135,25 @@ export class InventoryService {
     }
 
     const updated = await inventoryRepository.reduceStock(productId, warehouseId, normalizedQuantity, db);
+    if (!updated) {
+      throw new BadRequestError('Insufficient stock');
+    }
+
+    return updated;
+  }
+
+  async deductStockOnPayment(productId: string, warehouseId: string, quantity: number, db?: DB) {
+    const normalizedQuantity = this.normalizeQuantity(quantity);
+    if (normalizedQuantity <= 0) {
+      throw new BadRequestError('Quantity must be greater than 0');
+    }
+
+    const updated = await inventoryRepository.deductStockOnPayment(
+      productId,
+      warehouseId,
+      normalizedQuantity,
+      db,
+    );
     if (!updated) {
       throw new BadRequestError('Insufficient stock');
     }

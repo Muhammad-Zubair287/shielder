@@ -79,10 +79,30 @@ export const JOI_ERROR_KEY_MAP: Record<string, string> = {
  * For custom validators, checks if the message is an i18n key (format: 'namespace.key')
  * and translates it if found.
  */
+function isI18nMessageKey(message: string): boolean {
+  return (
+    message.includes('.') &&
+    !message.includes(' ') &&
+    !message.includes('<') &&
+    !message.includes('>') &&
+    !message.includes(';')
+  );
+}
+
 export function translateJoiError(
   detail: { type: string; message: string; context?: Record<string, any> },
   locale: string,
 ): string {
+  // Schema-level .messages() may supply an i18n key (e.g. validation.shippingAddressMin)
+  if (typeof detail.message === 'string' && isI18nMessageKey(detail.message)) {
+    const params: Record<string, string | number> = {};
+    if (detail.context?.limit !== undefined) params.limit = detail.context.limit;
+    const translated = t(detail.message, locale, params);
+    if (translated !== detail.message) {
+      return translated;
+    }
+  }
+
   const key = JOI_ERROR_KEY_MAP[detail.type];
   if (key) {
     // Standard Joi type with a mapping

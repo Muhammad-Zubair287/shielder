@@ -19,6 +19,13 @@ export class InventoryRepository {
     });
   }
 
+  findMainWarehouseFlagged() {
+    return prisma.warehouse.findFirst({
+      where: { isMain: true, isActive: true },
+      select: { id: true, name: true, isActive: true, address: true, city: true, country: true },
+    });
+  }
+
   findMainWarehouseByName() {
     return prisma.warehouse.findFirst({
       where: {
@@ -27,7 +34,15 @@ export class InventoryRepository {
           mode: 'insensitive',
         },
       },
-      select: { id: true, name: true, isActive: true },
+      select: { id: true, name: true, isActive: true, address: true, city: true, country: true },
+    });
+  }
+
+  findFirstActiveWarehouse() {
+    return prisma.warehouse.findFirst({
+      where: { isActive: true },
+      orderBy: [{ isMain: 'desc' }, { createdAt: 'asc' }],
+      select: { id: true, name: true, isActive: true, address: true, city: true, country: true },
     });
   }
 
@@ -199,6 +214,32 @@ export class InventoryRepository {
         "product_id" = ${productId}::text
         AND "warehouse_id" = ${warehouseId}::uuid
         AND ("quantity" - "reserved_quantity") >= ${quantity}
+      RETURNING "id"
+    `;
+
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Atomically deduct stock after verified payment.
+   * Also clears any legacy reservation for the same quantity so old pending
+   * reservations cannot leave reservedQuantity stuck after this model change.
+   * Guarantees quantity never goes negative.
+   */
+  async deductStockOnPayment(productId: string, warehouseId: string, quantity: number, db: DB = prisma) {
+    const rows = await db.$queryRaw<Array<{ id: string }>>`
+      UPDATE "inventories"
+      SET
+        "quantity" = "quantity" - ${quantity},
+        "reserved_quantity" = CASE
+          WHEN "reserved_quantity" >= ${quantity} THEN "reserved_quantity" - ${quantity}
+          ELSE "reserved_quantity"
+        END,
+        "updated_at" = NOW()
+      WHERE
+        "product_id" = ${productId}::text
+        AND "warehouse_id" = ${warehouseId}::uuid
+        AND "quantity" >= ${quantity}
       RETURNING "id"
     `;
 

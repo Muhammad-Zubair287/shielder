@@ -37,10 +37,17 @@ const startServer = async (): Promise<void> => {
     const app = createApp();
 
     const productImageStorage = checkProductImageStorage();
+    const storageLog = {
+      provider: productImageStorage.provider,
+      writable: productImageStorage.writable,
+      exists: productImageStorage.exists,
+      checkedAt: productImageStorage.checkedAt,
+      // Intentionally omit absoluteDir / raw error strings from logs.
+    };
     if (productImageStorage.writable) {
-      logger.info('✅ Product image storage verified', productImageStorage);
+      logger.info('✅ Product image storage verified', storageLog);
     } else {
-      logger.error('❌ Product image storage is not writable', productImageStorage);
+      logger.error('❌ Product image storage is not writable', storageLog);
     }
 
     // Start listening

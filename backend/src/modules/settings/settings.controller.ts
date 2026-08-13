@@ -16,6 +16,11 @@ import { AuthRequest } from '@/types/global';
 import { upload } from '@/common/middleware/upload.middleware';
 import env from '@/config/env';
 import { t } from '@/common/i18n';
+import {
+  deleteStoredRefIfUnused,
+  deleteStoredRefSafe,
+  storeUploadedImageFile,
+} from '@/common/storage/storage-image.helper';
 
 export const formatSettingUrl = (path: string | null | undefined): string | null => {
   if (!path) return null;
@@ -30,7 +35,7 @@ export const serializeSettings = (settings: any): any => {
   if (!settings) return settings;
   const serialized = { ...settings };
   
-  const fileFields = ['companyLogo', 'favicon'];
+  const fileFields = ['companyLogo'];
   for (const field of fileFields) {
     if (serialized[field] && typeof serialized[field] === 'string') {
       serialized[field] = formatSettingUrl(serialized[field]);
@@ -75,21 +80,34 @@ class SettingsController {
       upload.single('logo'),
       asyncHandler(async (req: AuthRequest, res: Response) => {
         if (!req.file) {
-          res.status(400).json({ success: false, message: 'No file uploaded' });
+          res.status(400).json({ success: false, message: t('storage.imageEmptyOrUnreadable', req.locale) });
           return;
         }
-        // Save file path (relative to uploads/)
-        const logoPath = `/uploads/${req.file.filename}`;
-        // Update settings
-        await SettingsService.updateSettings(
-          req.user?.id as string,
-          'general',
-          { companyLogo: logoPath },
-          req.ip || '',
-          req.locale
-        );
-        res.json({ success: true, message: t('settings.logoUploaded', req.locale), data: serializeSettings({ companyLogo: logoPath }) });
-      })
+
+        const currentSettings = await SettingsService.getSettings();
+        const logoPath = await storeUploadedImageFile(req.file, 'companyLogoRoot');
+
+        try {
+          await SettingsService.updateSettings(
+            req.user?.id as string,
+            'general',
+            { companyLogo: logoPath },
+            req.ip || '',
+            req.locale,
+          );
+        } catch (error) {
+          await deleteStoredRefSafe(logoPath);
+          throw error;
+        }
+
+        await deleteStoredRefIfUnused(currentSettings.companyLogo);
+
+        res.json({
+          success: true,
+          message: t('settings.logoUploaded', req.locale),
+          data: serializeSettings({ companyLogo: logoPath }),
+        });
+      }),
     ];
   /**
    * @swagger
@@ -154,20 +172,40 @@ class SettingsController {
     const ipAddress = req.ip || '';
 
     const updatePayload = { ...req.body };
+    // Favicon is intentionally not persisted — never accept it from clients.
+    delete updatePayload.favicon;
+    const pendingStoredRefs: string[] = [];
+    let previousLogoRef: string | null | undefined;
+
     if (section === 'general' && req.files && typeof req.files === 'object') {
       const filesMap = req.files as { [fieldname: string]: Express.Multer.File[] };
-      if (filesMap['companyLogo']?.[0]) {
-        updatePayload.companyLogo = `/uploads/${filesMap['companyLogo'][0].filename}`;
-      } else if (filesMap['logo']?.[0]) {
-        updatePayload.companyLogo = `/uploads/${filesMap['logo'][0].filename}`;
-      }
-      if (filesMap['favicon']?.[0]) {
-        updatePayload.favicon = `/uploads/${filesMap['favicon'][0].filename}`;
+      const currentSettings = await SettingsService.getSettings();
+      previousLogoRef = currentSettings.companyLogo;
+
+      if (filesMap['companyLogo']?.[0] || filesMap['logo']?.[0]) {
+        const logoFile = filesMap['companyLogo']?.[0] || filesMap['logo']?.[0];
+        if (logoFile) {
+          const logoPath = await storeUploadedImageFile(logoFile, 'companyLogoRoot');
+          pendingStoredRefs.push(logoPath);
+          updatePayload.companyLogo = logoPath;
+        }
       }
     }
 
-    const data = await SettingsService.updateSettings(userId, section, updatePayload, ipAddress, req.locale);
-    res.json({ success: true, message: t('settings.updateSuccess', req.locale), data: serializeSettings(data) });
+    try {
+      const data = await SettingsService.updateSettings(userId, section, updatePayload, ipAddress, req.locale);
+
+      if (updatePayload.companyLogo && previousLogoRef) {
+        await deleteStoredRefIfUnused(previousLogoRef);
+      }
+
+      res.json({ success: true, message: t('settings.updateSuccess', req.locale), data: serializeSettings(data) });
+    } catch (error) {
+      for (const ref of pendingStoredRefs) {
+        await deleteStoredRefSafe(ref);
+      }
+      throw error;
+    }
   });
 
   /**

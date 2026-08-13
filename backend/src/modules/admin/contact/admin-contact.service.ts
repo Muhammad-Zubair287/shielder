@@ -1,5 +1,8 @@
 import { prisma } from '@/config/database';
 import { NotFoundError } from '@/common/errors/api.error';
+import { createPrivateAccessToken } from '@/common/storage/private-url.service';
+import { env } from '@/config/env';
+import { appConfig } from '@/config/app.config';
 
 interface ContactListFilters {
   status?: 'PENDING' | 'RESOLVED';
@@ -53,8 +56,17 @@ class AdminContactService {
       prisma.contact.count({ where }),
     ]);
 
+    const signedItems = items.map((item) => {
+      if (!item.fileUrl) return item;
+      if (!item.fileUrl.startsWith('/uploads/contact/')) return item;
+
+      const token = createPrivateAccessToken({ ref: item.fileUrl });
+      const signedUrl = `${env.APP_URL}${appConfig.api.prefix}/storage/private/${token}`;
+      return { ...item, fileUrl: signedUrl };
+    });
+
     return {
-      items,
+      items: signedItems,
       pagination: {
         page: filters.page,
         limit: filters.limit,

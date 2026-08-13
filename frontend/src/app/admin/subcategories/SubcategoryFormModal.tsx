@@ -91,11 +91,11 @@ export default function SubcategoryFormModal({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Only JPG, PNG and WEBP are allowed');
+      toast.error(t('upload.invalidImageType'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
+      toast.error(t('upload.imageTooLarge'));
       return;
     }
     setImageFile(file);

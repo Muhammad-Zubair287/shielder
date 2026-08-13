@@ -70,6 +70,26 @@ const validateEnv = (): void => {
         );
       }
     }
+
+    // Mock EPG must never run in production
+    if ((process.env.EPG_PROVIDER || '').trim().toLowerCase() === 'mock') {
+      throw new Error(
+        'CRITICAL CONFIG ERROR: EPG_PROVIDER=mock is forbidden when NODE_ENV=production.'
+      );
+    }
+
+    const storageProvider = (process.env.STORAGE_PROVIDER || process.env.PRODUCT_IMAGE_STORAGE || 'local').toLowerCase();
+    if (storageProvider === 's3' && !(process.env.PRODUCT_IMAGE_S3_BUCKET || process.env.S3_BUCKET)) {
+      throw new Error(
+        'CRITICAL CONFIG ERROR: STORAGE_PROVIDER=s3 requires PRODUCT_IMAGE_S3_BUCKET (or S3_BUCKET) in production.'
+      );
+    }
+
+    if (!process.env.PRIVATE_URL_SIGNING_SECRET) {
+      throw new Error(
+        'CRITICAL CONFIG ERROR: PRIVATE_URL_SIGNING_SECRET is required in production for private file access.'
+      );
+    }
   }
 };
 
@@ -168,6 +188,39 @@ export const env = {
     uploadPath: process.env.UPLOAD_PATH || './uploads',
   },
 
+  // Unified storage (local filesystem + S3-compatible)
+  storage: {
+    provider: (process.env.STORAGE_PROVIDER || process.env.PRODUCT_IMAGE_STORAGE || 'local') as 'local' | 's3',
+
+    // Private URL signing for non-public assets (profiles, contact attachments, etc.)
+    privateUrlSigningSecret:
+      process.env.PRIVATE_URL_SIGNING_SECRET ||
+      (process.env.NODE_ENV === 'production' ? '' : 'dev-private-url-signing-secret'),
+    privateUrlTtlSeconds: parseInt(process.env.PRIVATE_URL_TTL_SECONDS || '600', 10),
+
+    // Image size limits (aligns with existing profile-image max ~5MB)
+    imageMaxFileSize: parseInt(process.env.IMAGE_MAX_FILE_SIZE || '5242880', 10), // 5MB
+    // Generic "document" size limit (contact attachments)
+    documentMaxFileSize: parseInt(process.env.DOCUMENT_MAX_FILE_SIZE || '5242880', 10), // 5MB
+
+    // Image mime allowlist and signature detection is centralized in ImageValidationService.
+    allowedImageMimeTypes: [
+      'image/jpg',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      // Some clients send jpeg as jfif; magic-byte validation still treats it as JPEG.
+      'image/jfif',
+    ],
+    allowedContactMimeTypes: [
+      'application/pdf',
+      'image/png',
+      'image/jpeg',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ],
+  },
+
   // Product image storage (local by default; S3-compatible when explicitly configured)
   productImageStorage: {
     provider: (process.env.PRODUCT_IMAGE_STORAGE || 'local') as 'local' | 's3',
@@ -182,6 +235,17 @@ export const env = {
   // Logging
   logging: {
     level: process.env.LOG_LEVEL || 'info',
+  },
+
+  // EPG provider: mock (dev only) | sandbox | production — server-side only, never from client
+  epg: {
+    provider: (() => {
+      const raw = (process.env.EPG_PROVIDER || '').trim().toLowerCase();
+      if (raw === 'mock') return 'mock' as const;
+      if (raw === 'production') return 'production' as const;
+      if (process.env.NODE_ENV === 'production') return 'production' as const;
+      return 'sandbox' as const;
+    })(),
   },
 } as const;
 

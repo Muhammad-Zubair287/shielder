@@ -63,7 +63,8 @@ export const settingsValidation = {
         'string.max': 'settings.credentialsTooLong',
       }),
     companyLogo: Joi.string().allow(null, '').optional(),
-    favicon: Joi.string().allow(null, '').optional(),
+    // Favicon is not persisted in SystemSettings (no Prisma field / no frontend usage).
+    // Accepting the field would create orphaned storage objects, so it is rejected.
     companyEmail: Joi.string().trim()
       .email()
       .allow(null, '')

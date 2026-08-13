@@ -11,8 +11,16 @@ import { AuthRequest } from '../../types/global';
 import { deleteLocalProfileImageFile, storeProfileImageFile } from '../../common/services/profile-image.service';
 import { emitToUser } from '../realtime/socket.service';
 import { t } from '@/common/i18n';
+import { createPrivateAccessToken } from '@/common/storage/private-url.service';
+import { env } from '@/config/env';
+import { appConfig } from '@/config/app.config';
 
 export class ProfileController {
+  private static buildPrivateProfileImageUrl(ref: string): string {
+    const token = createPrivateAccessToken({ ref });
+    return `${env.APP_URL}${appConfig.api.prefix}/storage/private/${token}`;
+  }
+
   /**
    * @swagger
    * /api/profile/me:
@@ -28,6 +36,11 @@ export class ProfileController {
     try {
       const userId = req.user!.userId;
       const profile = await ProfileService.getProfile(userId);
+
+      // Make profile images private: backend streams them via a signed token.
+      if (profile?.profileImage) {
+        profile.profileImage = ProfileController.buildPrivateProfileImageUrl(profile.profileImage);
+      }
       
       res.status(200).json({
         success: true,
@@ -130,6 +143,10 @@ export class ProfileController {
     try {
       const { userId } = req.params;
       const profile = await ProfileService.getProfile(userId as string);
+
+      if (profile?.profileImage) {
+        profile.profileImage = ProfileController.buildPrivateProfileImageUrl(profile.profileImage);
+      }
       
       res.status(200).json({
         success: true,
@@ -224,9 +241,9 @@ export class ProfileController {
       res.status(200).json({
         success: true,
         message: t('profile.imageUploaded', req.locale),
-        imageUrl: profileImageUrl,
+        imageUrl: ProfileController.buildPrivateProfileImageUrl(profileImageUrl),
         data: {
-          profileImage: profileImageUrl,
+          profileImage: ProfileController.buildPrivateProfileImageUrl(profileImageUrl),
         },
       });
     } catch (error) {

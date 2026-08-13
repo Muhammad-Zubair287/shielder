@@ -16,8 +16,8 @@ const profileImageSchema = Joi.string()
     return helpers.error('profileImage.uriOrPath');
   })
   .messages({
-    'profileImage.dataUri': 'Profile image must be a URL/path, not base64 image data.',
-    'profileImage.uriOrPath': 'Profile image must be a valid URL or uploads/profile path.',
+    'profileImage.dataUri': 'profile.imageDataUriRejected',
+    'profileImage.uriOrPath': 'profile.imageInvalidPath',
   });
 
 export const PROFILE_UPDATE_FIELDS = [

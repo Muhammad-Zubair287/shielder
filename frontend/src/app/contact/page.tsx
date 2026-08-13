@@ -22,6 +22,7 @@ import contactService from '@/services/contact.service';
 import { validateContactForm, validateContactField } from '@/services/validation/contact.validation';
 import { FIELD_LIMITS } from '@/constants/fieldLimits';
 import { filterPhoneInput } from '@/utils/phoneUtils';
+import { isPhoneUserAgent } from '@/utils/device';
 
 const CLIMITS = FIELD_LIMITS.contact;
 
@@ -83,6 +84,16 @@ export default function ContactPage() {
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>('');
   const [contactInfo, setContactInfo] = useState<Record<string, string> | null>(null);
+  // Defer CAPTCHA mount until after hydration so SSR markup matches the first client paint.
+  // Until UA is known, treat CAPTCHA as required (safe default for desktop).
+  const [deviceReady, setDeviceReady] = useState(false);
+  const [isPhoneClient, setIsPhoneClient] = useState(false);
+  const requireCaptcha = !isPhoneClient;
+
+  useEffect(() => {
+    setIsPhoneClient(isPhoneUserAgent(navigator.userAgent));
+    setDeviceReady(true);
+  }, []);
 
   // Check if form has been modified (unsaved changes)
   const hasChanges = 
@@ -142,7 +153,7 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors = validateContactForm(form, attachment, t as any);
+    const errors = validateContactForm(form, attachment, t as any, { requireCaptcha });
     if (errors.length > 0) {
       const mapped: Record<string, string> = {};
       errors.forEach(err => { mapped[err.field] = err.message; });
@@ -400,18 +411,20 @@ export default function ContactPage() {
                   )}
                 </div>
 
-                <div>
-                  <CaptchaChallenge
-                    isVerified={form.captchaConfirmed}
-                    onVerify={(verified, token) => {
-                      setForm(prev => ({ ...prev, captchaConfirmed: verified }));
-                      setCaptchaToken(token || '');
-                    }}
-                  />
-                  {fieldErrors.captchaConfirmed && (
-                    <p className="mt-2 text-xs text-red-500">{fieldErrors.captchaConfirmed}</p>
-                  )}
-                </div>
+                {deviceReady && requireCaptcha && (
+                  <div data-testid="contact-captcha">
+                    <CaptchaChallenge
+                      isVerified={form.captchaConfirmed}
+                      onVerify={(verified, token) => {
+                        setForm(prev => ({ ...prev, captchaConfirmed: verified }));
+                        setCaptchaToken(token || '');
+                      }}
+                    />
+                    {fieldErrors.captchaConfirmed && (
+                      <p className="mt-2 text-xs text-red-500">{fieldErrors.captchaConfirmed}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Submit */}
                 <div className="flex justify-center pt-2">

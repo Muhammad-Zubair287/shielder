@@ -6,25 +6,28 @@ export const orderValidation = {
     deliveryType: Joi.string().valid('DELIVERY', 'PICKUP').default('DELIVERY'),
     warehouseId: Joi.when('deliveryType', {
       is: 'PICKUP',
-      then: Joi.string().uuid().required(),
+      // Optional: backend resolves the single authoritative pickup warehouse.
+      then: Joi.string().uuid().optional().allow(null),
       otherwise: Joi.string().uuid().optional().allow(null),
     }),
     shippingAddress: Joi.when('deliveryType', {
       is: 'DELIVERY',
-      then: sharedValidationSchemas.textNoHtml.max(200).required().messages({
-        'any.required': 'Shipping address is required for delivery orders',
+      then: sharedValidationSchemas.textNoHtml.min(5).max(200).required().messages({
+        'any.required': 'validation.required',
+        'string.min': 'validation.shippingAddressMin',
+        'string.empty': 'validation.required',
       }),
       otherwise: sharedValidationSchemas.textNoHtml.max(200).allow('', null).optional(),
     }),
     phoneNumber: sharedValidationSchemas.phoneRequired,
     customerName: sharedValidationSchemas.textNoHtml.min(2).max(100).required().messages({
-      'any.required': 'Customer name is required',
-      'string.min': 'Customer name must be at least 2 characters',
-      'string.max': 'Customer name cannot exceed 100 characters',
+      'any.required': 'validation.required',
+      'string.min': 'validation.stringMin',
+      'string.max': 'validation.stringMax',
     }),
     paymentMethod: Joi.string().valid('CASH', 'BANK_TRANSFER', 'CREDIT_CARD').required().messages({
-      'any.required': 'Payment method is required',
-      'any.only': 'Payment method must be CASH, BANK_TRANSFER, or CREDIT_CARD',
+      'any.required': 'validation.required',
+      'any.only': 'validation.invalidEnum',
     }),
     notes: sharedValidationSchemas.textNoHtml.max(500).allow('', null).optional(),
     items: Joi.array().items(
@@ -32,8 +35,8 @@ export const orderValidation = {
         productId: Joi.string().uuid().required(),
         variantId: Joi.string().uuid().optional(),
         quantity: Joi.number().integer().min(1).max(10_000).required().messages({
-          'number.min': 'Quantity must be at least 1',
-          'number.max': 'Quantity cannot exceed 10,000',
+          'number.min': 'validation.numberMin',
+          'number.max': 'validation.numberMax',
         }),
       })
     ).min(1).required().messages({
