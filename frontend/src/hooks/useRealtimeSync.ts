@@ -67,7 +67,7 @@ const EVENT_QUERY_MAP: Partial<Record<RealtimeEvent, string[]>> = {
   'user:updated':       ['superadmin-users-list', 'superadmin-users-stats'],
   'user:deleted':       ['superadmin-users-list', 'superadmin-users-stats'],
   'notification:new':   ['notifications'],
-  'settings:updated':   ['settings'],
+  'settings:updated':   ['settings', 'public-settings'],
   'privacy-policy:updated': ['privacy-policy'],
 };
 
@@ -89,6 +89,7 @@ const EVENT_MODULE_MAP: Partial<Record<RealtimeEvent, string>> = {
   'user:created':       'users',
   'user:updated':       'users',
   'user:deleted':       'users',
+  'settings:updated':   'settings',
 };
 
 export function useRealtimeSync(): void {

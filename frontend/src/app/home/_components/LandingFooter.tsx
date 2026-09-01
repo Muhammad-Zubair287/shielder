@@ -5,10 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Facebook, Linkedin, Youtube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePublicSettings } from '@/hooks/usePublicSettings';
+import { buildCompanyMailtoHref } from '@/services/settings.service';
 
 
 export default function LandingFooter() {
   const { t, isRTL } = useLanguage();
+  const { companyEmail } = usePublicSettings();
   const year = new Date().getFullYear();
 
   const productLinks = [
@@ -119,15 +122,45 @@ export default function LandingFooter() {
               <p className="text-white/70 text-sm mb-4">
                 {t('landingFooterNewsletterText') || 'Subscribe to get the latest updates, new products and special offers.'}
               </p>
+              {companyEmail && (
+                <div className={`mb-4 space-y-1 ${isRTL ? 'text-right' : 'text-start'}`}>
+                  <p className="text-white font-semibold text-sm">
+                    {t('landingFooterContact')}
+                  </p>
+                  <a
+                    href={buildCompanyMailtoHref(companyEmail) ?? undefined}
+                    className="inline-flex items-center gap-2 text-white/70 text-sm hover:text-white transition-colors"
+                    dir="ltr"
+                  >
+                    <Mail size={14} className="shrink-0" />
+                    {companyEmail}
+                  </a>
+                </div>
+              )}
               <div className="flex gap-2">
                 <input
                   type="email"
                   placeholder={t('landingFooterEmailPlaceholder') || 'Enter your email'}
                   className={`flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/50 focus:outline-none focus:border-white/40 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
-                <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                  <Mail size={18} className="text-white" />
-                </button>
+                {companyEmail ? (
+                  <a
+                    href={buildCompanyMailtoHref(companyEmail) ?? undefined}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors inline-flex items-center justify-center shrink-0 cursor-pointer"
+                    aria-label={t('landingFooterContact')}
+                  >
+                    <Mail size={18} className="text-white" />
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="px-4 py-2 bg-white/10 rounded-lg transition-colors opacity-50 cursor-not-allowed"
+                    aria-label={t('landingFooterContact')}
+                  >
+                    <Mail size={18} className="text-white" />
+                  </button>
+                )}
               </div>
               {/* Social Links */}
               <div className={`flex gap-3 mt-6 ${isRTL ? 'flex-row-reverse' : ''}`}>

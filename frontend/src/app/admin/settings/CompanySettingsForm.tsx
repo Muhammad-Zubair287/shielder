@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { Upload, X, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import settingsService from '@/services/settings.service';
+import { broadcastSync } from '@/lib/crossTabSync';
 import {
   FormSection, FormRow, TextInput, SaveBar,
 } from './FormComponents';
@@ -135,6 +136,8 @@ export default function CompanySettingsForm({ settings, onSaved }: Props) {
       setOrig(form);
       setLogoFile(null);
       toast.success(t('settingsSavedSuccess'));
+      broadcastSync({ type: 'DATA_CHANGED', module: 'settings' });
+      broadcastSync({ type: 'QUERY_INVALIDATE', keys: ['public-settings', 'settings'] });
       onSaved();
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? t('settingsSaveFailed'));

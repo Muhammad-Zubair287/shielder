@@ -3,6 +3,29 @@
  */
 import api from './api.service';
 
+/** Public-facing settings subset returned by GET /settings/public */
+export interface PublicSettings {
+  company_name_en?: string | null;
+  company_name_ar?: string | null;
+  company_email?: string | null;
+  company_phone?: string | null;
+  company_location_en?: string | null;
+  company_location_ar?: string | null;
+  mapEmbedUrl?: string | null;
+  whatsAppHref?: string | null;
+  /** Legacy camelCase fallback (not returned by public API but tolerated in UI) */
+  companyEmail?: string | null;
+  companyPhone?: string | null;
+}
+
+/** Extract the configured company contact email from a public settings payload. */
+export function getCompanyEmailFromPublicSettings(
+  settings: PublicSettings | null | undefined,
+): string {
+  if (!settings) return '';
+  return (settings.company_email || settings.companyEmail || '').trim();
+}
+
 export interface SystemSettings {
   systemName: string;
   companyName: string;
@@ -53,6 +76,12 @@ export interface SystemSettings {
   // Backup
   lastBackupDate: string | null;
   autoBackupSchedule: string | null;
+}
+
+/** Build a mailto href from a configured company email (shared by Footer + Contact). */
+export function buildCompanyMailtoHref(email: string): string | null {
+  const trimmed = email.trim();
+  return trimmed ? `mailto:${trimmed}` : null;
 }
 
 const SECTION_FIELDS: Record<string, string[]> = {

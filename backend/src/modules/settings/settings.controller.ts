@@ -21,6 +21,7 @@ import {
   deleteStoredRefSafe,
   storeUploadedImageFile,
 } from '@/common/storage/storage-image.helper';
+import { emitToAll } from '@/modules/realtime/socket.service';
 
 export const formatSettingUrl = (path: string | null | undefined): string | null => {
   if (!path) return null;
@@ -101,6 +102,8 @@ class SettingsController {
         }
 
         await deleteStoredRefIfUnused(currentSettings.companyLogo);
+
+        void emitToAll('settings:updated', { section: 'general' });
 
         res.json({
           success: true,
@@ -198,6 +201,8 @@ class SettingsController {
       if (updatePayload.companyLogo && previousLogoRef) {
         await deleteStoredRefIfUnused(previousLogoRef);
       }
+
+      void emitToAll('settings:updated', { section });
 
       res.json({ success: true, message: t('settings.updateSuccess', req.locale), data: serializeSettings(data) });
     } catch (error) {

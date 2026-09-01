@@ -13,6 +13,7 @@ import {
   validatePaymentSettings,
   validateSecurityField,
 } from '@/common/security/validation.security';
+import { DEFAULT_COMPANY_EMAIL } from '@/common/constants/settings.defaults';
 
 class SettingsService {
   private cachedCurrency: string | null = null;
@@ -55,14 +56,31 @@ class SettingsService {
     if (!settings) {
       // Initialize if not exists
       settings = await prisma.systemSettings.create({
-        data: { id: 'CURRENT', currency: 'SAR' }
+        data: {
+          id: 'CURRENT',
+          currency: 'SAR',
+          companyEmail: DEFAULT_COMPANY_EMAIL,
+        },
       });
-    } else if (settings.currency === 'USD' && settings.updatedBy == null) {
-      // One-time legacy normalization for untouched defaults.
-      settings = await prisma.systemSettings.update({
-        where: { id: 'CURRENT' },
-        data: { currency: 'SAR' },
-      });
+    } else {
+      const legacyUpdates: { currency?: string; companyEmail?: string } = {};
+
+      if (settings.currency === 'USD' && settings.updatedBy == null) {
+        // One-time legacy normalization for untouched defaults.
+        legacyUpdates.currency = 'SAR';
+      }
+
+      if (!settings.companyEmail && settings.updatedBy == null) {
+        // One-time default for untouched installs — official client contact email.
+        legacyUpdates.companyEmail = DEFAULT_COMPANY_EMAIL;
+      }
+
+      if (Object.keys(legacyUpdates).length > 0) {
+        settings = await prisma.systemSettings.update({
+          where: { id: 'CURRENT' },
+          data: legacyUpdates,
+        });
+      }
     }
 
     // Invalidate currency cache when settings are fetched

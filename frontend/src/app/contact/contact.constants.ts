@@ -22,8 +22,6 @@ export const CONTACT_SUBJECTS = [
 export const CONTACT_INFO = {
   phoneDisplay: '+1 (555) 123-4567',
   phoneHref: 'tel:+15551234567',
-  emailDisplay: 'info@devflx.com',
-  emailHref: 'mailto:info@devflx.com',
   address: '123 Filter Street, Auto City, 12345 United States',
   whatsAppHref: 'https://wa.me/15551234567',
   mapEmbedUrl:

@@ -28,6 +28,7 @@ import {
   Globe
 } from 'lucide-react';
 import settingsService, { SystemSettings } from '@/services/settings.service';
+import { broadcastSync } from '@/lib/crossTabSync';
 import authService from '@/services/auth.service';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/helpers';
@@ -227,6 +228,8 @@ export default function SettingsPage() {
 
       await settingsService.updateSettings(section, payload);
       toast.success(t('settingsSaved'));
+      broadcastSync({ type: 'DATA_CHANGED', module: 'settings' });
+      broadcastSync({ type: 'QUERY_INVALIDATE', keys: ['public-settings', 'settings'] });
       fetchSettings(); // Refresh to get masked values/audit updates
     } catch (err) {
       const error = err as ApiErrorResponse;

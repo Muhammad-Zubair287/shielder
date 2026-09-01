@@ -223,4 +223,43 @@ describe('System Settings API', () => {
       expect(response.body.data.companyLogo).toMatch(/^https:\/\/my-custom-test-domain\.com\/uploads\//);
     });
   });
+
+  describe('GET /api/settings/public', () => {
+    it('returns only the public contact subset without sensitive fields', async () => {
+      const response = await request(app)
+        .get('/api/settings/public')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.company_email).toBe('info@shielder.com');
+      expect(response.body.data.company_phone).toBe('12345678');
+      expect(response.body.data).not.toHaveProperty('paymentGatewayApiKey');
+      expect(response.body.data).not.toHaveProperty('paymentGatewaySecretKey');
+      expect(response.body.data).not.toHaveProperty('passwordMinLength');
+      expect(response.body.data).not.toHaveProperty('sessionTimeoutMinutes');
+    });
+  });
+
+  describe('PUT /api/settings/general (companyEmail)', () => {
+    it('allows admin to update companyEmail', async () => {
+      const response = await request(app)
+        .put('/api/settings/general')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ companyEmail: 'support@filter-shielder.com' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.companyEmail).toBe('support@filter-shielder.com');
+    });
+
+    it('rejects invalid companyEmail format', async () => {
+      const response = await request(app)
+        .put('/api/settings/general')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ companyEmail: 'not-an-email' })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+    });
+  });
 });
