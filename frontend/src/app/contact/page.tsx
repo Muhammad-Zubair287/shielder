@@ -8,7 +8,7 @@ import LandingFooter from '@/app/home/_components/LandingFooter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import CaptchaChallenge from '@/components/CaptchaChallenge';
 import { usePublicSettings } from '@/hooks/usePublicSettings';
-import { buildCompanyMailtoHref } from '@/services/settings.service';
+import { buildCompanyMailtoHref, buildCompanyTelHref } from '@/services/settings.service';
 import {
   CONTACT_ALLOWED_FILE_TYPES,
   CONTACT_INFO,
@@ -84,7 +84,7 @@ export default function ContactPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>('');
-  const { settings: contactInfo, companyEmail } = usePublicSettings();
+  const { settings: contactInfo, companyEmail, companyPhone } = usePublicSettings();
   // Defer CAPTCHA mount until after hydration so SSR markup matches the first client paint.
   // Until UA is known, treat CAPTCHA as required (safe default for desktop).
   const [deviceReady, setDeviceReady] = useState(false);
@@ -199,10 +199,10 @@ export default function ContactPage() {
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                     <Phone size={15} className="text-white" />
                   </div>
-                  <a href={contactInfo?.company_phone ? `tel:${contactInfo.company_phone}` : CONTACT_INFO.phoneHref}
+                  <a href={companyPhone ? buildCompanyTelHref(companyPhone) ?? undefined : CONTACT_INFO.phoneHref}
                      className="text-sm text-gray-200 hover:text-white transition-colors"
                      style={{ direction: 'ltr', unicodeBidi: 'embed' }}>
-                    {contactInfo?.company_phone || CONTACT_INFO.phoneDisplay}
+                    {companyPhone || CONTACT_INFO.phoneDisplay}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">

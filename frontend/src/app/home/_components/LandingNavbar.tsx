@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, User, LogOut, Search, Phone, Truck, Headphones, Zap, Package, FileText } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { usePublicSettings } from '@/hooks/usePublicSettings';
+import { buildCompanyTelHref } from '@/services/settings.service';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import CartBadge from '@/components/cart/CartBadge';
 import QuotationBadge from '@/components/cart/QuotationBadge';
@@ -17,6 +19,7 @@ import { getImageUrl } from '@/utils/helpers';
 export default function LandingNavbar() {
   const { t, isRTL } = useLanguage();
   const { user, logout } = useAuth();
+  const { companyPhone } = usePublicSettings();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -150,13 +153,15 @@ export default function LandingNavbar() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Phone size={14} className="text-green-400" />
-                  <a
-                    href="tel:+966506814416"
-                    dir="ltr"
-                    className="font-semibold hover:text-green-400 transition-colors [unicode-bidi:isolate]"
-                  >
-                    +966 50 681 4416
-                  </a>
+                  {companyPhone ? (
+                    <a
+                      href={buildCompanyTelHref(companyPhone) ?? undefined}
+                      dir="ltr"
+                      className="font-semibold hover:text-green-400 transition-colors [unicode-bidi:isolate]"
+                    >
+                      {companyPhone}
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>

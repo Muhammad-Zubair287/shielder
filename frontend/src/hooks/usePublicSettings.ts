@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import settingsService, {
   getCompanyEmailFromPublicSettings,
+  getCompanyPhoneFromPublicSettings,
   type PublicSettings,
 } from '@/services/settings.service';
 import { DATA_CHANGED_EVENT } from '@/components/providers/CrossTabSyncProvider';
@@ -19,7 +20,7 @@ async function fetchPublicSettings(): Promise<PublicSettings | null> {
 }
 
 /**
- * Shared hook for customer-facing pages (Footer, Contact Us, Resources).
+ * Shared hook for customer-facing pages (Navbar, Footer, Contact Us, Resources).
  * Fetches the public settings subset and refetches when settings change
  * (cross-tab DATA_CHANGED or React Query invalidation via settings:updated).
  */
@@ -48,10 +49,12 @@ export function usePublicSettings() {
 
   const settings = query.data ?? null;
   const companyEmail = getCompanyEmailFromPublicSettings(settings);
+  const companyPhone = getCompanyPhoneFromPublicSettings(settings);
 
   return {
     settings,
     companyEmail,
+    companyPhone,
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,

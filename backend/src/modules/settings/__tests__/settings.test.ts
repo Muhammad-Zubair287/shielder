@@ -261,5 +261,16 @@ describe('System Settings API', () => {
 
       expect(response.body.success).toBe(false);
     });
+
+    it('allows admin to update companyPhone', async () => {
+      const response = await request(app)
+        .put('/api/settings/general')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ companyPhone: '+966 55 987 6543' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.companyPhone).toBe('+966 55 987 6543');
+    });
   });
 });

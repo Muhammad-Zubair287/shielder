@@ -26,6 +26,14 @@ export function getCompanyEmailFromPublicSettings(
   return (settings.company_email || settings.companyEmail || '').trim();
 }
 
+/** Extract the configured company contact phone from a public settings payload. */
+export function getCompanyPhoneFromPublicSettings(
+  settings: PublicSettings | null | undefined,
+): string {
+  if (!settings) return '';
+  return (settings.company_phone || settings.companyPhone || '').trim();
+}
+
 export interface SystemSettings {
   systemName: string;
   companyName: string;
@@ -82,6 +90,14 @@ export interface SystemSettings {
 export function buildCompanyMailtoHref(email: string): string | null {
   const trimmed = email.trim();
   return trimmed ? `mailto:${trimmed}` : null;
+}
+
+/** Build a tel href from a configured company phone (shared by Navbar + Contact). */
+export function buildCompanyTelHref(phone: string): string | null {
+  const trimmed = phone.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.replace(/[^\d+]/g, '');
+  return normalized ? `tel:${normalized}` : null;
 }
 
 const SECTION_FIELDS: Record<string, string[]> = {
